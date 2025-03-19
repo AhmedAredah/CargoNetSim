@@ -195,7 +195,7 @@ void TrainManagerDialog::deleteTrain()
         return;
     }
 
-    QString trainId = m_trains[currentRow]->userId();
+    QString trainId = m_trains[currentRow]->getUserId();
     
     // Confirm deletion
     QMessageBox::StandardButton reply = QMessageBox::question(
@@ -226,17 +226,17 @@ void TrainManagerDialog::updateTable()
         m_table->insertRow(row);
 
         // Train ID
-        QTableWidgetItem* idItem = new QTableWidgetItem(train->userId());
+        QTableWidgetItem* idItem = new QTableWidgetItem(train->getUserId());
         m_table->setItem(row, 0, idItem);
 
         // Locomotives summary
         QString locoStr;
-        const auto& locomotives = train->locomotives();
+        const auto& locomotives = train->getLocomotives();
         for (int i = 0; i < locomotives.size(); ++i) {
             const auto& loco = locomotives[i];
             locoStr += QString("%1x Type %2 (%3kW)").arg(
-                loco->count()).arg(loco->locoType())
-                           .arg(loco->power(), 0, 'f', 0);
+                loco->getCount()).arg(loco->getLocoType())
+                           .arg(loco->getPower(), 0, 'f', 0);
                 
             if (i < locomotives.size() - 1) {
                 locoStr += "; ";
@@ -247,11 +247,11 @@ void TrainManagerDialog::updateTable()
 
         // Cars summary
         QString carsStr;
-        const auto& cars = train->cars();
+        const auto& cars = train->getCars();
         for (int i = 0; i < cars.size(); ++i) {
             const auto& car = cars[i];
             carsStr += QString("%1x Type %2")
-                           .arg(car->count()).arg(car->carType());
+                           .arg(car->getCount()).arg(car->getCarType());
                 
             if (i < cars.size() - 1) {
                 carsStr += "; ";
@@ -280,45 +280,45 @@ TrainManagerDialog::formatTrainDetails(const Backend::Train* train) const
     QString details = QString(
         "<h2>Train Details for train ID: %1</h2>"
         "<h3>Locomotives:</h3>"
-        "<ul>").arg(train->userId());
+        "<ul>").arg(train->getUserId());
         
     // Locomotive details
-    for (const auto& loco : train->locomotives()) {
+    for (const auto& loco : train->getLocomotives()) {
         details += QString(
             "<li><b>Type %1:</b> %2 units<ul>"
             "    <li>Power: %3 kW</li>"
             "    <li>Gross Weight: %4 tons</li>"
             "    <li>Length: %5 m</li>"
             "</ul></li>").arg(
-                loco->locoType()).arg(
-                loco->count()).arg(
-                loco->power(), 0, 'f', 1).arg(
-                loco->grossWeight(), 0, 'f', 1).arg(
-                loco->length(), 0, 'f', 2);
+                loco->getLocoType()).arg(
+                loco->getCount()).arg(
+                loco->getPower(), 0, 'f', 1).arg(
+                loco->getGrossWeight(), 0, 'f', 1).arg(
+                loco->getLength(), 0, 'f', 2);
     }
     
     details += "</ul><h3>Cars:</h3><ul>";
     
     // Car details
-    for (const auto& car : train->cars()) {
+    for (const auto& car : train->getCars()) {
         details += QString(
             "<li><b>Type %1:</b> %2 units<ul>"
             "    <li>Count: %3 tons</li>"
             "    <li>Tare Weight: %4 tons</li>"
             "    <li>Length: %5 m</li>"
             "</ul></li>").arg(
-                car->carType()).arg(
-                car->count()).arg(
-                car->tareWeight(), 0, 'f', 1).arg(
-                car->tareWeight(), 0, 'f', 1).arg(
-                car->length(), 0, 'f', 2);
+                car->getCarType()).arg(
+                car->getCount()).arg(
+                car->getTareWeight(), 0, 'f', 1).arg(
+                car->getTareWeight(), 0, 'f', 1).arg(
+                car->getLength(), 0, 'f', 2);
     }
     
     details += "</ul>";
     
     // Train path
     details += "<h3>Train Path:</h3>";
-    const auto& pathNodes = train->trainPathOnNodeIds();
+    const auto& pathNodes = train->getTrainPathOnNodeIds();
     if (pathNodes.isEmpty()) {
         details += "<p>No path assigned</p>";
     } else {
@@ -334,7 +334,7 @@ TrainManagerDialog::formatTrainDetails(const Backend::Train* train) const
         "<h3>Operational Parameters:</h3>"
         "<ul>"
         "    <li><b>Load Time:</b> %1 minutes</li>"
-        "</ul>").arg(train->loadTime());
+        "</ul>").arg(train->getLoadTime());
         
     return details;
 }

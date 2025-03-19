@@ -698,7 +698,7 @@ QVector<QJsonObject> NeTrainSimNetworkBase::getLinks() const {
 
 NeTrainSimNode* NeTrainSimNetworkBase::getNodeByUserId(int userId) const {
     for (NeTrainSimNode* node : m_nodeObjects) {
-        if (node->userId() == userId) {
+        if (node->getUserId() == userId) {
             return node;
         }
     }

@@ -91,11 +91,6 @@ set(GUI_SOURCES
 # Create the GUI library
 add_library(CargoNetSimGUI STATIC ${GUI_SOURCES})
 
-# Add resources
-qt_add_resources(CargoNetSimGUI 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../resources/CargoNetSim.qrc
-)
-
 # Link against dependencies
 target_link_libraries(CargoNetSimGUI
     PUBLIC

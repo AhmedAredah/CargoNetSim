@@ -1,8 +1,17 @@
 add_subdirectory(GUI)
 add_subdirectory(Backend)
 
+# Define the resources variable
+set(RESOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../resources/CargoNetSim.qrc
+)
+
+qt6_add_resources(RESOURCE_SOURCES ${RESOURCES})
+
 set(SOURCES
-    main.cpp
+    main.cpp    # Main file
+
+    ${RESOURCE_SOURCES}  # Include the compiled resources
 )
 
 add_executable(CargoNetSim ${SOURCES})

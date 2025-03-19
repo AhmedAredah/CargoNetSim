@@ -1,3 +1,10 @@
+/**
+* @file DirectedGraph.h
+* @brief Template implementation of a directed graph with attributes and weights.
+* @author Ahmed Aredah
+*/
+
+
 #pragma once
 
 #include "DirectedGraphBase.h"
@@ -14,97 +21,238 @@
 namespace CargoNetSim {
 namespace Backend {
 
-// Custom priority queue entry for shortest path algorithm
-template <typename T>
+/**
+* @struct PriorityQueueEntry
+* @brief Custom priority queue entry for the shortest path algorithm.
+* @tparam T The type of node identifier.
+*/template <typename T>
 struct PriorityQueueEntry {
+    /** @brief Cost to reach this node */
     float cost;
+    /** @brief Node identifier */
     T nodeId;
 
+    /**
+    * @brief Comparison operator for priority queue ordering.
+    * @param other The entry to compare with.
+    * @return True if this entry has a higher cost than the other.
+    */
     bool operator>(const PriorityQueueEntry& other) const {
         return cost > other.cost;
     }
 };
 
+/**
+* @class DirectedGraph
+* @brief A template implementation of a directed graph with node and
+*        edge attributes.
+*
+* This class provides a comprehensive implementation of a directed
+* graph with support for:
+* - Node and edge attributes stored as key-value pairs
+* - Edge weights for path calculations
+* - Thread-safe operations via mutex locking
+* - Dijkstra's shortest path algorithm with customizable cost functions
+* - Serialization to and from JSON
+*
+* @tparam T The type of node identifier, which must be storable in QVariant.
+*/
 template <typename T>
 class DirectedGraph : public DirectedGraphBase {
 public:
+
+    /**
+    * @brief Constructs a DirectedGraph instance.
+    * @param parent The parent QObject (default: nullptr).
+    */
     explicit DirectedGraph(QObject* parent = nullptr);
+
+    /**
+    * @brief Destructor that cleans up the graph.
+    */
     virtual ~DirectedGraph();
 
-    // Add a node with attributes
-    void addNode(const T& nodeId, const QMap<QString, QVariant>& attributes = QMap<QString, QVariant>());
+    /**
+    * @brief Adds a node with optional attributes.
+    * @param nodeId The identifier for the node.
+    * @param attributes Key-value pairs of node attributes (default: empty).
+    */
+    void addNode(const T& nodeId, const QMap<QString, QVariant>& attributes =
+                                  QMap<QString, QVariant>());
 
-    // Add a directed edge with weight and attributes
+    /**
+    * @brief Adds a directed edge with weight and optional attributes.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @param weight The edge weight (used for path calculations).
+    * @param attributes Key-value pairs of edge attributes (default: empty).
+    */
     void addEdge(const T& fromNodeId, const T& toNodeId, float weight,
-                 const QMap<QString, QVariant>& attributes = QMap<QString, QVariant>());
+                 const QMap<QString, QVariant>& attributes =
+                 QMap<QString, QVariant>());
 
-    // Remove a node and all its edges
+    /**
+    * @brief Removes a node and all its connected edges.
+    * @param nodeId The identifier of the node to remove.
+    */
     void removeNode(const T& nodeId);
 
-    // Remove an edge between two nodes
+    /**
+    * @brief Removes an edge between two nodes.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    */
     void removeEdge(const T& fromNodeId, const T& toNodeId);
 
-    // Check if a node exists
+    /**
+    * @brief Checks if a node exists in the graph.
+    * @param nodeId The node identifier to check.
+    * @return True if the node exists, false otherwise.
+    */
     bool hasNode(const T& nodeId) const;
 
-    // Check if an edge exists
+    /**
+    * @brief Checks if an edge exists between two nodes.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @return True if the edge exists, false otherwise.
+    */
     bool hasEdge(const T& fromNodeId, const T& toNodeId) const;
 
-    // Get node attributes
+    /**
+    * @brief Gets the attributes of a node.
+    * @param nodeId The node identifier.
+    * @return A map of attribute name to value.
+    */
     QMap<QString, QVariant> getNodeAttributes(const T& nodeId) const;
 
-    // Set or update node attributes
+    /**
+    * @brief Sets or updates the attributes of a node.
+    * @param nodeId The node identifier.
+    * @param attributes The new attributes to set.
+    */
     void setNodeAttributes(const T& nodeId, const QMap<QString, QVariant>& attributes);
 
-    // Get edge attributes
+    /**
+    * @brief Gets the attributes of an edge.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @return A map of attribute name to value.
+    */
     QMap<QString, QVariant> getEdgeAttributes(const T& fromNodeId, const T& toNodeId) const;
 
-    // Set or update edge attributes
+    /**
+    * @brief Sets or updates the attributes of an edge.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @param attributes The new attributes to set.
+    */
     void setEdgeAttributes(const T& fromNodeId, const T& toNodeId, const QMap<QString, QVariant>& attributes);
 
-    // Get edge weight
+    /**
+    * @brief Gets the weight of an edge.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @return The edge weight, or infinity if the edge doesn't exist.
+    */
     float getEdgeWeight(const T& fromNodeId, const T& toNodeId) const;
 
-    // Set edge weight
+    /**
+    * @brief Sets the weight of an edge.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @param weight The new weight to set.
+    */
     void setEdgeWeight(const T& fromNodeId, const T& toNodeId, float weight);
 
-    // Get all nodes
+    /**
+    * @brief Gets all nodes in the graph.
+    * @return A vector of all node identifiers.
+    */
     QVector<T> getNodes() const;
 
-    // Get all outgoing edges from a node
+    /**
+    * @brief Gets all outgoing edges from a node.
+    * @param nodeId The source node identifier.
+    * @return A vector of pairs containing target node identifiers
+    *         and edge weights.
+    */
     QVector<QPair<T, float>> getOutgoingEdges(const T& nodeId) const;
 
-    // Get all incoming edges to a node
+    /**
+    * @brief Gets all incoming edges to a node.
+    * @param nodeId The target node identifier.
+    * @return A vector of pairs containing source node identifiers
+    *         and edge weights.
+    */
     QVector<QPair<T, float>> getIncomingEdges(const T& nodeId) const;
 
-    // Get out degree of a node
+    /**
+    * @brief Gets the out-degree of a node (number of outgoing edges).
+    * @param nodeId The node identifier.
+    * @return The number of outgoing edges.
+    */
     int getOutDegree(const T& nodeId) const;
 
-    // Get in degree of a node
+    /**
+    * @brief Gets the in-degree of a node (number of incoming edges).
+    * @param nodeId The node identifier.
+    * @return The number of incoming edges.
+    */
     int getInDegree(const T& nodeId) const;
 
-    // Find shortest path with customizable cost function
+    /**
+    * @brief Finds the shortest path between two nodes using
+    *        Dijkstra's algorithm.
+    * @param startNodeId The starting node identifier.
+    * @param endNodeId The destination node identifier.
+    * @param optimizeFor The criterion to optimize for (default: "distance").
+    * @return A vector of node identifiers representing the shortest path,
+    *         or empty if no path exists.
+    */
     QVector<T> findShortestPath(const T& startNodeId, const T& endNodeId,
                                 const QString& optimizeFor = "distance") const;
 
-    // Clear the graph
+    /**
+    * @brief Clears all nodes and edges from the graph.
+    */
     void clear();
 
-    // Export the graph to JSON
+    /**
+    * @brief Exports the graph to a JSON object.
+    * @return A JSON object representing the graph structure.
+    */
     QJsonObject toJson() const;
 
-    // Import the graph from JSON
+    /**
+    * @brief Imports a graph structure from a JSON object.
+    * @param json The JSON object to import.
+    */
     void fromJson(const QJsonObject& json);
 
 private:
-    // Calculate edge cost based on optimization criterion
-    float calculateEdgeCost(const T& fromNodeId, const T& toNodeId, const QString& optimizeFor) const;
+    /**
+    * @brief Calculates the cost of an edge based on the optimization criterion.
+    * @param fromNodeId The source node identifier.
+    * @param toNodeId The target node identifier.
+    * @param optimizeFor The criterion to optimize for
+    *        (e.g., "distance", "time").
+    * @return The calculated edge cost.
+    */
+    float calculateEdgeCost(const T& fromNodeId,
+                            const T& toNodeId,
+                            const QString& optimizeFor) const;
 
+    /** @brief Maps nodes to their attributes */
     QMap<T, QMap<QString, QVariant>> m_nodeAttributes;
+
+    /** @brief Maps edges to their attributes */
     QMap<T, QMap<T, QMap<QString, QVariant>>> m_edgeAttributes;
+
+    /** @brief Maps edges to their weights */
     QMap<T, QMap<T, float>> m_edgeWeights;
 
-    // Thread synchronization
+    /** @brief Mutex for thread synchronization */
     mutable QMutex m_mutex;
 };
 
@@ -650,3 +798,7 @@ extern template class DirectedGraph<QString>;
 // Ensure Q_DECLARE_METATYPE is called for common types
 Q_DECLARE_METATYPE(QVector<int>)
 Q_DECLARE_METATYPE(QVector<QString>)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::DirectedGraph<int>)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::DirectedGraph<int>*)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::DirectedGraph<QString>)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::DirectedGraph<QString>*)

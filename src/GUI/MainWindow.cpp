@@ -116,7 +116,22 @@ MainWindow::~MainWindow() {
 
 void MainWindow::initializeUI() {
     // Load the window icon
-    QIcon appIcon(":/media/Logo25.png");
+    QString imagePath = ":/Logo25";
+    auto originalPixmap = QPixmap(imagePath);
+
+    if (originalPixmap.isNull()) {
+        qWarning() << "Failed to load logo image:" << imagePath;
+        // Create a default splash pixmap
+        originalPixmap = QPixmap(25, 25);
+        originalPixmap.fill(Qt::white);
+
+        QPainter painter(&originalPixmap);
+        painter.setPen(Qt::black);
+        painter.setFont(QFont("Arial", 5, QFont::Bold));
+        painter.drawText(originalPixmap.rect(), Qt::AlignCenter, "CNS");
+    }
+
+    QIcon appIcon(originalPixmap);
     if (!appIcon.isNull()) {
         setWindowIcon(appIcon);
     }

@@ -1,8 +1,6 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
+<RCC>
     <qresource prefix="/">
-        <file>../media/Logo25.png</file>
-        <file>../media/Splash.png</file>
-        <!-- Add more resources as needed -->
+        <file alias="Logo25">images/Logo25.png</file>
+        <file alias="Splash">images/Splash.png</file>
     </qresource>
 </RCC>
