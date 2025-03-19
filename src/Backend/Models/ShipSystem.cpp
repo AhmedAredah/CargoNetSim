@@ -877,7 +877,7 @@ Ship* Ship::copy() const {
 }
 
 // Setters implementation with signals
-void Ship::setShipId(const QString& shipId) {
+void Ship::setUserId(const QString& shipId) {
     if (m_shipId != shipId) {
         m_shipId = shipId;
         emit shipChanged();

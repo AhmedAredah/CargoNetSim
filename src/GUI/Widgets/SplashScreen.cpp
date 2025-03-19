@@ -19,7 +19,7 @@ SplashScreen::SplashScreen()
       m_isFinished(false)
 {
     // Load splash image
-    QString imagePath = ":/media/Splash.png";
+    QString imagePath = "qrc:/Splash";
     m_originalPixmap = QPixmap(imagePath);
     
     if (m_originalPixmap.isNull()) {

@@ -48,7 +48,7 @@ bool VehicleController::loadShipsFromFile(const QString& filePath) {
     
     // Add ships to map
     for (Ship* ship : loadedShips) {
-        m_ships[ship->shipId()] = ship;
+        m_ships[ship->getUserId()] = ship;
         connect(ship, &Ship::shipChanged, this, [this, ship]() {
             emit shipUpdated(ship);
         });
@@ -67,7 +67,7 @@ QVector<Ship*> VehicleController::getAllShips() const {
 }
 
 bool VehicleController::addShip(Ship* ship) {
-    if (!ship || m_ships.contains(ship->shipId())) {
+    if (!ship || m_ships.contains(ship->getUserId())) {
         return false;
     }
     
@@ -80,7 +80,7 @@ bool VehicleController::addShip(Ship* ship) {
     });
     
     // Add to map
-    m_ships[ship->shipId()] = ship;
+    m_ships[ship->getUserId()] = ship;
     
     emit shipAdded(ship);
     return true;
@@ -99,19 +99,19 @@ bool VehicleController::removeShip(const QString& shipId) {
 }
 
 bool VehicleController::updateShip(Ship* ship) {
-    if (!ship || !m_ships.contains(ship->shipId())) {
+    if (!ship || !m_ships.contains(ship->getUserId())) {
         return false;
     }
     
     // Remove old ship
-    Ship* oldShip = m_ships[ship->shipId()];
+    Ship* oldShip = m_ships[ship->getUserId()];
     if (oldShip != ship) {
         delete oldShip;
     }
     
     // Add updated ship
     ship->setParent(this);
-    m_ships[ship->shipId()] = ship;
+    m_ships[ship->getUserId()] = ship;
     
     // Connect to signals
     connect(ship, &Ship::shipChanged, this, [this, ship]() {
@@ -126,7 +126,7 @@ bool VehicleController::updateShips(QVector<Ship*> ships) {
     // Create a set of new ship IDs for quick lookup
     QSet<QString> newShipIds;
     for (Ship* ship : ships) {
-        newShipIds.insert(ship->shipId());
+        newShipIds.insert(ship->getUserId());
     }
 
     // Find ships to remove (those in current map but not in new set)
@@ -145,7 +145,7 @@ bool VehicleController::updateShips(QVector<Ship*> ships) {
     // Update or add new ships
     bool success = true;
     for (Ship* ship : ships) {
-        if (m_ships.contains(ship->shipId())) {
+        if (m_ships.contains(ship->getUserId())) {
             success &= updateShip(ship);
         } else {
             success &= addShip(ship);
@@ -173,7 +173,7 @@ bool VehicleController::loadTrainsFromFile(const QString& filePath) {
     
     // Add trains to map
     for (Train* train : loadedTrains) {
-        m_trains[train->userId()] = train;
+        m_trains[train->getUserId()] = train;
         connect(train, &Train::trainChanged, this, [this, train]() {
             emit trainUpdated(train);
         });
@@ -192,7 +192,7 @@ QVector<Train*> VehicleController::getAllTrains() const {
 }
 
 bool VehicleController::addTrain(Train* train) {
-    if (!train || m_trains.contains(train->userId())) {
+    if (!train || m_trains.contains(train->getUserId())) {
         return false;
     }
     
@@ -205,7 +205,7 @@ bool VehicleController::addTrain(Train* train) {
     });
     
     // Add to map
-    m_trains[train->userId()] = train;
+    m_trains[train->getUserId()] = train;
     
     emit trainAdded(train);
     return true;
@@ -224,19 +224,19 @@ bool VehicleController::removeTrain(const QString& userId) {
 }
 
 bool VehicleController::updateTrain(Train* train) {
-    if (!train || !m_trains.contains(train->userId())) {
+    if (!train || !m_trains.contains(train->getUserId())) {
         return false;
     }
     
     // Remove old train
-    Train* oldTrain = m_trains[train->userId()];
+    Train* oldTrain = m_trains[train->getUserId()];
     if (oldTrain != train) {
         delete oldTrain;
     }
     
     // Add updated train
     train->setParent(this);
-    m_trains[train->userId()] = train;
+    m_trains[train->getUserId()] = train;
     
     // Connect to signals
     connect(train, &Train::trainChanged, this, [this, train]() {
@@ -251,7 +251,7 @@ bool VehicleController::updateTrains(QVector<Train*> trains) {
     // Create a set of new train IDs for quick lookup
     QSet<QString> newTrainIds;
     for (Train* train : trains) {
-        newTrainIds.insert(train->userId());
+        newTrainIds.insert(train->getUserId());
     }
 
     // Find trains to remove (those in current map but not in new set)
@@ -270,7 +270,7 @@ bool VehicleController::updateTrains(QVector<Train*> trains) {
     // Update or add new trains
     bool success = true;
     for (Train* train : trains) {
-        if (m_trains.contains(train->userId())) {
+        if (m_trains.contains(train->getUserId())) {
             success &= updateTrain(train);
         } else {
             success &= addTrain(train);

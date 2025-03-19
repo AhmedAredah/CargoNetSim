@@ -196,41 +196,41 @@ void ShipManagerDialog::updateTable() {
         m_table->insertRow(row);
         
         // Ship ID
-        m_table->setItem(row, 0, new QTableWidgetItem(ship->shipId()));
+        m_table->setItem(row, 0, new QTableWidgetItem(ship->getUserId()));
         
         // Max Speed
         m_table->setItem(row, 1, new QTableWidgetItem(
-            QString::number(ship->maxSpeed(), 'f', 1)));
+            QString::number(ship->getMaxSpeed(), 'f', 1)));
         
         // Length
         m_table->setItem(row, 2, new QTableWidgetItem(
-            QString::number(ship->waterlineLength(), 'f', 1)));
+            QString::number(ship->getWaterlineLength(), 'f', 1)));
         
         // Beam
         m_table->setItem(row, 3, new QTableWidgetItem(
-            QString::number(ship->beam(), 'f', 1)));
+            QString::number(ship->getBeam(), 'f', 1)));
         
         // Draft
         m_table->setItem(row, 4, new QTableWidgetItem(
             QString("%1/%2").arg(
-                QString::number(ship->draftAtForward(), 'f', 1),
-                QString::number(ship->draftAtAft(), 'f', 1)
+                QString::number(ship->getDraftAtForward(), 'f', 1),
+                QString::number(ship->getDraftAtAft(), 'f', 1)
             )
         ));
         
         // Displacement
-        double disp = ship->volumetricDisplacement();
+        double disp = ship->getVolumetricDisplacement();
         QString dispText = disp > 0 ? QString::number(disp, 'f', 1) : tr("N/A");
         m_table->setItem(row, 5, new QTableWidgetItem(dispText));
         
         // Cargo Weight
         m_table->setItem(row, 6, new QTableWidgetItem(
-            QString::number(ship->cargoWeight(), 'f', 1)));
+            QString::number(ship->getCargoWeight(), 'f', 1)));
         
         // Propulsion summary
         QString propText = QString("%1x %2m")
-            .arg(ship->propellerCount())
-            .arg(QString::number(ship->propellerDiameter(), 'f', 1));
+            .arg(ship->getPropellerCount())
+            .arg(QString::number(ship->getPropellerDiameter(), 'f', 1));
         m_table->setItem(row, 7, new QTableWidgetItem(propText));
     }
 }
@@ -245,7 +245,7 @@ void ShipManagerDialog::updateDetails() {
     auto ship = m_ships.at(currentRow);
     
     // Emit signal when a ship is selected
-    emit shipSelected(ship->shipId());
+    emit shipSelected(ship->getUserId());
     
     // Format and display the details
     m_detailsText->setHtml(formatShipDetails(ship));
@@ -308,47 +308,47 @@ QString ShipManagerDialog::formatShipDetails(const Backend::Ship &ship) const {
         "    <li><b>Stop if No Energy:</b> %28</li>"
         "</ul>"
     )
-    .arg(ship.shipId())
-    .arg(QString::number(ship.waterlineLength(), 'f', 2))
-    .arg(QString::number(ship.lengthBetweenPerpendiculars(), 'f', 2))
-    .arg(QString::number(ship.beam(), 'f', 2))
-    .arg(QString::number(ship.draftAtForward(), 'f', 2))
-    .arg(QString::number(ship.draftAtAft(), 'f', 2))
-    .arg(ship.volumetricDisplacement() > 0 ?
-         QString::number(ship.volumetricDisplacement(), 'f', 2) : tr("N/A"))
+    .arg(ship.getUserId())
+    .arg(QString::number(ship.getWaterlineLength(), 'f', 2))
+    .arg(QString::number(ship.getLengthBetweenPerpendiculars(), 'f', 2))
+    .arg(QString::number(ship.getBeam(), 'f', 2))
+    .arg(QString::number(ship.getDraftAtForward(), 'f', 2))
+    .arg(QString::number(ship.getDraftAtAft(), 'f', 2))
+    .arg(ship.getVolumetricDisplacement() > 0 ?
+         QString::number(ship.getVolumetricDisplacement(), 'f', 2) : tr("N/A"))
     
-    .arg(ship.wettedHullSurface() > 0 ?
-         QString::number(ship.wettedHullSurface(), 'f', 2) : tr("N/A"))
-    .arg(QString::number(ship.areaAboveWaterline(), 'f', 2))
-    .arg(QString::number(ship.surfaceRoughness(), 'f', 4))
-    .arg(QString::number(ship.buoyancyCenter(), 'f', 2))
+    .arg(ship.getWettedHullSurface() > 0 ?
+         QString::number(ship.getWettedHullSurface(), 'f', 2) : tr("N/A"))
+    .arg(QString::number(ship.getAreaAboveWaterline(), 'f', 2))
+    .arg(QString::number(ship.getSurfaceRoughness(), 'f', 4))
+    .arg(QString::number(ship.getBuoyancyCenter(), 'f', 2))
     
-    .arg(ship.blockCoef() > 0 ?
-         QString::number(ship.blockCoef(), 'f', 4) : tr("N/A"))
-    .arg(ship.prismaticCoef() > 0 ?
-         QString::number(ship.prismaticCoef(), 'f', 4) : tr("N/A"))
-    .arg(ship.midshipSectionCoef()> 0 ?
-         QString::number(ship.midshipSectionCoef(), 'f', 4) : tr("N/A"))
-    .arg(ship.waterplaneAreaCoef() > 0 ?
-         QString::number(ship.waterplaneAreaCoef(), 'f', 4) : tr("N/A"))
+    .arg(ship.getBlockCoef() > 0 ?
+         QString::number(ship.getBlockCoef(), 'f', 4) : tr("N/A"))
+    .arg(ship.getPrismaticCoef() > 0 ?
+         QString::number(ship.getPrismaticCoef(), 'f', 4) : tr("N/A"))
+    .arg(ship.getMidshipSectionCoef()> 0 ?
+         QString::number(ship.getMidshipSectionCoef(), 'f', 4) : tr("N/A"))
+    .arg(ship.getWaterplaneAreaCoef() > 0 ?
+         QString::number(ship.getWaterplaneAreaCoef(), 'f', 4) : tr("N/A"))
     
-    .arg(ship.propellerCount())
-    .arg(QString::number(ship.propellerDiameter(), 'f', 2))
-    .arg(QString::number(ship.propellerPitch(), 'f', 2))
-    .arg(ship.propellerBladesCount())
-    .arg(ship.enginesPerPropeller())
-    .arg(QString::number(ship.gearboxRatio(), 'f', 3))
+    .arg(ship.getPropellerCount())
+    .arg(QString::number(ship.getPropellerDiameter(), 'f', 2))
+    .arg(QString::number(ship.getPropellerPitch(), 'f', 2))
+    .arg(ship.getPropellerBladesCount())
+    .arg(ship.getEnginesPerPropellerCount())
+    .arg(QString::number(ship.getGearboxRatio(), 'f', 3))
     
-    .arg(QString::number(ship.gearboxEfficiency(), 'f', 3))
-    .arg(QString::number(ship.shaftEfficiency(), 'f', 3))
+    .arg(QString::number(ship.getGearboxEfficiency(), 'f', 3))
+    .arg(QString::number(ship.getShaftEfficiency(), 'f', 3))
     
-    .arg(QString::number(ship.vesselWeight(), 'f', 2))
-    .arg(QString::number(ship.cargoWeight(), 'f', 2))
+    .arg(QString::number(ship.getVesselWeight(), 'f', 2))
+    .arg(QString::number(ship.getCargoWeight(), 'f', 2))
     
-    .arg(QString::number(ship.maxSpeed(), 'f', 1))
-    .arg(ship.maxRudderAngle() > 0 ?
-         QString::number(ship.maxRudderAngle(), 'f', 1) : tr("N/A"))
-    .arg(ship.stopIfNoEnergy() ? tr("Yes") : tr("No"));
+    .arg(QString::number(ship.getMaxSpeed(), 'f', 1))
+    .arg(ship.getMaxRudderAngle() > 0 ?
+         QString::number(ship.getMaxRudderAngle(), 'f', 1) : tr("N/A"))
+    .arg(ship.shouldStopIfNoEnergy() ? tr("Yes") : tr("No"));
     
     return details;
 }
