@@ -1,0 +1,619 @@
+#pragma once
+
+#include <QObject>
+#include <QMap>
+#include <QString>
+#include <QVariant>
+#include <QVector>
+#include <QStringList>
+
+#include "NetworkController.h"
+
+namespace CargoNetSim {
+namespace Backend {
+
+// Forward declare the cleanup class
+class RegionDataControllerCleanup {
+public:
+    /**
+     * @brief Cleanup the RegionDataController singleton instance
+     */
+    static void cleanup();
+};
+
+/**
+ * @class RegionData
+ * @brief Stores and manages data for a specific region in the simulation
+ *
+ * This class encapsulates all region-specific data,
+ * associated networks, and provides methods to manage the region's resources.
+ */
+class RegionData : public QObject {
+    Q_OBJECT
+
+public:
+    /**
+     * @brief Constructor for RegionData
+     * @param regionName The name of the region
+     * @param parent The parent QObject
+     */
+    RegionData(const QString& regionName, QObject* parent = nullptr);
+
+    /**
+     * @brief Check if a network name exists in either train or truck networks
+     * @param name The network name to check
+     * @return True if the name conflicts with existing network names
+     */
+    bool checkNetworkNameConflict(const QString& name) const;
+
+    /**
+     * @brief Set the region name and update related references
+     * @param name The new region name
+     */
+    void setRegionName(const QString& name);
+
+    /**
+     * @brief Add a train network to the region
+     * @param networkName Name for the new network
+     * @param nodeFile Path to the node definition file
+     * @param linkFile Path to the link definition file
+     * @throws std::runtime_error if the network already
+     *              exists or creation fails
+     */
+    void addTrainNetwork(const QString& networkName,
+                         const QString& nodeFile,
+                         const QString& linkFile);
+
+    /**
+     * @brief Add a truck network to the region
+     * @param networkName Name for the new network
+     * @param configFile Path to the configuration file
+     * @throws std::runtime_error if the network already
+     *          exists or creation fails
+     */
+    void addTruckNetwork(const QString& networkName,
+                         const QString& configFile);
+
+    /**
+     * @brief Rename a train network
+     * @param oldName Current name of the network
+     * @param newName New name for the network
+     * @throws std::runtime_error if the old name doesn't exist or
+     *          the new name already exists
+     */
+    void renameTrainNetwork(const QString& oldName,
+                            const QString& newName);
+
+    /**
+     * @brief Rename a truck network
+     * @param oldName Current name of the network
+     * @param newName New name for the network
+     * @throws std::runtime_error if the old name doesn't exist
+     *          or the new name already exists
+     */
+    void renameTruckNetwork(const QString& oldName,
+                            const QString& newName);
+
+    /**
+     * @brief Remove a train network
+     * @param name Name of the network to remove
+     * @throws std::runtime_error if the network doesn't exist
+     */
+    void removeTrainNetwork(const QString& name);
+
+    /**
+     * @brief Remove a truck network
+     * @param name Name of the network to remove
+     * @throws std::runtime_error if the network doesn't exist
+     */
+    void removeTruckNetwork(const QString& name);
+
+    /**
+     * @brief Check if a train network exists
+     * @param name Name of the network to check
+     * @return True if the network exists
+     */
+    bool trainNetworkExists(const QString& name) const;
+
+    /**
+     * @brief Check if a truck network exists
+     * @param name Name of the network to check
+     * @return True if the network exists
+     */
+    bool truckNetworkExists(const QString& name) const;
+
+    /**
+     * @brief Get a train network by name
+     * @param name Name of the network to retrieve
+     * @return Pointer to the network, or nullptr if not found
+     */
+    NeTrainSimNetworkBase* getTrainNetwork(const QString& name) const;
+
+    /**
+     * @brief Get a truck network by name
+     * @param name Name of the network to retrieve
+     * @return Pointer to the network, or nullptr if not found
+     */
+    IntegrationNetworkBase* getTruckNetwork(const QString& name) const;
+
+    /**
+     * @brief Get a truck network configuration by name
+     * @param name Name of the network to retrieve
+     * @return Pointer to the truck network configuration, or nullptr
+     *          if not found
+     */
+    IntegrationSimulationFormatIConfigBase*
+    getTruckNetworkConfig(const QString& name) const;
+
+    /**
+     * @brief Store a variable in this region's data store
+     * @param key The name/key of the variable
+     * @param value The value to store
+     */
+    void setVariable(const QString& key, const QVariant& value) {
+        variables[key] = value;
+    }
+
+    /**
+     * @brief Retrieve a variable from this region's data store
+     * @param key The name/key of the variable to retrieve
+     * @param defaultValue The default value to return if the key doesn't exist
+     * @return The stored value or defaultValue if not found
+     */
+    QVariant getVariable(const QString& key,
+                         const QVariant& defaultValue = QVariant()) const {
+        return variables.value(key, defaultValue);
+    }
+
+    /**
+     * @brief Retrieve a variable from this region's data store
+     *          with type conversion
+     * @tparam T The type to convert the value to
+     * @param key The name/key of the variable to retrieve
+     * @param defaultValue The default value to return if the key doesn't exist
+     * @return The stored value converted to type T or defaultValue if not found
+     */
+    template <typename T>
+    T getVariableAs(const QString& key, const T& defaultValue = T()) const {
+        QVariant var = variables.value(key, QVariant());
+        if (var.isValid() && var.canConvert<T>()) {
+            return var.value<T>();
+        }
+        return defaultValue;
+    }
+
+
+    /**
+     * @brief Check if a variable exists in this region's data store
+     * @param key The name/key of the variable to check
+     * @return True if the variable exists
+     */
+    bool hasVariable(const QString& key) const {
+        return variables.contains(key);
+    }
+
+    /**
+     * @brief Remove a variable from this region's data store
+     * @param key The name/key of the variable to remove
+     * @return True if the variable was removed, false if it didn't exist
+     */
+    bool removeVariable(const QString& key) {
+        return variables.remove(key) > 0;
+    }
+
+    /**
+     * @brief Get all variables for this region
+     * @return A copy of the variables map
+     */
+    QVariantMap getAllVariables() const {
+        return variables;
+    }
+
+    /**
+     * @brief Convert the region data to a serializable map
+     * @return A QMap containing all region data
+     */
+    QMap<QString, QVariant> toMap() const;
+
+    /**
+     * @brief Create a RegionData instance from a serialized map
+     * @param data The map containing serialized region data
+     * @param parent The parent QObject
+     * @return A new RegionData instance with the deserialized data
+     */
+    static RegionData* fromMap(const QMap<QString, QVariant>& data,
+                               QObject* parent = nullptr);
+
+    // Accessors
+    /**
+     * @brief Get the region name
+     * @return The name of the region
+     */
+    const QString& getRegion() const { return region; }
+
+    /**
+     * @brief Get the list of train network names in this region
+     * @return QStringList of train network names
+     */
+    QStringList getTrainNetworks() const;
+
+    /**
+     * @brief Get the list of truck network names in this region
+     * @return QStringList of truck network names
+     */
+    QStringList getTruckNetworks() const;
+
+
+
+signals:
+    /**
+     * @brief Signal emitted when a train network is added to the region
+     * @param networkName Name of the added network
+     */
+    void trainNetworkAdded(const QString& networkName);
+
+    /**
+     * @brief Signal emitted when a train network is removed from the region
+     * @param networkName Name of the removed network
+     */
+    void trainNetworkRemoved(const QString& networkName);
+
+    /**
+     * @brief Signal emitted when a train network is renamed
+     * @param oldName Previous name of the network
+     * @param newName New name of the network
+     */
+    void trainNetworkRenamed(const QString& oldName, const QString& newName);
+
+    /**
+     * @brief Signal emitted when a truck network is added to the region
+     * @param networkName Name of the added network
+     */
+    void truckNetworkAdded(const QString& networkName);
+
+    /**
+     * @brief Signal emitted when a truck network is removed from the region
+     * @param networkName Name of the removed network
+     */
+    void truckNetworkRemoved(const QString& networkName);
+
+    /**
+     * @brief Signal emitted when a truck network is renamed
+     * @param oldName Previous name of the network
+     * @param newName New name of the network
+     */
+    void truckNetworkRenamed(const QString& oldName, const QString& newName);
+
+private:
+    QString region;                ///< Name of the region
+    QVariantMap variables;         ///< Map of custom variables for this region
+    QStringList trainNetworksList; ///< List of train network names in this region
+    QStringList truckNetworksList; ///< List of truck network names in this region
+};
+
+/**
+ * @class RegionDataController
+ * @brief Manages all regions in the simulation
+ *
+ * This class maintains the collection of regions and provides methods
+ * to add, remove, and query regions and their associated data.
+ */
+class RegionDataController : public QObject
+{
+    Q_OBJECT
+
+    // Make the cleanup class a friend
+    friend class RegionDataControllerCleanup;
+public:
+
+    /**
+     * @brief Get the singleton instance of RegionDataController
+     * @param parent Optional parent QObject
+     * @return Reference to the singleton instance
+     */
+    static RegionDataController& getInstance(QObject* parent = nullptr);
+
+    /**
+     * @brief Destructor for RegionDataController
+     */
+    ~RegionDataController();
+
+    // Delete copy constructor and assignment operator to prevent copies
+    RegionDataController(const RegionDataController&) = delete;
+    RegionDataController& operator=(const RegionDataController&) = delete;
+
+    /**
+     * @brief Get region data for a specific region
+     * @param name The name of the region
+     * @return Pointer to the region data, or nullptr if not found
+     */
+    RegionData* getRegionData(const QString& name);
+
+    /**
+     * @brief Get a list of all region names
+     * @return QStringList containing all region names
+     */
+    QStringList getAllRegionNames() const;
+
+    /**
+     * @brief Add a new region
+     * @param name The name of the new region
+     * @return True if the region was added successfully
+     */
+    bool addRegion(const QString& name);
+
+    /**
+     * @brief Rename a region
+     * @param oldName Current name of the region
+     * @param newName New name for the region
+     * @return True if the region was renamed successfully
+     */
+    bool renameRegion(const QString& oldName, const QString& newName);
+
+    /**
+     * @brief Remove a region
+     * @param name Name of the region to remove
+     * @return True if the region was removed successfully
+     */
+    bool removeRegion(const QString& name);
+
+    /**
+     * @brief Get the current active region name
+     * @return Current region name, or empty string if none selected
+     */
+    QString getCurrentRegion() const { return currentRegion; }
+
+    /**
+     * @brief Set the current active region
+     * @param name The name of the region to set as current
+     * @return True if the region exists and was set as current,
+     *           false otherwise
+     */
+    bool setCurrentRegion(const QString& name);
+
+    /**
+     * @brief Get the current active region data
+     * @return Pointer to the current region data, or nullptr if none selected
+     */
+    RegionData* getCurrentRegionData() const;
+
+    /**
+     * @brief Store a global variable not associated with any specific region
+     * @param key The name/key of the variable
+     * @param value The value to store
+     */
+    void setGlobalVariable(const QString& key, const QVariant& value) {
+        globalVariables[key] = value;
+        emit globalVariableChanged(key, value);
+    }
+
+    // /**
+    //  * @brief Retrieve a global variable
+    //  * @param key The name/key of the variable to retrieve
+    //  * @param defaultValue The default value to return if the key doesn't exist
+    //  * @return The stored value or defaultValue if not found
+    //  */
+    // QVariant
+    // getGlobalVariable(const QString& key,
+    //                   const QVariant& defaultValue = QVariant()) const {
+    //     return globalVariables.value(key, defaultValue);
+    // }
+
+    /**
+     * @brief Check if a global variable exists
+     * @param key The name/key of the variable to check
+     * @return True if the variable exists
+     */
+    bool hasGlobalVariable(const QString& key) const {
+        return globalVariables.contains(key);
+    }
+
+    /**
+     * @brief Remove a global variable
+     * @param key The name/key of the variable to remove
+     * @return True if the variable was removed, false if it didn't exist
+     */
+    bool removeGlobalVariable(const QString& key) {
+        if (globalVariables.contains(key)) {
+            globalVariables.remove(key);
+            emit globalVariableRemoved(key);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @brief Get all global variables
+     * @return A copy of the global variables map
+     */
+    QVariantMap getAllGlobalVariables() const {
+        return globalVariables;
+    }
+
+    /**
+     * @brief Set a variable for a specific region
+     * @param regionName The name of the region
+     * @param key The name/key of the variable
+     * @param value The value to store
+     * @return True if the region exists and variable was set, false otherwise
+     */
+    bool setRegionVariable(const QString& regionName,
+                           const QString& key,
+                           const QVariant& value) {
+        RegionData* region = getRegionData(regionName);
+        if (region) {
+            region->setVariable(key, value);
+            emit regionVariableChanged(regionName, key, value);
+            return true;
+        }
+        return false;
+    }
+
+    // /**
+    //  * @brief Get a variable from a specific region
+    //  * @param regionName The name of the region
+    //  * @param key The name/key of the variable
+    //  * @param defaultValue The default value to return if the key doesn't exist
+    //  * @return The stored value, defaultValue if key not found,
+    //  *          or invalid QVariant if region not found
+    //  */
+    // QVariant
+    // getRegionVariable(const QString& regionName,
+    //                   const QString& key,
+    //                   const QVariant& defaultValue = QVariant()) const {
+    //     auto it = regions.find(regionName);
+    //     if (it != regions.end()) {
+    //         return it.value()->getVariable(key, defaultValue);
+    //     }
+    //     return QVariant();
+    // }
+
+    /**
+     * @brief Retrieve a global variable with type conversion
+     * @tparam T The type to convert the value to
+     * @param key The name/key of the variable to retrieve
+     * @param defaultValue The default value to return if the key doesn't exist
+     * @return The stored value converted to type T or defaultValue if not found
+     */
+    template <typename T>
+    T getGlobalVariableAs(const QString& key,
+                          const T& defaultValue = T()) const {
+        QVariant var = globalVariables.value(key, QVariant());
+        if (var.isValid() && var.canConvert<T>()) {
+            return var.value<T>();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * @brief Get a specific variable from all regions with its region
+     *          name as key
+     * @tparam T The type to convert the value to
+     * @param key The name/key of the variable to retrieve
+     * @return A map of region names to variable values for regions that
+     *          have the variable
+     */
+    template <typename T>
+    QMap<QString, T> getAllRegionVariableAs(const QString& key) const {
+        QMap<QString, T> result;
+        for (auto it = regions.cbegin(); it != regions.cend(); ++it) {
+            QVariant var = it.value()->getVariable(key);
+            if (var.isValid() && var.canConvert<T>()) {
+                result.insert(it.key(), var.value<T>());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @brief Get a variable from a specific region with type conversion
+     * @tparam T The type to convert the value to
+     * @param regionName The name of the region
+     * @param key The name/key of the variable
+     * @param defaultValue The default value to return if the key doesn't exist
+     * @return The stored value converted to type T, defaultValue if
+     *         key not found, or default constructed T if region not found
+     */
+    template <typename T>
+    T getRegionVariableAs(const QString& regionName,
+                          const QString& key,
+                          const T& defaultValue = T()) const {
+        auto it = regions.find(regionName);
+        if (it != regions.end()) {
+            return it.value()->getVariableAs<T>(key, defaultValue);
+        }
+        return T();
+    }
+
+    /**
+     * @brief Clear all region data
+     */
+    void clear();
+
+    /**
+     * @brief Serialize the RegionDataController to a map
+     * @return A QMap containing all regions data
+     */
+    QMap<QString, QVariant> toMap() const;
+
+    /**
+     * @brief Deserialize from a map
+     * @param data The map containing serialized regions data
+     * @return True if deserialization was successful
+     */
+    bool fromMap(const QMap<QString, QVariant>& data);
+
+signals:
+    /**
+     * @brief Signal emitted when a new region is added
+     * @param regionName Name of the newly added region
+     */
+    void regionAdded(const QString& regionName);
+
+    /**
+     * @brief Signal emitted when a region is renamed
+     * @param oldName Previous name of the region
+     * @param newName New name of the region
+     */
+    void regionRenamed(const QString& oldName, const QString& newName);
+
+    /**
+     * @brief Signal emitted when a region is removed
+     * @param regionName Name of the removed region
+     */
+    void regionRemoved(const QString& regionName);
+
+    /**
+     * @brief Signal emitted when the current active region changes
+     * @param regionName New current region name
+     *          (empty string if no active region)
+     */
+    void currentRegionChanged(const QString& regionName);
+
+    /**
+     * @brief Signal emitted when all regions are cleared
+     */
+    void regionsCleared();
+
+    /**
+     * @brief Signal emitted when a global variable changes
+     * @param key The name/key of the variable that changed
+     * @param value The new value
+     */
+    void globalVariableChanged(const QString& key, const QVariant& value);
+
+    /**
+     * @brief Signal emitted when a global variable is removed
+     * @param key The name/key of the variable that was removed
+     */
+    void globalVariableRemoved(const QString& key);
+
+    /**
+     * @brief Signal emitted when a region-specific variable changes
+     * @param regionName The name of the region
+     * @param key The name/key of the variable that changed
+     * @param value The new value
+     */
+    void regionVariableChanged(const QString& regionName,
+                               const QString& key,
+                               const QVariant& value);
+
+protected:
+    // Singleton instance
+    static RegionDataController* instance;
+
+private:
+    /**
+     * @brief Private constructor for RegionDataController (singleton pattern)
+     * @param parent Optional parent QObject
+     */
+    explicit RegionDataController(QObject* parent = nullptr);
+
+    QMap<QString, RegionData*> regions; ///< Map of region name to RegionData
+    QString currentRegion;              ///< Stores the currently active region name
+    QVariantMap globalVariables;        ///< Map of global variables not tied to any specific region
+
+};
+
+} // namespace GUI
+} // namespace CargoNetSim
