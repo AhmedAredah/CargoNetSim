@@ -52,6 +52,12 @@ int main(int argc, char *argv[]) {
 
     // Initialize backend metatypes
     CargoNetSim::Backend::initializeBackend();
+
+    // only for debugging and testing
+    // auto client = CargoNetSim::Backend::ShipSimulationClient();
+    // client.initializeClient();
+    // client.connectToServer();
+    // client.resetServer();
     
     // Set up signal handling
     signal(SIGINT, signalHandler);
