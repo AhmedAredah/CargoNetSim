@@ -94,6 +94,12 @@ MainWindow::MainWindow() : CustomMainWindow() {
     resize(1000, 700);
     
     showStatusBarMessage("Ready.");
+
+    // Update hte regions combo box
+    BasicButtonController::updateRegionComboBox(this);
+
+    // Setup the signals
+    BasicButtonController::setupSignals(this);
 }
 
 MainWindow::~MainWindow() {

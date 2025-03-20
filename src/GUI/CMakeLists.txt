@@ -10,8 +10,6 @@ set(GUI_SOURCES
     # Controllers/HeartbeatController.h
     Controllers/NetworkController.cpp
     Controllers/NetworkController.h
-    # Controllers/RegionDataController.cpp
-    # Controllers/RegionDataController.h
     Controllers/ToolbarController.cpp
     Controllers/ToolbarController.h
     Controllers/UtilityFunctions.cpp

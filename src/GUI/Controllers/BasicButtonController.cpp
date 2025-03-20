@@ -21,6 +21,12 @@
 #include "../Widgets/SetCoordinatesDialog.h"
 #include "Backend/Controllers/NetworkController.h"
 
+#include "../Controllers/NetworkController.h"
+#include "../Controllers/UtilityFunctions.h"
+#include "../Widgets/TrainManagerDialog.h"
+#include "../Widgets/ShipManagerDialog.h"
+#include "Backend/Controllers/VehicleController.h"
+
 namespace CargoNetSim {
 namespace GUI {
 
@@ -662,9 +668,95 @@ bool BasicButtonController::setTerminalGlobalPosition(MainWindow* mainWindow, Te
     catch (const std::exception& e) {
         qCritical() << "Error in setTerminalGlobalPosition:" << e.what();
         QMessageBox::critical(mainWindow, "Error",
-                              QString("Failed to set terminal global position: %1").arg(e.what()));
+                              QString("Failed to set terminal global "
+                                      "position: %1").arg(e.what()));
         return false;
     }
+}
+
+void BasicButtonController::toggleDockWidget(bool checked,
+                                             QDockWidget* dockWidget,
+                                             QToolButton* button,
+                                             const QString& widgetName) {
+    dockWidget->setVisible(checked);
+    button->setText(QString("%1\n%2").arg(checked ? "Hide" : "Show").arg(widgetName));
+}
+
+void BasicButtonController::showTrainManager(MainWindow* mainWindow) {
+    TrainManagerDialog dialog(mainWindow);
+
+    auto trains = Backend::VehicleController::getInstance()->getAllTrains();
+    dialog.setTrains(trains);
+    dialog.updateTable();
+
+    if (dialog.exec() == QDialog::Accepted) {
+        // Store trains
+        auto newTrains = dialog.getTrains();
+        Backend::VehicleController::getInstance()->updateTrains(newTrains);
+    }
+}
+
+void BasicButtonController::showShipManager(MainWindow* mainWindow) {
+    ShipManagerDialog dialog(mainWindow);
+
+    auto ships = Backend::VehicleController::getInstance()->getAllShips();
+    dialog.setShips(ships);
+    dialog.updateTable();
+
+    if (dialog.exec() == QDialog::Accepted) {
+        // Store ships
+        auto newShips = dialog.getShips();
+        Backend::VehicleController::getInstance()->updateShips(newShips);
+    }
+}
+
+void BasicButtonController::updateRegionComboBox(MainWindow *mainWindow)
+{
+    // Store current selection
+    QString currentRegion = mainWindow->regionCombo_->currentText();
+
+    // Clear and repopulate
+    mainWindow->regionCombo_->clear();
+
+    // Get all region names from RegionDataController
+    QStringList regionNames =
+        Backend::RegionDataController::getInstance().getAllRegionNames();
+    mainWindow->regionCombo_->addItems(regionNames);
+
+    // Restore selection if it still exists, otherwise select first item
+    int index = mainWindow->regionCombo_->findText(currentRegion);
+    if (index >= 0) {
+        mainWindow->regionCombo_->setCurrentIndex(index);
+    } else if (mainWindow->regionCombo_->count() > 0) {
+        mainWindow->regionCombo_->setCurrentIndex(0);
+        // Update current region in controller
+        if (!mainWindow->regionCombo_->currentText().isEmpty()) {
+            Backend::RegionDataController::getInstance()
+                .setCurrentRegion(mainWindow->regionCombo_->currentText());
+        }
+    }
+}
+
+void BasicButtonController::setupSignals(MainWindow *mainWindow)
+{
+    QObject::connect(&Backend::RegionDataController::getInstance(),
+                     &Backend::RegionDataController::regionAdded,
+                     mainWindow,
+                     [mainWindow](const QString &regionName)
+                     { updateRegionComboBox(mainWindow); });
+
+    QObject::connect(&Backend::RegionDataController::getInstance(),
+                     &Backend::RegionDataController::regionRenamed,
+                     mainWindow,
+                     [mainWindow](const QString &oldName,
+                                  const QString &newName)
+                     { updateRegionComboBox(mainWindow); });
+
+    QObject::connect(&Backend::RegionDataController::getInstance(),
+                     &Backend::RegionDataController::regionRemoved,
+                     mainWindow,
+                     [mainWindow](const QString &regionName)
+                     { updateRegionComboBox(mainWindow); });
 }
 
 } // namespace GUI

@@ -14,6 +14,7 @@ namespace CargoNetSim {
 namespace GUI {
 
 class ToolbarController;
+class BasicButtonController;
 
 /**
  * @brief Dialog for managing ship entities in the simulation
@@ -26,6 +27,7 @@ class ShipManagerDialog : public QDialog {
     Q_OBJECT
 
     friend class ToolbarController;
+    friend class BasicButtonController;
 
 public:
     /**
