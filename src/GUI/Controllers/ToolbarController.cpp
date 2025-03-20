@@ -430,7 +430,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     trainManagerButton->setText("Train\nManager");
     trainManagerButton->setIcon(QIcon(IconFactory::createTrainManagerIcon()));
     QObject::connect(trainManagerButton, &QToolButton::clicked,
-                     [mainWindow]() { ToolbarController::showTrainManager(mainWindow); });
+                     [mainWindow]() { BasicButtonController::showTrainManager(mainWindow); });
     transportationVehiclesLayout->addWidget(trainManagerButton);
 
     // Ship management button
@@ -439,7 +439,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     shipManagerButton->setText("Ship\nManager");
     shipManagerButton->setIcon(QIcon(IconFactory::createShipManagerIcon()));
     QObject::connect(shipManagerButton, &QToolButton::clicked,
-                     [mainWindow]() { ToolbarController::showShipManager(mainWindow); });
+                     [mainWindow]() { BasicButtonController::showShipManager(mainWindow); });
     transportationVehiclesLayout->addWidget(shipManagerButton);
 
     // Store the transportation vehicles buttons
@@ -503,7 +503,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     terminalLibraryButton->setText("Hide\nTerminal Library");
     QObject::connect(terminalLibraryButton, &QToolButton::clicked,
                      [mainWindow, terminalLibraryButton](bool checked) {
-                         ToolbarController::toggleDockWidget(
+                         BasicButtonController::toggleDockWidget(
                              checked,
                              mainWindow->libraryDock_,
                              terminalLibraryButton,
@@ -520,7 +520,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     regionManagerButton->setText("Hide\nRegion Manager");
     QObject::connect(regionManagerButton, &QToolButton::clicked,
                      [mainWindow, regionManagerButton](bool checked) {
-                         ToolbarController::toggleDockWidget(
+                         BasicButtonController::toggleDockWidget(
                              checked,
                              mainWindow->regionManagerDock_,
                              regionManagerButton,
@@ -554,7 +554,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     shortestPathsTableButton->setText("Show\nShortest Paths");
     QObject::connect(shortestPathsTableButton, &QToolButton::clicked,
                      [mainWindow, shortestPathsTableButton](bool checked) {
-                         ToolbarController::toggleDockWidget(
+                         BasicButtonController::toggleDockWidget(
                              checked,
                              mainWindow->shortestPathTableDock_,
                              shortestPathsTableButton,
@@ -571,7 +571,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     propertiesButton->setText("Hide\nProperties");
     QObject::connect(propertiesButton, &QToolButton::clicked,
                      [mainWindow, propertiesButton](bool checked) {
-                         ToolbarController::toggleDockWidget(
+                         BasicButtonController::toggleDockWidget(
                              checked,
                              mainWindow->propertiesDock_,
                              propertiesButton,
@@ -588,7 +588,7 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
     settingsButton->setText("Hide\nSettings");
     QObject::connect(settingsButton, &QToolButton::clicked,
                      [mainWindow, settingsButton](bool checked) {
-                         ToolbarController::toggleDockWidget(
+                         BasicButtonController::toggleDockWidget(
                              checked,
                              mainWindow->settingsDock_,
                              settingsButton,
@@ -704,39 +704,6 @@ void ToolbarController::setupToolbar(MainWindow* mainWindow) {
         {importTabIndex, {0, 1}},
         {viewTabIndex, {0, 1}}
     };
-}
-
-void ToolbarController::toggleDockWidget(bool checked, QDockWidget* dockWidget, QToolButton* button, const QString& widgetName) {
-    dockWidget->setVisible(checked);
-    button->setText(QString("%1\n%2").arg(checked ? "Hide" : "Show").arg(widgetName));
-}
-
-void ToolbarController::showTrainManager(MainWindow* mainWindow) {
-    TrainManagerDialog dialog(mainWindow);
-
-    auto trains = Backend::VehicleController::getInstance()->getAllTrains();
-    dialog.setTrains(trains);
-    dialog.updateTable();
-
-    if (dialog.exec() == QDialog::Accepted) {
-        // Store trains
-        auto newTrains = dialog.getTrains();
-        Backend::VehicleController::getInstance()->updateTrains(newTrains);
-    }
-}
-
-void ToolbarController::showShipManager(MainWindow* mainWindow) {
-    ShipManagerDialog dialog(mainWindow);
-
-    auto ships = Backend::VehicleController::getInstance()->getAllShips();
-    dialog.setShips(ships);
-    dialog.updateTable();
-
-    if (dialog.exec() == QDialog::Accepted) {
-        // Store ships
-        auto newShips = dialog.getShips();
-        Backend::VehicleController::getInstance()->updateShips(newShips);
-    }
 }
 
 } // namespace GUI

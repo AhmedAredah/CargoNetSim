@@ -162,6 +162,34 @@ public:
      */
     static bool setTerminalGlobalPosition(MainWindow* mainWindow,
                                           TerminalItem* terminal);
+
+    /**
+     * @brief Toggles visibility of a dock widget
+     * @param checked Whether the dock widget should be visible
+     * @param dockWidget The dock widget to toggle
+     * @param button The button that controls the dock widget
+     * @param widgetName The name of the widget
+     */
+    static void toggleDockWidget(bool checked,
+                                 QDockWidget* dockWidget,
+                                 QToolButton* button,
+                                 const QString& widgetName);
+
+    /**
+     * @brief Shows the train manager dialog
+     * @param mainWindow Pointer to the main window
+     */
+    static void showTrainManager(MainWindow* mainWindow);
+
+    /**
+     * @brief Shows the ship manager dialog
+     * @param mainWindow Pointer to the main window
+     */
+    static void showShipManager(MainWindow* mainWindow);
+
+    static void updateRegionComboBox(MainWindow* mainWindow);
+
+    static void setupSignals(MainWindow* mainWindow);
 };
 
 } // namespace GUI
