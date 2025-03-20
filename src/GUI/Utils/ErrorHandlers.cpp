@@ -47,14 +47,20 @@ void ErrorHandlers::installExceptionHandlers() {
                 try {
                     std::rethrow_exception(eptr);
                 } catch (const std::exception& e) {
-                    QString errorMsg = QString("Unhandled C++ exception: %1").arg(e.what());
+                    QString errorMsg =
+                        QString("Unhandled C++ exception: %1").arg(e.what());
                     getInstance().errorOccurred(errorMsg, 3); // Fatal
                     writeToErrorLog(errorMsg);
 
                     // Show error dialog if we have a GUI
-                    if (QApplication::instance() && QThread::currentThread() == QApplication::instance()->thread()) {
-                        QMessageBox::critical(nullptr, "Fatal Error",
-                                              QString("An unhandled exception occurred:\n%1\n\nThe application will now terminate.").arg(e.what()));
+                    if (QApplication::instance() &&
+                        QThread::currentThread() ==
+                            QApplication::instance()->thread()) {
+                        QMessageBox::critical(
+                            nullptr, "Fatal Error",
+                            QString("An unhandled exception occurred:"
+                                    "\n%1\n\nThe application will now "
+                                    "terminate.").arg(e.what()));
                     }
 
                     std::cerr << errorMsg.toStdString() << std::endl;
@@ -72,11 +78,15 @@ void ErrorHandlers::installExceptionHandlers() {
 
     // For Qt6, we don't have direct thread pool exception handling
     // Instead log a message about proper thread handling
-    qDebug() << "Exception handlers installed (thread exceptions must be handled within SafeRunnable subclasses)";
+    qDebug() << "Exception handlers installed!";
 }
 
-void ErrorHandlers::handleException(int exceptionType, void* exceptionValue, void* exceptionTraceback) {
-    QString errorMessage = QString("Uncaught Python-like exception (type %1)").arg(exceptionType);
+void ErrorHandlers::handleException(int exceptionType,
+                                    void* exceptionValue,
+                                    void* exceptionTraceback) {
+    QString errorMessage =
+        QString("Uncaught Python-like exception (type %1)")
+            .arg(exceptionType);
 
     // Log the error
     writeToErrorLog(errorMessage);
@@ -85,9 +95,12 @@ void ErrorHandlers::handleException(int exceptionType, void* exceptionValue, voi
     getInstance().errorOccurred(errorMessage, 3); // Fatal severity
 
     // Show error dialog if in main thread
-    if (QApplication::instance() && QThread::currentThread() == QApplication::instance()->thread()) {
+    if (QApplication::instance() &&
+        QThread::currentThread() == QApplication::instance()->thread()) {
         QMessageBox::critical(nullptr, "Fatal Error",
-                              QString("An unhandled exception occurred.\n\nThe application will now terminate."));
+                              QString("An unhandled exception occurred."
+                                      "\n\nThe application will now "
+                                      "terminate."));
     }
 
     // Print to stderr
@@ -97,7 +110,9 @@ void ErrorHandlers::handleException(int exceptionType, void* exceptionValue, voi
     std::abort();
 }
 
-void ErrorHandlers::qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& message) {
+void ErrorHandlers::qtMessageHandler(QtMsgType type,
+                                     const QMessageLogContext& context,
+                                     const QString& message) {
     QString formattedMessage;
 
     // Format based on message type
@@ -109,22 +124,34 @@ void ErrorHandlers::qtMessageHandler(QtMsgType type, const QMessageLogContext& c
         formattedMessage = QString("[Info] %1").arg(message);
         break;
     case QtWarningMsg:
-        formattedMessage = QString("[Warning] %1 (%2:%3)").arg(message, context.file, QString::number(context.line));
+        formattedMessage =
+            QString("[Warning] %1 (%2:%3)").arg(message,
+                                                context.file,
+                                                QString::number(context.line));
         getInstance().errorOccurred(formattedMessage, 1); // Warning severity
         break;
     case QtCriticalMsg:
-        formattedMessage = QString("[Critical] %1 (%2:%3)").arg(message, context.file, QString::number(context.line));
+        formattedMessage =
+            QString("[Critical] %1 (%2:%3)").arg(message,
+                                                 context.file,
+                                                 QString::number(context.line));
         getInstance().errorOccurred(formattedMessage, 2); // Error severity
         break;
     case QtFatalMsg:
-        formattedMessage = QString("[Fatal] %1 (%2:%3)").arg(message, context.file, QString::number(context.line));
+        formattedMessage =
+            QString("[Fatal] %1 (%2:%3)").arg(message,
+                                              context.file,
+                                              QString::number(context.line));
         getInstance().errorOccurred(formattedMessage, 3); // Fatal severity
         writeToErrorLog(formattedMessage);
 
         // Show error dialog if in main thread
-        if (QApplication::instance() && QThread::currentThread() == QApplication::instance()->thread()) {
+        if (QApplication::instance() &&
+            QThread::currentThread() == QApplication::instance()->thread()) {
             QMessageBox::critical(nullptr, "Fatal Error",
-                                  QString("A fatal error occurred:\n%1\n\nThe application will now terminate.").arg(message));
+                                  QString("A fatal error occurred:"
+                                          "\n%1\n\nThe application will now "
+                                          "terminate.").arg(message));
         }
 
         std::abort();
@@ -140,19 +167,26 @@ void ErrorHandlers::qtMessageHandler(QtMsgType type, const QMessageLogContext& c
 }
 
 void ErrorHandlers::writeToErrorLog(const QString& errorText) {
-    QString logPath = QApplication::applicationDirPath() + "/logs/error_log.txt";
+    QString logPath = QApplication::applicationDirPath() +
+                      "/logs/error_log.txt";
     QFile logFile(logPath);
 
-    if (logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+    if (logFile.open(QIODevice::WriteOnly |
+                     QIODevice::Append |
+                     QIODevice::Text)) {
         QTextStream stream(&logFile);
 
-        stream << "\n==========================================================\n";
-        stream << "Timestamp: " << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss") << "\n";
+        stream << "\n==============================="
+                  "===========================\n";
+        stream << "Timestamp: " <<
+            QDateTime::currentDateTime()
+                .toString("yyyy-MM-dd hh:mm:ss") << "\n";
         stream << errorText << "\n";
 
         logFile.close();
     } else {
-        std::cerr << "Failed to write to error log: " << logPath.toStdString() << std::endl;
+        std::cerr << "Failed to write to error log: "
+                  << logPath.toStdString() << std::endl;
     }
 }
 
