@@ -5,6 +5,7 @@
 #include <QThread>
 #include <signal.h>
 
+#include "Backend/BackendInit.h"
 #include "GUI/MainWindow.h"
 #include "GUI/Utils/ErrorHandlers.h"
 #include "GUI/Widgets/SplashScreen.h"
@@ -48,6 +49,9 @@ int main(int argc, char *argv[]) {
     app.setApplicationName("CargoNetSim");
     app.setApplicationVersion("1.0.0");
     app.setOrganizationName("CargoNetSim Org");
+
+    // Initialize backend metatypes
+    CargoNetSim::Backend::initializeBackend();
     
     // Set up signal handling
     signal(SIGINT, signalHandler);
