@@ -1,8 +1,6 @@
 #pragma once
 
 #include <QtCore>
-#include "Backend/Clients/BaseClient/CommandProcessor.h"
-#include "Backend/Clients/BaseClient/ResponseProcessor.h"
 #include "Backend/Clients/BaseClient/RabbitMQHandler.h"
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
 
@@ -25,10 +23,6 @@ namespace Backend {
  */
 inline void initializeBackend() {
     // Register ShipClient metatypes
-    qRegisterMetaType<CommandProcessor>("CargoNetSim::Backend::CommandProcessor");
-    qRegisterMetaType<CommandProcessor*>("CargoNetSim::Backend::CommandProcessor*");
-    qRegisterMetaType<ResponseProcessor>("CargoNetSim::Backend::ResponseProcessor");
-    qRegisterMetaType<ResponseProcessor*>("CargoNetSim::Backend::ResponseProcessor*");
     qRegisterMetaType<RabbitMQHandler>("CargoNetSim::Backend::RabbitMQHandler");
     qRegisterMetaType<RabbitMQHandler*>("CargoNetSim::Backend::RabbitMQHandler*");
     qRegisterMetaType<SimulationClientBase>("CargoNetSim::Backend::SimulationClientBase");

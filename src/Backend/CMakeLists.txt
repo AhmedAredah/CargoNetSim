@@ -33,10 +33,6 @@ set(Backend_SOURCES
     # Clients
 
     # BaseClient
-    Clients/BaseClient/CommandProcessor.h
-    Clients/BaseClient/CommandProcessor.cpp
-    Clients/BaseClient/ResponseProcessor.h
-    Clients/BaseClient/ResponseProcessor.cpp
     Clients/BaseClient/RabbitMQHandler.h
     Clients/BaseClient/RabbitMQHandler.cpp
     Clients/BaseClient/SimulationClientBase.h
