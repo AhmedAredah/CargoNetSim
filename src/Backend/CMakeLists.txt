@@ -29,6 +29,34 @@ set(Backend_SOURCES
     Controllers/NetworkController.cpp
     Controllers/RegionDataController.h
     Controllers/RegionDataController.cpp
+
+    # Clients
+
+    # BaseClient
+    Clients/BaseClient/CommandProcessor.h
+    Clients/BaseClient/CommandProcessor.cpp
+    Clients/BaseClient/ResponseProcessor.h
+    Clients/BaseClient/ResponseProcessor.cpp
+    Clients/BaseClient/RabbitMQHandler.h
+    Clients/BaseClient/RabbitMQHandler.cpp
+    Clients/BaseClient/SimulationClientBase.h
+    Clients/BaseClient/SimulationClientBase.cpp
+
+    # ShipClient
+    Clients/ShipClient/ShipState.h
+    Clients/ShipClient/ShipState.cpp
+    Clients/ShipClient/ShipSimulationClient.h
+    Clients/ShipClient/ShipSimulationClient.cpp
+    Clients/ShipClient/SimulationResults.h
+    Clients/ShipClient/SimulationResults.cpp
+    Clients/ShipClient/SimulationSummaryData.h
+    Clients/ShipClient/SimulationSummaryData.cpp
+
+
+
+
+    # Initialization
+    BackendInit.h
 )
 
 # Create the GUI library
