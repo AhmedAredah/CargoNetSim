@@ -31,7 +31,9 @@ public:
      * @param exc_value The exception value/object
      * @param exc_traceback The exception traceback
      */
-    static void handleException(int exceptionType, void* exceptionValue, void* exceptionTraceback);
+    static void handleException(int exceptionType,
+                                void* exceptionValue,
+                                void* exceptionTraceback);
 
     /**
      * @brief Handler for Qt's debug/warning/critical/fatal messages
@@ -40,7 +42,9 @@ public:
      * @param context Message context
      * @param message The actual message text
      */
-    static void qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& message);
+    static void qtMessageHandler(QtMsgType type,
+                                 const QMessageLogContext& context,
+                                 const QString& message);
 
     /**
      * @brief Get the singleton instance
@@ -61,7 +65,8 @@ signals:
      * @brief Signal emitted when an error occurs
      *
      * @param errorMessage The error message
-     * @param severity Error severity level (0=info, 1=warning, 2=error, 3=fatal)
+     * @param severity Error severity level
+     *        (0=info, 1=warning, 2=error, 3=fatal)
      */
     void errorOccurred(const QString& errorMessage, int severity);
 
