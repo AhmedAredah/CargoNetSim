@@ -1,3 +1,16 @@
+/**
+ * @file TrainSimulationClient.h
+ * @brief Defines TrainSimulationClient for train simulation
+ *
+ * This header declares the TrainSimulationClient class, which
+ * manages train simulation interactions within the CargoNetSim
+ * framework, including simulation setup, train management, and
+ * state retrieval.
+ *
+ * @author Ahmed Aredah
+ * @date March 20, 2025
+ */
+
 #pragma once
 
 #include <QObject>
@@ -7,56 +20,58 @@
 #include <QMap>
 #include <QList>
 #include <QString>
+#include <containerLib/container.h>
 #include "Backend/Models/TrainSystem.h"
 #include "SimulationResults.h"
 #include "TrainState.h"
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
 #include "Backend/Commons/ClientType.h"
 
-/**
- * @file TrainSimulatorClient.h
- * @brief Header for TrainSimulatorClient class
- * @author Ahmed Aredah
- * @date March 20, 2025
- *
- * Declares TrainSimulatorClient, managing train simulation
- * interactions in the CargoNetSim backend.
- */
-
-// Forward declarations
+// Forward declarations for dependencies
 namespace CargoNetSim {
 namespace Backend {
 namespace TrainClient {
-
 class TerminalGraphServer;
 class SimulatorTimeServer;
 class ProgressBarManager;
 class ApplicationLogger;
 }}}
 
+/**
+ * @namespace CargoNetSim::Backend::TrainClient
+ * @brief Namespace for train simulation client components
+ *
+ * Encapsulates classes and utilities related to train simulation
+ * within the CargoNetSim backend infrastructure.
+ */
 namespace CargoNetSim {
 namespace Backend {
 namespace TrainClient {
 
 /**
- * @class TrainSimulatorClient
- * @brief Client for interacting with the train simulator
+ * @class TrainSimulationClient
+ * @brief Manages train simulation server interactions
  *
- * Provides functionality for train simulation management,
- * including defining simulations, handling trains and containers,
- * and processing server events. Inherits from SimulationClientBase.
+ * Extends SimulationClientBase to provide train-specific
+ * functionality, such as defining simulators, managing trains and
+ * containers, and handling server events. Ensures thread safety
+ * using mutexes.
+ *
+ * @ingroup TrainSimulation
  */
 class TrainSimulationClient : public SimulationClientBase {
     Q_OBJECT
 
 public:
     /**
-     * @brief Constructor
-     * @param parent Parent QObject, defaults to nullptr
-     * @param host RabbitMQ host, defaults to "localhost"
-     * @param port RabbitMQ port, defaults to 5672
+     * @brief Constructs a TrainSimulationClient instance
      *
-     * Initializes the train simulator client with connection details.
+     * Initializes the client with RabbitMQ connection parameters
+     * and optional parent object.
+     *
+     * @param parent Parent QObject, defaults to nullptr
+     * @param host RabbitMQ hostname, defaults to "localhost"
+     * @param port RabbitMQ port number, defaults to 5672
      */
     explicit TrainSimulationClient(
         QObject* parent = nullptr,
@@ -64,114 +79,137 @@ public:
         int port = 5672);
 
     /**
-     * @brief Destructor
+     * @brief Destroys the TrainSimulationClient instance
      *
-     * Cleans up allocated resources like trains and states.
+     * Frees dynamically allocated resources, ensuring proper
+     * cleanup of trains, states, and simulation data.
      */
     ~TrainSimulationClient() override;
 
     /**
-     * @brief Reset the simulator server
-     * @return True if reset succeeds
+     * @brief Resets the train simulation server
      *
-     * Resets the server to its initial state.
+     * Sends a reset command to clear all simulation data and state
+     * on the server.
+     *
+     * @return True if reset is successful, false otherwise
      */
     bool resetServer();
 
     /**
-     * @brief Initialize the client in its thread
+     * @brief Initializes the client in its thread
      *
-     * Sets up thread-specific resources like RabbitMQ heartbeat.
+     * Configures thread-specific resources, such as RabbitMQ
+     * heartbeat, after moving to its thread. Called automatically
+     * via QThread::started signal.
+     *
+     * @param logger Optional logger for initialization logging
+     * @throws std::runtime_error If RabbitMQ handler setup fails
+     * @note Avoid manual invocation unless synchronized
+     * @warning Call only once after thread start
      */
     void initializeClient(LoggerInterface* logger) override;
 
     /**
-     * @brief Define simulator by network name
-     * @param networkName Name of the network
-     * @param timeStep Simulation time step, defaults to 1.0
-     * @param trains List of train definitions, defaults to empty
-     * @return True if successful
+     * @brief Defines a simulator using a network name
      *
-     * Defines a simulator using a predefined network name.
+     * Sets up a train simulation using a predefined network name
+     * and optional train list.
+     *
+     * @param networkName Unique identifier for the network
+     * @param timeStep Simulation time increment, defaults to 1.0
+     * @param trains List of Train pointers, defaults to empty
+     * @return True if simulator definition succeeds
      */
     bool defineSimulatorByNetworkName(
         const QString& networkName,
-        double timeStep = 1.0,
-        const QList<QJsonObject>& trains = {});
+        const double timeStep = 1.0,
+        const QList<Train*>& trains = {});
 
     /**
-     * @brief Define a new simulator
+     * @brief Defines a new simulator with custom topology
+     *
+     * Configures a train simulation with specified nodes, links,
+     * and trains.
+     *
      * @param nodesJson JSON array of network nodes
      * @param linksJson JSON array of network links
-     * @param networkName Name of the network
-     * @param timeStep Simulation time step, defaults to 1.0
-     * @param trains List of train definitions, defaults to empty
-     * @return True if successful
-     *
-     * Defines a simulator with custom network topology.
+     * @param networkName Unique identifier for the network
+     * @param timeStep Simulation time increment, defaults to 1.0
+     * @param trains List of Train pointers, defaults to empty
+     * @return True if simulator definition succeeds
      */
     bool defineSimulator(
         const QJsonArray& nodesJson,
         const QJsonArray& linksJson,
         const QString& networkName,
-        double timeStep = 1.0,
-        const QList<QJsonObject>& trains = {});
+        const double timeStep = 1.0,
+        const QList<Train*>& trains = {});
 
     /**
-     * @brief Run the simulator
-     * @param networkNames Networks to run, "*" for all
-     * @param byTimeSteps Steps to run, -1 for unlimited
-     * @return True if successful
+     * @brief Runs the simulator for specified networks
      *
-     * Starts simulation for specified networks.
+     * Initiates simulation execution for given networks or all if
+     * "*" is specified.
+     *
+     * @param networkNames List of network names or "*" for all
+     * @param byTimeSteps Steps to run, -1 for unlimited, defaults to -1
+     * @return True if simulation starts successfully
      */
     bool runSimulator(
         const QStringList& networkNames,
         double byTimeSteps = -1.0);
 
     /**
-     * @brief End the simulator
-     * @param networkNames Networks to end, "*" for all
-     * @return True if successful
+     * @brief Terminates the simulator for specified networks
      *
-     * Stops simulation for specified networks.
+     * Stops simulation execution for given networks or all if "*"
+     * is specified.
+     *
+     * @param networkNames List of network names or "*" for all
+     * @return True if simulation ends successfully
      */
     bool endSimulator(const QStringList& networkNames);
 
     /**
-     * @brief Add trains to simulator
-     * @param networkName Target network name
-     * @param trains List of train definitions
-     * @return True if successful
+     * @brief Adds trains to an existing simulator
      *
-     * Adds trains to an existing simulator network.
+     * Incorporates additional trains into a specified simulation
+     * network.
+     *
+     * @param networkName Target network identifier
+     * @param trains List of Train pointers to add
+     * @return True if trains are added successfully
      */
     bool addTrainsToSimulator(
         const QString& networkName,
-        const QList<QJsonObject>& trains);
+        const QList<Train*>& trains);
 
     /**
-     * @brief Add containers to a train
-     * @param networkName Network name
-     * @param trainId Train ID
-     * @param containers List of container JSON strings
-     * @return True if successful
+     * @brief Adds containers to a specified train
      *
-     * Adds containers to a specified train.
+     * Assigns containers to a train within a given network.
+     *
+     * @param networkName Network containing the train
+     * @param trainId Unique identifier of the train
+     * @param containers List of Container pointers to add
+     * @return True if containers are added successfully
      */
     bool addContainersToTrain(
         const QString& networkName,
         const QString& trainId,
-        const QStringList& containers);
+        const QList<ContainerCore::Container*>& containers);
 
     /**
-     * @brief Unload containers from a train
-     * @param networkName Network name
-     * @param trainId Train ID
-     * @param containersDestinationNames Destination terminals
-     * @return True if successful
+     * @brief Unloads containers from a train
      *
-     * Unloads containers at specified terminals.
+     * Transfers containers from a train to specified destination
+     * terminals.
+     *
+     * @param networkName Network containing the train
+     * @param trainId Unique identifier of the train
+     * @param containersDestinationNames List of destination terminals
+     * @return True if unloading succeeds
      */
     bool unloadTrain(
         const QString& networkName,
@@ -179,114 +217,228 @@ public:
         const QStringList& containersDestinationNames);
 
     /**
-     * @brief Get state of a specific train
-     * @param networkName Network name
-     * @param trainId Train ID
-     * @return Train state as JSON, empty if not found
+     * @brief Retrieves the state of a specific train
      *
-     * Retrieves the state of a specific train.
+     * Fetches the current state of a train within a network.
+     *
+     * @param networkName Network containing the train
+     * @param trainId Unique identifier of the train
+     * @return Pointer to TrainState or nullptr if not found
      */
-    QJsonObject getTrainState(
+    const TrainState* getTrainState(
         const QString& networkName,
         const QString& trainId) const;
 
     /**
-     * @brief Get states of all trains in a network
-     * @param networkName Network name
-     * @return List of train states as JSON
+     * @brief Retrieves states of all trains in a network
      *
-     * Retrieves states of all trains in a network.
+     * Returns a list of states for all trains in a network.
+     *
+     * @param networkName Network to query
+     * @return List of TrainState pointers, empty if none found
      */
-    QJsonArray getAllNetworkTrainStates(
+    QList<const TrainState*> getAllNetworkTrainStates(
         const QString& networkName) const;
 
     /**
-     * @brief Get states of all trains across networks
-     * @return Map of network names to train states
+     * @brief Retrieves states of all trains across networks
      *
-     * Retrieves states of all trains in all networks.
+     * Returns a map of network names to lists of train states.
+     *
+     * @return Map of network names to TrainState pointer lists
      */
-    QJsonObject getAllTrainsStates() const;
+    QMap<QString, QList<const TrainState*>> getAllTrainsStates() const;
 
 protected:
     /**
-     * @brief Process server messages
-     * @param message JSON message from server
+     * @brief Processes messages from the server
      *
-     * Handles train-specific events from the server.
+     * Handles incoming server messages by dispatching them to
+     * appropriate event handlers.
+     *
+     * @param message JSON object containing the server message
      */
     void processMessage(const QJsonObject& message) override;
 
 private:
     /**
-     * @brief Internal unload train method
-     * @param networkName Network name
-     * @param trainId Train ID
-     * @param containersDestinationNames Destination terminals
-     * @return True if command sent successfully
+     * @brief Internal method to unload containers from a train
      *
-     * Private implementation for unloading containers.
+     * Sends an unload command without waiting for a response.
+     *
+     * @param networkName Network containing the train
+     * @param trainId Unique identifier of the train
+     * @param containersDestinationNames List of destination terminals
+     * @return True if command is sent successfully
      */
     bool unloadTrainPrivate(
         const QString& networkName,
         const QString& trainId,
         const QStringList& containersDestinationNames);
 
-    /// @brief Handle simulation created event
+    /**
+     * @brief Handles simulation created event
+     *
+     * Processes the event when a simulation is created.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationCreated(const QJsonObject& message);
 
-    /// @brief Handle simulation ended event
+    /**
+     * @brief Handles simulation ended event
+     *
+     * Processes the event when a simulation ends.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationEnded(const QJsonObject& message);
 
-    /// @brief Handle train reached destination event
+    /**
+     * @brief Handles train reached destination event
+     *
+     * Processes the event when a train reaches its destination.
+     *
+     * @param message Event data in JSON format
+     */
     void onTrainReachedDestination(const QJsonObject& message);
 
-    /// @brief Handle all trains reached destination event
+    /**
+     * @brief Handles all trains reached destination event
+     *
+     * Processes the event when all trains reach their destinations.
+     *
+     * @param message Event data in JSON format
+     */
     void onAllTrainsReachedDestination(const QJsonObject& message);
 
-    /// @brief Handle simulation results available event
+    /**
+     * @brief Handles simulation results available event
+     *
+     * Processes the event when simulation results are available.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationResultsAvailable(const QJsonObject& message);
 
-    /// @brief Handle trains added to simulator event
+    /**
+     * @brief Handles trains added to simulator event
+     *
+     * Processes the event when trains are added to the simulator.
+     *
+     * @param message Event data in JSON format
+     */
     void onTrainsAddedToSimulator(const QJsonObject& message);
 
-    /// @brief Handle error occurred event
+    /**
+     * @brief Handles error occurred event
+     *
+     * Processes the event when an error occurs on the server.
+     *
+     * @param message Event data in JSON format
+     */
     void onErrorOccurred(const QJsonObject& message);
 
-    /// @brief Handle server reset event
+    /**
+     * @brief Handles server reset event
+     *
+     * Processes the event when the server is reset.
+     */
     void onServerReset();
 
-    /// @brief Handle simulation advanced event
+    /**
+     * @brief Handles simulation advanced event
+     *
+     * Processes the event when a simulation advances in time.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationAdvanced(const QJsonObject& message);
 
-    /// @brief Handle containers added event
+    /**
+     * @brief Handles containers added event
+     *
+     * Processes the event when containers are added to a train.
+     *
+     * @param message Event data in JSON format
+     */
     void onContainersAdded(const QJsonObject& message);
 
-    /// @brief Handle simulation progress update event
+    /**
+     * @brief Handles simulation progress update event
+     *
+     * Processes the event when simulation progress updates.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationProgressUpdate(const QJsonObject& message);
 
-    /// @brief Handle simulation paused event
+    /**
+     * @brief Handles simulation paused event
+     *
+     * Processes the event when a simulation is paused.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationPaused(const QJsonObject& message);
 
-    /// @brief Handle simulation resumed event
+    /**
+     * @brief Handles simulation resumed event
+     *
+     * Processes the event when a simulation is resumed.
+     *
+     * @param message Event data in JSON format
+     */
     void onSimulationResumed(const QJsonObject& message);
 
-    /// @brief Handle train reached terminal event
+    /**
+     * @brief Handles train reached terminal event
+     *
+     * Processes the event when a train reaches a terminal.
+     *
+     * @param message Event data in JSON format
+     */
     void onTrainReachedTerminal(const QJsonObject& message);
 
-    /// @brief Handle containers unloaded event
+    /**
+     * @brief Handles containers unloaded event
+     *
+     * Processes the event when containers are unloaded from a train.
+     *
+     * @param message Event data in JSON format
+     */
     void onContainersUnloaded(const QJsonObject& message);
 
-    /// @brief Mutex for thread-safe data access
+    /**
+     * @var m_dataAccessMutex
+     * @brief Mutex for thread-safe data access
+     *
+     * Protects internal data structures from concurrent access.
+     */
     mutable QMutex m_dataAccessMutex;
 
-    /// @brief Map of network names to simulation results
+    /**
+     * @var m_networkData
+     * @brief Stores simulation results by network
+     *
+     * Maps network names to SimulationResults pointers.
+     */
     QMap<QString, SimulationResults*> m_networkData;
 
-    /// @brief Map of network names to train states
+    /**
+     * @var m_trainState
+     * @brief Stores train states by network
+     *
+     * Maps network names to lists of TrainState pointers.
+     */
     QMap<QString, QList<TrainState*>> m_trainState;
 
-    /// @brief Map of train IDs to Train objects
+    /**
+     * @var m_loadedTrains
+     * @brief Stores loaded train objects
+     *
+     * Maps train IDs to Train pointers for the simulation.
+     */
     QMap<QString, Backend::Train*> m_loadedTrains;
 };
 

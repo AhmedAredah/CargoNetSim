@@ -141,8 +141,8 @@ void TrainSimulationClient::initializeClient(LoggerInterface *logger)
 
 bool TrainSimulationClient::defineSimulatorByNetworkName(
     const QString& networkName,
-    double timeStep,
-    const QList<QJsonObject>& trains)
+    const double timeStep,
+    const QList<Train*>& trains)
 {
     // Placeholder for network registry (uncomment if available)
     // Network* network = getNeTrainSimNetworkRegistry().getNetwork(networkName);
@@ -152,8 +152,6 @@ bool TrainSimulationClient::defineSimulatorByNetworkName(
     // }
     // QJsonArray nodesJson = network->nodesToJson();
     // QJsonArray linksJson = network->linksToJson();
-
-    // Use empty arrays as placeholders
     QJsonArray nodesJson;
     QJsonArray linksJson;
 
@@ -166,20 +164,16 @@ bool TrainSimulationClient::defineSimulator(
     const QJsonArray& nodesJson,
     const QJsonArray& linksJson,
     const QString& networkName,
-    double timeStep,
-    const QList<QJsonObject>& trains)
+    const double timeStep,
+    const QList<Train*>& trains)
 {
-    // Execute in a serialized command block
     return executeSerializedCommand([&]() {
         // Prepare train data for JSON
         QJsonArray trainsArray;
-        QList<Backend::Train*> trainObjects;
-
-        // Convert each train to JSON and store object
-        for (const QJsonObject& trainData : trains) {
-            Backend::Train* train = new Backend::Train(trainData);
-            trainObjects.append(train);
-            trainsArray.append(train->toJson());
+        for (const auto* train : trains) {
+            if (train) {
+                trainsArray.append(train->toJson());
+            }
         }
 
         // Build command parameters
@@ -201,25 +195,22 @@ bool TrainSimulationClient::defineSimulator(
         // If successful, store train objects
         if (success) {
             QMutexLocker locker(&m_dataAccessMutex);
-            for (Backend::Train* train : trainObjects) {
-                m_loadedTrains[train->getUserId()] = train;
+            for (const auto* train : trains) {
+                if (train) {
+                    m_loadedTrains[train->getUserId()] =
+                        const_cast<Train*>(train);
+                }
             }
             if (m_logger) {
                 m_logger->log("Simulator defined for " + networkName,
                               static_cast<int>(m_clientType));
             }
-        } else {
-            // Clean up on failure
-            qDeleteAll(trainObjects);
-
-            if (m_logger) {
-                m_logger->logError("Failed to define simulator for " +
-                                       networkName,
-                                   static_cast<int>(m_clientType));
-            }
+        } else if (m_logger) {
+            m_logger->logError("Failed to define simulator for " +
+                                   networkName,
+                               static_cast<int>(m_clientType));
         }
 
-        // Return success status
         return success;
     });
 }
@@ -310,19 +301,15 @@ bool TrainSimulationClient::endSimulator(const QStringList& networkNames)
 
 bool TrainSimulationClient::addTrainsToSimulator(
     const QString& networkName,
-    const QList<QJsonObject>& trains)
+    const QList<Train*>& trains)
 {
-    // Execute in a serialized command block
     return executeSerializedCommand([&]() {
         // Prepare train data for JSON
         QJsonArray trainsArray;
-        QList<Backend::Train*> trainObjects;
-
-        // Convert each train to JSON and store object
-        for (const QJsonObject& trainData : trains) {
-            Backend::Train* train = new Backend::Train(trainData);
-            trainObjects.append(train);
-            trainsArray.append(train->toJson());
+        for (const auto* train : trains) {
+            if (train) {
+                trainsArray.append(train->toJson());
+            }
         }
 
         // Build command parameters
@@ -339,24 +326,21 @@ bool TrainSimulationClient::addTrainsToSimulator(
         // If successful, store train objects
         if (success) {
             QMutexLocker locker(&m_dataAccessMutex);
-            for (Backend::Train* train : trainObjects) {
-                m_loadedTrains[train->getUserId()] = train;
+            for (const auto* train : trains) {
+                if (train) {
+                    m_loadedTrains[train->getUserId()] =
+                        const_cast<Train*>(train);
+                }
             }
             if (m_logger) {
                 m_logger->log("Trains added to " + networkName,
                               static_cast<int>(m_clientType));
             }
-        } else {
-            // Clean up on failure
-            qDeleteAll(trainObjects);
-            if (m_logger) {
-                m_logger->logError("Failed to add trains to " +
-                                       networkName,
-                                   static_cast<int>(m_clientType));
-            }
+        } else if (m_logger) {
+            m_logger->logError("Failed to add trains to " + networkName,
+                               static_cast<int>(m_clientType));
         }
 
-        // Return success status
         return success;
     });
 }
@@ -364,32 +348,15 @@ bool TrainSimulationClient::addTrainsToSimulator(
 bool TrainSimulationClient::addContainersToTrain(
     const QString& networkName,
     const QString& trainId,
-    const QStringList& containers)
+    const QList<ContainerCore::Container*>& containers)
 {
-    // Execute in a serialized command block
     return executeSerializedCommand([&]() {
         // Prepare containers array for JSON
         QJsonArray containersArray;
-
-        // Process each container string
-        for (QString containerStr : containers) {
-            // Replace NaN with null for valid JSON
-            containerStr.replace("\"addedTime\": NaN",
-                                 "\"addedTime\": null");
-
-            // Parse container string to JSON
-            QJsonDocument doc = QJsonDocument::fromJson(
-                containerStr.toUtf8());
-
-            // Validate JSON parsing
-            if (doc.isNull() || !doc.isObject()) {
-                qCritical() << "Error parsing container JSON:"
-                            << containerStr;
-                return false;
+        for (const auto* container : containers) {
+            if (container) {
+                containersArray.append(container->toJson());
             }
-
-            // Add parsed object to array
-            containersArray.append(doc.object());
         }
 
         // Build command parameters
@@ -410,8 +377,7 @@ bool TrainSimulationClient::addContainersToTrain(
                 m_logger->log("Containers added to train " + trainId,
                               static_cast<int>(m_clientType));
             } else {
-                m_logger->logError("Failed to add containers to " +
-                                       trainId,
+                m_logger->logError("Failed to add containers to " + trainId,
                                    static_cast<int>(m_clientType));
             }
         }
@@ -485,83 +451,70 @@ bool TrainSimulationClient::unloadTrainPrivate(
     return success;
 }
 
-QJsonObject TrainSimulationClient::getTrainState(
+const TrainState* TrainSimulationClient::getTrainState(
     const QString& networkName,
     const QString& trainId) const
 {
-    // Lock mutex for thread-safe access
     QMutexLocker locker(&m_dataAccessMutex);
-
-    // Check if network exists in train states
     if (!m_trainState.contains(networkName)) {
-        return QJsonObject();
+        if (m_logger) {
+            m_logger->log("No train state for network " + networkName,
+                          static_cast<int>(m_clientType));
+        }
+        return nullptr;
     }
 
-    // Search for train by ID
-    for (const TrainState* state : m_trainState[networkName]) {
-        if (state->m_trainUserId == trainId) {
-            return state->toJson();
+    for (const auto* state : m_trainState[networkName]) {
+        if (state && state->m_trainUserId == trainId) {
+            return state;
         }
     }
 
-    // Log if train not found
     if (m_logger) {
         m_logger->log("Train " + trainId + " not found in " + networkName,
                       static_cast<int>(m_clientType));
     }
-
-    // Return empty object if not found
-    return QJsonObject();
+    return nullptr;
 }
 
-QJsonArray TrainSimulationClient::getAllNetworkTrainStates(
+QList<const TrainState*>
+TrainSimulationClient::getAllNetworkTrainStates(
     const QString& networkName) const
 {
-    // Lock mutex for thread-safe access
     QMutexLocker locker(&m_dataAccessMutex);
+    QList<const TrainState*> states;
 
-    // Initialize empty array for states
-    QJsonArray states;
-
-    // Check if network exists in train states
     if (m_trainState.contains(networkName)) {
-        // Add each train state to array
-        for (const TrainState* state : m_trainState[networkName]) {
-            states.append(state->toJson());
+        for (const auto* state : m_trainState[networkName]) {
+            if (state) {
+                states.append(state);
+            }
         }
     } else if (m_logger) {
         m_logger->log("No train states for network " + networkName,
                       static_cast<int>(m_clientType));
     }
 
-    // Return collected states
     return states;
 }
 
-QJsonObject TrainSimulationClient::getAllTrainsStates() const
+QMap<QString, QList<const TrainState*>>
+TrainSimulationClient::getAllTrainsStates() const
 {
-    // Lock mutex for thread-safe access
     QMutexLocker locker(&m_dataAccessMutex);
+    QMap<QString, QList<const TrainState*>> allStates;
 
-    // Initialize object for all states
-    QJsonObject allStates;
-
-    // Iterate over all networks
     for (auto it = m_trainState.constBegin();
          it != m_trainState.constEnd(); ++it) {
-        // Array for states in current network
-        QJsonArray networkStates;
-
-        // Add each train state to array
-        for (const TrainState* state : it.value()) {
-            networkStates.append(state->toJson());
+        QList<const TrainState*> networkStates;
+        for (const auto* state : it.value()) {
+            if (state) {
+                networkStates.append(state);
+            }
         }
-
-        // Map network name to its states
         allStates[it.key()] = networkStates;
     }
 
-    // Return complete states object
     return allStates;
 }
 
