@@ -51,12 +51,20 @@ SimulationClientBase::~SimulationClientBase()
     if (m_rabbitMQHandler) {
         delete m_rabbitMQHandler;
     }
+
+    if (m_logger) {
+        delete m_logger;
+    }
     qDebug() << "SimulationClientBase destroyed for"
              << getClientTypeString();
 }
 
-void SimulationClientBase::initializeClient()
+void SimulationClientBase::initializeClient(LoggerInterface* logger)
 {
+
+    // Set the logger interface
+    m_logger = logger;
+
     // Create RabbitMQ handler
     m_rabbitMQHandler = new RabbitMQHandler(
         nullptr, m_host, m_port, m_exchange, m_commandQueue,
@@ -78,6 +86,10 @@ void SimulationClientBase::initializeClient()
 
     qDebug() << "SimulationClientBase initialized for"
              << getClientTypeString();
+    if (m_logger) {
+        m_logger->log("SimulationClientBase initialized for " +
+                     getClientTypeString(), static_cast<int>(m_clientType));
+    }
 }
 
 /**
@@ -97,6 +109,11 @@ bool SimulationClientBase::connectToServer()
     if (m_rabbitMQHandler == nullptr) {
         qWarning() << "Cannot execute command: RabbitMQ "
                       "handler not initialized";
+        if (m_logger) {
+            m_logger->logError("Cannot execute command: RabbitMQ "
+                               "handler not initialized",
+                               static_cast<int>(m_clientType));
+        }
         throw std::runtime_error("Client not ready for"
                                  " command execution");
     }
@@ -109,6 +126,11 @@ bool SimulationClientBase::connectToServer()
     } else {
         qWarning() << getClientTypeString()
         << "failed to connect to server";
+        if (m_logger) {
+            m_logger->logError(getClientTypeString() +
+                               " failed to connect to server",
+                               static_cast<int>(m_clientType));
+        }
     }
 
     return success;
@@ -123,6 +145,11 @@ void SimulationClientBase::disconnectFromServer()
     if (m_rabbitMQHandler == nullptr) {
         qWarning() << "Cannot execute command: RabbitMQ "
                       "handler not initialized";
+        if (m_logger) {
+            m_logger->logError("Cannot execute command: RabbitMQ "
+                               "handler not initialized",
+                               static_cast<int>(m_clientType));
+        }
         throw std::runtime_error("Client not ready for"
                                  " command execution");
     }
@@ -173,6 +200,10 @@ bool SimulationClientBase::sendCommandAndWait(
     // Early check to avoid unnecessary work
     if (expectedEvents.isEmpty()) {
         qWarning() << "Cannot wait for empty expected events list";
+        if (m_logger) {
+            m_logger->logError("Cannot wait for empty expected events list",
+                               static_cast<int>(m_clientType));
+        }
         return false;
     }
 
@@ -189,6 +220,11 @@ bool SimulationClientBase::sendCommandAndWait(
     bool sent = sendCommand(command, params, routingKey);
     if (!sent) {
         qWarning() << "Failed to send command:" << command;
+        if (m_logger) {
+            m_logger->logError("Failed to send command: " + command,
+                               static_cast<int>(m_clientType));
+        }
+        // Clear any events that may have been registered
         return false;
     }
 
@@ -197,6 +233,10 @@ bool SimulationClientBase::sendCommandAndWait(
     if (!received) {
         qWarning() << "Timeout waiting for response to command:"
                    << command;
+        if (m_logger) {
+            m_logger->logError("Timeout waiting for response to command: " +
+                               command, static_cast<int>(m_clientType));
+        }
         return false;
     }
 

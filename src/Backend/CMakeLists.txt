@@ -2,6 +2,7 @@
 set(Backend_SOURCES
 
     # Commons
+    Commons/LoggerInterface.h
     Commons/ClientType.h
     Commons/TerminalInterface.h
     Commons/TerminalInterface.cpp

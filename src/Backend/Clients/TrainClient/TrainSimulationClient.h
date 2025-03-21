@@ -83,7 +83,7 @@ public:
      *
      * Sets up thread-specific resources like RabbitMQ heartbeat.
      */
-    void initializeClient() override;
+    void initializeClient(LoggerInterface* logger) override;
 
     /**
      * @brief Define simulator by network name

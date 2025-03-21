@@ -54,9 +54,9 @@ bool TerminalSimulationClient::resetServer()
 /**
  * Initialize client in its thread
  */
-void TerminalSimulationClient::initializeClient()
+void TerminalSimulationClient::initializeClient(LoggerInterface *logger)
 {
-    SimulationClientBase::initializeClient();
+    SimulationClientBase::initializeClient(logger);
     if (!m_rabbitMQHandler) {
         throw std::runtime_error("RabbitMQ handler not set");
     }

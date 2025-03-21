@@ -9,6 +9,7 @@
 
 // Placeholder includes
 #include "Backend/Models/ShipSystem.h"
+#include "Backend/Commons/LoggerInterface.h"
 // #include "TerminalGraphServer.h"
 // #include "SimulatorTimeServer.h"
 // #include "ProgressBarManager.h"
@@ -40,7 +41,13 @@ ShipSimulationClient::ShipSimulationClient(
     // ProgressBarManager::getInstance()->addProgressBar(
     //     ClientType::ShipClient, "Ship Simulation", 100);
 
-    qDebug() << "ShipSimulatorClient initialized";
+    // Log initialization using logger if available
+    if (m_logger) {
+        m_logger->log("ShipSimulationClient initialized",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "ShipSimulatorClient initialized";
+    }
 }
 
 /**
@@ -66,7 +73,13 @@ ShipSimulationClient::~ShipSimulationClient()
     qDeleteAll(m_loadedShips);
     m_loadedShips.clear();
 
-    qDebug() << "ShipSimulatorClient destroyed";
+    // Log destruction using logger if available
+    if (m_logger) {
+        m_logger->log("ShipSimulationClient destroyed",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "ShipSimulatorClient destroyed";
+    }
 }
 
 /**
@@ -80,24 +93,46 @@ bool ShipSimulationClient::resetServer()
             QJsonObject(),
             {"serverReset"});
 
+        // Log result of reset operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Server reset successful",
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Server reset failed",
+                                   static_cast<int>(m_clientType));
+            }
+        }
         return success;
     });
 }
 
-void ShipSimulationClient::initializeClient()
+void ShipSimulationClient::initializeClient(LoggerInterface *logger)
 {
     // Call base class initialization to set up shared resources
-    SimulationClientBase::initializeClient();
+    SimulationClientBase::initializeClient(logger);
 
     // Configure RabbitMQ handler's heartbeat for connection health
     if (m_rabbitMQHandler == nullptr) {
+        if (m_logger) {
+            m_logger->logError("Cannot execute command: RabbitMQ "
+                               "handler not initialized",
+                               static_cast<int>(m_clientType));
+        }
         throw std::runtime_error("RabbitMQ handler not initialized");
     }
     m_rabbitMQHandler->setupHeartbeat(5);
 
-    // Log initialization details for debugging
-    qDebug() << "ShipSimulationClient initialized in thread:"
-             << QThread::currentThreadId();
+    // Log initialization details using logger if available
+    if (m_logger) {
+        m_logger->log("Initialized in thread: " +
+                          QString::number(reinterpret_cast<quintptr>(
+                              QThread::currentThreadId())),
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "ShipSimulationClient initialized in thread:"
+                 << QThread::currentThreadId();
+    }
 }
 
 /**
@@ -127,8 +162,13 @@ bool ShipSimulationClient::defineSimulator(
                     shipsArray.append(ship->toJson());
                 }
             } catch (const std::exception& e) {
-                qCritical() << "Error converting ships:" << e.what();
-                qDeleteAll(shipObjects);
+                if (m_logger) {
+                    m_logger->logError("Error converting ships: " +
+                                           QString(e.what()),
+                                       static_cast<int>(m_clientType));
+                } else {
+                    qCritical() << "Error converting ships:" << e.what();
+                }                qDeleteAll(shipObjects);
                 return false;
             }
 
@@ -168,7 +208,13 @@ bool ShipSimulationClient::defineSimulator(
             return true;
 
         } catch (const std::exception& e) {
-            qCritical() << "Exception in defineSimulator:" << e.what();
+            if (m_logger) {
+                m_logger->logError("Exception in defineSimulator: " +
+                                       QString(e.what()),
+                                   static_cast<int>(m_clientType));
+            } else {
+                qCritical() << "Exception in defineSimulator:" << e.what();
+            }
             return false;
         }
     });
@@ -201,10 +247,23 @@ bool ShipSimulationClient::runSimulator(
         params["byTimeSteps"] = byTimeSteps;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "runSimulator",
             params,
             {"allshipsreacheddestination"});
+
+        // Log result of run operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Simulator run for " + networks.join(", "),
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to run simulator for " +
+                                       networks.join(", "),
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -233,10 +292,23 @@ bool ShipSimulationClient::endSimulator(
         params["network"] = networksArray;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "endSimulator",
             params,
             {"simulationended"});
+
+        // Log result of end operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Simulator ended for " + networks.join(", "),
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to end simulator for " +
+                                       networks.join(", "),
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -264,7 +336,13 @@ bool ShipSimulationClient::addShipsToSimulator(
                 shipsArray.append(ship->toJson());
             }
         } catch (const std::exception& e) {
-            qCritical() << "Error converting ships:" << e.what();
+            if (m_logger) {
+                m_logger->logError("Error converting ships: " +
+                                       QString(e.what()),
+                                   static_cast<int>(m_clientType));
+            } else {
+                qCritical() << "Error converting ships:" << e.what();
+            }
             qDeleteAll(shipObjects);
             return false;
         }
@@ -290,6 +368,10 @@ bool ShipSimulationClient::addShipsToSimulator(
                 QStringList terminals =
                     destinationTerminalIds.value(ship->getUserId());
                 m_shipsDestinationTerminals[ship->getUserId()] = terminals;
+            }
+            if (m_logger) {
+                m_logger->log("Ships added to " + networkName,
+                              static_cast<int>(m_clientType));
             }
         } else {
             qDeleteAll(shipObjects);
@@ -323,8 +405,14 @@ bool ShipSimulationClient::addContainersToShip(
                 QJsonDocument::fromJson(fixedStr.toUtf8());
 
             if (doc.isNull() || !doc.isObject()) {
-                qCritical() << "Error parsing container JSON:"
-                            << containerStr;
+                if (m_logger) {
+                    m_logger->logError("Error parsing container JSON: " +
+                                           containerStr,
+                                       static_cast<int>(m_clientType));
+                } else {
+                    qCritical() << "Error parsing container JSON:"
+                                << containerStr;
+                }
                 return false;
             }
 
@@ -338,10 +426,22 @@ bool ShipSimulationClient::addContainersToShip(
         params["containers"] = containersArray;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "addContainersToShip",
             params,
             {"containersaddedtoship"});
+
+        // Log result of adding containers
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Containers added to ship " + shipId,
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to add containers to " + shipId,
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -365,7 +465,14 @@ bool ShipSimulationClient::unloadContainersFromShipAtTerminalsPrivate(
     params["terminalNames"] = terminalsArray;
 
     // Send command
-    return sendCommand("unloadContainersFromShipAtTerminal", params);
+    bool success = sendCommand("unloadContainersFromShipAtTerminal", params);
+
+    // Log result of private unload
+    if (m_logger && !success) {
+        m_logger->logError("Private unload failed for " + shipId,
+                           static_cast<int>(m_clientType));
+    }
+    return success;
 }
 
 /**
@@ -389,10 +496,22 @@ bool ShipSimulationClient::unloadContainersFromShipAtTerminals(
         params["terminalNames"] = terminalsArray;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "unloadContainersFromShipAtTerminal",
             params,
             {"shipunloadedcontainers"});
+
+        // Log result of unload operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Ship " + shipId + " unloaded",
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to unload ship " + shipId,
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -408,8 +527,14 @@ void ShipSimulationClient::getNetworkTerminalNodes(
         params["network"] = networkName;
 
         // Send command
-        sendCommand("getNetworkSeaPorts", params);
-        return true;
+        bool success = sendCommand("getNetworkSeaPorts", params);
+
+        // Log request if logger available
+        if (m_logger) {
+            m_logger->log("Requested terminal nodes for " + networkName,
+                          static_cast<int>(m_clientType));
+        }
+        return success;
     });
 }
 
@@ -429,8 +554,14 @@ void ShipSimulationClient::getShortestPath(
         params["endNode"] = endNode;
 
         // Send command
-        sendCommand("getShortestPath", params);
-        return true;
+        bool success = sendCommand("getShortestPath", params);
+
+        // Log request if logger available
+        if (m_logger) {
+            m_logger->log("Requested shortest path in " + networkName,
+                          static_cast<int>(m_clientType));
+        }
+        return success;
     });
 }
 
@@ -444,6 +575,10 @@ QJsonObject ShipSimulationClient::getShipState(
     QMutexLocker locker(&m_dataAccessMutex);
 
     if (!m_shipState.contains(networkName)) {
+        if (m_logger) {
+            m_logger->log("No ship state for network " + networkName,
+                          static_cast<int>(m_clientType));
+        }
         return QJsonObject();
     }
 
@@ -455,6 +590,10 @@ QJsonObject ShipSimulationClient::getShipState(
         }
     }
 
+    if (m_logger) {
+        m_logger->log("Ship " + shipId + " not found in " + networkName,
+                      static_cast<int>(m_clientType));
+    }
     return QJsonObject();
 }
 
@@ -469,6 +608,10 @@ QJsonArray ShipSimulationClient::getAllNetworkShipsStates(
     QJsonArray states;
 
     if (!m_shipState.contains(networkName)) {
+        if (m_logger) {
+            m_logger->log("No ship states for " + networkName,
+                          static_cast<int>(m_clientType));
+        }
         return states;
     }
 
@@ -515,6 +658,10 @@ void ShipSimulationClient::processMessage(const QJsonObject& message)
 
     // Extract event type
     if (!message.contains("event")) {
+        if (m_logger) {
+            m_logger->log("Received message without event",
+                          static_cast<int>(m_clientType));
+        }
         return; // Not an event message
     }
 
@@ -561,7 +708,12 @@ void ShipSimulationClient::processMessage(const QJsonObject& message)
     } else if (normalizedEvent == "simulationrestarted") {
         onSimulationRestarted(message);
     } else {
-        qWarning() << "Unrecognized event:" << eventType;
+        if (m_logger) {
+            m_logger->log("Unrecognized event: " + eventType,
+                          static_cast<int>(m_clientType));
+        } else {
+            qWarning() << "Unrecognized event:" << eventType;
+        }
     }
 }
 
@@ -570,7 +722,12 @@ void ShipSimulationClient::processMessage(const QJsonObject& message)
 void ShipSimulationClient::onSimulationNetworkLoaded(
     const QJsonObject& message)
 {
-    qDebug() << "Simulation network loaded.";
+    if (m_logger) {
+        m_logger->log("Simulation network loaded",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation network loaded.";
+    }
 }
 
 void ShipSimulationClient::onSimulationCreated(
@@ -582,30 +739,57 @@ void ShipSimulationClient::onSimulationCreated(
 
     QMutexLocker locker(&m_dataAccessMutex);
     m_networkData[networkName] = QList<SimulationResults*>();
+
+    if (m_logger) {
+        m_logger->log("Simulation created for " + networkName,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation created.";
+    }
 }
 
 void ShipSimulationClient::onSimulationPaused(
     const QJsonObject& message)
 {
-    qDebug() << "Simulation paused.";
+    if (m_logger) {
+        m_logger->log("Simulation paused",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation paused.";
+    }
 }
 
 void ShipSimulationClient::onSimulationResumed(
     const QJsonObject& message)
 {
-    qDebug() << "Simulation resumed.";
+    if (m_logger) {
+        m_logger->log("Simulation resumed",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation resumed.";
+    }
 }
 
 void ShipSimulationClient::onSimulationRestarted(
     const QJsonObject& message)
 {
-    qDebug() << "Simulation restarted.";
+    if (m_logger) {
+        m_logger->log("Simulation restarted",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation restarted.";
+    }
 }
 
 void ShipSimulationClient::onSimulationEnded(
     const QJsonObject& message)
 {
-    qDebug() << "Simulation ended.";
+    if (m_logger) {
+        m_logger->log("Simulation ended",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation ended.";
+    }
 }
 
 void ShipSimulationClient::onSimulationAdvanced(
@@ -634,10 +818,24 @@ void ShipSimulationClient::onSimulationAdvanced(
         // ProgressBarManager::getInstance()->updateProgress(
         //    ClientType::ShipClient, average);
 
-        qDebug() << "Simulations advanced for" << networks.join(", ");
+        if (m_logger) {
+            m_logger->log("Simulation advanced to time: " +
+                              QString::number(newTime),
+                          static_cast<int>(m_clientType));
+            m_logger->log("Simulations advanced for " + networks.join(", "),
+                          static_cast<int>(m_clientType));
+        } else {
+            qDebug() << "Simulation advanced to time:" << newTime;
+            qDebug() << "Simulations advanced for" << networks.join(", ");
+        }
     } else {
-        qWarning() << "Invalid or missing 'networkNamesProgress' "
-                   << "in the message.";
+        if (m_logger) {
+            m_logger->log("Invalid 'networkNamesProgress' in message",
+                          static_cast<int>(m_clientType));
+        } else {
+            qWarning() << "Invalid or missing 'networkNamesProgress' "
+                       << "in the message.";
+        }
     }
 }
 
@@ -648,21 +846,38 @@ void ShipSimulationClient::onSimulationProgressUpdate(
 
     // ProgressBarManager::getInstance()->updateProgress(
     //    ClientType::ShipClient, progress);
+
+    if (m_logger) {
+        m_logger->updateProgress(progress,
+                                 static_cast<int>(m_clientType));
+    }
 }
 
 void ShipSimulationClient::onShipAddedToSimulator(
     const QJsonObject& message)
 {
     QString shipId = message.value("shipID").toString();
-    qDebug() << "Ship" << shipId << "added to simulator.";
+
+    if (m_logger) {
+        m_logger->log("Ship " + shipId + " added to simulator",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Ship" << shipId << "added to simulator.";
+    }
 }
 
 void ShipSimulationClient::onAllShipsReachedDestination(
     const QJsonObject& message)
 {
     QString networkName = message.value("networkName").toString();
-    qDebug() << "All ships reached destination of network:"
-             << networkName;
+
+    if (m_logger) {
+        m_logger->log("All ships reached destination in " + networkName,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "All ships reached destination of network:"
+                 << networkName;
+    }
 }
 
 void ShipSimulationClient::onShipReachedDestination(
@@ -724,7 +939,11 @@ void ShipSimulationClient::onShipReachedDestination(
                     networkName, shipId, QStringList{terminalId});
             }
 
-            if (!foundTerminal) {
+            if (!foundTerminal && m_logger) {
+                m_logger->log("No terminal of [" + terminalIds.join(", ") +
+                                  "] exists",
+                              static_cast<int>(m_clientType));
+            } else if (!foundTerminal) {
                 qWarning() << "No terminal of ["
                            << terminalIds.join(", ")
                            << "] exist in the terminal manager!";
@@ -735,8 +954,14 @@ void ShipSimulationClient::onShipReachedDestination(
         }
     }
 
-    qDebug() << "Ships [" << shipIds.join(", ")
-             << "] reached destinations";
+    if (m_logger) {
+        m_logger->log("Ships [" + shipIds.join(", ") +
+                          "] reached destinations",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Ships [" << shipIds.join(", ")
+        << "] reached destinations";
+    }
 }
 
 void ShipSimulationClient::onShipReachedSeaport(
@@ -759,8 +984,13 @@ void ShipSimulationClient::onShipReachedSeaport(
     // }
 
     // Placeholder implementation
-    unloadContainersFromShipAtTerminalsPrivate(
+    bool success = unloadContainersFromShipAtTerminalsPrivate(
         networkName, shipId, QStringList{terminalId});
+
+    if (m_logger) {
+        m_logger->log("Ship " + shipId + " reached seaport " + terminalId,
+                      static_cast<int>(m_clientType));
+    }
 }
 
 void ShipSimulationClient::onContainersUnloaded(
@@ -792,40 +1022,73 @@ void ShipSimulationClient::onContainersUnloaded(
     //    }
     // }
 
-    qDebug() << "Containers unloaded at port:" << portName;
+    if (m_logger) {
+        m_logger->log("Containers unloaded at port: " + portName,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Containers unloaded at port:" << portName;
+    }
 }
 
 void ShipSimulationClient::onSimulationResultsAvailable(
     const QJsonObject& message)
 {
     QJsonObject results = message.value("results").toObject();
-    qDebug() << "Simulation results available";
+
+    if (m_logger) {
+        m_logger->log("Simulation results available",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation results available";
+    }
 }
 
 void ShipSimulationClient::onShipStateAvailable(
     const QJsonObject& message)
 {
     QJsonObject shipState = message.value("state").toObject();
-    qDebug() << "Ship state available";
+
+    if (m_logger) {
+        m_logger->log("Ship state available",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Ship state available";
+    }
 }
 
 void ShipSimulationClient::onSimulatorStateAvailable(
     const QJsonObject& message)
 {
     QJsonObject simulatorState = message.value("state").toObject();
-    qDebug() << "Simulator state available";
+
+    if (m_logger) {
+        m_logger->log("Simulator state available",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulator state available";
+    }
 }
 
 void ShipSimulationClient::onErrorOccurred(
     const QJsonObject& message)
 {
     QString errorMessage = message.value("errorMessage").toString();
-    qCritical() << "Error occurred:" << errorMessage;
+    if (m_logger) {
+        m_logger->logError("Error occurred: " + errorMessage,
+                           static_cast<int>(m_clientType));
+    } else {
+        qCritical() << "Error occurred:" << errorMessage;
+    }
 }
 
 void ShipSimulationClient::onServerReset()
 {
-    qDebug() << "Server Reset Successfully";
+    if (m_logger) {
+        m_logger->log("Server reset successfully",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Server Reset Successfully";
+    }
 }
 
 void ShipSimulationClient::onContainersAdded(
@@ -834,8 +1097,14 @@ void ShipSimulationClient::onContainersAdded(
     QString network = message.value("networkName").toString();
     QString shipId = message.value("shipID").toString();
 
-    qDebug() << "Containers added to ship" << shipId
-             << "on network" << network;
+    if (m_logger) {
+        m_logger->log("Containers added to ship " + shipId +
+                          " on " + network,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Containers added to ship" << shipId
+                 << "on network" << network;
+    }
 }
 
 } // namespace ShipClient

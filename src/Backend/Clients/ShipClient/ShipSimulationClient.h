@@ -90,7 +90,7 @@ public:
      * @see QThread::started
      * @see RabbitMQHandler::setupHeartbeat
      */
-    void initializeClient() override;
+    void initializeClient(LoggerInterface* logger = nullptr) override;
 
     /**
      * @brief Define a new ship simulator

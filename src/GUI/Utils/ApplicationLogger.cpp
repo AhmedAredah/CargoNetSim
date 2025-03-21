@@ -20,11 +20,14 @@ QQueue<LogEntry> ApplicationLogger::s_logQueue;
 QQueue<QPair<float, int>> ApplicationLogger::s_progressQueue;
 
 // LogEntry implementation
-LogEntry::LogEntry(const QString& message, int clientIndex, bool isError, qint64 timestamp)
+LogEntry::LogEntry(const QString& message,
+                   int clientIndex,
+                   bool isError,
+                   qint64 timestamp)
     : message(message),
-      clientIndex(clientIndex),
-      isError(isError),
-      timestamp(timestamp)
+    clientIndex(clientIndex),
+    isError(isError),
+    timestamp(timestamp)
 {
 }
 
@@ -47,7 +50,8 @@ ApplicationLogger* ApplicationLogger::getInstance() {
     return s_instance;
 }
 
-ApplicationLogger::ApplicationLogger() : QObject(nullptr), m_isRunning(false) {
+ApplicationLogger::ApplicationLogger() :
+    QObject(nullptr), m_isRunning(false) {
     // Create client logs maps with default entries
     for (int i = 0; i < 5; ++i) {
         m_clientLogs[i] = QStringList();
@@ -70,12 +74,14 @@ void ApplicationLogger::start() {
     
     // Create timer for processing log queue
     QTimer* logTimer = new QTimer(this);
-    connect(logTimer, &QTimer::timeout, this, &ApplicationLogger::processLogQueue);
+    connect(logTimer, &QTimer::timeout, this,
+            &ApplicationLogger::processLogQueue);
     logTimer->start(100);  // Process every 100 ms
     
     // Create timer for processing progress queue
     QTimer* progressTimer = new QTimer(this);
-    connect(progressTimer, &QTimer::timeout, this, &ApplicationLogger::processProgressQueue);
+    connect(progressTimer, &QTimer::timeout, this,
+            &ApplicationLogger::processProgressQueue);
     progressTimer->start(100);  // Process every 100 ms
     
     qDebug() << "ApplicationLogger started";
@@ -113,7 +119,9 @@ void ApplicationLogger::updateProgress(float progressValue, int clientType) {
     
     // Post event to main thread if not already there
     if (QThread::currentThread() != getInstance()->thread()) {
-        QApplication::postEvent(getInstance(), new ProgressEvent(progressValue, clientType));
+        QApplication::postEvent(getInstance(),
+                                new ProgressEvent(progressValue,
+                                                  clientType));
     } else {
         // Process immediately if already in the main thread
         getInstance()->m_clientProgress[clientType] = progress;
@@ -134,7 +142,8 @@ bool ApplicationLogger::waitForInitComplete(int timeoutMs) {
         return true;
     }
     
-    return s_initCondition.wait(&s_logMutex, timeoutMs < 0 ? ULONG_MAX : timeoutMs);
+    return s_initCondition.wait(&s_logMutex,
+                                timeoutMs < 0 ? ULONG_MAX : timeoutMs);
 }
 
 void ApplicationLogger::processLogQueue() {
@@ -177,7 +186,9 @@ void ApplicationLogger::processProgressQueue() {
     }
 }
 
-void ApplicationLogger::logMessageInternal(const QString& message, int clientType, bool isError) {
+void ApplicationLogger::logMessageInternal(const QString& message,
+                                           int clientType,
+                                           bool isError) {
     // Ensure valid client index (default to "general" log at index 4)
     clientType = (clientType >= 0 && clientType < 4) ? clientType : 4;
     // Create log entry with current timestamp
@@ -208,8 +219,10 @@ void ApplicationLogger::customEvent(QEvent* event) {
     // Handle progress events
     if (event->type() == ProgressEvent::ProgressEventType) {
         ProgressEvent* progressEvent = static_cast<ProgressEvent*>(event);
-        m_clientProgress[progressEvent->clientIndex] = static_cast<int>(progressEvent->value);
-        emit progressUpdated(static_cast<int>(progressEvent->value), progressEvent->clientIndex);
+        m_clientProgress[progressEvent->clientIndex] =
+            static_cast<int>(progressEvent->value);
+        emit progressUpdated(static_cast<int>(progressEvent->value),
+                             progressEvent->clientIndex);
         return;
     }
     
@@ -252,7 +265,8 @@ bool ApplicationLogger::saveLogsToFile(const QString& filePath) {
     
     // Write header
     out << "=== CargoNetSim Log File ===" << Qt::endl;
-    out << "Generated: " << QDateTime::currentDateTime().toString() << Qt::endl;
+    out << "Generated: " << QDateTime::currentDateTime().toString()
+        << Qt::endl;
     out << "==========================" << Qt::endl << Qt::endl;
     
     // Client type names for better readability

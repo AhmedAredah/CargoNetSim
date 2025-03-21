@@ -62,7 +62,7 @@ public:
      * @warning Call only once after thread start.
      * @throws std::runtime_error If init fails.
      */
-    void initializeClient() override;
+    void initializeClient(LoggerInterface* logger = nullptr) override;
 
     /**
      * @brief Add a terminal using a Terminal object

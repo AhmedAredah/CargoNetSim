@@ -41,8 +41,13 @@ TrainSimulationClient::TrainSimulationClient(
     // ProgressBarManager::getInstance()->addProgressBar(
     //     ClientType::TrainClient, "Train Simulation", 100);
 
-    // Log initialization for debugging
-    qDebug() << "TrainSimulationClient initialized";
+    // Log initialization using logger if available
+    if (m_logger) {
+        m_logger->log("TrainSimulationClient initialized",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "TrainSimulationClient initialized";
+    }
 }
 
 TrainSimulationClient::~TrainSimulationClient()
@@ -66,8 +71,13 @@ TrainSimulationClient::~TrainSimulationClient()
     qDeleteAll(m_loadedTrains); // m_loadedTrains is a QMap<QString, Train*>
     m_loadedTrains.clear();
 
-    // Log destruction for debugging
-    qDebug() << "TrainSimulatorClient destroyed";
+    // Log destruction using logger if available
+    if (m_logger) {
+        m_logger->log("TrainSimulationClient destroyed",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "TrainSimulatorClient destroyed";
+    }
 }
 
 bool TrainSimulationClient::resetServer()
@@ -75,20 +85,42 @@ bool TrainSimulationClient::resetServer()
     // Execute reset command in a serialized manner
     return executeSerializedCommand([this]() {
         // Send reset command and wait for confirmation
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "resetServer",
             QJsonObject(),
             {"serverReset"});
+
+        // Log result of reset operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Server reset successful",
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Server reset failed",
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
-void TrainSimulationClient::initializeClient()
+void TrainSimulationClient::initializeClient(LoggerInterface *logger)
 {
     // Call base class initialization first
-    SimulationClientBase::initializeClient();
+    SimulationClientBase::initializeClient(logger);
 
     // Ensure RabbitMQ handler exists
     if (!m_rabbitMQHandler) {
+        throw std::runtime_error("RabbitMQ handler not initialized");
+    }
+
+    // Ensure RabbitMQ handler exists
+    if (!m_rabbitMQHandler) {
+        if (m_logger) {
+            m_logger->logError("Cannot execute command: RabbitMQ "
+                               "handler not initialized",
+                               static_cast<int>(m_clientType));
+        }
         throw std::runtime_error("RabbitMQ handler not initialized");
     }
 
@@ -96,8 +128,15 @@ void TrainSimulationClient::initializeClient()
     m_rabbitMQHandler->setupHeartbeat(5);
 
     // Log thread initialization
-    qDebug() << "TrainSimulationClient initialized in thread:"
-             << QThread::currentThreadId();
+    if (m_logger) {
+        m_logger->log("Initialized in thread: " +
+                          QString::number(reinterpret_cast<quintptr>(
+                              QThread::currentThreadId())),
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "TrainSimulationClient initialized in thread:"
+                 << QThread::currentThreadId();
+    }
 }
 
 bool TrainSimulationClient::defineSimulatorByNetworkName(
@@ -165,9 +204,19 @@ bool TrainSimulationClient::defineSimulator(
             for (Backend::Train* train : trainObjects) {
                 m_loadedTrains[train->getUserId()] = train;
             }
+            if (m_logger) {
+                m_logger->log("Simulator defined for " + networkName,
+                              static_cast<int>(m_clientType));
+            }
         } else {
             // Clean up on failure
             qDeleteAll(trainObjects);
+
+            if (m_logger) {
+                m_logger->logError("Failed to define simulator for " +
+                                       networkName,
+                                   static_cast<int>(m_clientType));
+            }
         }
 
         // Return success status
@@ -198,10 +247,24 @@ bool TrainSimulationClient::runSimulator(
         params["byTimeSteps"] = byTimeSteps;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "runSimulator",
             params,
             {"allTrainsReachedDestination"});
+
+        // Log result of run operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Simulator run for " + networks.join(", "),
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to run simulator for " +
+                                       networks.join(", "),
+                                   static_cast<int>(m_clientType));
+            }
+        }
+
+        return success;
     });
 }
 
@@ -225,10 +288,23 @@ bool TrainSimulationClient::endSimulator(const QStringList& networkNames)
         params["networkNames"] = networksArray;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "endSimulator",
             params,
             {"simulationEnded"});
+
+        // Log result of end operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Simulator ended for " + networks.join(", "),
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to end simulator for " +
+                                       networks.join(", "),
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -266,9 +342,18 @@ bool TrainSimulationClient::addTrainsToSimulator(
             for (Backend::Train* train : trainObjects) {
                 m_loadedTrains[train->getUserId()] = train;
             }
+            if (m_logger) {
+                m_logger->log("Trains added to " + networkName,
+                              static_cast<int>(m_clientType));
+            }
         } else {
             // Clean up on failure
             qDeleteAll(trainObjects);
+            if (m_logger) {
+                m_logger->logError("Failed to add trains to " +
+                                       networkName,
+                                   static_cast<int>(m_clientType));
+            }
         }
 
         // Return success status
@@ -314,10 +399,23 @@ bool TrainSimulationClient::addContainersToTrain(
         params["containers"] = containersArray;
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "addContainersToTrain",
             params,
             {"containersAddedToTrain"});
+
+        // Log result of adding containers
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Containers added to train " + trainId,
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to add containers to " +
+                                       trainId,
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -343,10 +441,22 @@ bool TrainSimulationClient::unloadTrain(
         };
 
         // Send command and wait for response
-        return sendCommandAndWait(
+        bool success = sendCommandAndWait(
             "unloadContainersFromTrainAtCurrentTerminal",
             params,
             {"containersUnloaded"});
+
+        // Log result of unload operation
+        if (m_logger) {
+            if (success) {
+                m_logger->log("Train " + trainId + " unloaded",
+                              static_cast<int>(m_clientType));
+            } else {
+                m_logger->logError("Failed to unload train " + trainId,
+                                   static_cast<int>(m_clientType));
+            }
+        }
+        return success;
     });
 }
 
@@ -363,9 +473,16 @@ bool TrainSimulationClient::unloadTrainPrivate(
         QJsonArray::fromStringList(containersDestinationNames);
 
     // Send command without waiting
-    return sendCommand(
+    bool success = sendCommand(
         "unloadContainersFromTrainAtCurrentTerminal",
         params);
+
+    // Log result of private unload
+    if (m_logger && !success) {
+        m_logger->logError("Private unload failed for " + trainId,
+                           static_cast<int>(m_clientType));
+    }
+    return success;
 }
 
 QJsonObject TrainSimulationClient::getTrainState(
@@ -387,6 +504,12 @@ QJsonObject TrainSimulationClient::getTrainState(
         }
     }
 
+    // Log if train not found
+    if (m_logger) {
+        m_logger->log("Train " + trainId + " not found in " + networkName,
+                      static_cast<int>(m_clientType));
+    }
+
     // Return empty object if not found
     return QJsonObject();
 }
@@ -406,6 +529,9 @@ QJsonArray TrainSimulationClient::getAllNetworkTrainStates(
         for (const TrainState* state : m_trainState[networkName]) {
             states.append(state->toJson());
         }
+    } else if (m_logger) {
+        m_logger->log("No train states for network " + networkName,
+                      static_cast<int>(m_clientType));
     }
 
     // Return collected states
@@ -446,6 +572,10 @@ void TrainSimulationClient::processMessage(const QJsonObject& message)
 
     // Check if message contains an event
     if (!message.contains("event")) {
+        if (m_logger) {
+            m_logger->log("Received message without event",
+                          static_cast<int>(m_clientType));
+        }
         return;
     }
 
@@ -500,14 +630,24 @@ void TrainSimulationClient::onSimulationCreated(const QJsonObject& message)
     // Initialize new results for network
     m_networkData[network] = new SimulationResults();
 
-    // Log event for debugging
-    qDebug() << "Simulation created for network:" << network;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Simulation created for network: " + network,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation created for network:" << network;
+    }
 }
 
 void TrainSimulationClient::onSimulationEnded(const QJsonObject& message)
 {
-    // Log event for debugging
-    qDebug() << "Simulation ended";
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Simulation ended",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation ended";
+    }
 }
 
 void TrainSimulationClient::onTrainReachedDestination(const QJsonObject& message)
@@ -566,9 +706,15 @@ void TrainSimulationClient::onTrainReachedDestination(const QJsonObject& message
         }
     }
 
-    // Log event with train IDs
-    qDebug() << "Trains [" << trainIds.join(", ")
-             << "] reached destinations";
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Trains [" + trainIds.join(", ") +
+                          "] reached destinations",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Trains [" << trainIds.join(", ")
+        << "] reached destinations";
+    }
 }
 
 void TrainSimulationClient::onAllTrainsReachedDestination(
@@ -577,8 +723,13 @@ void TrainSimulationClient::onAllTrainsReachedDestination(
     // Extract network name from message
     QString network = message["networkName"].toString();
 
-    // Log event for debugging
-    qDebug() << "All trains reached destination in:" << network;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("All trains reached destination in: " + network,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "All trains reached destination in:" << network;
+    }
 }
 
 void TrainSimulationClient::onSimulationResultsAvailable(
@@ -597,9 +748,15 @@ void TrainSimulationClient::onSimulationResultsAvailable(
             SimulationResults::fromJson(it.value().toObject()));
     }
 
-    // Log event with network names
-    qDebug() << "Simulation results available for networks:"
-             << results.keys().join(", ");
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Simulation results available for: " +
+                          results.keys().join(", "),
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation results available for networks:"
+                 << results.keys().join(", ");
+    }
 }
 
 void TrainSimulationClient::onTrainsAddedToSimulator(
@@ -608,8 +765,13 @@ void TrainSimulationClient::onTrainsAddedToSimulator(
     // Extract network name from message
     QString network = message["networkNames"].toString();
 
-    // Log event for debugging
-    qDebug() << "Trains added to network:" << network;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Trains added to network: " + network,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Trains added to network:" << network;
+    }
 }
 
 void TrainSimulationClient::onErrorOccurred(const QJsonObject& message)
@@ -617,8 +779,13 @@ void TrainSimulationClient::onErrorOccurred(const QJsonObject& message)
     // Extract error message from JSON
     QString error = message["errorMessage"].toString();
 
-    // Log error for debugging
-    qCritical() << "Error occurred:" << error;
+    // Log error using logger if available
+    if (m_logger) {
+        m_logger->logError("Error occurred: " + error,
+                           static_cast<int>(m_clientType));
+    } else {
+        qCritical() << "Error occurred:" << error;
+    }
 }
 
 void TrainSimulationClient::onServerReset()
@@ -642,8 +809,13 @@ void TrainSimulationClient::onServerReset()
     qDeleteAll(m_loadedTrains);
     m_loadedTrains.clear();
 
-    // Log event for debugging
-    qDebug() << "Server reset successfully";
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Server reset successfully",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Server reset successfully";
+    }
 }
 
 void TrainSimulationClient::onSimulationAdvanced(const QJsonObject& message)
@@ -669,8 +841,14 @@ void TrainSimulationClient::onSimulationAdvanced(const QJsonObject& message)
         // ProgressBarManager::getInstance()->updateProgress(
         //     ClientType::TrainClient, average);
 
-        // Log event with network names
-        qDebug() << "Simulation advanced for:" << networks.join(", ");
+        // Log event using logger if available
+        if (m_logger) {
+            m_logger->log("Simulation advanced for: " +
+                              networks.join(", "),
+                          static_cast<int>(m_clientType));
+        } else {
+            qDebug() << "Simulation advanced for:" << networks.join(", ");
+        }
     }
 }
 
@@ -680,9 +858,15 @@ void TrainSimulationClient::onContainersAdded(const QJsonObject& message)
     QString network = message["networkName"].toString();
     QString trainId = message["trainID"].toString();
 
-    // Log event for debugging
-    qDebug() << "Containers added to train" << trainId
-             << "in" << network;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Containers added to train " + trainId +
+                          " in " + network,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Containers added to train" << trainId
+                 << "in" << network;
+    }
 }
 
 void TrainSimulationClient::onSimulationProgressUpdate(
@@ -694,6 +878,12 @@ void TrainSimulationClient::onSimulationProgressUpdate(
     // Update progress bar (placeholder)
     // ProgressBarManager::getInstance()->updateProgress(
     //     ClientType::TrainClient, progress);
+
+    // Log progress update if logger available
+    if (m_logger) {
+        m_logger->updateProgress(progress,
+                                 static_cast<int>(m_clientType));
+    }
 }
 
 void TrainSimulationClient::onSimulationPaused(const QJsonObject& message)
@@ -701,8 +891,13 @@ void TrainSimulationClient::onSimulationPaused(const QJsonObject& message)
     // Extract network names from message
     QJsonArray networks = message["networkNames"].toArray();
 
-    // Log event for debugging
-    qDebug() << "Simulation paused for:" << networks;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Simulation paused for networks",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation paused for:" << networks;
+    }
 }
 
 void TrainSimulationClient::onSimulationResumed(const QJsonObject& message)
@@ -710,8 +905,13 @@ void TrainSimulationClient::onSimulationResumed(const QJsonObject& message)
     // Extract network names from message
     QJsonArray networks = message["networkNames"].toArray();
 
-    // Log event for debugging
-    qDebug() << "Simulation resumed for:" << networks;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Simulation resumed for networks",
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Simulation resumed for:" << networks;
+    }
 }
 
 void TrainSimulationClient::onTrainReachedTerminal(const QJsonObject& message)
@@ -739,6 +939,13 @@ void TrainSimulationClient::onTrainReachedTerminal(const QJsonObject& message)
         //     }
         // }
     }
+
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Train " + trainId + " reached terminal " +
+                          terminalId,
+                      static_cast<int>(m_clientType));
+    }
 }
 
 void TrainSimulationClient::onContainersUnloaded(const QJsonObject& message)
@@ -765,8 +972,13 @@ void TrainSimulationClient::onContainersUnloaded(const QJsonObject& message)
     //         ->addContainersFromJson(containersJson, currentTime);
     // }
 
-    // Log event for debugging
-    qDebug() << "Containers unloaded at terminal:" << terminalId;
+    // Log event using logger if available
+    if (m_logger) {
+        m_logger->log("Containers unloaded at terminal: " + terminalId,
+                      static_cast<int>(m_clientType));
+    } else {
+        qDebug() << "Containers unloaded at terminal:" << terminalId;
+    }
 }
 
 } // namespace TrainClient
