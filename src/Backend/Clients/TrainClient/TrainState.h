@@ -1,9 +1,3 @@
-#pragma once
-
-#include <QJsonObject>
-#include <QMap>
-#include <QString>
-
 /**
  * @file TrainState.h
  * @brief Header for TrainState class
@@ -13,6 +7,13 @@
  * Declares the TrainState class, which represents the state of
  * a train in the CargoNetSim simulation backend.
  */
+
+#pragma once
+
+#include <QJsonObject>
+#include <QMap>
+#include <QString>
+
 
 namespace CargoNetSim {
 namespace Backend {
