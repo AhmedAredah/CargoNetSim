@@ -28,7 +28,6 @@
 #include "Widgets/PropertiesPanel.h"
 #include "Widgets/SettingsWidget.h"
 #include "Widgets/ShortestPathTable.h"
-#include "Widgets/SplashScreen.h"
 #include "Widgets/RegionManagerWidget.h"
 #include "Widgets/NetworkManagerDialog.h"
 
@@ -41,8 +40,6 @@
 #include "Items/ConnectionLabel.h"
 
 #include "Utils/IconCreator.h"
-#include "Utils/ColorUtils.h"
-#include "Utils/ApplicationLogger.h"
 
 #include "Controllers/ViewController.h"
 #include "Backend/Controllers/RegionDataController.h"
@@ -305,7 +302,8 @@ void MainWindow::setupLoggingTab() {
     QGridLayout* layout = new QGridLayout(loggingTab_);
     
     // Client names
-    clientNames_ << "ShipClient" << "TrainClient" << "TruckClient" << "PortClient" << "CargoNetSim";
+    clientNames_ << "ShipClient" << "TrainClient" << "TruckClient"
+                 << "TerminalClient" << "CargoNetSim";
     
     // Create 2x2 grid of logging widgets for first 4 clients
     for (int i = 0; i < 2; ++i) {

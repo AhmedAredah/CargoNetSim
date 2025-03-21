@@ -51,7 +51,7 @@ public:
         const QString& sendingRoutingKey = "default_key",
         const QStringList& receivingRoutingKeys =
         QStringList{"default_key"},
-        ClientType clientType = ClientType::PortClient);
+        ClientType clientType = ClientType::TerminalClient);
 
     /**
      * @brief Destructor
