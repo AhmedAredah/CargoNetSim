@@ -36,7 +36,6 @@ ShipSimulationClient::ShipSimulationClient(
           ClientType::ShipClient)
 {
     // Add progress bar placeholder
-    // In real code, you'd use your actual implementation
     // ProgressBarManager::getInstance()->addProgressBar(
     //     ClientType::ShipClient, "Ship Simulation", 100);
 
