@@ -33,7 +33,7 @@ public:
         ShipClient = 0,   /**< Maritime vessel client */
         TrainClient = 1,  /**< Railway transport client */
         TruckClient = 2,  /**< Road transport client */
-        PortClient = 3    /**< Port facility client */
+        TerminalClient = 3    /**< Port facility client */
     };
     Q_ENUM(Value)
 
@@ -64,7 +64,7 @@ public:
         case ShipClient: return QStringLiteral("ShipClient");
         case TrainClient: return QStringLiteral("TrainClient");
         case TruckClient: return QStringLiteral("TruckClient");
-        case PortClient: return QStringLiteral("PortClient");
+        case TerminalClient: return QStringLiteral("TerminalClient");
         default: return QStringLiteral("Unknown");
         }
     }
