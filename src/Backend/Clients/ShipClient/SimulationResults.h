@@ -17,6 +17,7 @@
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 /**
      * @brief Stores simulation results data
@@ -74,10 +75,11 @@ private:
     QString m_summaryFileName;
 };
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim
 
 
-Q_DECLARE_METATYPE(CargoNetSim::Backend::SimulationResults)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::SimulationResults*)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::SimulationResults)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::SimulationResults*)
 

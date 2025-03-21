@@ -15,6 +15,7 @@
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 SimulationSummaryData::SimulationSummaryData(
     const QList<SummaryPair>& summaryData)
@@ -140,5 +141,6 @@ QVariantMap SimulationSummaryData::info() const
     return m_parsedData;
 }
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim

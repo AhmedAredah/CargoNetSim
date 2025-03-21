@@ -16,6 +16,7 @@
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 ShipState::ShipState(const QJsonObject& shipData)
     : m_shipId(shipData.value("shipID").toString("Unknown")),
@@ -317,5 +318,6 @@ QString ShipState::closestPort() const
     return m_closestPort;
 }
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim

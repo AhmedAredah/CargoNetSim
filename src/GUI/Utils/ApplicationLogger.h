@@ -28,7 +28,8 @@ public:
      * @param isError Flag indicating if this is an error message
      * @param timestamp Message timestamp
      */
-    LogEntry(const QString& message, int clientIndex, bool isError, qint64 timestamp);
+    LogEntry(const QString& message, int clientIndex,
+             bool isError, qint64 timestamp);
     
     QString message;   ///< The log message text
     int clientIndex;   ///< The client that generated the message
@@ -170,23 +171,29 @@ private:
      * @param clientType Client type/index
      * @param isError Error flag
      */
-    static void logMessageInternal(const QString& message, int clientType, bool isError);
+    static void logMessageInternal(const QString& message,
+                                   int clientType,
+                                   bool isError);
 
     // Thread synchronization primitives
-    static QMutex s_logMutex;             ///< Mutex for log operations
-    static QMutex s_progressMutex;        ///< Mutex for progress operations
-    static QWaitCondition s_initCondition; ///< Condition for initialization waiting
-    static bool s_isInitialized;           ///< Initialization flag
+    static QMutex s_logMutex;         ///< Mutex for log operations
+    static QMutex s_progressMutex;    ///< Mutex for progress operations
+    static QWaitCondition
+        s_initCondition;              ///< Condition for initialization waiting
+    static bool s_isInitialized;      ///< Initialization flag
     
     // Queues for messages and progress updates
-    static QQueue<LogEntry> s_logQueue;   ///< Queue of pending log messages
-    static QQueue<QPair<float, int>> s_progressQueue; ///< Queue of pending progress updates
+    static QQueue<LogEntry>
+        s_logQueue;                   ///< Queue of pending log messages
+    static QQueue<QPair<float, int>>
+        s_progressQueue;              ///< Queue of pending progress updates
     
     // Log storage
-    QMap<int, QStringList> m_clientLogs;  ///< Logs organized by client
-    QMap<int, int> m_clientProgress;      ///< Current progress by client
+    QMap<int, QStringList>
+        m_clientLogs;                 ///< Logs organized by client
+    QMap<int, int> m_clientProgress;  ///< Current progress by client
     
-    bool m_isRunning;                     ///< Flag indicating if logger is running
+    bool m_isRunning;                 ///< Flag indicating if logger is running
     
     // Singleton instance
     static ApplicationLogger* s_instance;
@@ -197,7 +204,8 @@ private:
  */
 class LogEvent : public QEvent {
 public:
-    static const QEvent::Type LogEventType = static_cast<QEvent::Type>(QEvent::User + 1);
+    static const QEvent::Type LogEventType =
+        static_cast<QEvent::Type>(QEvent::User + 1);
     
     LogEvent(const LogEntry& entry);
     LogEntry entry;  ///< The log entry
@@ -208,7 +216,8 @@ public:
  */
 class ProgressEvent : public QEvent {
 public:
-    static const QEvent::Type ProgressEventType = static_cast<QEvent::Type>(QEvent::User + 2);
+    static const QEvent::Type ProgressEventType =
+        static_cast<QEvent::Type>(QEvent::User + 2);
     
     ProgressEvent(float value, int clientIndex);
     float value;        ///< Progress value

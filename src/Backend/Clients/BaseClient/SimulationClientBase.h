@@ -14,6 +14,7 @@
 #include <atomic>
 #include "Backend/Commons/ClientType.h"
 #include "Backend/Clients/BaseClient/RabbitMQHandler.h"
+#include "Backend/Commons/LoggerInterface.h"
 
 namespace CargoNetSim {
 namespace Backend {
@@ -74,6 +75,13 @@ public:
      *   or network clients.
      * - Configures any necessary thread-safe callbacks or event handlers.
      *
+     * @param logger Optional logger interface for logging messages
+     *              (default is nullptr).
+     *              If provided, it will be used for logging during
+     *              initialization.
+     *              If not provided, no logging will occur.
+     *              This allows for flexible logging options depending
+     *              on the client's needs.
      * @note This function is virtual and can be overridden by derived
      *       classes to add subclass-specific initialization logic.
      *       When overriding, it is recommended to call the base class
@@ -90,7 +98,7 @@ public:
      * @see SimulationClientBase::SimulationClientBase
      * @see QThread::started
      */
-    virtual void initializeClient();
+    virtual void initializeClient(LoggerInterface* logger = nullptr);
 
     /**
      * @brief Checks if client is connected to server
@@ -314,6 +322,9 @@ protected:
     QString m_responseQueue;
     QString m_sendingRoutingKey;
     QStringList m_receivingRoutingKeys;
+
+    // Logging interface
+    LoggerInterface* m_logger;
 
     // Command timeout constant
     static const int COMMAND_TIMEOUT_MS = 1800000; // 30 minutes
