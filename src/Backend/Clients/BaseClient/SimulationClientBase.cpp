@@ -153,8 +153,8 @@ QString SimulationClientBase::getClientTypeString() const
         return "TrainClient";
     case ClientType::TruckClient:
         return "TruckClient";
-    case ClientType::PortClient:
-        return "PortClient";
+    case ClientType::TerminalClient:
+        return "TerminalClient";
     default:
         return "UnknownClient";
     }
