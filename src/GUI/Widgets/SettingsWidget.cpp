@@ -65,24 +65,24 @@ void SettingsWidget::initUI() {
     containerLayout->setContentsMargins(10, 10, 10, 10);
     containerLayout->setSpacing(10);
 
-    // ----- Simulation Settings Group -----
-    simulationGroup = new QGroupBox(tr("Simulation"), this);
+    // --- Simulation Settings Group ---
+    simulationGroup = new QGroupBox(tr("Simulation"), container);
     QFormLayout* simLayout = new QFormLayout(simulationGroup);
-    
-    timeStepSpin = new QSpinBox(this);
+    simLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+    timeStepSpin = new QSpinBox(simulationGroup);
     timeStepSpin->setRange(1, 60);
     timeStepSpin->setValue(15);
     timeStepSpin->setSuffix(tr(" minutes"));
     simLayout->addRow(tr("Time Step:"), timeStepSpin);
 
-    timeValueOfMoneySpin = new QDoubleSpinBox(this);
+    timeValueOfMoneySpin = new QDoubleSpinBox(simulationGroup);
     timeValueOfMoneySpin->setRange(0, 20.0);
-    timeValueOfMoneySpin->setValue(45);
+    timeValueOfMoneySpin->setValue(4.5);
     timeValueOfMoneySpin->setSuffix(tr(" USD/h"));
     simLayout->addRow(tr("Time Value of Money:"), timeValueOfMoneySpin);
 
-    // Add shortest paths spinner
-    shortestPathsSpin = new QSpinBox(this);
+    shortestPathsSpin = new QSpinBox(simulationGroup);
     shortestPathsSpin->setRange(1, 10);
     shortestPathsSpin->setValue(3);
     shortestPathsSpin->setSuffix(tr(" paths"));
@@ -90,20 +90,20 @@ void SettingsWidget::initUI() {
 
     containerLayout->addWidget(simulationGroup);
 
-    // ----- Fuel Types Table -----
-    fuelTypesGroup = new QGroupBox(tr("Fuel Types"), this);
+    // --- Fuel Types Table ---
+    fuelTypesGroup = new QGroupBox(tr("Fuel Types"), container);
     QVBoxLayout* fuelTypesLayout = new QVBoxLayout(fuelTypesGroup);
 
     // Create table for fuel types
-    fuelTable = new QTableWidget(0, 5, this);  // 5 columns for fuel type, cost, energy, carbon, unit
+    fuelTable = new QTableWidget(0, 5);  // 5 columns for fuel type, cost, energy, carbon, unit
     fuelTable->setHorizontalHeaderLabels({
-        tr("Fuel Type"), 
-        tr("Cost (USD)"), 
-        tr("Energy Content (kWh)"), 
+        tr("Fuel Type"),
+        tr("Cost (USD)"),
+        tr("Energy Content (kWh)"),
         tr("Carbon Content (kg CO₂)"),
         tr("Unit")
     });
-    
+
     fuelTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     fuelTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     fuelTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
@@ -117,202 +117,204 @@ void SettingsWidget::initUI() {
     updateFuelTable();
 
     // Add "Add Fuel Type" button
-    QPushButton* addFuelButton = new QPushButton(tr("Add Fuel Type"), this);
+    QPushButton* addFuelButton = new QPushButton(tr("Add Fuel Type"), fuelTypesGroup);
     connect(addFuelButton, &QPushButton::clicked, this, &SettingsWidget::addFuelType);
 
     fuelTypesLayout->addWidget(fuelTable);
     fuelTypesLayout->addWidget(addFuelButton);
     containerLayout->addWidget(fuelTypesGroup);
 
-    // ----- Carbon Emissions Pricing Group -----
-    carbonGroup = new QGroupBox(tr("Carbon Emissions Pricing"), this);
+    // --- Carbon Emissions Pricing Group ---
+    carbonGroup = new QGroupBox(tr("Carbon Emissions Pricing"), container);
     QFormLayout* carbonLayout = new QFormLayout(carbonGroup);
-    
-    carbonRateSpin = new QDoubleSpinBox(this);
+    carbonLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+    carbonRateSpin = new QDoubleSpinBox(carbonGroup);
     carbonRateSpin->setRange(0, 1000);
     carbonRateSpin->setValue(65);
     carbonRateSpin->setSuffix(tr(" per CO₂ ton"));
     carbonLayout->addRow(tr("Rate:"), carbonRateSpin);
 
-    shipMultiplierSpin = new QDoubleSpinBox(this);
+    shipMultiplierSpin = new QDoubleSpinBox(carbonGroup);
     shipMultiplierSpin->setRange(0, 10);
     shipMultiplierSpin->setDecimals(2);
     shipMultiplierSpin->setValue(1.2);
     carbonLayout->addRow(tr("Ship Multiplier:"), shipMultiplierSpin);
 
-    truckMultiplierSpin = new QDoubleSpinBox(this);
+    truckMultiplierSpin = new QDoubleSpinBox(carbonGroup);
     truckMultiplierSpin->setRange(0, 10);
     truckMultiplierSpin->setDecimals(2);
     truckMultiplierSpin->setValue(1.1);
     carbonLayout->addRow(tr("Truck Multiplier:"), truckMultiplierSpin);
 
-    trainMultiplierSpin = new QDoubleSpinBox(this);
+    trainMultiplierSpin = new QDoubleSpinBox(carbonGroup);
     trainMultiplierSpin->setRange(0, 10);
     trainMultiplierSpin->setDecimals(2);
     trainMultiplierSpin->setValue(1.1);
     carbonLayout->addRow(tr("Train Multiplier:"), trainMultiplierSpin);
-    
+
     containerLayout->addWidget(carbonGroup);
 
-    // ----- Transportation Mode Parameters Group -----
-    transportGroup =
-        new QGroupBox(tr("Transportation Mode Parameters For Predictions"),
-                      this);
+    // --- Transportation Mode Parameters Group ---
+    transportGroup = new QGroupBox(tr("Transportation Mode Parameters For Predictions"), container);
     QVBoxLayout* transportLayout = new QVBoxLayout(transportGroup);
 
     // -- Ship Settings --
-    shipGroup = new QGroupBox(tr("Ship"), this);
+    shipGroup = new QGroupBox(tr("Ship"), transportGroup);
     QFormLayout* shipLayout = new QFormLayout(shipGroup);
-    
-    shipSpeedSpin = new QDoubleSpinBox(this);
+    shipLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+    shipSpeedSpin = new QDoubleSpinBox(shipGroup);
     shipSpeedSpin->setRange(0, 100);
     shipSpeedSpin->setValue(20);
     shipSpeedSpin->setSuffix(tr(" km/h"));
     shipLayout->addRow(tr("Average Speed:"), shipSpeedSpin);
 
     // Ship fuel type dropdown
-    shipFuelType = new QComboBox(this);
+    shipFuelType = new QComboBox(shipGroup);
     shipLayout->addRow(tr("Fuel Type:"), shipFuelType);
 
     // Ship fuel consumption
-    QHBoxLayout* shipFuelLayout = new QHBoxLayout(this);
-    shipFuelSpin = new QDoubleSpinBox(this);
+    QHBoxLayout* shipFuelLayout = new QHBoxLayout();
+    shipFuelSpin = new QDoubleSpinBox(shipGroup);
     shipFuelSpin->setRange(0, 600);
     shipFuelSpin->setValue(50);
     shipFuelSpin->setSuffix(tr(" L/km"));
     shipFuelLayout->addWidget(shipFuelSpin);
 
-    QToolButton* shipCalcButton = new QToolButton(this);
+    QToolButton* shipCalcButton = new QToolButton(shipGroup);
     shipCalcButton->setIcon(QIcon::fromTheme("settings", QIcon(":/icons/settings.png")));
     shipCalcButton->setToolTip(tr("Calculate energy from fuel consumption"));
-    connect(shipCalcButton, &QToolButton::clicked, [this]() { 
-        showEnergyCalculator("ship"); 
+    connect(shipCalcButton, &QToolButton::clicked, [this]() {
+        showEnergyCalculator("ship");
     });
     shipCalcButton->setMaximumWidth(30);
     shipFuelLayout->addWidget(shipCalcButton);
 
     shipLayout->addRow(tr("Fuel Consumption:"), shipFuelLayout);
 
-    shipContainers = new QSpinBox(this);
+    shipContainers = new QSpinBox(shipGroup);
     shipContainers->setRange(1, 10000000);
     shipContainers->setSingleStep(200);
     shipContainers->setValue(5000);
     shipLayout->addRow(tr("Average Number of Containers:"), shipContainers);
 
-    shipRiskSpin = new QDoubleSpinBox(this);
+    shipRiskSpin = new QDoubleSpinBox(shipGroup);
     shipRiskSpin->setRange(0, 1);
     shipRiskSpin->setDecimals(3);
     shipRiskSpin->setValue(0.025);
     shipLayout->addRow(tr("Risk Factor:"), shipRiskSpin);
-    
+
     transportLayout->addWidget(shipGroup);
 
     // -- Train Settings --
-    trainGroup = new QGroupBox(tr("Train"), this);
+    trainGroup = new QGroupBox(tr("Train"), transportGroup);
     QFormLayout* trainLayout = new QFormLayout(trainGroup);
+    trainLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
     // Speed settings with checkbox
-    QHBoxLayout* trainSpeedLayout = new QHBoxLayout(this);
-    trainSpeedSpin = new QDoubleSpinBox(this);
+    QHBoxLayout* trainSpeedLayout = new QHBoxLayout();
+    trainSpeedSpin = new QDoubleSpinBox(trainGroup);
     trainSpeedSpin->setRange(0, 200);
     trainSpeedSpin->setValue(40);
     trainSpeedSpin->setSuffix(tr(" km/h"));
     trainSpeedLayout->addWidget(trainSpeedSpin);
-    
-    trainUseNetwork = new QCheckBox(tr("Use Network"), this);
+
+    trainUseNetwork = new QCheckBox(tr("Use Network"), trainGroup);
     connect(trainUseNetwork, &QCheckBox::toggled, trainSpeedSpin, &QDoubleSpinBox::setDisabled);
     trainSpeedLayout->addWidget(trainUseNetwork);
-    
+
     trainLayout->addRow(tr("Average Speed:"), trainSpeedLayout);
 
     // Train fuel type dropdown
-    trainFuelType = new QComboBox(this);
+    trainFuelType = new QComboBox(trainGroup);
     trainLayout->addRow(tr("Fuel Type:"), trainFuelType);
 
     // Train fuel consumption
-    QHBoxLayout* trainFuelLayout = new QHBoxLayout(this);
-    trainFuelSpin = new QDoubleSpinBox();
+    QHBoxLayout* trainFuelLayout = new QHBoxLayout();
+    trainFuelSpin = new QDoubleSpinBox(trainGroup);
     trainFuelSpin->setRange(0, 600);
     trainFuelSpin->setValue(20);
     trainFuelSpin->setSuffix(tr(" L/km"));
     trainFuelLayout->addWidget(trainFuelSpin);
 
-    QToolButton* trainCalcButton = new QToolButton(this);
+    QToolButton* trainCalcButton = new QToolButton(trainGroup);
     trainCalcButton->setIcon(QIcon::fromTheme("settings", QIcon(":/icons/settings.png")));
     trainCalcButton->setToolTip(tr("Calculate energy from fuel consumption"));
-    connect(trainCalcButton, &QToolButton::clicked, [this]() { 
-        showEnergyCalculator("train"); 
+    connect(trainCalcButton, &QToolButton::clicked, [this]() {
+        showEnergyCalculator("train");
     });
     trainCalcButton->setMaximumWidth(30);
     trainFuelLayout->addWidget(trainCalcButton);
 
     trainLayout->addRow(tr("Fuel Consumption:"), trainFuelLayout);
 
-    trainContainers = new QSpinBox(this);
+    trainContainers = new QSpinBox(trainGroup);
     trainContainers->setRange(1, 10000000);
     trainContainers->setSingleStep(10);
     trainContainers->setValue(400);
     trainLayout->addRow(tr("Average Number of Containers:"), trainContainers);
 
-    trainRiskSpin = new QDoubleSpinBox(this);
+    trainRiskSpin = new QDoubleSpinBox(trainGroup);
     trainRiskSpin->setRange(0, 1);
     trainRiskSpin->setDecimals(3);
     trainRiskSpin->setValue(0.006);
     trainLayout->addRow(tr("Risk Factor:"), trainRiskSpin);
-    
+
     transportLayout->addWidget(trainGroup);
 
     // -- Truck Settings --
-    truckGroup = new QGroupBox(tr("Truck"), this);
+    truckGroup = new QGroupBox(tr("Truck"), transportGroup);
     QFormLayout* truckLayout = new QFormLayout(truckGroup);
-    
-    QHBoxLayout* truckSpeedLayout = new QHBoxLayout(this);
-    truckSpeedSpin = new QDoubleSpinBox(this);
+    truckLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+    QHBoxLayout* truckSpeedLayout = new QHBoxLayout();
+    truckSpeedSpin = new QDoubleSpinBox(truckGroup);
     truckSpeedSpin->setRange(0, 200);
     truckSpeedSpin->setValue(70);
     truckSpeedSpin->setSuffix(tr(" km/h"));
     truckSpeedLayout->addWidget(truckSpeedSpin);
-    
-    truckUseNetwork = new QCheckBox(tr("Use Network"), this);
+
+    truckUseNetwork = new QCheckBox(tr("Use Network"), truckGroup);
     connect(truckUseNetwork, &QCheckBox::toggled, truckSpeedSpin, &QDoubleSpinBox::setDisabled);
     truckSpeedLayout->addWidget(truckUseNetwork);
-    
+
     truckLayout->addRow(tr("Average Speed:"), truckSpeedLayout);
 
     // Truck fuel type dropdown
-    truckFuelType = new QComboBox(this);
+    truckFuelType = new QComboBox(truckGroup);
     truckLayout->addRow(tr("Fuel Type:"), truckFuelType);
 
     // Truck fuel consumption
-    QHBoxLayout* truckFuelLayout = new QHBoxLayout(this);
-    truckFuelSpin = new QDoubleSpinBox(this);
+    QHBoxLayout* truckFuelLayout = new QHBoxLayout();
+    truckFuelSpin = new QDoubleSpinBox(truckGroup);
     truckFuelSpin->setRange(0, 600);
     truckFuelSpin->setValue(15);
     truckFuelSpin->setSuffix(tr(" L/km"));
     truckFuelLayout->addWidget(truckFuelSpin);
 
-    QToolButton* truckCalcButton = new QToolButton(this);
+    QToolButton* truckCalcButton = new QToolButton(truckGroup);
     truckCalcButton->setIcon(QIcon::fromTheme("settings", QIcon(":/icons/settings.png")));
     truckCalcButton->setToolTip(tr("Calculate energy from fuel consumption"));
-    connect(truckCalcButton, &QToolButton::clicked, [this]() { 
-        showEnergyCalculator("truck"); 
+    connect(truckCalcButton, &QToolButton::clicked, [this]() {
+        showEnergyCalculator("truck");
     });
     truckCalcButton->setMaximumWidth(30);
     truckFuelLayout->addWidget(truckCalcButton);
 
     truckLayout->addRow(tr("Fuel Consumption:"), truckFuelLayout);
 
-    truckContainers = new QSpinBox(this);
+    truckContainers = new QSpinBox(truckGroup);
     truckContainers->setRange(1, 100);
     truckContainers->setValue(1);
     truckLayout->addRow(tr("Average Number of Containers:"), truckContainers);
 
-    truckRiskSpin = new QDoubleSpinBox(this);
+    truckRiskSpin = new QDoubleSpinBox(truckGroup);
     truckRiskSpin->setRange(0, 1);
     truckRiskSpin->setDecimals(3);
     truckRiskSpin->setValue(0.012);
     truckLayout->addRow(tr("Risk Factor:"), truckRiskSpin);
-    
+
     transportLayout->addWidget(truckGroup);
 
     containerLayout->addWidget(transportGroup);
@@ -324,7 +326,7 @@ void SettingsWidget::initUI() {
     containerLayout->addStretch();
 
     // Apply Settings Button inside the scrollable content
-    applyButton = new QPushButton(tr("Apply Settings"), this);
+    applyButton = new QPushButton(tr("Apply Settings"), container);
     connect(applyButton, &QPushButton::clicked, this, &SettingsWidget::applySettings);
     containerLayout->addWidget(applyButton);
 
@@ -336,9 +338,8 @@ void SettingsWidget::initUI() {
 }
 
 void SettingsWidget::updateFuelTable() {
-    fuelTable->setRowCount(fuelTypes.size());
+    fuelTable->setRowCount(fuelTypes.size());  // Set row count to match number of fuel types
 
-    // Update table with current fuel data
     int row = 0;
     for(auto it = fuelTypes.begin(); it != fuelTypes.end(); ++it, ++row) {
         const QString& fuelType = it.key();
@@ -349,21 +350,21 @@ void SettingsWidget::updateFuelTable() {
         fuelTable->setItem(row, 0, nameItem);
 
         // Cost
-        QDoubleSpinBox* costSpin = new QDoubleSpinBox(this);
+        QDoubleSpinBox* costSpin = new QDoubleSpinBox();
         costSpin->setRange(0, 10000);
         costSpin->setDecimals(2);
         costSpin->setValue(data["cost"].toDouble());
-        
+
         if (data["unit"].toString() == "kg") {
             costSpin->setSuffix(tr(" per ton"));
         } else {
             costSpin->setSuffix(tr(" per ") + data["unit"].toString());
         }
-        
+
         fuelTable->setCellWidget(row, 1, costSpin);
 
         // Calorific value
-        QDoubleSpinBox* calorificSpin = new QDoubleSpinBox(this);
+        QDoubleSpinBox* calorificSpin = new QDoubleSpinBox();
         calorificSpin->setRange(0, 100);
         calorificSpin->setDecimals(1);
         calorificSpin->setValue(data["calorific"].toDouble());
@@ -371,7 +372,7 @@ void SettingsWidget::updateFuelTable() {
         fuelTable->setCellWidget(row, 2, calorificSpin);
 
         // Carbon content
-        QDoubleSpinBox* carbonSpin = new QDoubleSpinBox(this);
+        QDoubleSpinBox* carbonSpin = new QDoubleSpinBox();
         carbonSpin->setRange(0, 10);
         carbonSpin->setDecimals(2);
         carbonSpin->setValue(data["carbon_content"].toDouble());
@@ -379,28 +380,28 @@ void SettingsWidget::updateFuelTable() {
         fuelTable->setCellWidget(row, 3, carbonSpin);
 
         // Unit
-        QComboBox* unitCombo = new QComboBox(this);
+        QComboBox* unitCombo = new QComboBox();
         unitCombo->addItems({"L", "kg"});
         unitCombo->setCurrentText(data["unit"].toString());
         fuelTable->setCellWidget(row, 4, unitCombo);
 
         // Connect signals to update fuel data when values change
-        connect(costSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+        connect(costSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [this, fuelType](double value) {
                     updateFuelData(fuelType, "cost", value);
                 });
 
-        connect(calorificSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+        connect(calorificSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [this, fuelType](double value) {
                     updateFuelData(fuelType, "calorific", value);
                 });
 
-        connect(carbonSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+        connect(carbonSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [this, fuelType](double value) {
                     updateFuelData(fuelType, "carbon_content", value);
                 });
 
-        connect(unitCombo, &QComboBox::currentTextChanged, 
+        connect(unitCombo, &QComboBox::currentTextChanged,
                 [this, fuelType](const QString& value) {
                     updateFuelData(fuelType, "unit", value);
                 });
@@ -861,6 +862,7 @@ SettingsWidget::createDwellTimeParameters(
     const QString& method, const QMap<QString, QVariant>& currentParams) {
 
     QFormLayout* paramLayout = new QFormLayout();
+    paramLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
     QMap<QString, QWidget*> paramFields;
 
     if (method == "gamma") {
@@ -992,8 +994,10 @@ void SettingsWidget::addNestedPropertiesSection(
         return;
     }
 
-    QGroupBox* group = new QGroupBox(tr(sectionName.toUtf8().constData()), this);
+    QGroupBox* group = new QGroupBox(tr(sectionName.toUtf8().constData()),
+                                     this);
     QFormLayout* layout = new QFormLayout(group);
+    layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
     // Define units and validators for different property types
     QMap<QString, QPair<QString, QValidator*>> propertyConfigs;
