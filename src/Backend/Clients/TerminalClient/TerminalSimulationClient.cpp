@@ -127,15 +127,17 @@ QJsonArray TerminalSimulationClient::findShortestPath(
  */
 bool TerminalSimulationClient::addContainers(
     const QString& terminalId,
-    const QList<QJsonObject>& containers,
+    QList<ContainerCore::Container *>& containers,
     double addTime)
 {
     return executeSerializedCommand([&]() {
         QJsonObject params;
         params["terminal_id"] = terminalId;
         QJsonArray containersArray;
-        for (const auto& container : containers) {
-            containersArray.append(container);
+        for (const auto* container : containers) {
+            if (container) {
+                containersArray.append(container->toJson());
+            }
         }
         params["containers"] = containersArray;
         if (addTime >= 0.0) {

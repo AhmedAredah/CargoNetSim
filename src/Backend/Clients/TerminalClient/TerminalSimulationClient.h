@@ -7,6 +7,7 @@
 #include <QMap>
 #include <QList>
 #include <QString>
+#include <containerLib/container.h>
 #include "Backend/Models/Terminal.h"
 #include "Backend/Models/Route.h"
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
@@ -93,13 +94,13 @@ public:
     /**
      * @brief Add containers to a terminal
      * @param terminalId Terminal ID
-     * @param containers List of container JSON objects
+     * @param containers Reference to list of Container pointers
      * @param addTime Time of addition (optional)
      * @return True if successful
      */
     bool addContainers(
         const QString& terminalId,
-        const QList<QJsonObject>& containers,
+        QList<ContainerCore::Container *>& containers,
         double addTime = -1.0);
 
     /**
