@@ -16,6 +16,7 @@
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 SimulationResults::SimulationResults()
     : m_summaryData(QList<QPair<QString, QString>>()),
@@ -106,5 +107,6 @@ QString SimulationResults::summaryFileName() const
     return m_summaryFileName;
 }
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim

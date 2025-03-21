@@ -15,19 +15,21 @@
 #include "Backend/Clients/ShipClient/SimulationResults.h"
 #include "Backend/Clients/ShipClient/ShipState.h"
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
+#include "Backend/Models/ShipSystem.h"
 
 // Forward declarations
 namespace CargoNetSim {
 namespace Backend {
-class Ship;
+namespace ShipClient {
 class TerminalGraphServer;
 class SimulatorTimeServer;
 class ProgressBarManager;
 class ApplicationLogger;
-}}
+}}}
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 /**
  * @brief Client for interacting with the ship simulator
@@ -340,12 +342,13 @@ private:
     mutable QMutex m_dataAccessMutex;
     QMap<QString, QList<SimulationResults*>> m_networkData;
     QMap<QString, QList<ShipState*>> m_shipState;
-    QMap<QString, Ship*> m_loadedShips;
+    QMap<QString, Backend::Ship*> m_loadedShips;
     QMap<QString, QStringList> m_shipsDestinationTerminals;
 };
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim
 
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipSimulationClient)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipSimulationClient*)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipSimulationClient)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipSimulationClient*)

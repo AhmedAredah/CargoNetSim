@@ -18,6 +18,7 @@
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 /**
  * @brief Represents the state of a ship in the simulation
@@ -101,9 +102,10 @@ private:
     double m_waveAngularFrequency;
 };
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim
 
 // Declare metatypes
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipState)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipState*)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipState)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipState*)

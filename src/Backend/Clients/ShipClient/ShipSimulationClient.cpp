@@ -16,6 +16,7 @@
 
 namespace CargoNetSim {
 namespace Backend {
+namespace ShipClient {
 
 /**
  * Constructor initializes the ship client
@@ -113,13 +114,13 @@ bool ShipSimulationClient::defineSimulator(
         try {
             // Prepare ship data
             QJsonArray shipsArray;
-            QList<Ship*> shipObjects;
+            QList<Backend::Ship*> shipObjects;
 
             // Convert ship data to JSON
             try {
                 for (const QJsonObject& shipData : ships) {
                     // Create Ship objects
-                    Ship* ship = new Ship(shipData);
+                    Backend::Ship* ship = new Backend::Ship(shipData);
                     shipObjects.append(ship);
 
                     // Use ship's toJson method to get JSON representation
@@ -151,7 +152,7 @@ bool ShipSimulationClient::defineSimulator(
                 QMutexLocker locker(&m_dataAccessMutex);
 
                 // Store ship objects
-                for (Ship* ship : shipObjects) {
+                for (Backend::Ship* ship : shipObjects) {
                     m_loadedShips[ship->getUserId()] = ship;
 
                     QStringList terminals =
@@ -837,5 +838,6 @@ void ShipSimulationClient::onContainersAdded(
              << "on network" << network;
 }
 
+} // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim
