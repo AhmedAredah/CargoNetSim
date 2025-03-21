@@ -1,10 +1,3 @@
-#pragma once
-
-#include <QMap>
-#include <QString>
-#include <QVariant>
-#include <QVector>
-
 /**
  * @file SimulationSummaryData.h
  * @brief Header file for the SimulationSummaryData class
@@ -16,6 +9,13 @@
  * backend. It provides a hierarchical structure for categories and
  * subcategories, parsed from a list of text-value pairs.
  */
+
+#pragma once
+
+#include <QMap>
+#include <QString>
+#include <QVariant>
+#include <QVector>
 
 namespace CargoNetSim {
 namespace Backend {
