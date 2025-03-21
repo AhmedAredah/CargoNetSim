@@ -50,14 +50,20 @@ set(Backend_SOURCES
     # ShipClient
     Clients/ShipClient/ShipState.h
     Clients/ShipClient/ShipState.cpp
-    Clients/ShipClient/ShipSimulationClient.h
-    Clients/ShipClient/ShipSimulationClient.cpp
     Clients/ShipClient/SimulationResults.h
     Clients/ShipClient/SimulationResults.cpp
     Clients/ShipClient/SimulationSummaryData.h
     Clients/ShipClient/SimulationSummaryData.cpp
+    Clients/ShipClient/ShipSimulationClient.h
+    Clients/ShipClient/ShipSimulationClient.cpp
 
     # TrainClient
+    Clients/TrainClient/TrainState.h
+    Clients/TrainClient/TrainState.cpp
+    Clients/TrainClient/SimulationResults.h
+    Clients/TrainClient/SimulationResults.cpp
+    Clients/TrainClient/SimulationSummaryData.h
+    Clients/TrainClient/SimulationSummaryData.cpp
     Clients/TrainClient/TrainSimulationClient.h
     Clients/TrainClient/TrainSimulationClient.cpp
 
