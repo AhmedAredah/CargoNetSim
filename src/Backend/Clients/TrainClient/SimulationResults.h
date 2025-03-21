@@ -1,10 +1,3 @@
-#pragma once
-
-#include <QByteArray>
-#include <QJsonObject>
-#include <QString>
-#include "SimulationSummaryData.h"
-
 /**
  * @file SimulationResults.h
  * @brief Header for SimulationResults class
@@ -15,6 +8,13 @@
  * results including summary data, trajectory files, and metadata
  * in the CargoNetSim backend.
  */
+
+#pragma once
+
+#include <QByteArray>
+#include <QJsonObject>
+#include <QString>
+#include "SimulationSummaryData.h"
 
 namespace CargoNetSim {
 namespace Backend {
