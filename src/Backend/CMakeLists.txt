@@ -22,11 +22,12 @@ set(Backend_SOURCES
     Models/TrainNetwork.cpp
     Models/TruckNetwork.h
     Models/TruckNetwork.cpp
-
     Models/Terminal.h
     Models/Terminal.cpp
-    Models/Route.h
-    Models/Route.cpp
+    Models/PathSegment.h
+    Models/PathSegment.cpp
+    Models/Path.h
+    Models/Path.cpp
 
     # Controllers
     Controllers/VehicleController.h
