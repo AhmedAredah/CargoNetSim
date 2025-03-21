@@ -22,6 +22,11 @@ set(Backend_SOURCES
     Models/TruckNetwork.h
     Models/TruckNetwork.cpp
 
+    Models/Terminal.h
+    Models/Terminal.cpp
+    Models/Route.h
+    Models/Route.cpp
+
     # Controllers
     Controllers/VehicleController.h
     Controllers/VehicleController.cpp
@@ -38,6 +43,10 @@ set(Backend_SOURCES
     Clients/BaseClient/SimulationClientBase.h
     Clients/BaseClient/SimulationClientBase.cpp
 
+    # TerminalClient
+    Clients/TerminalClient/TerminalSimulationClient.h
+    Clients/TerminalClient/TerminalSimulationClient.cpp
+
     # ShipClient
     Clients/ShipClient/ShipState.h
     Clients/ShipClient/ShipState.cpp
@@ -47,6 +56,15 @@ set(Backend_SOURCES
     Clients/ShipClient/SimulationResults.cpp
     Clients/ShipClient/SimulationSummaryData.h
     Clients/ShipClient/SimulationSummaryData.cpp
+
+    # TrainClient
+    Clients/TrainClient/TrainSimulationClient.h
+    Clients/TrainClient/TrainSimulationClient.cpp
+
+
+    # TruckClient
+    Clients/TruckClient/TruckSimulationClient.h
+    Clients/TruckClient/TruckSimulationClient.cpp
 
 
 
