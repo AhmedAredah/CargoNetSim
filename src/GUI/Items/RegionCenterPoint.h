@@ -1,21 +1,23 @@
 #pragma once
 
-#include <QGraphicsObject>
 #include <QColor>
+#include <QGraphicsObject>
 #include <QMap>
-#include <QVariant>
 #include <QPointF>
+#include <QVariant>
 
 namespace CargoNetSim {
 namespace GUI {
 
 /**
  * @class RegionCenterPoint
- * @brief A visual representation of a region's center point in the scene.
- * 
- * RegionCenterPoint provides a visual indicator of a region's center and holds the
- * region's metadata, including geographic coordinates and shared coordinates that
- * are used for global map positioning.
+ * @brief A visual representation of a region's center point
+ * in the scene.
+ *
+ * RegionCenterPoint provides a visual indicator of a
+ * region's center and holds the region's metadata,
+ * including geographic coordinates and shared coordinates
+ * that are used for global map positioning.
  */
 class RegionCenterPoint : public QGraphicsObject {
     Q_OBJECT
@@ -29,11 +31,11 @@ public:
      * @param parent Optional parent QGraphicsItem
      */
     RegionCenterPoint(
-        const QColor& color,
-        const QMap<QString, QVariant>& properties = QMap<QString, QVariant>(),
-        QGraphicsItem* parent = nullptr
-    );
-    
+        const QColor                  &color,
+        const QMap<QString, QVariant> &properties =
+            QMap<QString, QVariant>(),
+        QGraphicsItem *parent = nullptr);
+
     /**
      * @brief Destructor
      */
@@ -47,7 +49,8 @@ public:
     void updateCoordinates(double lat, double lon);
 
     /**
-     * @brief Updates the region's shared coordinates for global mapping.
+     * @brief Updates the region's shared coordinates for
+     * global mapping.
      * @param lat New shared latitude
      * @param lon New shared longitude
      */
@@ -57,46 +60,54 @@ public:
      * @brief Sets the region's color.
      * @param color New color for the region
      */
-    void setColor(const QColor& color);
+    void setColor(const QColor &color);
 
     /**
      * @brief set new properties
-     * @param newProperties is the QMap of the new properties
+     * @param newProperties is the QMap of the new
+     * properties
      */
-    void updateProperties(const QMap<QString, QVariant>& newProperties);
+    void updateProperties(
+        const QMap<QString, QVariant> &newProperties);
 
     /**
      * @brief get properties
-     * @return QMap<QString, QVariant> of the item properties
+     * @return QMap<QString, QVariant> of the item
+     * properties
      */
-    QMap<QString, QVariant> getProperties() const { return properties; }
-
+    QMap<QString, QVariant> getProperties() const {
+        return properties;
+    }
 
     /**
-     * @brief Converts the object to a serializable dictionary.
+     * @brief Converts the object to a serializable
+     * dictionary.
      * @return Dictionary containing all serializable data
      */
     QMap<QString, QVariant> toDict() const;
 
     /**
-     * @brief Creates a RegionCenterPoint from dictionary data.
-     * @param data Dictionary containing region center point data
+     * @brief Creates a RegionCenterPoint from dictionary
+     * data.
+     * @param data Dictionary containing region center point
+     * data
      * @return New RegionCenterPoint instance
      */
-    static RegionCenterPoint* fromDict(const QMap<QString, QVariant>& data);
+    static RegionCenterPoint *
+    fromDict(const QMap<QString, QVariant> &data);
 
 signals:
     /**
      * @brief Signal emitted when the item is clicked.
      * @param item Pointer to this RegionCenterPoint
      */
-    void clicked(RegionCenterPoint* item);
+    void clicked(RegionCenterPoint *item);
 
     /**
      * @brief Signal emitted when the position changes.
      * @param newPos New position in scene coordinates
      */
-    void positionChanged(const QPointF& newPos);
+    void positionChanged(const QPointF &newPos);
 
     /**
      * @brief Signal emitted when the coordinates change.
@@ -106,7 +117,8 @@ signals:
     void coordinatesChanged(double lat, double lon);
 
     /**
-     * @brief Signal emitted when the shared coordinates change.
+     * @brief Signal emitted when the shared coordinates
+     * change.
      * @param lat New shared latitude
      * @param lon New shared longitude
      */
@@ -116,14 +128,15 @@ signals:
      * @brief Signal emitted when the region color changes.
      * @param newColor The new color
      */
-    void colorChanged(const QColor& newColor);
+    void colorChanged(const QColor &newColor);
 
     /**
      * @brief Signal emitted when any property changes.
      * @param key Property key
      * @param value New property value
      */
-    void propertyChanged(const QString& key, const QVariant& value);
+    void propertyChanged(const QString  &key,
+                         const QVariant &value);
 
     /**
      * @brief Signal emitted when all properties change.
@@ -133,11 +146,17 @@ signals:
 protected:
     // QGraphicsItem overrides
     QRectF boundingRect() const override;
-    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
-    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
-    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
-    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
+    void   paint(QPainter                       *painter,
+                 const QStyleOptionGraphicsItem *option,
+                 QWidget *widget = nullptr) override;
+    void   mousePressEvent(
+          QGraphicsSceneMouseEvent *event) override;
+    QVariant itemChange(GraphicsItemChange change,
+                        const QVariant    &value) override;
+    void     hoverEnterEvent(
+            QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(
+        QGraphicsSceneHoverEvent *event) override;
 
 private:
     /**
@@ -146,9 +165,9 @@ private:
      */
     void updateCoordinatesFromPosition();
 
-    QColor color;
+    QColor                  color;
     QMap<QString, QVariant> properties;
-    QPointF dragOffset;
+    QPointF                 dragOffset;
 };
 
 } // namespace GUI
@@ -156,4 +175,4 @@ private:
 
 // Register the type for QVariant
 Q_DECLARE_METATYPE(CargoNetSim::GUI::RegionCenterPoint)
-Q_DECLARE_METATYPE(CargoNetSim::GUI::RegionCenterPoint*)
+Q_DECLARE_METATYPE(CargoNetSim::GUI::RegionCenterPoint *)

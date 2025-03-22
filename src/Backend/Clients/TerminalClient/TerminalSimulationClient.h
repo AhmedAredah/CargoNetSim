@@ -2,31 +2,33 @@
 
 /**
  * @file TerminalSimulationClient.h
- * @brief Defines TerminalSimulationClient for server interaction
- * @author [Your Name]
+ * @brief Defines TerminalSimulationClient for server
+ * interaction
+ * @author Ahmed Aredah
  * @date March 21, 2025
  *
- * This file declares the TerminalSimulationClient class, which
- * provides an interface to the TerminalSim server via RabbitMQ
- * for managing terminals, path segments, and containers in the
- * CargoNetSim simulation framework.
+ * This file declares the TerminalSimulationClient class,
+ * which provides an interface to the TerminalSim server via
+ * RabbitMQ for managing terminals, path segments, and
+ * containers in the CargoNetSim simulation framework.
  *
  * @note Requires Qt framework and RabbitMQ connectivity.
- * @warning Manages pointers; caller must handle memory cleanup.
+ * @warning Manages pointers; caller must handle memory
+ * cleanup.
  */
 
-#include <QObject>
-#include <QMutex>
-#include <QJsonObject>
+#include "Backend/Clients/BaseClient/SimulationClientBase.h"
+#include "Backend/Models/Path.h"
+#include "Backend/Models/PathSegment.h"
+#include "Backend/Models/Terminal.h"
 #include <QJsonArray>
-#include <QMap>
+#include <QJsonObject>
 #include <QList>
+#include <QMap>
+#include <QMutex>
+#include <QObject>
 #include <QString>
 #include <containerLib/container.h>
-#include "Backend/Models/Terminal.h"
-#include "Backend/Clients/BaseClient/SimulationClientBase.h"
-#include "Backend/Models/PathSegment.h"
-#include "Backend/Models/Path.h"
 
 namespace CargoNetSim {
 namespace Backend {
@@ -35,14 +37,18 @@ namespace Backend {
  * @class TerminalSimulationClient
  * @brief Client for interacting with TerminalSim server
  *
- * This class extends SimulationClientBase to manage terminal
- * simulation operations, including terminal management, route
- * addition, path finding, and container handling via RabbitMQ.
+ * This class extends SimulationClientBase to manage
+ * terminal simulation operations, including terminal
+ * management, route addition, path finding, and container
+ * handling via RabbitMQ.
  *
- * @note Uses raw pointers for flexibility; ownership varies.
- * @warning Thread-safe via mutex; ensure proper pointer management.
+ * @note Uses raw pointers for flexibility; ownership
+ * varies.
+ * @warning Thread-safe via mutex; ensure proper pointer
+ * management.
  */
-class TerminalSimulationClient : public SimulationClientBase {
+class TerminalSimulationClient
+    : public SimulationClientBase {
     Q_OBJECT
 
 public:
@@ -55,9 +61,8 @@ public:
      * Initializes the client with connection parameters.
      */
     explicit TerminalSimulationClient(
-        QObject* parent = nullptr,
-        const QString& host = "localhost",
-        int port = 5672);
+        QObject       *parent = nullptr,
+        const QString &host = "localhost", int port = 5672);
 
     /**
      * @brief Destroys the client, freeing owned resources
@@ -80,9 +85,11 @@ public:
      * @param logger Optional logger, defaults to nullptr
      * @throws std::runtime_error If initialization fails
      *
-     * Sets up thread-specific resources and RabbitMQ heartbeat.
+     * Sets up thread-specific resources and RabbitMQ
+     * heartbeat.
      */
-    void initializeClient(LoggerInterface* logger = nullptr) override;
+    void initializeClient(
+        LoggerInterface *logger = nullptr) override;
 
     // Terminal Management
     /**
@@ -92,7 +99,7 @@ public:
      *
      * Sends terminal data for server-side addition.
      */
-    bool addTerminal(const Terminal* terminal);
+    bool addTerminal(const Terminal *terminal);
 
     /**
      * @brief Adds an alias to a terminal
@@ -102,7 +109,8 @@ public:
      *
      * Associates an additional ID with a terminal.
      */
-    bool addTerminalAlias(const QString& terminalId, const QString& alias);
+    bool addTerminalAlias(const QString &terminalId,
+                          const QString &alias);
 
     /**
      * @brief Retrieves aliases for a terminal
@@ -111,7 +119,8 @@ public:
      *
      * Fetches all aliases linked to a terminal.
      */
-    QStringList getTerminalAliases(const QString& terminalId);
+    QStringList
+    getTerminalAliases(const QString &terminalId);
 
     /**
      * @brief Removes a terminal from the server
@@ -120,7 +129,7 @@ public:
      *
      * Deletes a terminal and its data from the server.
      */
-    bool removeTerminal(const QString& terminalId);
+    bool removeTerminal(const QString &terminalId);
 
     /**
      * @brief Gets the total terminal count
@@ -138,7 +147,7 @@ public:
      *
      * Fetches and returns terminal status as an object.
      */
-    Terminal* getTerminalStatus(const QString& terminalId);
+    Terminal *getTerminalStatus(const QString &terminalId);
 
     // Route Management
     /**
@@ -148,7 +157,7 @@ public:
      *
      * Sends a route segment for server-side addition.
      */
-    bool addRoute(const PathSegment* route);
+    bool addRoute(const PathSegment *route);
 
     /**
      * @brief Updates route weight attributes
@@ -160,11 +169,9 @@ public:
      *
      * Modifies weight attributes of an existing route.
      */
-    bool changeRouteWeight(
-        const QString& start,
-        const QString& end,
-        int mode,
-        const QJsonObject& attributes);
+    bool changeRouteWeight(const QString &start,
+                           const QString &end, int mode,
+                           const QJsonObject &attributes);
 
     // Auto-connection
     /**
@@ -182,7 +189,8 @@ public:
      *
      * Links terminals within a region by mode.
      */
-    bool connectTerminalsInRegionByMode(const QString& region);
+    bool
+    connectTerminalsInRegionByMode(const QString &region);
 
     /**
      * @brief Connects regions by transportation mode
@@ -204,10 +212,9 @@ public:
      *
      * Computes the shortest path using the given mode.
      */
-    QList<PathSegment*> findShortestPath(
-        const QString& start,
-        const QString& end,
-        int mode);
+    QList<PathSegment *>
+    findShortestPath(const QString &start,
+                     const QString &end, int mode);
 
     /**
      * @brief Finds top N shortest paths
@@ -221,12 +228,10 @@ public:
      *
      * Retrieves the top N shortest paths.
      */
-    QList<Path*> findTopPaths(
-        const QString& start,
-        const QString& end,
-        int n,
-        int mode,
-        bool skipDelays = true);
+    QList<Path *> findTopPaths(const QString &start,
+                               const QString &end, int n,
+                               int  mode,
+                               bool skipDelays = true);
 
     // Container Management
     /**
@@ -238,10 +243,10 @@ public:
      *
      * Adds a single container to the specified terminal.
      */
-    bool addContainer(
-        const QString& terminalId,
-        const ContainerCore::Container* container,
-        double addTime = -1.0);
+    bool
+    addContainer(const QString                  &terminalId,
+                 const ContainerCore::Container *container,
+                 double addTime = -1.0);
 
     /**
      * @brief Adds multiple containers to a terminal
@@ -253,9 +258,9 @@ public:
      * Adds multiple containers to the terminal.
      */
     bool addContainers(
-        const QString& terminalId,
-        QList<ContainerCore::Container*>& containers,
-        double addTime = -1.0);
+        const QString                     &terminalId,
+        QList<ContainerCore::Container *> &containers,
+        double                             addTime = -1.0);
 
     /**
      * @brief Adds containers from JSON data
@@ -266,10 +271,9 @@ public:
      *
      * Parses and adds containers from JSON.
      */
-    bool addContainersFromJson(
-        const QString& terminalId,
-        const QString& json,
-        double addTime = -1.0);
+    bool addContainersFromJson(const QString &terminalId,
+                               const QString &json,
+                               double addTime = -1.0);
 
     /**
      * @brief Gets containers by departing time
@@ -281,10 +285,10 @@ public:
      *
      * Fetches containers based on departure time.
      */
-    QList<ContainerCore::Container*> getContainersByDepartingTime(
-        const QString& terminalId,
-        double time,
-        const QString& condition);
+    QList<ContainerCore::Container *>
+    getContainersByDepartingTime(const QString &terminalId,
+                                 double         time,
+                                 const QString &condition);
 
     /**
      * @brief Gets containers by added time
@@ -296,10 +300,10 @@ public:
      *
      * Fetches containers based on addition time.
      */
-    QList<ContainerCore::Container*> getContainersByAddedTime(
-        const QString& terminalId,
-        double time,
-        const QString& condition);
+    QList<ContainerCore::Container *>
+    getContainersByAddedTime(const QString &terminalId,
+                             double         time,
+                             const QString &condition);
 
     /**
      * @brief Gets containers by next destination
@@ -310,9 +314,10 @@ public:
      *
      * Fetches containers headed to a destination.
      */
-    QList<ContainerCore::Container*> getContainersByNextDestination(
-        const QString& terminalId,
-        const QString& destination);
+    QList<ContainerCore::Container *>
+    getContainersByNextDestination(
+        const QString &terminalId,
+        const QString &destination);
 
     /**
      * @brief Dequeues containers by destination
@@ -323,9 +328,10 @@ public:
      *
      * Removes and returns containers for a destination.
      */
-    QList<ContainerCore::Container*> dequeueContainersByNextDestination(
-        const QString& terminalId,
-        const QString& destination);
+    QList<ContainerCore::Container *>
+    dequeueContainersByNextDestination(
+        const QString &terminalId,
+        const QString &destination);
 
     /**
      * @brief Gets container count for a terminal
@@ -334,7 +340,7 @@ public:
      *
      * Retrieves the current container count.
      */
-    int getContainerCount(const QString& terminalId);
+    int getContainerCount(const QString &terminalId);
 
     /**
      * @brief Gets available capacity of a terminal
@@ -343,7 +349,7 @@ public:
      *
      * Retrieves the remaining capacity.
      */
-    double getAvailableCapacity(const QString& terminalId);
+    double getAvailableCapacity(const QString &terminalId);
 
     /**
      * @brief Gets maximum capacity of a terminal
@@ -352,7 +358,7 @@ public:
      *
      * Retrieves the total capacity.
      */
-    double getMaxCapacity(const QString& terminalId);
+    double getMaxCapacity(const QString &terminalId);
 
     /**
      * @brief Clears containers from a terminal
@@ -361,7 +367,7 @@ public:
      *
      * Removes all containers from the terminal.
      */
-    bool clearTerminal(const QString& terminalId);
+    bool clearTerminal(const QString &terminalId);
 
     // Serialization and Diagnostics
     /**
@@ -379,7 +385,7 @@ public:
      *
      * Restores server state from graph data.
      */
-    bool deserializeGraph(const QJsonObject& graphData);
+    bool deserializeGraph(const QJsonObject &graphData);
 
     /**
      * @brief Pings the server for connectivity
@@ -388,7 +394,7 @@ public:
      *
      * Tests server responsiveness with an optional echo.
      */
-    QJsonObject ping(const QString& echo = "");
+    QJsonObject ping(const QString &echo = "");
 
 protected:
     /**
@@ -397,68 +403,69 @@ protected:
      *
      * Handles server responses and updates local state.
      */
-    void processMessage(const QJsonObject& message) override;
+    void
+    processMessage(const QJsonObject &message) override;
 
 private:
     /**
      * @brief Handles terminal added event
      * @param message Event data from server
      */
-    void onTerminalAdded(const QJsonObject& message);
+    void onTerminalAdded(const QJsonObject &message);
 
     /**
      * @brief Handles route added event
      * @param message Event data from server
      */
-    void onRouteAdded(const QJsonObject& message);
+    void onRouteAdded(const QJsonObject &message);
 
     /**
      * @brief Handles path found event
      * @param message Event data from server
      */
-    void onPathFound(const QJsonObject& message);
+    void onPathFound(const QJsonObject &message);
 
     /**
      * @brief Handles containers added event
      * @param message Event data from server
      */
-    void onContainersAdded(const QJsonObject& message);
+    void onContainersAdded(const QJsonObject &message);
 
     /**
      * @brief Handles server reset event
      * @param message Event data from server
      */
-    void onServerReset(const QJsonObject& message);
+    void onServerReset(const QJsonObject &message);
 
     /**
      * @brief Handles error occurrence event
      * @param message Event data from server
      */
-    void onErrorOccurred(const QJsonObject& message);
+    void onErrorOccurred(const QJsonObject &message);
 
     /**
      * @brief Handles terminal removed event
      * @param message Event data from server
      */
-    void onTerminalRemoved(const QJsonObject& message);
+    void onTerminalRemoved(const QJsonObject &message);
 
     /**
      * @brief Handles terminal count event
      * @param message Event data from server
      */
-    void onTerminalCount(const QJsonObject& message);
+    void onTerminalCount(const QJsonObject &message);
 
     /**
      * @brief Handles containers fetched event
      * @param message Event data from server
      */
-    void onContainersFetched(const QJsonObject& message);
+    void onContainersFetched(const QJsonObject &message);
 
     /**
      * @brief Handles capacity fetched event
      * @param message Event data from server
      */
-    void onCapacityFetched(const QJsonObject& message);
+    void onCapacityFetched(const QJsonObject &message);
 
     /**
      * @brief Mutex for thread-safe data access
@@ -468,7 +475,7 @@ private:
     /**
      * @brief Map of terminal IDs to Terminal pointers
      */
-    QMap<QString, Terminal*> m_terminalStatus;
+    QMap<QString, Terminal *> m_terminalStatus;
 
     /**
      * @brief Map of terminal aliasses
@@ -478,17 +485,18 @@ private:
     /**
      * @brief Map of path keys to PathSegment lists
      */
-    QMap<QString, QList<PathSegment*>> m_shortestPaths;
+    QMap<QString, QList<PathSegment *>> m_shortestPaths;
 
     /**
      * @brief Map of path keys to Path lists
      */
-    QMap<QString, QList<Path*>> m_topPaths;
+    QMap<QString, QList<Path *>> m_topPaths;
 
     /**
      * @brief Map of terminal IDs to container lists
      */
-    QMap<QString, QList<ContainerCore::Container*>> m_containers;
+    QMap<QString, QList<ContainerCore::Container *>>
+        m_containers;
 
     /**
      * @brief Map of terminal IDs to capacity values
@@ -517,9 +525,11 @@ private:
 /**
  * @brief Declares metatype for TerminalSimulationClient
  */
-Q_DECLARE_METATYPE(CargoNetSim::Backend::TerminalSimulationClient)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::TerminalSimulationClient)
 
 /**
  * @brief Declares metatype for pointer to client
  */
-Q_DECLARE_METATYPE(CargoNetSim::Backend::TerminalSimulationClient*)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::TerminalSimulationClient *)

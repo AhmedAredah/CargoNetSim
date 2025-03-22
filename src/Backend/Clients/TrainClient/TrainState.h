@@ -4,8 +4,8 @@
  * @author Ahmed Aredah
  * @date March 20, 2025
  *
- * Declares the TrainState class, which represents the state of
- * a train in the CargoNetSim simulation backend.
+ * Declares the TrainState class, which represents the state
+ * of a train in the CargoNetSim simulation backend.
  */
 
 #pragma once
@@ -13,7 +13,6 @@
 #include <QJsonObject>
 #include <QMap>
 #include <QString>
-
 
 namespace CargoNetSim {
 namespace Backend {
@@ -36,7 +35,7 @@ public:
      * Initializes a TrainState object from a JSON object
      * containing train metrics and states.
      */
-    explicit TrainState(const QJsonObject& trainData = {});
+    explicit TrainState(const QJsonObject &trainData = {});
 
     /**
      * @brief Get a specific metric value
@@ -45,7 +44,7 @@ public:
      *
      * Provides dynamic access to any train state metric.
      */
-    QVariant getMetric(const QString& metricName) const;
+    QVariant getMetric(const QString &metricName) const;
 
     /**
      * @brief Convert state to JSON
@@ -137,5 +136,7 @@ private:
 } // namespace Backend
 } // namespace CargoNetSim
 
-Q_DECLARE_METATYPE(CargoNetSim::Backend::TrainClient::TrainState)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::TrainClient::TrainState*)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::TrainClient::TrainState)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::TrainClient::TrainState *)

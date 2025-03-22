@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QWidget>
-#include <QListWidget>
-#include <QPushButton>
 #include <QGridLayout>
-#include <QMessageBox>
 #include <QInputDialog>
+#include <QListWidget>
 #include <QMap>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QWidget>
 
 namespace CargoNetSim {
 namespace GUI {
@@ -14,10 +14,13 @@ namespace GUI {
 class MainWindow;
 
 /**
- * @brief The RegionManager widget allows users to create, edit, and manage regions in the application.
- * 
- * This widget provides a UI for creating new regions, renaming or deleting existing regions,
- * and changing their colors. Each region is displayed in a list with a color swatch.
+ * @brief The RegionManager widget allows users to create,
+ * edit, and manage regions in the application.
+ *
+ * This widget provides a UI for creating new regions,
+ * renaming or deleting existing regions, and changing their
+ * colors. Each region is displayed in a list with a color
+ * swatch.
  */
 class RegionManagerWidget : public QWidget {
     Q_OBJECT
@@ -28,13 +31,15 @@ public:
      * @param mainWindow Pointer to the main window
      * @param parent Parent widget
      */
-    explicit RegionManagerWidget(MainWindow* mainWindow, QWidget* parent = nullptr);
-    
+    explicit RegionManagerWidget(MainWindow *mainWindow,
+                                 QWidget *parent = nullptr);
+
     /**
-     * @brief Updates the region list with current regions and their colors
+     * @brief Updates the region list with current regions
+     * and their colors
      */
     void updateRegionList();
-    
+
     /**
      * @brief Clears all regions except the default region
      */
@@ -45,24 +50,26 @@ private slots:
      * @brief Adds a new region to the application
      */
     void addRegion();
-    
+
     /**
      * @brief Renames the currently selected region
      */
     void renameRegion();
-    
+
     /**
      * @brief Deletes the currently selected region
      */
     void deleteRegion();
-    
+
     /**
-     * @brief Changes the color of the currently selected region
+     * @brief Changes the color of the currently selected
+     * region
      */
     void changeRegionColor();
-    
+
     /**
-     * @brief Updates UI button states based on the selection state
+     * @brief Updates UI button states based on the
+     * selection state
      */
     void updateButtonStates();
 
@@ -73,14 +80,14 @@ private:
     void setupUI();
 
     // UI elements
-    QListWidget* regionList;
-    QPushButton* addButton;
-    QPushButton* renameButton;
-    QPushButton* deleteButton;
-    QPushButton* colorButton;
-    
+    QListWidget *regionList;
+    QPushButton *addButton;
+    QPushButton *renameButton;
+    QPushButton *deleteButton;
+    QPushButton *colorButton;
+
     // Reference to the main window
-    MainWindow* mainWindow;
+    MainWindow *mainWindow;
 };
 
 } // namespace GUI

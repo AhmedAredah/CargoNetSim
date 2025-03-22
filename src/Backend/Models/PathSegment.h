@@ -3,7 +3,7 @@
 /**
  * @file PathSegment.h
  * @brief Defines the PathSegment class for path segments
- * @author [Your Name]
+ * @author Ahmed Aredah
  * @date March 21, 2025
  *
  * This file declares the PathSegment class, representing a
@@ -14,8 +14,8 @@
  * @warning Instances should be managed by Path or caller.
  */
 
-#include <QObject>
 #include <QJsonObject>
+#include <QObject>
 #include <QString>
 
 namespace CargoNetSim {
@@ -23,7 +23,8 @@ namespace Backend {
 
 /**
  * @class PathSegment
- * @brief Represents a single segment in a transportation path
+ * @brief Represents a single segment in a transportation
+ * path
  *
  * This class encapsulates details of a route between two
  * terminals, including its identifier, endpoints, mode, and
@@ -38,23 +39,23 @@ class PathSegment : public QObject {
 public:
     /**
      * @brief Constructs a PathSegment instance
-     * @param pathSegmentId Unique identifier for the segment
+     * @param pathSegmentId Unique identifier for the
+     * segment
      * @param start Starting terminal identifier
      * @param end Ending terminal identifier
      * @param mode Transportation mode as integer
      * @param attributes Optional attributes as JSON object
      * @param parent Parent QObject, defaults to nullptr
-     * @throws std::invalid_argument If required fields are empty
+     * @throws std::invalid_argument If required fields are
+     * empty
      *
      * Creates a PathSegment with specified properties.
      */
     explicit PathSegment(
-        const QString& pathSegmentId,
-        const QString& start,
-        const QString& end,
-        int mode,
-        const QJsonObject& attributes = QJsonObject(),
-        QObject* parent = nullptr);
+        const QString &pathSegmentId, const QString &start,
+        const QString &end, int mode,
+        const QJsonObject &attributes = QJsonObject(),
+        QObject           *parent     = nullptr);
 
     /**
      * @brief Retrieves the path segment identifier
@@ -62,7 +63,9 @@ public:
      *
      * Returns the unique ID assigned to this segment.
      */
-    QString getPathSegmentId() const { return m_pathSegmentId; }
+    QString getPathSegmentId() const {
+        return m_pathSegmentId;
+    }
 
     /**
      * @brief Retrieves the starting terminal
@@ -70,7 +73,9 @@ public:
      *
      * Returns the ID of the segment's starting terminal.
      */
-    QString getStart() const { return m_start; }
+    QString getStart() const {
+        return m_start;
+    }
 
     /**
      * @brief Retrieves the ending terminal
@@ -78,7 +83,9 @@ public:
      *
      * Returns the ID of the segment's ending terminal.
      */
-    QString getEnd() const { return m_end; }
+    QString getEnd() const {
+        return m_end;
+    }
 
     /**
      * @brief Retrieves the transportation mode
@@ -86,7 +93,9 @@ public:
      *
      * Returns the transportation mode used in this segment.
      */
-    int getMode() const { return m_mode; }
+    int getMode() const {
+        return m_mode;
+    }
 
     /**
      * @brief Retrieves the segment attributes
@@ -94,7 +103,9 @@ public:
      *
      * Returns additional properties of the segment.
      */
-    QJsonObject getAttributes() const { return m_attributes; }
+    QJsonObject getAttributes() const {
+        return m_attributes;
+    }
 
     /**
      * @brief Converts the segment to JSON format

@@ -1,21 +1,21 @@
 #include "ColorPickerDialog.h"
 #include "../Utils/ColorPalette.h"
 
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QColorDialog>
-#include <QPixmap>
-#include <QIcon>
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QPixmap>
+#include <QVBoxLayout>
 
 namespace CargoNetSim {
 namespace GUI {
 
-ColorPickerDialog::ColorPickerDialog(const QColor& currentColor, QWidget* parent)
+ColorPickerDialog::ColorPickerDialog(
+    const QColor &currentColor, QWidget *parent)
     : QDialog(parent)
     , currentColor(currentColor)
-    , customColor(currentColor)
-{
+    , customColor(currentColor) {
     setWindowTitle(tr("Select Color"));
     setModal(true);
     setupUI();
@@ -23,35 +23,39 @@ ColorPickerDialog::ColorPickerDialog(const QColor& currentColor, QWidget* parent
 
 QColor ColorPickerDialog::getSelectedColor() const {
     int currentTabIndex = tabWidget->currentIndex();
-    
-    if (currentTabIndex == 0) {  // Predefined colors tab
-        QListWidgetItem* item = colorList->currentItem();
+
+    if (currentTabIndex == 0) { // Predefined colors tab
+        QListWidgetItem *item = colorList->currentItem();
         if (item) {
             QString colorName = item->text();
             return ColorPalette::getColor(colorName);
         }
-    } else {  // Custom color tab
+    } else { // Custom color tab
         return customColor;
     }
-    
-    return QColor();  // Invalid color if nothing selected
+
+    return QColor(); // Invalid color if nothing selected
 }
 
 void ColorPickerDialog::openColorDialog() {
-    QColor initialColor = customColor.isValid() ? customColor : Qt::white;
-    QColor color = QColorDialog::getColor(initialColor, this);
-    
+    QColor initialColor =
+        customColor.isValid() ? customColor : Qt::white;
+    QColor color =
+        QColorDialog::getColor(initialColor, this);
+
     if (color.isValid()) {
         customColor = color;
-        
+
         // Update custom preview
-        QString styleSheet = QString(
-            "background-color: rgb(%1, %2, %3); "
-            "border: 1px solid black;"
-        ).arg(color.red()).arg(color.green()).arg(color.blue());
-        
+        QString styleSheet =
+            QString("background-color: rgb(%1, %2, %3); "
+                    "border: 1px solid black;")
+                .arg(color.red())
+                .arg(color.green())
+                .arg(color.blue());
+
         customPreview->setStyleSheet(styleSheet);
-        
+
         // Also update the main preview if on custom tab
         if (tabWidget->currentIndex() == 1) {
             previewLabel->setStyleSheet(styleSheet);
@@ -59,34 +63,40 @@ void ColorPickerDialog::openColorDialog() {
     }
 }
 
-void ColorPickerDialog::updatePreview(QListWidgetItem* item) {
+void ColorPickerDialog::updatePreview(
+    QListWidgetItem *item) {
     if (!item) {
         return;
     }
-    
+
     QString colorName = item->text();
-    QColor qcolor = ColorPalette::getColor(colorName);
-    
-    QString styleSheet = QString(
-        "background-color: rgb(%1, %2, %3); "
-        "border: 1px solid black;"
-    ).arg(qcolor.red()).arg(qcolor.green()).arg(qcolor.blue());
-    
+    QColor  qcolor    = ColorPalette::getColor(colorName);
+
+    QString styleSheet =
+        QString("background-color: rgb(%1, %2, %3); "
+                "border: 1px solid black;")
+            .arg(qcolor.red())
+            .arg(qcolor.green())
+            .arg(qcolor.blue());
+
     previewLabel->setStyleSheet(styleSheet);
 }
 
 void ColorPickerDialog::onTabChanged(int index) {
-    if (index == 0) {  // Predefined colors tab
+    if (index == 0) { // Predefined colors tab
         if (colorList->currentItem()) {
             updatePreview(colorList->currentItem());
         }
-    } else {  // Custom color tab
+    } else { // Custom color tab
         if (customColor.isValid()) {
-            QString styleSheet = QString(
-                "background-color: rgb(%1, %2, %3); "
-                "border: 1px solid black;"
-            ).arg(customColor.red()).arg(customColor.green()).arg(customColor.blue());
-            
+            QString styleSheet =
+                QString(
+                    "background-color: rgb(%1, %2, %3); "
+                    "border: 1px solid black;")
+                    .arg(customColor.red())
+                    .arg(customColor.green())
+                    .arg(customColor.blue());
+
             previewLabel->setStyleSheet(styleSheet);
         }
     }
@@ -94,100 +104,113 @@ void ColorPickerDialog::onTabChanged(int index) {
 
 void ColorPickerDialog::setupUI() {
     // Main layout
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    
+    QVBoxLayout *layout = new QVBoxLayout(this);
+
     // Create tab widget
     tabWidget = new QTabWidget();
-    
+
     // ------- Predefined Colors Tab -------
-    QWidget* predefinedTab = new QWidget();
-    QVBoxLayout* predefinedLayout = new QVBoxLayout(predefinedTab);
-    
+    QWidget     *predefinedTab = new QWidget();
+    QVBoxLayout *predefinedLayout =
+        new QVBoxLayout(predefinedTab);
+
     // Create color list widget
     colorList = new QListWidget();
     colorList->setIconSize(QSize(32, 32));
-    
+
     // Add color swatches
     QStringList colorNames = ColorPalette::getAllColors();
-    for (const QString& colorName : colorNames) {
+    for (const QString &colorName : colorNames) {
         QColor qcolor = ColorPalette::getColor(colorName);
-        
+
         // Create color swatch pixmap
         QPixmap pixmap(32, 32);
         pixmap.fill(qcolor);
-        
+
         // Create list item
-        QListWidgetItem* item = new QListWidgetItem(QIcon(pixmap), colorName);
+        QListWidgetItem *item =
+            new QListWidgetItem(QIcon(pixmap), colorName);
         colorList->addItem(item);
-        
+
         // Select the current color if it matches
-        if (currentColor.isValid() && qcolor == currentColor) {
+        if (currentColor.isValid()
+            && qcolor == currentColor) {
             colorList->setCurrentItem(item);
         }
     }
-    
+
     predefinedLayout->addWidget(colorList);
-    
+
     // ------- Custom Color Tab -------
-    QWidget* customTab = new QWidget();
-    QVBoxLayout* customLayout = new QVBoxLayout(customTab);
-    
+    QWidget     *customTab    = new QWidget();
+    QVBoxLayout *customLayout = new QVBoxLayout(customTab);
+
     // Add color dialog button
-    colorButton = new QPushButton(tr("Select Custom Color"));
-    connect(colorButton, &QPushButton::clicked, this, &ColorPickerDialog::openColorDialog);
+    colorButton =
+        new QPushButton(tr("Select Custom Color"));
+    connect(colorButton, &QPushButton::clicked, this,
+            &ColorPickerDialog::openColorDialog);
     customLayout->addWidget(colorButton);
-    
+
     // Custom color preview
     customPreview = new QLabel();
     customPreview->setFixedSize(100, 100);
-    customPreview->setStyleSheet("border: 1px solid black;");
-    customLayout->addWidget(customPreview, 0, Qt::AlignCenter);
-    
+    customPreview->setStyleSheet(
+        "border: 1px solid black;");
+    customLayout->addWidget(customPreview, 0,
+                            Qt::AlignCenter);
+
     if (currentColor.isValid()) {
-        QString styleSheet = QString(
-            "background-color: rgb(%1, %2, %3); "
-            "border: 1px solid black;"
-        ).arg(currentColor.red()).arg(currentColor.green()).arg(currentColor.blue());
-        
+        QString styleSheet =
+            QString("background-color: rgb(%1, %2, %3); "
+                    "border: 1px solid black;")
+                .arg(currentColor.red())
+                .arg(currentColor.green())
+                .arg(currentColor.blue());
+
         customPreview->setStyleSheet(styleSheet);
     }
-    
+
     customLayout->addStretch();
-    
+
     // ------- Add tabs to tab widget -------
-    tabWidget->addTab(predefinedTab, tr("Predefined Colors"));
+    tabWidget->addTab(predefinedTab,
+                      tr("Predefined Colors"));
     tabWidget->addTab(customTab, tr("Custom Color"));
-    
+
     layout->addWidget(tabWidget);
-    
+
     // ------- Preview area -------
-    QHBoxLayout* previewLayout = new QHBoxLayout();
+    QHBoxLayout *previewLayout = new QHBoxLayout();
     previewLayout->addWidget(new QLabel(tr("Preview:")));
     previewLabel = new QLabel();
     previewLabel->setFixedSize(50, 50);
     previewLabel->setStyleSheet("border: 1px solid black;");
     previewLayout->addWidget(previewLabel);
     previewLayout->addStretch();
-    
+
     layout->addLayout(previewLayout);
-    
+
     // ------- Buttons -------
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel
-    );
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(buttonBox, &QDialogButtonBox::accepted, this,
+            &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this,
+            &QDialog::reject);
     layout->addWidget(buttonBox);
-    
+
     // ------- Connect signals -------
-    connect(colorList, &QListWidget::currentItemChanged, this, &ColorPickerDialog::updatePreview);
-    connect(tabWidget, &QTabWidget::currentChanged, this, &ColorPickerDialog::onTabChanged);
-    
+    connect(colorList, &QListWidget::currentItemChanged,
+            this, &ColorPickerDialog::updatePreview);
+    connect(tabWidget, &QTabWidget::currentChanged, this,
+            &ColorPickerDialog::onTabChanged);
+
     // ------- Initial preview update -------
     if (colorList->currentItem()) {
         updatePreview(colorList->currentItem());
     }
-    
+
     // Set an appropriate size for the dialog
     resize(400, 500);
 }

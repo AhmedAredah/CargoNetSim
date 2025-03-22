@@ -2,11 +2,11 @@
  * @file ShipSimulationClient.h
  * @brief Header for the ShipSimulationClient class
  *
- * This file defines the ShipSimulationClient class, which manages
- * interactions with the ship simulation server within the
- * CargoNetSim framework. It provides interfaces for defining
- * simulators, managing ships and containers, and retrieving
- * simulation states.
+ * This file defines the ShipSimulationClient class, which
+ * manages interactions with the ship simulation server
+ * within the CargoNetSim framework. It provides interfaces
+ * for defining simulators, managing ships and containers,
+ * and retrieving simulation states.
  *
  * @author Ahmed Aredah
  * @date March 19, 2025
@@ -14,21 +14,21 @@
 
 #pragma once
 
-#include <QObject>
-#include <QMutex>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <QByteArray>
-#include <QMap>
-#include <QList>
-#include <QString>
 #include <QDateTime>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QList>
+#include <QMap>
+#include <QMutex>
+#include <QObject>
+#include <QString>
 #include <containerLib/container.h>
 
-#include "Backend/Clients/ShipClient/ShipState.h"
-#include "Backend/Commons/ClientType.h"
-#include "Backend/Clients/ShipClient/SimulationResults.h"
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
+#include "Backend/Clients/ShipClient/ShipState.h"
+#include "Backend/Clients/ShipClient/SimulationResults.h"
+#include "Backend/Commons/ClientType.h"
 #include "Backend/Models/ShipSystem.h"
 
 // Forward declarations
@@ -39,14 +39,16 @@ class TerminalGraphServer;
 class SimulatorTimeServer;
 class ProgressBarManager;
 class ApplicationLogger;
-}}}
+} // namespace ShipClient
+} // namespace Backend
+} // namespace CargoNetSim
 
 /**
  * @namespace CargoNetSim::Backend::ShipClient
  * @brief Namespace for ship simulation client components
  *
- * Contains classes and utilities for managing ship simulation
- * operations within the CargoNetSim backend.
+ * Contains classes and utilities for managing ship
+ * simulation operations within the CargoNetSim backend.
  */
 namespace CargoNetSim {
 namespace Backend {
@@ -54,12 +56,14 @@ namespace ShipClient {
 
 /**
  * @class ShipSimulationClient
- * @brief Manages interactions with the ship simulation server
+ * @brief Manages interactions with the ship simulation
+ * server
  *
- * This class extends SimulationClientBase to provide specialized
- * functionality for ship simulation, including simulator setup,
- * ship and container management, and state retrieval. It uses
- * RabbitMQ for communication and ensures thread-safe operations.
+ * This class extends SimulationClientBase to provide
+ * specialized functionality for ship simulation, including
+ * simulator setup, ship and container management, and state
+ * retrieval. It uses RabbitMQ for communication and ensures
+ * thread-safe operations.
  *
  * @ingroup ShipSimulation
  */
@@ -70,115 +74,130 @@ public:
     /**
      * @brief Constructs a ShipSimulationClient instance
      *
-     * Initializes the client with a parent object and RabbitMQ
-     * connection details. Defaults to localhost and port 5672.
+     * Initializes the client with a parent object and
+     * RabbitMQ connection details. Defaults to localhost
+     * and port 5672.
      *
      * @param parent Parent QObject, defaults to nullptr
-     * @param host RabbitMQ server hostname, defaults to "localhost"
+     * @param host RabbitMQ server hostname, defaults to
+     * "localhost"
      * @param port RabbitMQ server port, defaults to 5672
      */
     explicit ShipSimulationClient(
-        QObject* parent = nullptr,
-        const QString& host = "localhost",
-        int port = 5672);
+        QObject       *parent = nullptr,
+        const QString &host = "localhost", int port = 5672);
 
     /**
      * @brief Destroys the ShipSimulationClient instance
      *
-     * Cleans up resources, including dynamically allocated objects
-     * and thread-safe data structures.
+     * Cleans up resources, including dynamically allocated
+     * objects and thread-safe data structures.
      */
     ~ShipSimulationClient() override;
 
     /**
      * @brief Resets the ship simulation server
      *
-     * Sends a reset command to the server, clearing all current
-     * simulation data and state.
+     * Sends a reset command to the server, clearing all
+     * current simulation data and state.
      *
-     * @return True if the reset command succeeds, false otherwise
+     * @return True if the reset command succeeds, false
+     * otherwise
      */
     bool resetServer();
 
     /**
      * @brief Initializes the client within its thread
      *
-     * Sets up thread-specific resources after the object is moved
-     * to its thread. Automatically invoked via QThread::started.
+     * Sets up thread-specific resources after the object is
+     * moved to its thread. Automatically invoked via
+     * QThread::started.
      *
-     * @param logger Optional logger for initialization logging
+     * @param logger Optional logger for initialization
+     * logging
      * @throws std::runtime_error If RabbitMQ setup fails
      * @note Avoid manual calls unless synchronized
      * @warning Call only once after thread start
      */
-    void initializeClient(LoggerInterface* logger = nullptr) override;
+    void initializeClient(
+        LoggerInterface *logger = nullptr) override;
 
     /**
      * @brief Defines a new ship simulator
      *
-     * Configures a simulation network with specified ships and
-     * parameters, sending the setup to the server.
+     * Configures a simulation network with specified ships
+     * and parameters, sending the setup to the server.
      *
-     * @param networkName Unique name for the simulation network
+     * @param networkName Unique name for the simulation
+     * network
      * @param timeStep Time increment for simulation steps
-     * @param ships List of Ship pointers to include in the simulator
-     * @param destinationTerminalIds Map of ship IDs to terminal IDs
-     * @param networkPath Path to network file, defaults to "Default"
+     * @param ships List of Ship pointers to include in the
+     * simulator
+     * @param destinationTerminalIds Map of ship IDs to
+     * terminal IDs
+     * @param networkPath Path to network file, defaults to
+     * "Default"
      * @return True if the simulator is defined successfully
      */
-    bool defineSimulator(
-        const QString& networkName,
-        const double timeStep,
-        const QList<Ship*>& ships,
-        const QMap<QString, QStringList>& destinationTerminalIds,
-        const QString& networkPath = "Default");
+    bool
+    defineSimulator(const QString       &networkName,
+                    const double         timeStep,
+                    const QList<Ship *> &ships,
+                    const QMap<QString, QStringList>
+                                  &destinationTerminalIds,
+                    const QString &networkPath = "Default");
 
     /**
      * @brief Runs the simulator for specified networks
      *
-     * Starts the simulation for given networks or all if "*" is
-     * specified, with an optional time step limit.
+     * Starts the simulation for given networks or all if
+     * "*" is specified, with an optional time step limit.
      *
-     * @param networkNames List of network names or "*" for all
-     * @param byTimeSteps Steps to run, -1 for unlimited, defaults to -1
+     * @param networkNames List of network names or "*" for
+     * all
+     * @param byTimeSteps Steps to run, -1 for unlimited,
+     * defaults to -1
      * @return True if the simulation starts successfully
      */
-    bool runSimulator(
-        const QStringList& networkNames,
-        double byTimeSteps = -1.0);
+    bool runSimulator(const QStringList &networkNames,
+                      double byTimeSteps = -1.0);
 
     /**
      * @brief Ends the simulator for specified networks
      *
-     * Terminates the simulation for given networks or all if "*"
-     * is specified.
+     * Terminates the simulation for given networks or all
+     * if "*" is specified.
      *
-     * @param networkNames List of network names or "*" for all
+     * @param networkNames List of network names or "*" for
+     * all
      * @return True if the simulation ends successfully
      */
-    bool endSimulator(const QStringList& networkNames);
+    bool endSimulator(const QStringList &networkNames);
 
     /**
      * @brief Adds ships to an existing simulator
      *
-     * Incorporates additional ships into a running simulation
-     * network, associating them with destination terminals.
+     * Incorporates additional ships into a running
+     * simulation network, associating them with destination
+     * terminals.
      *
      * @param networkName Target network name
      * @param ships List of Ship pointers to add
-     * @param destinationTerminalIds Map of ship IDs to terminal IDs
+     * @param destinationTerminalIds Map of ship IDs to
+     * terminal IDs
      * @return True if ships are added successfully
      */
-    bool addShipsToSimulator(
-        const QString& networkName,
-        const QList<Ship*>& ships,
-        const QMap<QString, QStringList>& destinationTerminalIds);
+    bool
+    addShipsToSimulator(const QString       &networkName,
+                        const QList<Ship *> &ships,
+                        const QMap<QString, QStringList>
+                            &destinationTerminalIds);
 
     /**
      * @brief Adds containers to a ship
      *
-     * Assigns containers to a specified ship within a network,
-     * sending the command to the server.
+     * Assigns containers to a specified ship within a
+     * network, sending the command to the server.
      *
      * @param networkName Network containing the ship
      * @param shipId Unique identifier of the target ship
@@ -186,50 +205,50 @@ public:
      * @return True if containers are added successfully
      */
     bool addContainersToShip(
-        const QString& networkName,
-        const QString& shipId,
-        const QList<ContainerCore::Container*>& containers);
+        const QString &networkName, const QString &shipId,
+        const QList<ContainerCore::Container *>
+            &containers);
 
     /**
      * @brief Unloads containers from a ship at terminals
      *
-     * Removes containers from a ship and assigns them to specified
-     * terminals within a network.
+     * Removes containers from a ship and assigns them to
+     * specified terminals within a network.
      *
      * @param networkName Network containing the ship
      * @param shipId Unique identifier of the target ship
-     * @param terminalNames List of terminal names for unloading
+     * @param terminalNames List of terminal names for
+     * unloading
      * @return True if unloading succeeds
      */
     bool unloadContainersFromShipAtTerminals(
-        const QString& networkName,
-        const QString& shipId,
-        const QStringList& terminalNames);
+        const QString &networkName, const QString &shipId,
+        const QStringList &terminalNames);
 
     /**
      * @brief Requests terminal nodes for a network
      *
-     * Sends a command to retrieve the terminal nodes of a specified
-     * simulation network.
+     * Sends a command to retrieve the terminal nodes of a
+     * specified simulation network.
      *
      * @param networkName Name of the network to query
      */
-    void getNetworkTerminalNodes(const QString& networkName);
+    void
+    getNetworkTerminalNodes(const QString &networkName);
 
     /**
      * @brief Requests shortest path between nodes
      *
-     * Sends a command to compute the shortest path between two nodes
-     * in a specified network.
+     * Sends a command to compute the shortest path between
+     * two nodes in a specified network.
      *
      * @param networkName Network to query
      * @param startNode Starting node ID
      * @param endNode Ending node ID
      */
-    void getShortestPath(
-        const QString& networkName,
-        const QString& startNode,
-        const QString& endNode);
+    void getShortestPath(const QString &networkName,
+                         const QString &startNode,
+                         const QString &endNode);
 
     /**
      * @brief Retrieves the state of a specific ship
@@ -240,29 +259,35 @@ public:
      * @param shipId Unique identifier of the ship
      * @return Pointer to ShipState or nullptr if not found
      */
-    const ShipState* getShipState(
-        const QString& networkName,
-        const QString& shipId) const;
+    const ShipState *
+    getShipState(const QString &networkName,
+                 const QString &shipId) const;
 
     /**
      * @brief Retrieves states of all ships in a network
      *
-     * Returns a list of states for all ships in a specified network.
+     * Returns a list of states for all ships in a specified
+     * network.
      *
      * @param networkName Network to query
-     * @return List of ShipState pointers, empty if none found
+     * @return List of ShipState pointers, empty if none
+     * found
      */
-    QList<const ShipState*> getAllNetworkShipsStates(
-        const QString& networkName) const;
+    QList<const ShipState *> getAllNetworkShipsStates(
+        const QString &networkName) const;
 
     /**
-     * @brief Retrieves states of all ships across all networks
+     * @brief Retrieves states of all ships across all
+     * networks
      *
-     * Returns a map of network names to lists of ship states.
+     * Returns a map of network names to lists of ship
+     * states.
      *
-     * @return Map of network names to ShipState pointer lists
+     * @return Map of network names to ShipState pointer
+     * lists
      */
-    QMap<QString, QList<const ShipState*>> getAllShipsStates() const;
+    QMap<QString, QList<const ShipState *>>
+    getAllShipsStates() const;
 
 protected:
     /**
@@ -271,15 +296,18 @@ protected:
      * Handles incoming server messages, dispatching them to
      * appropriate event handlers.
      *
-     * @param message JSON object containing the server message
+     * @param message JSON object containing the server
+     * message
      */
-    void processMessage(const QJsonObject& message) override;
+    void
+    processMessage(const QJsonObject &message) override;
 
 private:
     /**
      * @brief Internal method to unload containers
      *
-     * Executes the unloading process without waiting for a response.
+     * Executes the unloading process without waiting for a
+     * response.
      *
      * @param networkName Network name
      * @param shipId Ship ID
@@ -287,18 +315,19 @@ private:
      * @return True if the command is sent successfully
      */
     bool unloadContainersFromShipAtTerminalsPrivate(
-        const QString& networkName,
-        const QString& shipId,
-        const QStringList& terminalNames);
+        const QString &networkName, const QString &shipId,
+        const QStringList &terminalNames);
 
     /**
      * @brief Handles simulation network loaded event
      *
-     * Processes the event when a simulation network is loaded.
+     * Processes the event when a simulation network is
+     * loaded.
      *
      * @param message Event data in JSON format
      */
-    void onSimulationNetworkLoaded(const QJsonObject& message);
+    void
+    onSimulationNetworkLoaded(const QJsonObject &message);
 
     /**
      * @brief Handles simulation created event
@@ -307,7 +336,7 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onSimulationCreated(const QJsonObject& message);
+    void onSimulationCreated(const QJsonObject &message);
 
     /**
      * @brief Handles simulation paused event
@@ -316,7 +345,7 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onSimulationPaused(const QJsonObject& message);
+    void onSimulationPaused(const QJsonObject &message);
 
     /**
      * @brief Handles simulation resumed event
@@ -325,7 +354,7 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onSimulationResumed(const QJsonObject& message);
+    void onSimulationResumed(const QJsonObject &message);
 
     /**
      * @brief Handles simulation restarted event
@@ -334,7 +363,7 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onSimulationRestarted(const QJsonObject& message);
+    void onSimulationRestarted(const QJsonObject &message);
 
     /**
      * @brief Handles simulation ended event
@@ -343,16 +372,17 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onSimulationEnded(const QJsonObject& message);
+    void onSimulationEnded(const QJsonObject &message);
 
     /**
      * @brief Handles simulation advanced event
      *
-     * Processes the event when a simulation advances in time.
+     * Processes the event when a simulation advances in
+     * time.
      *
      * @param message Event data in JSON format
      */
-    void onSimulationAdvanced(const QJsonObject& message);
+    void onSimulationAdvanced(const QJsonObject &message);
 
     /**
      * @brief Handles simulation progress update event
@@ -361,34 +391,40 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onSimulationProgressUpdate(const QJsonObject& message);
+    void
+    onSimulationProgressUpdate(const QJsonObject &message);
 
     /**
      * @brief Handles ship added to simulator event
      *
-     * Processes the event when a ship is added to the simulator.
+     * Processes the event when a ship is added to the
+     * simulator.
      *
      * @param message Event data in JSON format
      */
-    void onShipAddedToSimulator(const QJsonObject& message);
+    void onShipAddedToSimulator(const QJsonObject &message);
 
     /**
      * @brief Handles all ships reached destination event
      *
-     * Processes the event when all ships reach their destinations.
+     * Processes the event when all ships reach their
+     * destinations.
      *
      * @param message Event data in JSON format
      */
-    void onAllShipsReachedDestination(const QJsonObject& message);
+    void onAllShipsReachedDestination(
+        const QJsonObject &message);
 
     /**
      * @brief Handles ship reached destination event
      *
-     * Processes the event when a ship reaches its destination.
+     * Processes the event when a ship reaches its
+     * destination.
      *
      * @param message Event data in JSON format
      */
-    void onShipReachedDestination(const QJsonObject& message);
+    void
+    onShipReachedDestination(const QJsonObject &message);
 
     /**
      * @brief Handles ship reached seaport event
@@ -397,25 +433,28 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onShipReachedSeaport(const QJsonObject& message);
+    void onShipReachedSeaport(const QJsonObject &message);
 
     /**
      * @brief Handles containers unloaded event
      *
-     * Processes the event when containers are unloaded from a ship.
+     * Processes the event when containers are unloaded from
+     * a ship.
      *
      * @param message Event data in JSON format
      */
-    void onContainersUnloaded(const QJsonObject& message);
+    void onContainersUnloaded(const QJsonObject &message);
 
     /**
      * @brief Handles simulation results available event
      *
-     * Processes the event when simulation results are available.
+     * Processes the event when simulation results are
+     * available.
      *
      * @param message Event data in JSON format
      */
-    void onSimulationResultsAvailable(const QJsonObject& message);
+    void onSimulationResultsAvailable(
+        const QJsonObject &message);
 
     /**
      * @brief Handles ship state available event
@@ -424,25 +463,28 @@ private:
      *
      * @param message Event data in JSON format
      */
-    void onShipStateAvailable(const QJsonObject& message);
+    void onShipStateAvailable(const QJsonObject &message);
 
     /**
      * @brief Handles simulator state available event
      *
-     * Processes the event when the simulator state is available.
+     * Processes the event when the simulator state is
+     * available.
      *
      * @param message Event data in JSON format
      */
-    void onSimulatorStateAvailable(const QJsonObject& message);
+    void
+    onSimulatorStateAvailable(const QJsonObject &message);
 
     /**
      * @brief Handles error occurred event
      *
-     * Processes the event when an error occurs on the server.
+     * Processes the event when an error occurs on the
+     * server.
      *
      * @param message Event data in JSON format
      */
-    void onErrorOccurred(const QJsonObject& message);
+    void onErrorOccurred(const QJsonObject &message);
 
     /**
      * @brief Handles server reset event
@@ -454,17 +496,19 @@ private:
     /**
      * @brief Handles containers added event
      *
-     * Processes the event when containers are added to a ship.
+     * Processes the event when containers are added to a
+     * ship.
      *
      * @param message Event data in JSON format
      */
-    void onContainersAdded(const QJsonObject& message);
+    void onContainersAdded(const QJsonObject &message);
 
     /**
      * @var m_dataAccessMutex
      * @brief Mutex for thread-safe data access
      *
-     * Ensures synchronized access to internal data structures.
+     * Ensures synchronized access to internal data
+     * structures.
      */
     mutable QMutex m_dataAccessMutex;
 
@@ -472,9 +516,10 @@ private:
      * @var m_networkData
      * @brief Stores simulation results by network
      *
-     * Maps network names to lists of SimulationResults pointers.
+     * Maps network names to lists of SimulationResults
+     * pointers.
      */
-    QMap<QString, QList<SimulationResults*>> m_networkData;
+    QMap<QString, QList<SimulationResults *>> m_networkData;
 
     /**
      * @var m_shipState
@@ -482,7 +527,7 @@ private:
      *
      * Maps network names to lists of ShipState pointers.
      */
-    QMap<QString, QList<ShipState*>> m_shipState;
+    QMap<QString, QList<ShipState *>> m_shipState;
 
     /**
      * @var m_loadedShips
@@ -490,7 +535,7 @@ private:
      *
      * Maps ship IDs to Ship pointers for the simulation.
      */
-    QMap<QString, Backend::Ship*> m_loadedShips;
+    QMap<QString, Backend::Ship *> m_loadedShips;
 
     /**
      * @var m_shipsDestinationTerminals
@@ -505,5 +550,8 @@ private:
 } // namespace Backend
 } // namespace CargoNetSim
 
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipSimulationClient)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipSimulationClient*)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::ShipClient::ShipSimulationClient)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::ShipClient::ShipSimulationClient
+        *)

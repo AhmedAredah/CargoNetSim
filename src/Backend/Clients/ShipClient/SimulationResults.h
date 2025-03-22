@@ -1,27 +1,26 @@
 #pragma once
 
-#include <QObject>
-#include <QMutex>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <QByteArray>
-#include <QMap>
+#include <QDateTime>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QList>
+#include <QMap>
+#include <QMutex>
+#include <QObject>
 #include <QString>
 #include <QThread>
-#include <QDateTime>
 #include <QWaitCondition>
 
 #include "Backend/Clients/ShipClient/SimulationSummaryData.h"
-
 
 namespace CargoNetSim {
 namespace Backend {
 namespace ShipClient {
 
 /**
-     * @brief Stores simulation results data
-     */
+ * @brief Stores simulation results data
+ */
 class SimulationResults {
 public:
     /**
@@ -37,18 +36,18 @@ public:
      * @param summaryFileName Name of summary file
      */
     SimulationResults(
-        const QList<QPair<QString, QString>>& summaryData,
-        const QByteArray& trajectoryFileData,
-        const QString& trajectoryFileName,
-        const QString& summaryFileName);
+        const QList<QPair<QString, QString>> &summaryData,
+        const QByteArray &trajectoryFileData,
+        const QString    &trajectoryFileName,
+        const QString    &summaryFileName);
 
     /**
      * @brief Create from JSON object
      * @param jsonObj JSON object with results data
      * @return SimulationResults instance
      */
-    static SimulationResults fromJson(
-        const QJsonObject& jsonObj);
+    static SimulationResults
+    fromJson(const QJsonObject &jsonObj);
 
     /**
      * @brief Get trajectory filename without path
@@ -64,22 +63,22 @@ public:
 
     // Accessors
     SimulationSummaryData summaryData() const;
-    QByteArray trajectoryFileData() const;
-    QString trajectoryFileName() const;
-    QString summaryFileName() const;
-    
+    QByteArray            trajectoryFileData() const;
+    QString               trajectoryFileName() const;
+    QString               summaryFileName() const;
+
 private:
     SimulationSummaryData m_summaryData;
-    QByteArray m_trajectoryFileData;
-    QString m_trajectoryFileName;
-    QString m_summaryFileName;
+    QByteArray            m_trajectoryFileData;
+    QString               m_trajectoryFileName;
+    QString               m_summaryFileName;
 };
 
 } // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim
 
-
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::SimulationResults)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::SimulationResults*)
-
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::ShipClient::SimulationResults)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::ShipClient::SimulationResults *)

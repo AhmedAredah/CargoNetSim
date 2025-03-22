@@ -1,0 +1,41 @@
+# Use a base style and then override selected options:
+BasedOnStyle: LLVM
+
+# Target C++ code:
+Language: Cpp
+
+# Enforce a strict column limit for all lines:
+ColumnLimit: 60
+
+# Indentation and tab usage:
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Adjust how access modifiers are indented (e.g., public:, private:):
+AccessModifierOffset: -4
+
+# Keep consistent alignment for brackets, assignments, and declarations:
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignOperands: true
+AlignTrailingComments: true
+
+# Controls how short statements (e.g., short if or for statements) are handled:
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Handle where braces break:
+BreakBeforeBraces: Attach
+
+# Adjust binary operator breaking:
+BreakBeforeBinaryOperators: NonAssignment
+
+# Break constructor initializer lists before the comma to keep them on separate lines:
+BreakConstructorInitializers: BeforeComma
+
+# Limit consecutive empty lines to keep code tidy:
+MaxEmptyLinesToKeep: 1

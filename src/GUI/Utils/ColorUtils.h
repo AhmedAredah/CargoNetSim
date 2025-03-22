@@ -4,22 +4,25 @@
 #include <QColor>
 
 /*!
- * \brief The ColorUtil namespace provides utility functions for color operations.
+ * \brief The ColorUtil namespace provides utility functions
+ * for color operations.
  */
 namespace CargoNetSim {
 namespace GUI {
-namespace ColorUtils{
+namespace ColorUtils {
 
 /*!
- * \brief Generates a random QColor with RGB values between 50 and 205.
+ * \brief Generates a random QColor with RGB values between
+ * 50 and 205.
  *
- * This ensures good visibility by avoiding colors that are too dark or too light.
+ * This ensures good visibility by avoiding colors that are
+ * too dark or too light.
  *
  * \return A randomly generated QColor.
  */
 QColor getRandomColor();
 
-} // namespace colorUtils
+} // namespace ColorUtils
 } // namespace GUI
 } // namespace CargoNetSim
 
