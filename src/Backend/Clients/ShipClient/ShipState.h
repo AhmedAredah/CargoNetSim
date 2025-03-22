@@ -1,20 +1,19 @@
 #pragma once
 
-#include <QObject>
-#include <QMutex>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <QByteArray>
-#include <QMap>
+#include <QDateTime>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QList>
+#include <QMap>
+#include <QMutex>
+#include <QObject>
 #include <QString>
 #include <QThread>
-#include <QDateTime>
 #include <QWaitCondition>
 
-#include "Backend/Commons/ClientType.h"
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
-
+#include "Backend/Commons/ClientType.h"
 
 namespace CargoNetSim {
 namespace Backend {
@@ -29,14 +28,14 @@ public:
      * @brief Constructor from JSON data
      * @param shipData Ship state data as JSON
      */
-    explicit ShipState(const QJsonObject& shipData);
+    explicit ShipState(const QJsonObject &shipData);
 
     /**
      * @brief Get value of a specific metric
      * @param metricName Name of the metric
      * @return Value as QVariant, invalid if not found
      */
-    QVariant getMetric(const QString& metricName) const;
+    QVariant getMetric(const QString &metricName) const;
 
     /**
      * @brief Get all metrics as a map
@@ -52,45 +51,45 @@ public:
 
     // Accessor methods for common properties
     QString shipId() const;
-    double travelledDistance() const;
-    double currentSpeed() const;
-    double currentAcceleration() const;
-    bool isLoaded() const;
-    bool reachedDestination() const;
-    double tripTime() const;
-    int containersCount() const;
+    double  travelledDistance() const;
+    double  currentSpeed() const;
+    double  currentAcceleration() const;
+    bool    isLoaded() const;
+    bool    reachedDestination() const;
+    double  tripTime() const;
+    int     containersCount() const;
     QString closestPort() const;
 
 private:
     QString m_shipId;
-    double m_travelledDistance;
-    double m_currentAcceleration;
-    double m_previousAcceleration;
-    double m_currentSpeed;
-    double m_previousSpeed;
-    double m_totalThrust;
-    double m_totalResistance;
-    double m_vesselWeight;
-    double m_cargoWeight;
-    bool m_isOn;
-    bool m_outOfEnergy;
-    bool m_loaded;
-    bool m_reachedDestination;
-    double m_tripTime;
-    int m_containersCount;
+    double  m_travelledDistance;
+    double  m_currentAcceleration;
+    double  m_previousAcceleration;
+    double  m_currentSpeed;
+    double  m_previousSpeed;
+    double  m_totalThrust;
+    double  m_totalResistance;
+    double  m_vesselWeight;
+    double  m_cargoWeight;
+    bool    m_isOn;
+    bool    m_outOfEnergy;
+    bool    m_loaded;
+    bool    m_reachedDestination;
+    double  m_tripTime;
+    int     m_containersCount;
     QString m_closestPort;
 
     // Energy and fuel consumption
-    double m_energyConsumption;
+    double                m_energyConsumption;
     QMap<QString, double> m_fuelConsumption;
-    double m_carbonDioxideEmitted;
+    double                m_carbonDioxideEmitted;
 
     // Energy sources
     QList<QVariantMap> m_energySources;
 
     // Position
-    double m_latitude;
-    double m_longitude;
+    double        m_latitude;
+    double        m_longitude;
     QList<double> m_position;
 
     // Environmental conditions
@@ -107,5 +106,7 @@ private:
 } // namespace CargoNetSim
 
 // Declare metatypes
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipState)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::ShipClient::ShipState*)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::ShipClient::ShipState)
+Q_DECLARE_METATYPE(
+    CargoNetSim::Backend::ShipClient::ShipState *)
