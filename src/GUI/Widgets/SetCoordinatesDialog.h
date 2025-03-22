@@ -1,24 +1,26 @@
 #pragma once
 
 #include <QDialog>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
 #include <QDoubleValidator>
-#include <QString>
-#include <QVBoxLayout>
 #include <QFormLayout>
 #include <QLabel>
-#include <QDoubleSpinBox>
-#include <QDialogButtonBox>
 #include <QPushButton>
+#include <QString>
+#include <QVBoxLayout>
 
 namespace CargoNetSim {
 namespace GUI {
 
 /**
- * @brief Dialog for setting geographic coordinates for a terminal
- * 
- * This dialog allows users to input latitude and longitude coordinates
- * for a terminal's global position. It validates the input and provides
- * a clean interface for coordinate editing.
+ * @brief Dialog for setting geographic coordinates for a
+ * terminal
+ *
+ * This dialog allows users to input latitude and longitude
+ * coordinates for a terminal's global position. It
+ * validates the input and provides a clean interface for
+ * coordinate editing.
  */
 class SetCoordinatesDialog : public QDialog {
     Q_OBJECT
@@ -31,11 +33,11 @@ public:
      * @param currentLon Current longitude value
      * @param parent Parent widget
      */
-    explicit SetCoordinatesDialog(const QString& terminalName, 
-                                 double currentLat = 0.0, 
-                                 double currentLon = 0.0, 
-                                 QWidget* parent = nullptr);
-    
+    explicit SetCoordinatesDialog(
+        const QString &terminalName,
+        double currentLat = 0.0, double currentLon = 0.0,
+        QWidget *parent = nullptr);
+
     /**
      * @brief Get the coordinates entered by the user
      * @return Pair of latitude and longitude values
@@ -57,12 +59,12 @@ private slots:
     void onCoordinatesChanged();
 
 private:
-    QLabel* infoLabel;
-    QDoubleSpinBox* latInput;
-    QDoubleSpinBox* lonInput;
-    QDialogButtonBox* buttonBox;
-    QVBoxLayout* mainLayout;
-    QFormLayout* formLayout;
+    QLabel           *infoLabel;
+    QDoubleSpinBox   *latInput;
+    QDoubleSpinBox   *lonInput;
+    QDialogButtonBox *buttonBox;
+    QVBoxLayout      *mainLayout;
+    QFormLayout      *formLayout;
 };
 
 } // namespace GUI

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QGraphicsObject>
 #include <QGraphicsItem>
-#include <QPen>
+#include <QGraphicsObject>
 #include <QMap>
-#include <QVariant>
+#include <QPen>
 #include <QPropertyAnimation>
+#include <QVariant>
 
 namespace CargoNetSim {
 namespace GUI {
@@ -18,101 +18,128 @@ class ConnectionLine : public QGraphicsObject {
     Q_OBJECT
 
 public:
-    static const QMap<QString, QMap<QString, QVariant>> CONNECTION_STYLES;
+    static const QMap<QString, QMap<QString, QVariant>>
+        CONNECTION_STYLES;
 
     ConnectionLine(
-        QGraphicsItem* startItem,
-        QGraphicsItem* endItem,
-        const QString& connectionType = "Truck",
-        const QMap<QString, QVariant>& properties = QMap<QString, QVariant>(),
-        const QString& region = "Default Region",
-        QGraphicsItem* parent = nullptr);
-    
+        QGraphicsItem *startItem, QGraphicsItem *endItem,
+        const QString &connectionType = "Truck",
+        const QMap<QString, QVariant> &properties =
+            QMap<QString, QVariant>(),
+        const QString &region = "Default Region",
+        QGraphicsItem *parent = nullptr);
+
     virtual ~ConnectionLine();
 
     // Access to members
-    QGraphicsItem* startItem() const { return m_startItem; }
-    QGraphicsItem* endItem() const { return m_endItem; }
-    QString connectionType() const { return m_connectionType; }
-    QString getRegion() const { return m_region; }
-    int connectionId() const { return m_id; }
-    void updateProperties(const QMap<QString, QVariant>& newProperties);
-    const QMap<QString, QVariant>& getProperties() const { return m_properties; }
+    QGraphicsItem *startItem() const {
+        return m_startItem;
+    }
+    QGraphicsItem *endItem() const {
+        return m_endItem;
+    }
+    QString connectionType() const {
+        return m_connectionType;
+    }
+    QString getRegion() const {
+        return m_region;
+    }
+    int connectionId() const {
+        return m_id;
+    }
+    void updateProperties(
+        const QMap<QString, QVariant> &newProperties);
+    const QMap<QString, QVariant> &getProperties() const {
+        return m_properties;
+    }
 
-    void setRegion(const QString& region);
-    void setConnectionType(const QString& type);
-    void setProperty(const QString& key, const QVariant& value);
+    void setRegion(const QString &region);
+    void setConnectionType(const QString &type);
+    void setProperty(const QString  &key,
+                     const QVariant &value);
 
     // Update methods
-    void updatePosition(const QPointF& newPos = QPointF(), bool isStart = false);
+    void updatePosition(const QPointF &newPos  = QPointF(),
+                        bool           isStart = false);
 
     // Selection handling
     bool isSelected() const;
     void setSelected(bool selected);
 
     // Flash effect for highlighting
-    void flash(bool evenIfHidden = false, const QColor& color = QColor(255, 0, 0, 180));
+    void flash(bool          evenIfHidden = false,
+               const QColor &color = QColor(255, 0, 0,
+                                            180));
 
     // Serialization methods
     QMap<QString, QVariant> toDict() const;
-    static ConnectionLine* fromDict(
-        const QMap<QString, QVariant>& data,
-        const QMap<int, QGraphicsItem*>& terminalsByID,
-        QGraphicsScene* globalScene = nullptr,
-        QGraphicsItem* parent = nullptr);
-    
+    static ConnectionLine  *fromDict(
+         const QMap<QString, QVariant>    &data,
+         const QMap<int, QGraphicsItem *> &terminalsByID,
+         QGraphicsScene *globalScene = nullptr,
+         QGraphicsItem  *parent      = nullptr);
+
     // Reset/set class static IDs
     static void resetClassIDs();
-    static void setClassIDs(const QMap<int, ConnectionLine*>& allConnectionsById);
+    static void
+               setClassIDs(const QMap<int, ConnectionLine *>
+                               &allConnectionsById);
     static int getNewConnectionID();
 
 signals:
-    void clicked(ConnectionLine* line);
-    void startPositionChanged(const QPointF& newPos);
-    void endPositionChanged(const QPointF& newPos);
-    void propertyChanged(const QString& key, const QVariant& value);
+    void clicked(ConnectionLine *line);
+    void startPositionChanged(const QPointF &newPos);
+    void endPositionChanged(const QPointF &newPos);
+    void propertyChanged(const QString  &key,
+                         const QVariant &value);
     void propertiesChanged();
-    void connectionTypeChanged(const QString& newType);
-    void regionChanged(const QString& newRegion);
+    void connectionTypeChanged(const QString &newType);
+    void regionChanged(const QString &newRegion);
 
 protected:
     // QGraphicsItem overrides
-    QRectF boundingRect() const override;
+    QRectF       boundingRect() const override;
     QPainterPath shape() const override;
-    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
-    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
-    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
+    void         paint(QPainter                       *painter,
+                       const QStyleOptionGraphicsItem *option,
+                       QWidget *widget = nullptr) override;
+    void         mousePressEvent(
+                QGraphicsSceneMouseEvent *event) override;
+    void hoverEnterEvent(
+        QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(
+        QGraphicsSceneHoverEvent *event) override;
 
 private:
     // Utility methods
-    QLineF calculateOffsetLine(const QLineF& originalLine) const;
-    void onStartItemPositionChanged(const QPointF& newPos);
-    void onEndItemPositionChanged(const QPointF& newPos);
+    QLineF
+    calculateOffsetLine(const QLineF &originalLine) const;
+    void onStartItemPositionChanged(const QPointF &newPos);
+    void onEndItemPositionChanged(const QPointF &newPos);
     void createConnections();
     void initializeProperties();
 
     // Member variables
-    QGraphicsItem* m_startItem;
-    QGraphicsItem* m_endItem;
-    QString m_connectionType;
-    QString m_region;
+    QGraphicsItem          *m_startItem;
+    QGraphicsItem          *m_endItem;
+    QString                 m_connectionType;
+    QString                 m_region;
     QMap<QString, QVariant> m_properties;
-    int m_id;
-    bool m_isHovered;
-    
+    int                     m_id;
+    bool                    m_isHovered;
+
     // Geometry
-    QLineF m_line;
-    QPointF m_ctrlPoint;  // Control point for curved lines
-    QRectF m_boundingRect;
-    
+    QLineF  m_line;
+    QPointF m_ctrlPoint; // Control point for curved lines
+    QRectF  m_boundingRect;
+
     // Visual
-    ConnectionLabel* m_label;
-    
+    ConnectionLabel *m_label;
+
     // Animation
-    QObject* m_animObject;
-    QPropertyAnimation* m_animation;
-    
+    QObject            *m_animObject;
+    QPropertyAnimation *m_animation;
+
     // Static members
     static int CONNECTION_LINE_ID;
 };
@@ -122,4 +149,4 @@ private:
 
 // Register the type for QVariant
 Q_DECLARE_METATYPE(CargoNetSim::GUI::ConnectionLine)
-Q_DECLARE_METATYPE(CargoNetSim::GUI::ConnectionLine*)
+Q_DECLARE_METATYPE(CargoNetSim::GUI::ConnectionLine *)

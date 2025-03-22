@@ -1,60 +1,63 @@
 #include "GraphicsView.h"
 
-#include <QPainter>
-#include <QMouseEvent>
-#include <QWheelEvent>
-#include <QScrollBar>
 #include <QApplication>
 #include <QDrag>
-#include <QMimeData>
-#include <QWindow>
-#include <QStatusBar>
 #include <QListWidget>
+#include <QMimeData>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QScrollBar>
+#include <QStatusBar>
+#include <QWheelEvent>
+#include <QWindow>
 #include <cmath>
 
+#include "../Controllers/ViewController.h"
 #include "../Items/DistanceMeasurementTool.h"
 #include "../Items/TerminalItem.h"
-#include "../Controllers/ViewController.h"
 
 namespace CargoNetSim {
 namespace GUI {
 
-GraphicsView::GraphicsView(QGraphicsScene* scene, QWidget* parent)
-    : QGraphicsView(scene, parent),
-      useProjectedCoords(false),
-      measureMode(false),
-      measurementTool(nullptr),
-      _zoom(0),
-      _panMode("ctrl_left"),
-      _ctrlLeftDrag(false),
-      _gridSize(50),
-      _gridEnabled(true),
-      _accumulatedScrollX(0),
-      _accumulatedScrollY(0),
-      _minLon(-180.0),
-      _maxLon(180.0),
-      _minLat(-90.0),
-      _maxLat(90.0)
-{
+GraphicsView::GraphicsView(QGraphicsScene *scene,
+                           QWidget        *parent)
+    : QGraphicsView(scene, parent)
+    , useProjectedCoords(false)
+    , measureMode(false)
+    , measurementTool(nullptr)
+    , _zoom(0)
+    , _panMode("ctrl_left")
+    , _ctrlLeftDrag(false)
+    , _gridSize(50)
+    , _gridEnabled(true)
+    , _accumulatedScrollX(0)
+    , _accumulatedScrollY(0)
+    , _minLon(-180.0)
+    , _maxLon(180.0)
+    , _minLat(-90.0)
+    , _maxLat(90.0) {
     // Set up drag mode for left mouse
     setDragMode(QGraphicsView::RubberBandDrag);
-    
+
     // Configure view settings
-    setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    setTransformationAnchor(
+        QGraphicsView::AnchorUnderMouse);
     setResizeAnchor(QGraphicsView::AnchorUnderMouse);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setRenderHint(QPainter::Antialiasing);
-    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-    
+    setViewportUpdateMode(
+        QGraphicsView::FullViewportUpdate);
+
     // Enable mouse tracking for coordinate display
     setMouseTracking(true);
-    
+
     // Allow view to move beyond scene boundaries
-    constexpr double SAFE_COORD_LIMIT = 1e9;  // 1 billion
+    constexpr double SAFE_COORD_LIMIT = 1e9; // 1 billion
     setSceneRect(-SAFE_COORD_LIMIT, -SAFE_COORD_LIMIT,
-                 2 * SAFE_COORD_LIMIT, 2 * SAFE_COORD_LIMIT);
-    
+                 2 * SAFE_COORD_LIMIT,
+                 2 * SAFE_COORD_LIMIT);
+
     // Create coordinate label
     _coordinateLabel = new QLabel(this);
     _coordinateLabel->setStyleSheet(
@@ -64,17 +67,16 @@ GraphicsView::GraphicsView(QGraphicsScene* scene, QWidget* parent)
         "   padding: 5px;"
         "   border: 1px solid gray;"
         "   border-radius: 3px;"
-        "}"
-    );
+        "}");
     _coordinateLabel->hide();
-    
+
     // Enable drop support
     setAcceptDrops(true);
-    
+
     // Set very large initial range for scrollbars
     horizontalScrollBar()->setRange(-100000000, 100000000);
     verticalScrollBar()->setRange(-100000000, 100000000);
-    
+
     // Update scrollbar ranges based on initial zoom
     updateScrollBarRanges();
 }
@@ -84,14 +86,15 @@ GraphicsView::~GraphicsView() {
 }
 
 double GraphicsView::latToMercator(double lat) const {
-    // Convert latitude to Mercator Y coordinate, avoiding ±90° errors
-    // Avoid log domain error by slightly shifting extreme latitudes
+    // Convert latitude to Mercator Y coordinate, avoiding
+    // ±90° errors Avoid log domain error by slightly
+    // shifting extreme latitudes
     if (lat >= 90) {
         lat = 89.999999;
     } else if (lat <= -90) {
         lat = -89.999999;
     }
-    
+
     double latRad = lat * M_PI / 180.0;
     return std::log(std::tan(M_PI / 4 + latRad / 2));
 }
@@ -99,50 +102,67 @@ double GraphicsView::latToMercator(double lat) const {
 double GraphicsView::mercatorToLat(double mercatorY) const {
     try {
         // Clamp mercator_y to avoid math domain errors
-        double maxY = std::log(std::tan(M_PI / 4 + (89.9 * M_PI / 180.0) / 2));
-        double minY = std::log(std::tan(M_PI / 4 + (-89.9 * M_PI / 180.0) / 2));
-        mercatorY = std::max(minY, std::min(maxY, mercatorY));
-        
-        return (2 * std::atan(std::exp(mercatorY)) - M_PI / 2) * 180.0 / M_PI;
-    } catch (const std::overflow_error&) {
+        double maxY = std::log(
+            std::tan(M_PI / 4 + (89.9 * M_PI / 180.0) / 2));
+        double minY = std::log(std::tan(
+            M_PI / 4 + (-89.9 * M_PI / 180.0) / 2));
+        mercatorY =
+            std::max(minY, std::min(maxY, mercatorY));
+
+        return (2 * std::atan(std::exp(mercatorY))
+                - M_PI / 2)
+               * 180.0 / M_PI;
+    } catch (const std::overflow_error &) {
         // Return maximum valid latitude if overflow occurs
         return mercatorY > 0 ? 89.9 : -89.9;
     }
 }
 
-QPair<double, double> GraphicsView::sceneToWGS84(const QPointF& scenePos) const {
+QPair<double, double>
+GraphicsView::sceneToWGS84(const QPointF &scenePos) const {
     try {
         // Apply zoom scaling to coordinates
-        QPointF scaledPos(scenePos.x() / SCALE_FACTOR, scenePos.y() / SCALE_FACTOR);
+        QPointF scaledPos(scenePos.x() / SCALE_FACTOR,
+                          scenePos.y() / SCALE_FACTOR);
 
-        // Define a scaling factor based on current view scale
-        // This helps maintain reasonable coordinate ranges when zooming
-        double viewScaleFactor = 1000.0 * (1.0 + std::abs(_zoom) / 20.0);
+        // Define a scaling factor based on current view
+        // scale This helps maintain reasonable coordinate
+        // ranges when zooming
+        double viewScaleFactor =
+            1000.0 * (1.0 + std::abs(_zoom) / 20.0);
 
-        // Apply safety check for extremely large scale factors
-        if (viewScaleFactor <= 0 || !std::isfinite(viewScaleFactor)) {
+        // Apply safety check for extremely large scale
+        // factors
+        if (viewScaleFactor <= 0
+            || !std::isfinite(viewScaleFactor)) {
             viewScaleFactor = 1000.0;
         }
 
-        // Convert to normalized coordinates in a more direct way
-        // Center of view is considered origin (0,0) by default
+        // Convert to normalized coordinates in a more
+        // direct way Center of view is considered origin
+        // (0,0) by default
         double xNorm = scaledPos.x() / viewScaleFactor;
         double yNorm = scaledPos.y() / viewScaleFactor;
 
         // Safety checks for numerical stability
-        if (!std::isfinite(xNorm) || !std::isfinite(yNorm)) {
+        if (!std::isfinite(xNorm)
+            || !std::isfinite(yNorm)) {
             return {0.0, 0.0};
         }
 
         // Map normalized coordinates to lat/lon
-        double lon = xNorm * 180.0;  // Scale to longitude range
+        double lon =
+            xNorm * 180.0; // Scale to longitude range
 
-        // Use a non-linear transformation for latitude to maintain aspect ratio
-        double yMercator = -yNorm;  // Flip y axis (negative y is north in scene)
+        // Use a non-linear transformation for latitude to
+        // maintain aspect ratio
+        double yMercator = -yNorm; // Flip y axis (negative
+                                   // y is north in scene)
         double lat;
 
         if (std::abs(yMercator) > 0.99) {
-            lat = std::copysign(89.9, yMercator);  // Avoid exact poles
+            lat = std::copysign(
+                89.9, yMercator); // Avoid exact poles
         } else {
             // Apply a Mercator-like transformation
             lat = 90.0 * std::tanh(yMercator * M_PI / 2);
@@ -158,8 +178,9 @@ QPair<double, double> GraphicsView::sceneToWGS84(const QPointF& scenePos) const 
         lon = std::max(-180.0, std::min(180.0, lon));
 
         return {lat, lon};
-    } catch (const std::exception& e) {
-        qWarning() << "Exception in sceneToWGS84:" << e.what();
+    } catch (const std::exception &e) {
+        qWarning() << "Exception in sceneToWGS84:"
+                   << e.what();
         return {0.0, 0.0};
     } catch (...) {
         qWarning() << "Unknown exception in sceneToWGS84";
@@ -167,7 +188,8 @@ QPair<double, double> GraphicsView::sceneToWGS84(const QPointF& scenePos) const 
     }
 }
 
-QPointF GraphicsView::wgs84ToScene(double lat, double lon) const {
+QPointF GraphicsView::wgs84ToScene(double lat,
+                                   double lon) const {
     try {
         // Safety check for input values
         if (!std::isfinite(lat) || !std::isfinite(lon)) {
@@ -179,17 +201,21 @@ QPointF GraphicsView::wgs84ToScene(double lat, double lon) const {
         lon = std::max(-180.0, std::min(180.0, lon));
 
         // Define scaling factor (same as in sceneToWGS84)
-        double viewScaleFactor = 1000.0 * (1.0 + std::abs(_zoom) / 20.0);
+        double viewScaleFactor =
+            1000.0 * (1.0 + std::abs(_zoom) / 20.0);
 
-        // Apply safety check for extremely large scale factors
-        if (viewScaleFactor <= 0 || !std::isfinite(viewScaleFactor)) {
+        // Apply safety check for extremely large scale
+        // factors
+        if (viewScaleFactor <= 0
+            || !std::isfinite(viewScaleFactor)) {
             viewScaleFactor = 1000.0;
         }
 
         // Convert longitude directly
         double xNorm = lon / 180.0;
 
-        // Convert latitude using inverse of our Mercator-like transform
+        // Convert latitude using inverse of our
+        // Mercator-like transform
         double yMercator;
         if (std::abs(lat) > 89.9) {
             yMercator = std::copysign(0.99, lat);
@@ -197,10 +223,12 @@ QPointF GraphicsView::wgs84ToScene(double lat, double lon) const {
             yMercator = std::atanh(lat / 90.0) * 2 / M_PI;
         }
 
-        double yNorm = -yMercator;  // Flip back to scene coordinates
+        double yNorm =
+            -yMercator; // Flip back to scene coordinates
 
         // Safety checks for numerical stability
-        if (!std::isfinite(xNorm) || !std::isfinite(yNorm)) {
+        if (!std::isfinite(xNorm)
+            || !std::isfinite(yNorm)) {
             return QPointF(0, 0);
         }
 
@@ -214,8 +242,9 @@ QPointF GraphicsView::wgs84ToScene(double lat, double lon) const {
         }
 
         return QPointF(x, y);
-    } catch (const std::exception& e) {
-        qWarning() << "Exception in wgs84ToScene:" << e.what();
+    } catch (const std::exception &e) {
+        qWarning() << "Exception in wgs84ToScene:"
+                   << e.what();
         return QPointF(0, 0);
     } catch (...) {
         qWarning() << "Unknown exception in wgs84ToScene";
@@ -223,25 +252,34 @@ QPointF GraphicsView::wgs84ToScene(double lat, double lon) const {
     }
 }
 
-QPointF GraphicsView::convertCoordinates(const QPointF& point, const QString& direction) const {
+QPointF GraphicsView::convertCoordinates(
+    const QPointF &point, const QString &direction) const {
     try {
         // Safety check for input values
-        if (!std::isfinite(point.x()) || !std::isfinite(point.y())) {
+        if (!std::isfinite(point.x())
+            || !std::isfinite(point.y())) {
             return QPointF(0, 0);
         }
 
         // WGS 84 Web Mercator constants
-        constexpr double EARTH_RADIUS = 6378137.0;  // Earth radius in meters
-        constexpr double HALF_CIRCUMFERENCE = M_PI * EARTH_RADIUS;  // Half the Earth's circumference
-        constexpr double ORIGIN_SHIFT = HALF_CIRCUMFERENCE;  // Used for coordinate origin shift
+        constexpr double EARTH_RADIUS =
+            6378137.0; // Earth radius in meters
+        constexpr double HALF_CIRCUMFERENCE =
+            M_PI * EARTH_RADIUS; // Half the Earth's
+                                 // circumference
+        constexpr double ORIGIN_SHIFT =
+            HALF_CIRCUMFERENCE; // Used for coordinate
+                                // origin shift
 
         if (direction == "to_projected") {
             // Extract longitude and latitude
             double lon = point.x();
             double lat = point.y();
 
-            // Clamp latitude to the valid range for Web Mercator
-            lat = std::max(std::min(lat, 85.051129), -85.051129);
+            // Clamp latitude to the valid range for Web
+            // Mercator
+            lat = std::max(std::min(lat, 85.051129),
+                           -85.051129);
 
             // Convert to radians
             double lonRad = lon * M_PI / 180.0;
@@ -249,7 +287,9 @@ QPointF GraphicsView::convertCoordinates(const QPointF& point, const QString& di
 
             // Calculate Web Mercator coordinates
             double x = EARTH_RADIUS * lonRad;
-            double y = EARTH_RADIUS * std::log(std::tan(M_PI / 4 + latRad / 2));
+            double y =
+                EARTH_RADIUS
+                * std::log(std::tan(M_PI / 4 + latRad / 2));
 
             // Safety check for output values
             if (!std::isfinite(x) || !std::isfinite(y)) {
@@ -257,7 +297,7 @@ QPointF GraphicsView::convertCoordinates(const QPointF& point, const QString& di
             }
 
             return QPointF(x, y);
-        } else {  // to_geodetic
+        } else { // to_geodetic
             // Extract projected coordinates
             double x = point.x();
             double y = point.y();
@@ -267,34 +307,42 @@ QPointF GraphicsView::convertCoordinates(const QPointF& point, const QString& di
                 return QPointF(0, 0);
             }
 
-            // Convert from Web Mercator to geodetic coordinates
+            // Convert from Web Mercator to geodetic
+            // coordinates
             double lonRad = x / EARTH_RADIUS;
-            double latRad = 2 * std::atan(std::exp(y / EARTH_RADIUS)) - M_PI / 2;
+            double latRad =
+                2 * std::atan(std::exp(y / EARTH_RADIUS))
+                - M_PI / 2;
 
             // Convert to degrees
             double lonDeg = lonRad * 180.0 / M_PI;
             double latDeg = latRad * 180.0 / M_PI;
 
             // Ensure longitude is in the range [-180, 180]
-            lonDeg = std::fmod(lonDeg + 180.0, 360.0) - 180.0;
+            lonDeg =
+                std::fmod(lonDeg + 180.0, 360.0) - 180.0;
 
             // Safety check for output values
-            if (!std::isfinite(latDeg) || !std::isfinite(lonDeg)) {
+            if (!std::isfinite(latDeg)
+                || !std::isfinite(lonDeg)) {
                 return QPointF(0, 0);
             }
 
             return wgs84ToScene(latDeg, lonDeg);
         }
-    } catch (const std::exception& e) {
-        qWarning() << "Exception in convertCoordinates:" << e.what();
+    } catch (const std::exception &e) {
+        qWarning() << "Exception in convertCoordinates:"
+                   << e.what();
         return QPointF(0, 0);
     } catch (...) {
-        qWarning() << "Unknown exception in convertCoordinates";
+        qWarning()
+            << "Unknown exception in convertCoordinates";
         return QPointF(0, 0);
     }
 }
 
-void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
+void GraphicsView::drawBackground(QPainter     *painter,
+                                  const QRectF &rect) {
     // Call base class implementation first
     QGraphicsView::drawBackground(painter, rect);
 
@@ -308,37 +356,48 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
 
     try {
         // Get the visible area in scene coordinates
-        QRectF visibleRect = mapToScene(viewport()->rect()).boundingRect();
+        QRectF visibleRect =
+            mapToScene(viewport()->rect()).boundingRect();
 
         // Get the viewport width in scene coordinates
         double viewportWidth = visibleRect.width();
 
-        // Early exit check for extreme zoom levels or invalid dimensions
-        if (viewportWidth <= 0 || viewportWidth > 1e15 || visibleRect.height() <= 0 || visibleRect.height() > 1e15) {
+        // Early exit check for extreme zoom levels or
+        // invalid dimensions
+        if (viewportWidth <= 0 || viewportWidth > 1e15
+            || visibleRect.height() <= 0
+            || visibleRect.height() > 1e15) {
             painter->restore();
             return;
         }
 
         // Adjust target grid lines based on zoom level
-        int targetGridLines;
+        int    targetGridLines;
         double zoomFactor = std::abs(_zoom);
         if (zoomFactor > 50) {
-            targetGridLines = 40;  // More grid lines at higher zoom
+            targetGridLines =
+                40; // More grid lines at higher zoom
         } else {
-            targetGridLines = 20;  // Default number of grid lines
+            targetGridLines =
+                20; // Default number of grid lines
         }
 
-        // Calculate base grid size that would give us the target number of lines
-        double baseGridSize = viewportWidth / targetGridLines;
-        if (baseGridSize <= 0 || !std::isfinite(baseGridSize)) {
+        // Calculate base grid size that would give us the
+        // target number of lines
+        double baseGridSize =
+            viewportWidth / targetGridLines;
+        if (baseGridSize <= 0
+            || !std::isfinite(baseGridSize)) {
             painter->restore();
             return;
         }
 
-        // Round to the nearest power of 10 to get clean numbers
+        // Round to the nearest power of 10 to get clean
+        // numbers
         double magnitude;
         try {
-            magnitude = std::pow(10.0, std::round(std::log10(baseGridSize)));
+            magnitude = std::pow(
+                10.0, std::round(std::log10(baseGridSize)));
             if (!std::isfinite(magnitude)) {
                 painter->restore();
                 return;
@@ -358,12 +417,24 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
             gridSize = magnitude * 2;
         }
 
-        // Adjust minimum and maximum constraints based on zoom
-        double minGrid = 50.0 / (1.0 + zoomFactor / 10.0);  // Decrease minimum grid size as zoom increases
-        double maxGrid = 1000000.0 * (1.0 + zoomFactor / 10.0);  // Increase maximum grid size as zoom increases
+        // Adjust minimum and maximum constraints based on
+        // zoom
+        double minGrid =
+            50.0
+            / (1.0
+               + zoomFactor
+                     / 10.0); // Decrease minimum grid size
+                              // as zoom increases
+        double maxGrid =
+            1000000.0
+            * (1.0
+               + zoomFactor
+                     / 10.0); // Increase maximum grid size
+                              // as zoom increases
 
         // Apply constraints
-        gridSize = std::max(minGrid, std::min(gridSize, maxGrid));
+        gridSize =
+            std::max(minGrid, std::min(gridSize, maxGrid));
 
         // Safety check for grid size
         if (gridSize <= 0 || !std::isfinite(gridSize)) {
@@ -371,30 +442,42 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
             return;
         }
 
-        // Calculate number of grid cells needed in each direction from origin
-        // Use safe conversion to int to prevent overflow
+        // Calculate number of grid cells needed in each
+        // direction from origin Use safe conversion to int
+        // to prevent overflow
         int cellsLeft, cellsRight, cellsTop, cellsBottom;
         try {
-            double tempLeft = std::abs(visibleRect.left()) / gridSize;
-            double tempRight = std::abs(visibleRect.right()) / gridSize;
-            double tempTop = std::abs(visibleRect.top()) / gridSize;
-            double tempBottom = std::abs(visibleRect.bottom()) / gridSize;
+            double tempLeft =
+                std::abs(visibleRect.left()) / gridSize;
+            double tempRight =
+                std::abs(visibleRect.right()) / gridSize;
+            double tempTop =
+                std::abs(visibleRect.top()) / gridSize;
+            double tempBottom =
+                std::abs(visibleRect.bottom()) / gridSize;
 
             // Check if values are within safe integer range
-            if (tempLeft > INT_MAX/2 || tempRight > INT_MAX/2 ||
-                tempTop > INT_MAX/2 || tempBottom > INT_MAX/2) {
+            if (tempLeft > INT_MAX / 2
+                || tempRight > INT_MAX / 2
+                || tempTop > INT_MAX / 2
+                || tempBottom > INT_MAX / 2) {
                 painter->restore();
                 return;
             }
 
-            cellsLeft = static_cast<int>(std::ceil(tempLeft));
-            cellsRight = static_cast<int>(std::ceil(tempRight));
+            cellsLeft =
+                static_cast<int>(std::ceil(tempLeft));
+            cellsRight =
+                static_cast<int>(std::ceil(tempRight));
             cellsTop = static_cast<int>(std::ceil(tempTop));
-            cellsBottom = static_cast<int>(std::ceil(tempBottom));
+            cellsBottom =
+                static_cast<int>(std::ceil(tempBottom));
 
-            // Safety check: limit maximum number of cells to prevent freezing
+            // Safety check: limit maximum number of cells
+            // to prevent freezing
             const int MAX_CELLS = 1000;
-            if (cellsLeft + cellsRight > MAX_CELLS || cellsTop + cellsBottom > MAX_CELLS) {
+            if (cellsLeft + cellsRight > MAX_CELLS
+                || cellsTop + cellsBottom > MAX_CELLS) {
                 painter->restore();
                 return;
             }
@@ -403,27 +486,32 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
             return;
         }
 
-        // Calculate grid bounds ensuring they extend from origin
-        double left = -cellsLeft * gridSize;
-        double right = cellsRight * gridSize;
-        double top = -cellsTop * gridSize;
+        // Calculate grid bounds ensuring they extend from
+        // origin
+        double left   = -cellsLeft * gridSize;
+        double right  = cellsRight * gridSize;
+        double top    = -cellsTop * gridSize;
         double bottom = cellsBottom * gridSize;
 
         // Define quadrant colors
-        QColor q1Color(150, 150, 150);  // Top Right
-        QColor q2Color(170, 170, 170);  // Top Left
-        QColor q3Color(190, 190, 190);  // Bottom Left
-        QColor q4Color(130, 130, 130);  // Bottom Right
+        QColor q1Color(150, 150, 150); // Top Right
+        QColor q2Color(170, 170, 170); // Top Left
+        QColor q3Color(190, 190, 190); // Bottom Left
+        QColor q4Color(130, 130, 130); // Bottom Right
 
-        // Draw grid only if lines would be sufficiently far apart
-        constexpr int MIN_GRID_SPACING = 5;  // Reduced from 10 to allow denser grids
+        // Draw grid only if lines would be sufficiently far
+        // apart
+        constexpr int MIN_GRID_SPACING =
+            5; // Reduced from 10 to allow denser grids
 
-        // Calculate grid spacing in pixels - with safety checks
+        // Calculate grid spacing in pixels - with safety
+        // checks
         QPointF p1 = mapFromScene(QPointF(gridSize, 0));
         QPointF p2 = mapFromScene(QPointF(0, 0));
-        double gridSpacingPixels = p1.x() - p2.x();
+        double  gridSpacingPixels = p1.x() - p2.x();
 
-        if (gridSpacingPixels < MIN_GRID_SPACING || !std::isfinite(gridSpacingPixels)) {
+        if (gridSpacingPixels < MIN_GRID_SPACING
+            || !std::isfinite(gridSpacingPixels)) {
             painter->restore();
             return;
         }
@@ -431,9 +519,11 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
         // Reset transformation to draw in view coordinates
         painter->resetTransform();
 
-        // Draw vertical lines starting from origin and going both directions
+        // Draw vertical lines starting from origin and
+        // going both directions
         for (double x = 0; x <= right; x += gridSize) {
-            if (x == 0) {  // Skip origin line here, we'll draw it later
+            if (x == 0) { // Skip origin line here, we'll
+                          // draw it later
                 continue;
             }
 
@@ -442,28 +532,26 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
 
             // Draw top half
             QPen pen(q1Color, 1);
-            pen.setCosmetic(true);  // Make line width constant regardless of zoom
+            pen.setCosmetic(
+                true); // Make line width constant
+                       // regardless of zoom
             painter->setPen(pen);
             painter->drawLine(
-                viewX,
-                mapFromScene(QPointF(0, top)).y(),
-                viewX,
-                mapFromScene(QPointF(0, 0)).y()
-                );
+                viewX, mapFromScene(QPointF(0, top)).y(),
+                viewX, mapFromScene(QPointF(0, 0)).y());
 
             // Draw bottom half
             pen = QPen(q4Color, 1);
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
+                viewX, mapFromScene(QPointF(0, 0)).y(),
                 viewX,
-                mapFromScene(QPointF(0, 0)).y(),
-                viewX,
-                mapFromScene(QPointF(0, bottom)).y()
-                );
+                mapFromScene(QPointF(0, bottom)).y());
         }
 
-        for (double x = -gridSize; x >= left; x -= gridSize) {
+        for (double x = -gridSize; x >= left;
+             x -= gridSize) {
             int viewX = mapFromScene(QPointF(x, 0)).x();
 
             // Draw top half
@@ -471,27 +559,24 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
-                viewX,
-                mapFromScene(QPointF(0, top)).y(),
-                viewX,
-                mapFromScene(QPointF(0, 0)).y()
-                );
+                viewX, mapFromScene(QPointF(0, top)).y(),
+                viewX, mapFromScene(QPointF(0, 0)).y());
 
             // Draw bottom half
             pen = QPen(q3Color, 1);
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
+                viewX, mapFromScene(QPointF(0, 0)).y(),
                 viewX,
-                mapFromScene(QPointF(0, 0)).y(),
-                viewX,
-                mapFromScene(QPointF(0, bottom)).y()
-                );
+                mapFromScene(QPointF(0, bottom)).y());
         }
 
-        // Draw horizontal lines starting from origin and going both directions
+        // Draw horizontal lines starting from origin and
+        // going both directions
         for (double y = 0; y <= bottom; y += gridSize) {
-            if (y == 0) {  // Skip origin line here, we'll draw it later
+            if (y == 0) { // Skip origin line here, we'll
+                          // draw it later
                 continue;
             }
 
@@ -502,25 +587,20 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
-                mapFromScene(QPointF(left, 0)).x(),
-                viewY,
-                mapFromScene(QPointF(0, 0)).x(),
-                viewY
-                );
+                mapFromScene(QPointF(left, 0)).x(), viewY,
+                mapFromScene(QPointF(0, 0)).x(), viewY);
 
             // Draw right half
             pen = QPen(q4Color, 1);
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
-                mapFromScene(QPointF(0, 0)).x(),
-                viewY,
-                mapFromScene(QPointF(right, 0)).x(),
-                viewY
-                );
+                mapFromScene(QPointF(0, 0)).x(), viewY,
+                mapFromScene(QPointF(right, 0)).x(), viewY);
         }
 
-        for (double y = -gridSize; y >= top; y -= gridSize) {
+        for (double y = -gridSize; y >= top;
+             y -= gridSize) {
             int viewY = mapFromScene(QPointF(0, y)).y();
 
             // Draw left half
@@ -528,22 +608,16 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
-                mapFromScene(QPointF(left, 0)).x(),
-                viewY,
-                mapFromScene(QPointF(0, 0)).x(),
-                viewY
-                );
+                mapFromScene(QPointF(left, 0)).x(), viewY,
+                mapFromScene(QPointF(0, 0)).x(), viewY);
 
             // Draw right half
             pen = QPen(q1Color, 1);
             pen.setCosmetic(true);
             painter->setPen(pen);
             painter->drawLine(
-                mapFromScene(QPointF(0, 0)).x(),
-                viewY,
-                mapFromScene(QPointF(right, 0)).x(),
-                viewY
-                );
+                mapFromScene(QPointF(0, 0)).x(), viewY,
+                mapFromScene(QPointF(right, 0)).x(), viewY);
         }
 
         // Draw origin axes with darker color
@@ -553,41 +627,40 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
 
         // Draw axes in view coordinates
         QPoint originPos = mapFromScene(QPointF(0, 0));
-        painter->drawLine(  // Y axis
+        painter->drawLine( // Y axis
             originPos.x(),
             mapFromScene(QPointF(0, top)).y(),
             originPos.x(),
-            mapFromScene(QPointF(0, bottom)).y()
-            );
-        painter->drawLine(  // X axis
+            mapFromScene(QPointF(0, bottom)).y());
+        painter->drawLine( // X axis
             mapFromScene(QPointF(left, 0)).x(),
             originPos.y(),
             mapFromScene(QPointF(right, 0)).x(),
-            originPos.y()
-            );
+            originPos.y());
 
         // Draw origin crosshair
         QPen crosshairPen(Qt::red, 4);
         crosshairPen.setCosmetic(true);
         painter->setPen(crosshairPen);
 
-        // Draw crosshair lines extending to first grid in each direction
-        painter->drawLine(  // Vertical line
+        // Draw crosshair lines extending to first grid in
+        // each direction
+        painter->drawLine( // Vertical line
             originPos.x(),
-            mapFromScene(QPointF(0, -gridSize)).y(),  // Top
+            mapFromScene(QPointF(0, -gridSize)).y(), // Top
             originPos.x(),
-            mapFromScene(QPointF(0, gridSize)).y()  // Bottom
-            );
-        painter->drawLine(  // Horizontal line
-            mapFromScene(QPointF(-gridSize, 0)).x(),  // Left
+            mapFromScene(QPointF(0, gridSize)).y() // Bottom
+        );
+        painter->drawLine( // Horizontal line
+            mapFromScene(QPointF(-gridSize, 0)).x(), // Left
             originPos.y(),
-            mapFromScene(QPointF(gridSize, 0)).x(),  // Right
-            originPos.y()
-            );
+            mapFromScene(QPointF(gridSize, 0)).x(), // Right
+            originPos.y());
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         // Log the exception but don't crash
-        qWarning() << "Exception in drawBackground:" << e.what();
+        qWarning() << "Exception in drawBackground:"
+                   << e.what();
     } catch (...) {
         // Catch any other unexpected exceptions
         qWarning() << "Unknown exception in drawBackground";
@@ -597,24 +670,25 @@ void GraphicsView::drawBackground(QPainter* painter, const QRectF& rect) {
     painter->restore();
 }
 
-void GraphicsView::wheelEvent(QWheelEvent* event) {
+void GraphicsView::wheelEvent(QWheelEvent *event) {
     try {
-        constexpr double zoomInFactor = 1.25;
+        constexpr double zoomInFactor  = 1.25;
         constexpr double zoomOutFactor = 1 / zoomInFactor;
 
         // Get the scene position before scaling
-        QPointF oldPos = mapToScene(event->position().toPoint());
+        QPointF oldPos =
+            mapToScene(event->position().toPoint());
 
         // Determine zoom direction
         double zoomFactor;
-        int newZoom;
+        int    newZoom;
 
         if (event->angleDelta().y() > 0) {
             zoomFactor = zoomInFactor;
-            newZoom = _zoom + 1;
+            newZoom    = _zoom + 1;
         } else {
             zoomFactor = zoomOutFactor;
-            newZoom = _zoom - 1;
+            newZoom    = _zoom - 1;
         }
 
         // Check zoom limits
@@ -628,7 +702,8 @@ void GraphicsView::wheelEvent(QWheelEvent* event) {
         _zoom = newZoom;
 
         // Get the new position under mouse after scaling
-        QPointF newPos = mapToScene(event->position().toPoint());
+        QPointF newPos =
+            mapToScene(event->position().toPoint());
 
         // Move scene to delta to keep mouse position fixed
         QPointF delta = newPos - oldPos;
@@ -638,8 +713,9 @@ void GraphicsView::wheelEvent(QWheelEvent* event) {
         updateScrollBarRanges();
 
         event->accept();
-    } catch (const std::exception& e) {
-        qWarning() << "Exception in wheelEvent:" << e.what();
+    } catch (const std::exception &e) {
+        qWarning() << "Exception in wheelEvent:"
+                   << e.what();
         event->accept();
     } catch (...) {
         qWarning() << "Unknown exception in wheelEvent";
@@ -647,36 +723,41 @@ void GraphicsView::wheelEvent(QWheelEvent* event) {
     }
 }
 
-void GraphicsView::mousePressEvent(QMouseEvent* event) {
+void GraphicsView::mousePressEvent(QMouseEvent *event) {
     // Check for Ctrl + Left Button
-    if (_panMode == "ctrl_left" && 
-        event->modifiers() == Qt::ControlModifier && 
-        event->button() == Qt::LeftButton) {
-        
-        _ctrlLeftDrag = true;
+    if (_panMode == "ctrl_left"
+        && event->modifiers() == Qt::ControlModifier
+        && event->button() == Qt::LeftButton) {
+
+        _ctrlLeftDrag  = true;
         _lastDragPoint = event->pos();
-        viewport()->setCursor(QCursor(Qt::ClosedHandCursor));
+        viewport()->setCursor(
+            QCursor(Qt::ClosedHandCursor));
         event->accept();
         return;
-    } else if (_panMode == "middle_mouse" && 
-               event->button() == Qt::MiddleButton) {
-        
-        _ctrlLeftDrag = true;  // Reuse the same drag logic
+    } else if (_panMode == "middle_mouse"
+               && event->button() == Qt::MiddleButton) {
+
+        _ctrlLeftDrag  = true; // Reuse the same drag logic
         _lastDragPoint = event->pos();
-        viewport()->setCursor(QCursor(Qt::ClosedHandCursor));
+        viewport()->setCursor(
+            QCursor(Qt::ClosedHandCursor));
         event->accept();
         return;
     }
-    
+
     if (measureMode && event->button() == Qt::LeftButton) {
         QPointF scenePos = mapToScene(event->pos());
-        
+
         if (!measurementTool) {
-            // Create new measurement tool for this measurement
-            measurementTool = new DistanceMeasurementTool(this);
+            // Create new measurement tool for this
+            // measurement
+            measurementTool =
+                new DistanceMeasurementTool(this);
             scene()->addItem(measurementTool);
             measurementTool->setStartPoint(scenePos);
-            measurementTool->setEndPoint(scenePos);  // Initialize end point
+            measurementTool->setEndPoint(
+                scenePos); // Initialize end point
             measurementTool->update();
             event->accept();
             return;
@@ -684,26 +765,31 @@ void GraphicsView::mousePressEvent(QMouseEvent* event) {
             // Complete the measurement
             measurementTool->setEndPoint(scenePos);
             measurementTool->update();
-            
-            // Important: Set measurementTool to None so next measurement creates a new one
+
+            // Important: Set measurementTool to None so
+            // next measurement creates a new one
             measurementTool = nullptr;
-            measureMode = false;
-            
-            // Emit signal or call function to uncheck measure action in parent window
-            if (QWidget* mainWindow = window()) {
-                QMetaObject::invokeMethod(mainWindow, "onMeasurementCompleted");
+            measureMode     = false;
+
+            // Emit signal or call function to uncheck
+            // measure action in parent window
+            if (QWidget *mainWindow = window()) {
+                QMetaObject::invokeMethod(
+                    mainWindow, "onMeasurementCompleted");
             }
-            
+
             unsetCursor();
-            
+
             // Show status message
-            if (QWidget* mainWindow = window()) {
-                QStatusBar* statusBar = mainWindow->findChild<QStatusBar*>();
+            if (QWidget *mainWindow = window()) {
+                QStatusBar *statusBar =
+                    mainWindow->findChild<QStatusBar *>();
                 if (statusBar) {
-                    statusBar->showMessage("Measurement complete", 2000);
+                    statusBar->showMessage(
+                        "Measurement complete", 2000);
                 }
             }
-            
+
             event->accept();
             return;
         }
@@ -712,16 +798,19 @@ void GraphicsView::mousePressEvent(QMouseEvent* event) {
     }
 }
 
-void GraphicsView::mouseMoveEvent(QMouseEvent* event) {
+void GraphicsView::mouseMoveEvent(QMouseEvent *event) {
     try {
         // Handle Ctrl + Left Button dragging
         if (_ctrlLeftDrag) {
-            QPointF delta = event->pos() - _lastDragPoint;
+            QPointF delta  = event->pos() - _lastDragPoint;
             _lastDragPoint = event->pos();
 
-            // Use horizontal and vertical scrollbars for smooth scrolling
-            horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
-            verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+            // Use horizontal and vertical scrollbars for
+            // smooth scrolling
+            horizontalScrollBar()->setValue(
+                horizontalScrollBar()->value() - delta.x());
+            verticalScrollBar()->setValue(
+                verticalScrollBar()->value() - delta.y());
 
             event->accept();
             return;
@@ -734,15 +823,22 @@ void GraphicsView::mouseMoveEvent(QMouseEvent* event) {
         QString coordText;
         try {
             if (useProjectedCoords) {
-                auto [lat, lon] = sceneToWGS84(scenePos);
-                QPointF projected = convertCoordinates(QPointF(lon, lat), "to_projected");
-                coordText = QString("X: %1m, Y: %2m").arg(projected.x(), 0, 'f', 2).arg(projected.y(), 0, 'f', 2);
+                auto [lat, lon]   = sceneToWGS84(scenePos);
+                QPointF projected = convertCoordinates(
+                    QPointF(lon, lat), "to_projected");
+                coordText =
+                    QString("X: %1m, Y: %2m")
+                        .arg(projected.x(), 0, 'f', 2)
+                        .arg(projected.y(), 0, 'f', 2);
             } else {
                 auto [lat, lon] = sceneToWGS84(scenePos);
                 // Constrain display values to valid ranges
                 lat = std::max(-90.0, std::min(90.0, lat));
-                lon = std::max(-180.0, std::min(180.0, lon));
-                coordText = QString("Lat: %1°, Lon: %2°").arg(lat, 0, 'f', 6).arg(lon, 0, 'f', 6);
+                lon =
+                    std::max(-180.0, std::min(180.0, lon));
+                coordText = QString("Lat: %1°, Lon: %2°")
+                                .arg(lat, 0, 'f', 6)
+                                .arg(lon, 0, 'f', 6);
             }
         } catch (...) {
             coordText = "Coordinates unavailable";
@@ -751,14 +847,16 @@ void GraphicsView::mouseMoveEvent(QMouseEvent* event) {
         _coordinateLabel->setText(coordText);
 
         // Position the label
-        QPoint labelPos = event->pos() + QPoint(15, 15);
-        QSize labelSize = _coordinateLabel->sizeHint();
+        QPoint labelPos  = event->pos() + QPoint(15, 15);
+        QSize  labelSize = _coordinateLabel->sizeHint();
 
         if (labelPos.x() + labelSize.width() > width()) {
-            labelPos.setX(event->pos().x() - labelSize.width() - 5);
+            labelPos.setX(event->pos().x()
+                          - labelSize.width() - 5);
         }
         if (labelPos.y() + labelSize.height() > height()) {
-            labelPos.setY(event->pos().y() - labelSize.height() - 5);
+            labelPos.setY(event->pos().y()
+                          - labelSize.height() - 5);
         }
 
         _coordinateLabel->move(labelPos);
@@ -766,17 +864,21 @@ void GraphicsView::mouseMoveEvent(QMouseEvent* event) {
 
         // Handle measurement tool updates
         try {
-            if (measureMode && measurementTool && measurementTool->hasStartPoint()) {
-                measurementTool->setEndPoint(mapToScene(event->pos()));
+            if (measureMode && measurementTool
+                && measurementTool->hasStartPoint()) {
+                measurementTool->setEndPoint(
+                    mapToScene(event->pos()));
                 measurementTool->update();
             }
         } catch (...) {
-            qWarning() << "Exception handling measurement tool update";
+            qWarning() << "Exception handling measurement "
+                          "tool update";
         }
 
         QGraphicsView::mouseMoveEvent(event);
-    } catch (const std::exception& e) {
-        qWarning() << "Exception in mouseMoveEvent:" << e.what();
+    } catch (const std::exception &e) {
+        qWarning() << "Exception in mouseMoveEvent:"
+                   << e.what();
         QGraphicsView::mouseMoveEvent(event);
     } catch (...) {
         qWarning() << "Unknown exception in mouseMoveEvent";
@@ -784,30 +886,33 @@ void GraphicsView::mouseMoveEvent(QMouseEvent* event) {
     }
 }
 
-void GraphicsView::leaveEvent(QEvent* event) {
+void GraphicsView::leaveEvent(QEvent *event) {
     QGraphicsView::leaveEvent(event);
     _coordinateLabel->hide();
 }
 
-void GraphicsView::resizeEvent(QResizeEvent* event) {
+void GraphicsView::resizeEvent(QResizeEvent *event) {
     QGraphicsView::resizeEvent(event);
 }
 
-bool GraphicsView::eventFilter(QObject* obj, QEvent* event) {
+bool GraphicsView::eventFilter(QObject *obj,
+                               QEvent  *event) {
     // Handle any resize-related events
-    if (event->type() == QEvent::Resize ||
-        event->type() == QEvent::LayoutRequest ||
-        event->type() == QEvent::LayoutDirectionChange) {
+    if (event->type() == QEvent::Resize
+        || event->type() == QEvent::LayoutRequest
+        || event->type() == QEvent::LayoutDirectionChange) {
     }
-    
+
     return QGraphicsView::eventFilter(obj, event);
 }
 
-void GraphicsView::mouseReleaseEvent(QMouseEvent* event) {
+void GraphicsView::mouseReleaseEvent(QMouseEvent *event) {
     // Check pan mode and handle accordingly
-    if ((_panMode == "ctrl_left" && event->button() == Qt::LeftButton) ||
-        (_panMode == "middle_mouse" && event->button() == Qt::MiddleButton)) {
-        
+    if ((_panMode == "ctrl_left"
+         && event->button() == Qt::LeftButton)
+        || (_panMode == "middle_mouse"
+            && event->button() == Qt::MiddleButton)) {
+
         if (_ctrlLeftDrag) {
             _ctrlLeftDrag = false;
             viewport()->unsetCursor();
@@ -820,172 +925,205 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent* event) {
     }
 }
 
-void GraphicsView::mouseDoubleClickEvent(QMouseEvent* event) {
+void GraphicsView::mouseDoubleClickEvent(
+    QMouseEvent *event) {
     if (event->button() == Qt::MiddleButton) {
         // Get all TerminalItem objects in the scene
-        QList<TerminalItem*> terminals;
-        
+        QList<TerminalItem *> terminals;
+
         if (scene()) {
-            for (QGraphicsItem* item : scene()->items()) {
-                if (TerminalItem* terminal = dynamic_cast<TerminalItem*>(item)) {
+            for (QGraphicsItem *item : scene()->items()) {
+                if (TerminalItem *terminal =
+                        dynamic_cast<TerminalItem *>(
+                            item)) {
                     terminals.append(terminal);
                 }
             }
         }
-        
+
         if (!terminals.isEmpty()) {
             // Calculate the bounding rect of all terminals
-            QRectF sceneRect = terminals.first()->sceneBoundingRect();
+            QRectF sceneRect =
+                terminals.first()->sceneBoundingRect();
             for (int i = 1; i < terminals.size(); ++i) {
-                sceneRect = sceneRect.united(terminals[i]->sceneBoundingRect());
+                sceneRect = sceneRect.united(
+                    terminals[i]->sceneBoundingRect());
             }
-            
+
             // Add some padding around the bounds
             int padding = 50;
-            sceneRect.adjust(-padding, -padding, padding, padding);
-            
+            sceneRect.adjust(-padding, -padding, padding,
+                             padding);
+
             // Center the view on this rectangle
             fitInView(sceneRect, Qt::KeepAspectRatio);
-            
+
             event->accept();
             return;
         } else {
             // Get current region
-            if (QWidget* mainWindow = window()) {
+            if (QWidget *mainWindow = window()) {
                 QVariant regionVariant;
-                QMetaObject::invokeMethod(mainWindow, "getCurrentRegion",
-                                        Qt::DirectConnection,
-                                        Q_RETURN_ARG(QVariant, regionVariant));
-                
-                QString currentRegion = regionVariant.toString();
-                
+                QMetaObject::invokeMethod(
+                    mainWindow, "getCurrentRegion",
+                    Qt::DirectConnection,
+                    Q_RETURN_ARG(QVariant, regionVariant));
+
+                QString currentRegion =
+                    regionVariant.toString();
+
                 // Find the region center point
-                QGraphicsItem* centerPoint = nullptr;
-                QMetaObject::invokeMethod(mainWindow, "getRegionCenter",
-                                        Qt::DirectConnection,
-                                        Q_RETURN_ARG(QGraphicsItem*, centerPoint),
-                                        Q_ARG(QString, currentRegion));
-                
+                QGraphicsItem *centerPoint = nullptr;
+                QMetaObject::invokeMethod(
+                    mainWindow, "getRegionCenter",
+                    Qt::DirectConnection,
+                    Q_RETURN_ARG(QGraphicsItem *,
+                                 centerPoint),
+                    Q_ARG(QString, currentRegion));
+
                 if (centerPoint) {
                     // Calculate bounding rect with padding
-                    int padding = 50;
-                    QRectF centerRect = centerPoint->sceneBoundingRect();
-                    centerRect.adjust(-padding, -padding, padding, padding);
-                    
-                    // Center the view on the region center point
-                    fitInView(centerRect, Qt::KeepAspectRatio);
-                    
+                    int    padding = 50;
+                    QRectF centerRect =
+                        centerPoint->sceneBoundingRect();
+                    centerRect.adjust(-padding, -padding,
+                                      padding, padding);
+
+                    // Center the view on the region center
+                    // point
+                    fitInView(centerRect,
+                              Qt::KeepAspectRatio);
+
                     event->accept();
                     return;
                 }
             }
         }
     }
-    
+
     QGraphicsView::mouseDoubleClickEvent(event);
 }
 
-void GraphicsView::dragEnterEvent(QDragEnterEvent* event) {
-    if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) {
+void GraphicsView::dragEnterEvent(QDragEnterEvent *event) {
+    if (event->mimeData()->hasFormat(
+            "application/x-qabstractitemmodeldatalist")) {
         event->accept();
     } else {
         event->ignore();
     }
 }
 
-void GraphicsView::dragMoveEvent(QDragMoveEvent* event) {
-    if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) {
+void GraphicsView::dragMoveEvent(QDragMoveEvent *event) {
+    if (event->mimeData()->hasFormat(
+            "application/x-qabstractitemmodeldatalist")) {
         event->accept();
     } else {
         event->ignore();
     }
 }
 
-void GraphicsView::dropEvent(QDropEvent* event) {
-    if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) {
+void GraphicsView::dropEvent(QDropEvent *event) {
+    if (event->mimeData()->hasFormat(
+            "application/x-qabstractitemmodeldatalist")) {
         // Get the drop position in scene coordinates
-        QPointF dropPos = mapToScene(event->position().toPoint());
-        
+        QPointF dropPos =
+            mapToScene(event->position().toPoint());
+
         // Get the source item from the library
-        QWidget* sourceWidget = qobject_cast<QWidget*>(event->source());
-        QByteArray modelData = event->mimeData()->data("application/x-qabstractitemmodeldatalist");
+        QWidget *sourceWidget =
+            qobject_cast<QWidget *>(event->source());
+        QByteArray modelData = event->mimeData()->data(
+            "application/x-qabstractitemmodeldatalist");
         QDataStream stream(&modelData, QIODevice::ReadOnly);
-        
-        int row = -1, column = -1;
+
+        int             row = -1, column = -1;
         QList<QVariant> itemData;
 
         while (!stream.atEnd()) {
             int mapItems;
             stream >> row >> column >> mapItems;
             for (int i = 0; i < mapItems; ++i) {
-                int key;
+                int      key;
                 QVariant value;
                 stream >> key >> value;
                 itemData.append(value);
             }
         }
-        
+
         // Get terminal type from the source item
-        QListWidget* listWidget = qobject_cast<QListWidget*>(sourceWidget);
+        QListWidget *listWidget =
+            qobject_cast<QListWidget *>(sourceWidget);
         if (!listWidget || row < 0) {
             event->ignore();
             return;
         }
-        
-        QListWidgetItem* sourceItem = listWidget->item(row);
-        QString terminalType = sourceItem->text();
-        
-        // Check for uniqueness constraints (Only one Origin/Destination terminal allowed)
-        if (terminalType == "Origin" || terminalType == "Destination") {
+
+        QListWidgetItem *sourceItem = listWidget->item(row);
+        QString          terminalType = sourceItem->text();
+
+        // Check for uniqueness constraints (Only one
+        // Origin/Destination terminal allowed)
+        if (terminalType == "Origin"
+            || terminalType == "Destination") {
             bool terminalExists = false;
             if (scene()) {
-                for (QGraphicsItem* item : scene()->items()) {
-                    if (TerminalItem* terminal = dynamic_cast<TerminalItem*>(item)) {
-                        if (terminal->getTerminalType() == terminalType) {
+                for (QGraphicsItem *item :
+                     scene()->items()) {
+                    if (TerminalItem *terminal =
+                            dynamic_cast<TerminalItem *>(
+                                item)) {
+                        if (terminal->getTerminalType()
+                            == terminalType) {
                             terminalExists = true;
                             break;
                         }
                     }
                 }
             }
-            
+
             if (terminalExists) {
                 // Show message in status bar
-                if (QWidget* mainWindow = window()) {
-                    QStatusBar* statusBar = mainWindow->findChild<QStatusBar*>();
+                if (QWidget *mainWindow = window()) {
+                    QStatusBar *statusBar =
+                        mainWindow
+                            ->findChild<QStatusBar *>();
                     if (statusBar) {
                         statusBar->showMessage(
-                            QString("Only one %1 terminal allowed.").arg(terminalType), 
-                            2000
-                        );
+                            QString("Only one %1 terminal "
+                                    "allowed.")
+                                .arg(terminalType),
+                            2000);
                     }
                 }
                 event->ignore();
                 return;
             }
         }
-        
+
         // Create terminal using ViewController
-        QObject* sceneParent = scene() ? scene()->parent() : nullptr;
+        QObject *sceneParent =
+            scene() ? scene()->parent() : nullptr;
         if (sceneParent) {
             // Use reflection to call the controller method
             QMetaObject::invokeMethod(
-                sceneParent,
-                "createTerminalAtPoint",
+                sceneParent, "createTerminalAtPoint",
                 Qt::DirectConnection,
                 Q_ARG(QString, terminalType),
-                Q_ARG(QGraphicsScene*, scene()),
-                Q_ARG(QPointF, dropPos)
-            );
-            
+                Q_ARG(QGraphicsScene *, scene()),
+                Q_ARG(QPointF, dropPos));
+
             // Show confirmation in status bar
-            if (QWidget* mainWindow = window()) {
-                QStatusBar* statusBar = mainWindow->findChild<QStatusBar*>();
+            if (QWidget *mainWindow = window()) {
+                QStatusBar *statusBar =
+                    mainWindow->findChild<QStatusBar *>();
                 if (statusBar) {
-                    statusBar->showMessage(QString("%1 added.").arg(terminalType), 2000);
+                    statusBar->showMessage(
+                        QString("%1 added.")
+                            .arg(terminalType),
+                        2000);
                 }
             }
-            
+
             event->accept();
         } else {
             event->ignore();
@@ -1005,8 +1143,11 @@ void GraphicsView::updateScrollBarRanges() {
             scale = 0.0000001;
         }
 
-        // Base range that stays within 32-bit integer limits
-        const int MAX_RANGE = 1000000000;  // Use a more conservative value than INT_MAX
+        // Base range that stays within 32-bit integer
+        // limits
+        const int MAX_RANGE =
+            1000000000; // Use a more conservative value
+                        // than INT_MAX
 
         // Calculate new range based on scale
         int adjustedRange;
@@ -1016,24 +1157,31 @@ void GraphicsView::updateScrollBarRanges() {
             adjustedRange = MAX_RANGE;
         } else {
             double rawRange = MAX_RANGE * (1 / scale);
-            if (rawRange > MAX_RANGE || !std::isfinite(rawRange)) {
+            if (rawRange > MAX_RANGE
+                || !std::isfinite(rawRange)) {
                 adjustedRange = MAX_RANGE;
             } else {
-                adjustedRange = static_cast<int>(std::min(rawRange, static_cast<double>(MAX_RANGE)));
+                adjustedRange = static_cast<int>(std::min(
+                    rawRange,
+                    static_cast<double>(MAX_RANGE)));
             }
         }
 
         // Set new ranges for both scrollbars
-        horizontalScrollBar()->setRange(-adjustedRange, adjustedRange);
-        verticalScrollBar()->setRange(-adjustedRange, adjustedRange);
-    } catch (const std::exception& e) {
-        qWarning() << "Exception in updateScrollBarRanges:" << e.what();
+        horizontalScrollBar()->setRange(-adjustedRange,
+                                        adjustedRange);
+        verticalScrollBar()->setRange(-adjustedRange,
+                                      adjustedRange);
+    } catch (const std::exception &e) {
+        qWarning() << "Exception in updateScrollBarRanges:"
+                   << e.what();
 
         // In case of exception, set a safe default range
         horizontalScrollBar()->setRange(-1000000, 1000000);
         verticalScrollBar()->setRange(-1000000, 1000000);
     } catch (...) {
-        qWarning() << "Unknown exception in updateScrollBarRanges";
+        qWarning()
+            << "Unknown exception in updateScrollBarRanges";
 
         // In case of exception, set a safe default range
         horizontalScrollBar()->setRange(-1000000, 1000000);
@@ -1041,69 +1189,80 @@ void GraphicsView::updateScrollBarRanges() {
     }
 }
 
-void GraphicsView::setGridVisibility(bool visible)
-{
+void GraphicsView::setGridVisibility(bool visible) {
     _gridEnabled = visible;
 }
 
-void GraphicsView::fitInView(const QRectF& rect, Qt::AspectRatioMode aspectRatioMode) {
+void GraphicsView::fitInView(
+    const QRectF       &rect,
+    Qt::AspectRatioMode aspectRatioMode) {
     try {
         // Safety check for valid rect
-        if (!rect.isValid() || rect.width() <= 0 || rect.height() <= 0) {
-            qWarning() << "Invalid rect in fitInView, using default view";
+        if (!rect.isValid() || rect.width() <= 0
+            || rect.height() <= 0) {
+            qWarning() << "Invalid rect in fitInView, "
+                          "using default view";
             return;
         }
 
-        // Call the parent implementation to get the basic fit
+        // Call the parent implementation to get the basic
+        // fit
         QGraphicsView::fitInView(rect, aspectRatioMode);
 
-        // Calculate the actual zoom level based on the transform scale
+        // Calculate the actual zoom level based on the
+        // transform scale
         double currentScale = transform().m11();
 
         // Safety check for numerical stability
-        if (currentScale <= 0 || !std::isfinite(currentScale)) {
+        if (currentScale <= 0
+            || !std::isfinite(currentScale)) {
             qWarning() << "Invalid scale in fitInView";
             _zoom = 0;
             return;
         }
 
-        _zoom = qRound(std::log(currentScale) / std::log(1.25));
+        _zoom =
+            qRound(std::log(currentScale) / std::log(1.25));
 
         // Check if the calculated zoom is within bounds
         if (_zoom > MAX_ZOOM) {
             // Scale back to maximum allowed zoom
-            double scaleFactor = std::pow(1.25, MAX_ZOOM - _zoom);
+            double scaleFactor =
+                std::pow(1.25, MAX_ZOOM - _zoom);
             scale(scaleFactor, scaleFactor);
             _zoom = MAX_ZOOM;
         } else if (_zoom < MIN_ZOOM) {
             // Scale up to minimum allowed zoom
-            double scaleFactor = std::pow(1.25, MIN_ZOOM - _zoom);
+            double scaleFactor =
+                std::pow(1.25, MIN_ZOOM - _zoom);
             scale(scaleFactor, scaleFactor);
             _zoom = MIN_ZOOM;
         }
 
         // Update scrollbar ranges for the new zoom level
         updateScrollBarRanges();
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         qWarning() << "Exception in fitInView:" << e.what();
     } catch (...) {
         qWarning() << "Unknown exception in fitInView";
     }
 }
 
-void GraphicsView::keyPressEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Control && _panMode == "ctrl_left") {
+void GraphicsView::keyPressEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Control
+        && _panMode == "ctrl_left") {
         viewport()->setCursor(QCursor(Qt::OpenHandCursor));
     }
-    
+
     QGraphicsView::keyPressEvent(event);
 }
 
-void GraphicsView::keyReleaseEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Control && _panMode == "ctrl_left") {
+void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Control
+        && _panMode == "ctrl_left") {
         viewport()->unsetCursor();
     }
-    
+
     QGraphicsView::keyReleaseEvent(event);
 }
 

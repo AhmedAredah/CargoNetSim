@@ -1,14 +1,14 @@
 #pragma once
 
+#include "../../Backend/Models/ShipSystem.h"
+#include <QAction>
 #include <QDialog>
+#include <QList>
+#include <QSplitter>
 #include <QTableWidget>
 #include <QTextEdit>
-#include <QSplitter>
 #include <QToolBar>
-#include <QAction>
-#include <QList>
 #include <memory>
-#include "../../Backend/Models/ShipSystem.h"
 
 namespace CargoNetSim {
 namespace GUI {
@@ -17,10 +17,12 @@ class ToolbarController;
 class BasicButtonController;
 
 /**
- * @brief Dialog for managing ship entities in the simulation
- * 
- * ShipManagerDialog provides an interface for loading, viewing, and managing ships
- * that can be used in the simulation. It displays ships in a table with detailed
+ * @brief Dialog for managing ship entities in the
+ * simulation
+ *
+ * ShipManagerDialog provides an interface for loading,
+ * viewing, and managing ships that can be used in the
+ * simulation. It displays ships in a table with detailed
  * properties in a separate view.
  */
 class ShipManagerDialog : public QDialog {
@@ -34,24 +36,24 @@ public:
      * @brief Constructor
      * @param parent Parent widget
      */
-    explicit ShipManagerDialog(QWidget* parent = nullptr);
-    
+    explicit ShipManagerDialog(QWidget *parent = nullptr);
+
     /**
      * @brief Destructor
      */
     ~ShipManagerDialog() = default;
-    
+
     /**
      * @brief Get the managed ships
      * @return List of ship objects
      */
     QList<Backend::Ship *> getShips() const;
-    
+
     /**
      * @brief Set the ships to be managed
      * @param ships List of ship objects
      */
-    void setShips(const QList<Backend::Ship *>& ships);
+    void setShips(const QList<Backend::Ship *> &ships);
 
 signals:
     /**
@@ -59,30 +61,30 @@ signals:
      * @param count Number of ships loaded
      */
     void shipsLoaded(int count);
-    
+
     /**
      * @brief Signal emitted when a ship is selected
      * @param shipId ID of the selected ship
      */
-    void shipSelected(const QString& shipId);
-    
+    void shipSelected(const QString &shipId);
+
     /**
      * @brief Signal emitted when a ship is deleted
      * @param shipId ID of the deleted ship
      */
-    void shipDeleted(const QString& shipId);
+    void shipDeleted(const QString &shipId);
 
 private slots:
     /**
      * @brief Load ships from a file
      */
     void loadShips();
-    
+
     /**
      * @brief Delete the selected ship
      */
     void deleteShip();
-    
+
     /**
      * @brief Update details view when selection changes
      */
@@ -99,24 +101,25 @@ private:
      * @brief Initialize the user interface
      */
     void initUI();
-    
+
     /**
      * @brief Format ship details for display
      * @param ship Ship object
      * @return Formatted HTML string for display
      */
-    QString formatShipDetails(const Backend::Ship& ship) const;
+    QString
+    formatShipDetails(const Backend::Ship &ship) const;
 
     // UI components
-    QTableWidget* m_table;
-    QTextEdit* m_detailsText;
-    QSplitter* m_splitter;
-    QToolBar* m_toolbar;
-    QAction* m_loadAction;
-    QAction* m_deleteAction;
-    
+    QTableWidget *m_table;
+    QTextEdit    *m_detailsText;
+    QSplitter    *m_splitter;
+    QToolBar     *m_toolbar;
+    QAction      *m_loadAction;
+    QAction      *m_deleteAction;
+
     // Data
-    QList<Backend::Ship*> m_ships;
+    QList<Backend::Ship *> m_ships;
 };
 
 } // namespace GUI

@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QWidget>
-#include <QFormLayout>
-#include <QDoubleValidator>
-#include <QGroupBox>
-#include <QComboBox>
-#include <QLineEdit>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QDoubleValidator>
+#include <QFormLayout>
+#include <QGraphicsItem>
+#include <QGroupBox>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMap>
 #include <QPushButton>
-#include <QLabel>
 #include <QSpinBox>
-#include <QDoubleSpinBox>
 #include <QVariant>
-#include <QGraphicsItem>
+#include <QWidget>
 
 namespace CargoNetSim {
 namespace GUI {
@@ -36,63 +36,86 @@ public:
 
     // Display property methods for different items
     void displayMapProperties();
-    void displayProperties(QGraphicsItem* item);
-    
+    void displayProperties(QGraphicsItem *item);
+
     // Update position fields for selected item
-    void updatePositionFields(const QPointF& pos);
+    void updatePositionFields(const QPointF &pos);
     void updateCoordinateFields(double lat, double lon);
 
-    QGraphicsItem* getCurrentItem() { return currentItem; }
+    QGraphicsItem *getCurrentItem() {
+        return currentItem;
+    }
 
 signals:
-    void propertiesChanged(QGraphicsItem* item, const QMap<QString, QVariant>& properties);
+    void propertiesChanged(
+        QGraphicsItem                 *item,
+        const QMap<QString, QVariant> &properties);
     void requestRefresh();
 
 public slots:
     void saveProperties();
-    void openContainerManager(TerminalItem* item);
+    void openContainerManager(TerminalItem *item);
 
 private slots:
     void onCoordSystemChanged(int index);
-    void onDwellMethodChanged(const QString& method, QGroupBox* dwellGroup);
+    void onDwellMethodChanged(const QString &method,
+                              QGroupBox     *dwellGroup);
 
 private:
     // Clear the form layout
     void clearLayout();
 
     // Display methods for specific item types
-    void displayMapPointProperties(MapPoint* item);
-    void displayRegionCenterProperties(RegionCenterPoint* item);
-    void displayConnectionProperties(ConnectionLine* item);
-    void displayTerminalProperties(TerminalItem* item);
-    void displayGenericProperties(QGraphicsItem* item, const QStringList& skipProperties = QStringList());
+    void displayMapPointProperties(MapPoint *item);
+    void
+    displayRegionCenterProperties(RegionCenterPoint *item);
+    void displayConnectionProperties(ConnectionLine *item);
+    void displayTerminalProperties(TerminalItem *item);
+    void displayGenericProperties(
+        QGraphicsItem     *item,
+        const QStringList &skipProperties = QStringList());
 
     // Helper methods for terminal properties
-    void addInterfacesSection(TerminalItem* item, const QMap<QString, bool>& isEditable = QMap<QString, bool>());
-    QLayout* createInterfaceLayout(const QString& label, const QList<QPair<QString, QString>>& options, 
-                                  const QStringList& currentValues, const QString& side, bool isEditable = false);
-    void addNestedPropertiesSection(TerminalItem* item, const QString& sectionName, const QString& propertiesKey);
-    void addCapacitySection(TerminalItem* item);
-    void addCostSection(TerminalItem* item);
-    void addCustomsSection(TerminalItem* item);
-    void addDwellTimeSection(TerminalItem* item);
-    void addContainerManagement(TerminalItem* item);
+    void addInterfacesSection(
+        TerminalItem              *item,
+        const QMap<QString, bool> &isEditable =
+            QMap<QString, bool>());
+    QLayout *createInterfaceLayout(
+        const QString                        &label,
+        const QList<QPair<QString, QString>> &options,
+        const QStringList                    &currentValues,
+        const QString &side, bool isEditable = false);
+    void addNestedPropertiesSection(
+        TerminalItem *item, const QString &sectionName,
+        const QString &propertiesKey);
+    void addCapacitySection(TerminalItem *item);
+    void addCostSection(TerminalItem *item);
+    void addCustomsSection(TerminalItem *item);
+    void addDwellTimeSection(TerminalItem *item);
+    void addContainerManagement(TerminalItem *item);
 
     // Helper method for coordinate fields
-    void addCoordinateField(const QString& key, const QVariant& value, GraphicsView* view, RegionCenterPoint* item);
-    
+    void addCoordinateField(const QString     &key,
+                            const QVariant    &value,
+                            GraphicsView      *view,
+                            RegionCenterPoint *item);
+
     // Common helper methods
-    void addGenericField(const QString& key, const QVariant& value);
-    QPair<QLayout*, QMap<QString, QWidget*>> createDwellTimeParameters(
-        const QString& method, const QMap<QString, QVariant>& currentParams = QMap<QString, QVariant>());
+    void addGenericField(const QString  &key,
+                         const QVariant &value);
+    QPair<QLayout *, QMap<QString, QWidget *>>
+    createDwellTimeParameters(
+        const QString                 &method,
+        const QMap<QString, QVariant> &currentParams =
+            QMap<QString, QVariant>());
 
     // Member variables
-    MainWindow* mainWindow;
-    QFormLayout* layout;
-    QWidget* container;
-    QPushButton* saveButton;
-    QGraphicsItem* currentItem;
-    QMap<QString, QWidget*> editFields;
+    MainWindow              *mainWindow;
+    QFormLayout             *layout;
+    QWidget                 *container;
+    QPushButton             *saveButton;
+    QGraphicsItem           *currentItem;
+    QMap<QString, QWidget *> editFields;
 };
 
 } // namespace GUI

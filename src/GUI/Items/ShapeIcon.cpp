@@ -1,36 +1,34 @@
 #include "ShapeIcon.h"
 
+#include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPaintEvent>
 
 namespace CargoNetSim {
 namespace GUI {
 
-ShapeIcon::ShapeIcon(const QString& shapeType, QWidget* parent)
+ShapeIcon::ShapeIcon(const QString &shapeType,
+                     QWidget       *parent)
     : QWidget(parent)
     , m_shapeType(shapeType)
     , m_fillColor(Qt::lightGray)
     , m_borderColor(Qt::black)
-    , m_borderWidth(1)
-{
+    , m_borderWidth(1) {
     // Set transparent background
     setStyleSheet("background-color: transparent;");
-    
+
     // Default size policy to fit content
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    
+
     // Set focus policy to not receive focus
     setFocusPolicy(Qt::NoFocus);
 }
 
-QString ShapeIcon::shapeType() const
-{
+QString ShapeIcon::shapeType() const {
     return m_shapeType;
 }
 
-void ShapeIcon::setShapeType(const QString& type)
-{
+void ShapeIcon::setShapeType(const QString &type) {
     if (m_shapeType != type) {
         m_shapeType = type;
         update();
@@ -38,13 +36,11 @@ void ShapeIcon::setShapeType(const QString& type)
     }
 }
 
-QColor ShapeIcon::fillColor() const
-{
+QColor ShapeIcon::fillColor() const {
     return m_fillColor;
 }
 
-void ShapeIcon::setFillColor(const QColor& color)
-{
+void ShapeIcon::setFillColor(const QColor &color) {
     if (m_fillColor != color) {
         m_fillColor = color;
         update();
@@ -52,13 +48,11 @@ void ShapeIcon::setFillColor(const QColor& color)
     }
 }
 
-QColor ShapeIcon::borderColor() const
-{
+QColor ShapeIcon::borderColor() const {
     return m_borderColor;
 }
 
-void ShapeIcon::setBorderColor(const QColor& color)
-{
+void ShapeIcon::setBorderColor(const QColor &color) {
     if (m_borderColor != color) {
         m_borderColor = color;
         update();
@@ -66,13 +60,11 @@ void ShapeIcon::setBorderColor(const QColor& color)
     }
 }
 
-int ShapeIcon::borderWidth() const
-{
+int ShapeIcon::borderWidth() const {
     return m_borderWidth;
 }
 
-void ShapeIcon::setBorderWidth(int width)
-{
+void ShapeIcon::setBorderWidth(int width) {
     if (m_borderWidth != width) {
         m_borderWidth = width;
         update();
@@ -80,47 +72,42 @@ void ShapeIcon::setBorderWidth(int width)
     }
 }
 
-QSize ShapeIcon::sizeHint() const
-{
+QSize ShapeIcon::sizeHint() const {
     return QSize(24, 24);
 }
 
-QSize ShapeIcon::minimumSizeHint() const
-{
+QSize ShapeIcon::minimumSizeHint() const {
     return QSize(12, 12);
 }
 
-void ShapeIcon::paintEvent(QPaintEvent* event)
-{
+void ShapeIcon::paintEvent(QPaintEvent *event) {
     Q_UNUSED(event);
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     // Configure painter
     painter.setPen(QPen(m_borderColor, m_borderWidth));
     painter.setBrush(QBrush(m_fillColor));
-    
+
     // Calculate the available drawing area with margin
-    QRect rect = this->rect().adjusted(m_borderWidth, m_borderWidth, 
-                                      -m_borderWidth, -m_borderWidth);
-    
+    QRect rect = this->rect().adjusted(
+        m_borderWidth, m_borderWidth, -m_borderWidth,
+        -m_borderWidth);
+
     // Draw the appropriate shape
     if (m_shapeType == "circle") {
         painter.drawEllipse(rect);
-    }
-    else if (m_shapeType == "rectangle") {
+    } else if (m_shapeType == "rectangle") {
         painter.drawRect(rect);
-    }
-    else if (m_shapeType == "triangle") {
+    } else if (m_shapeType == "triangle") {
         QPainterPath path;
         path.moveTo(rect.center().x(), rect.top());
         path.lineTo(rect.left(), rect.bottom());
         path.lineTo(rect.right(), rect.bottom());
         path.lineTo(rect.center().x(), rect.top());
         painter.drawPath(path);
-    }
-    else if (m_shapeType == "diamond") {
+    } else if (m_shapeType == "diamond") {
         QPainterPath path;
         path.moveTo(rect.center().x(), rect.top());
         path.lineTo(rect.right(), rect.center().y());
@@ -128,8 +115,7 @@ void ShapeIcon::paintEvent(QPaintEvent* event)
         path.lineTo(rect.left(), rect.center().y());
         path.lineTo(rect.center().x(), rect.top());
         painter.drawPath(path);
-    }
-    else {
+    } else {
         // Default to circle if shape type is unknown
         painter.drawEllipse(rect);
     }

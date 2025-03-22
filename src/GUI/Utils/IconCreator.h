@@ -1,23 +1,27 @@
 #ifndef ICONFACTORY_H
 #define ICONFACTORY_H
 
-#include <QPixmap>
 #include <QMap>
+#include <QPixmap>
 #include <QString>
 
 /*!
- * \brief A namespace providing a set of functions to create custom QPixmaps for various icons.
+ * \brief A namespace providing a set of functions to create
+ * custom QPixmaps for various icons.
  *
- * Each function returns a QPixmap that has been drawn using QPainter and related Qt classes.
+ * Each function returns a QPixmap that has been drawn using
+ * QPainter and related Qt classes.
  */
 namespace CargoNetSim {
 namespace GUI {
 namespace IconFactory {
-// Returns a map of terminal icon names to their corresponding QPixmaps.
+// Returns a map of terminal icon names to their
+// corresponding QPixmaps.
 QMap<QString, QPixmap> createTerminalIcons();
 
 QPixmap createConnectTerminalsPixmap(int size = 32);
-QPixmap createAssignSelectedToCurrentRegionPixmap(int size = 32);
+QPixmap
+createAssignSelectedToCurrentRegionPixmap(int size = 32);
 QPixmap createSetBackgroundColorPixmap(int size = 32);
 QPixmap createMeasureDistancePixmap(int size = 32);
 QPixmap createClearMeasurementsPixmap(int size = 32);
@@ -46,9 +50,9 @@ QPixmap createShowHideTerminalsIcon(int size = 128);
 QPixmap createShowHideConnectionsIcon(int size = 128);
 QPixmap createShowEyeIcon(int size = 128);
 QPixmap createShowHidePathsTableIcon(int size = 128);
-QPixmap createThickWhiteArrowPixmap(int size = 32,
+QPixmap createThickWhiteArrowPixmap(int size  = 32,
                                     int width = 200);
-QPixmap createThickWhiteLinePixmap(int size = 32,
+QPixmap createThickWhiteLinePixmap(int size  = 32,
                                    int width = 200);
 QPixmap createImportTrainsIcon(int size = 128);
 QPixmap createDeleteTrainIcon(int size = 128);
@@ -57,8 +61,8 @@ QPixmap createDeleteShipIcon(int size = 128);
 QPixmap createTrainManagerIcon(int size = 128);
 QPixmap createShipManagerIcon(int size = 128);
 QPixmap createSetGlobalPositionIcon();
-QPixmap createTransportationModePixmap(const QString& mode,
-                                       int size = 32,
+QPixmap createTransportationModePixmap(const QString &mode,
+                                       int size  = 32,
                                        int width = 64);
 
 } // namespace IconFactory
