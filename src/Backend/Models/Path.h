@@ -3,21 +3,22 @@
 /**
  * @file Path.h
  * @brief Defines the Path class for complete paths
- * @author [Your Name]
+ * @author Ahmed Aredah
  * @date March 21, 2025
  *
- * This file declares the Path class, representing a complete
- * transportation path with multiple segments in the
- * CargoNetSim simulation framework.
+ * This file declares the Path class, representing a
+ * complete transportation path with multiple segments in
+ * the CargoNetSim simulation framework.
  *
  * @note Part of the CargoNetSim::Backend namespace.
- * @warning Manages PathSegment pointers; ensure proper deletion.
+ * @warning Manages PathSegment pointers; ensure proper
+ * deletion.
  */
 
-#include <QObject>
-#include <QJsonObject>
-#include <QString>
 #include "PathSegment.h"
+#include <QJsonObject>
+#include <QObject>
+#include <QString>
 
 namespace CargoNetSim {
 namespace Backend {
@@ -26,11 +27,12 @@ namespace Backend {
  * @class Path
  * @brief Represents a complete transportation path
  *
- * This class encapsulates a full path, including its ID, costs,
- * terminals, and segments, used for path-finding results in
- * the simulation.
+ * This class encapsulates a full path, including its ID,
+ * costs, terminals, and segments, used for path-finding
+ * results in the simulation.
  *
- * @note Owns PathSegment pointers and deletes them on destruction.
+ * @note Owns PathSegment pointers and deletes them on
+ * destruction.
  */
 class Path : public QObject {
     Q_OBJECT
@@ -45,16 +47,14 @@ public:
      * @param segments List of PathSegment pointers
      * @param parent Parent QObject, defaults to nullptr
      *
-     * Creates a Path with specified properties and segments.
+     * Creates a Path with specified properties and
+     * segments.
      */
-    explicit Path(
-        int id,
-        double totalCost,
-        double edgeCost,
-        double termCost,
-        const QList<QJsonObject>& terminals,
-        const QList<PathSegment*>& segments,
-        QObject* parent = nullptr);
+    explicit Path(int id, double totalCost, double edgeCost,
+                  double                      termCost,
+                  const QList<QJsonObject>   &terminals,
+                  const QList<PathSegment *> &segments,
+                  QObject *parent = nullptr);
 
     /**
      * @brief Destroys the Path, freeing segments
@@ -69,7 +69,9 @@ public:
      *
      * Returns the ID assigned to this path.
      */
-    int getPathId() const { return m_pathId; }
+    int getPathId() const {
+        return m_pathId;
+    }
 
     /**
      * @brief Retrieves the total path cost
@@ -77,7 +79,9 @@ public:
      *
      * Returns the sum of edge and terminal costs.
      */
-    double getTotalPathCost() const { return m_totalPathCost; }
+    double getTotalPathCost() const {
+        return m_totalPathCost;
+    }
 
     /**
      * @brief Retrieves the total edge costs
@@ -85,7 +89,9 @@ public:
      *
      * Returns the cumulative cost of path segments.
      */
-    double getTotalEdgeCosts() const { return m_totalEdgeCosts; }
+    double getTotalEdgeCosts() const {
+        return m_totalEdgeCosts;
+    }
 
     /**
      * @brief Retrieves the total terminal costs
@@ -93,7 +99,9 @@ public:
      *
      * Returns the cumulative cost at terminals.
      */
-    double getTotalTerminalCosts() const { return m_totalTerminalCosts; }
+    double getTotalTerminalCosts() const {
+        return m_totalTerminalCosts;
+    }
 
     /**
      * @brief Retrieves terminals in the path
@@ -101,7 +109,9 @@ public:
      *
      * Returns information about terminals in the path.
      */
-    QList<QJsonObject> getTerminalsInPath() const { return m_terminalsInPath; }
+    QList<QJsonObject> getTerminalsInPath() const {
+        return m_terminalsInPath;
+    }
 
     /**
      * @brief Retrieves path segments
@@ -109,7 +119,9 @@ public:
      *
      * Returns the segments composing this path.
      */
-    QList<PathSegment*> getSegments() const { return m_segments; }
+    QList<PathSegment *> getSegments() const {
+        return m_segments;
+    }
 
 private:
     /**
@@ -140,7 +152,7 @@ private:
     /**
      * @brief List of segments composing the path
      */
-    QList<PathSegment*> m_segments;
+    QList<PathSegment *> m_segments;
 };
 
 } // namespace Backend

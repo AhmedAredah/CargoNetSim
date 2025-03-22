@@ -1,25 +1,25 @@
 /**
-* @file ship_system.h
-* @brief Defines ship-related classes for the CargoNetSim
-*        system.
-* @author Ahmed Aredah
-* @date 2025-03-19
-* @copyright Copyright (c) 2025
-*/
+ * @file ship_system.h
+ * @brief Defines ship-related classes for the CargoNetSim
+ *        system.
+ * @author Ahmed Aredah
+ * @date 2025-03-19
+ * @copyright Copyright (c) 2025
+ */
 
 #pragma once
 
+#include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QMap>
 #include <QObject>
 #include <QString>
-#include <QVector>
-#include <QMap>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QFile>
 #include <QTextStream>
-#include <QDebug>
+#include <QVector>
 #include <QtMath>
-#include <QDir>
 
 #include "../Commons/ClientType.h"
 
@@ -38,10 +38,11 @@ public:
      * @param clientType The type of client generating the
      *        error.
      */
-    static void log_error(const QString& message,
-                          ClientType clientType) {
-        qCritical() << "Error [" << static_cast<int>(clientType)
-        << "]: " << message;
+    static void log_error(const QString &message,
+                          ClientType     clientType) {
+        qCritical() << "Error ["
+                    << static_cast<int>(clientType)
+                    << "]: " << message;
     }
 };
 
@@ -60,7 +61,7 @@ public:
      * @brief Default constructor.
      * @param parent The parent QObject.
      */
-    Ship(QObject* parent = nullptr);
+    Ship(QObject *parent = nullptr);
 
     /**
      * @brief Detailed constructor with all ship parameters.
@@ -133,132 +134,143 @@ public:
      * @param parent The parent QObject.
      */
     Ship(
-        const QString& shipId,
-        const QVector<QVector<float>>& pathCoordinates,
-        float maxSpeed,
-        float waterlineLength,
-        float lengthBetweenPerpendiculars,
-        float beam,
-        float draftAtForward,
-        float draftAtAft,
+        const QString                 &shipId,
+        const QVector<QVector<float>> &pathCoordinates,
+        float maxSpeed, float waterlineLength,
+        float lengthBetweenPerpendiculars, float beam,
+        float draftAtForward, float draftAtAft,
         float volumetricDisplacement = -1.0f,
-        float wettedHullSurface = -1.0f,
-        float areaAboveWaterline = 0.0f,
+        float wettedHullSurface      = -1.0f,
+        float areaAboveWaterline     = 0.0f,
         float bulbousBowCenterHeight = 0.0f,
-        float bulbousBowArea = 0.0f,
-        float immersedTransomArea = 0.0f,
-        float entranceAngle = -1.0f,
-        float surfaceRoughness = 0.0f,
-        float buoyancyCenter = 0.0f,
-        int sternShapeParam = -1,
-        float midshipSectionCoef = -1.0f,
-        float waterplaneAreaCoef = -1.0f,
-        float prismaticCoef = -1.0f,
-        float blockCoef = -1.0f,
-        const QVector<QMap<QString, float>>& tanksDetails =
-        QVector<QMap<QString, float>>(),
+        float bulbousBowArea         = 0.0f,
+        float immersedTransomArea    = 0.0f,
+        float entranceAngle          = -1.0f,
+        float surfaceRoughness       = 0.0f,
+        float buoyancyCenter         = 0.0f,
+        int   sternShapeParam        = -1,
+        float midshipSectionCoef     = -1.0f,
+        float waterplaneAreaCoef     = -1.0f,
+        float prismaticCoef          = -1.0f,
+        float blockCoef              = -1.0f,
+        const QVector<QMap<QString, float>> &tanksDetails =
+            QVector<QMap<QString, float>>(),
         int enginesPerPropeller = 1,
-        const QVector<QMap<QString, float>>& engineTierII =
-        QVector<QMap<QString, float>>(),
-        const QVector<QMap<QString, float>>& engineTierIII =
-        QVector<QMap<QString, float>>(),
-        const QVector<QMap<QString, float>>& engineTierIICurve =
-        QVector<QMap<QString, float>>(),
-        const QVector<QMap<QString, float>>& engineTierIIICurve =
-        QVector<QMap<QString, float>>(),
-        float gearboxRatio = 0.0f,
-        float gearboxEfficiency = 1.0f,
-        float shaftEfficiency = 1.0f,
-        int propellerCount = 1,
-        float propellerDiameter = 0.0f,
-        float propellerPitch = 0.0f,
-        int propellerBladesCount = 4,
-        float expandedAreaRatio = 0.0f,
-        bool stopIfNoEnergy = false,
-        float maxRudderAngle = -1.0f,
-        float vesselWeight = 0.0f,
-        float cargoWeight = 0.0f,
-        const QMap<int, float>& appendagesWettedSurfaces =
-        QMap<int, float>(),
-        QObject* parent = nullptr
-        );
+        const QVector<QMap<QString, float>> &engineTierII =
+            QVector<QMap<QString, float>>(),
+        const QVector<QMap<QString, float>> &engineTierIII =
+            QVector<QMap<QString, float>>(),
+        const QVector<QMap<QString, float>>
+            &engineTierIICurve =
+                QVector<QMap<QString, float>>(),
+        const QVector<QMap<QString, float>>
+            &engineTierIIICurve =
+                QVector<QMap<QString, float>>(),
+        float gearboxRatio         = 0.0f,
+        float gearboxEfficiency    = 1.0f,
+        float shaftEfficiency      = 1.0f,
+        int   propellerCount       = 1,
+        float propellerDiameter    = 0.0f,
+        float propellerPitch       = 0.0f,
+        int   propellerBladesCount = 4,
+        float expandedAreaRatio    = 0.0f,
+        bool  stopIfNoEnergy       = false,
+        float maxRudderAngle       = -1.0f,
+        float vesselWeight = 0.0f, float cargoWeight = 0.0f,
+        const QMap<int, float> &appendagesWettedSurfaces =
+            QMap<int, float>(),
+        QObject *parent = nullptr);
 
     /**
      * @brief Constructor from JSON object.
      * @param json JSON object containing ship parameters.
      * @param parent The parent QObject.
      */
-    Ship(const QJsonObject& json, QObject* parent = nullptr);
+    Ship(const QJsonObject &json,
+         QObject           *parent = nullptr);
 
     /**
      * @brief Copy constructor for Ship class.
      *
-     * Creates a new Ship with the same data as the source Ship,
-     * but as a separate QObject instance.
+     * Creates a new Ship with the same data as the source
+     * Ship, but as a separate QObject instance.
      *
      * @param other The Ship to copy from.
      */
-    Ship(const Ship& other) : QObject(nullptr)
-    {
-        *this = other;  // Use the assignment operator
+    Ship(const Ship &other)
+        : QObject(nullptr) {
+        *this = other; // Use the assignment operator
     }
 
     /**
      * @brief Copy assignment operator for Ship class.
      *
-     * This only copies the data fields of the Ship, not QObject properties
-     * like object name, parent/child relationships, or signal/slot connections.
+     * This only copies the data fields of the Ship, not
+     * QObject properties like object name, parent/child
+     * relationships, or signal/slot connections.
      *
      * @param other The Ship to copy from.
      * @return Reference to this Ship after copying.
      */
-    Ship& operator=(const Ship& other)
-    {
-        if (this != &other) {  // Check for self-assignment
-            // Don't copy QObject properties, only copy the Ship's data fields
-            m_shipId = other.m_shipId;
+    Ship &operator=(const Ship &other) {
+        if (this != &other) { // Check for self-assignment
+            // Don't copy QObject properties, only copy the
+            // Ship's data fields
+            m_shipId          = other.m_shipId;
             m_pathCoordinates = other.m_pathCoordinates;
-            m_maxSpeed = other.m_maxSpeed;
+            m_maxSpeed        = other.m_maxSpeed;
             m_waterlineLength = other.m_waterlineLength;
-            m_lengthBetweenPerpendiculars = other.m_lengthBetweenPerpendiculars;
-            m_beam = other.m_beam;
+            m_lengthBetweenPerpendiculars =
+                other.m_lengthBetweenPerpendiculars;
+            m_beam           = other.m_beam;
             m_draftAtForward = other.m_draftAtForward;
-            m_draftAtAft = other.m_draftAtAft;
-            m_volumetricDisplacement = other.m_volumetricDisplacement;
+            m_draftAtAft     = other.m_draftAtAft;
+            m_volumetricDisplacement =
+                other.m_volumetricDisplacement;
             m_wettedHullSurface = other.m_wettedHullSurface;
-            m_areaAboveWaterline = other.m_areaAboveWaterline;
-            m_bulbousBowCenterHeight = other.m_bulbousBowCenterHeight;
+            m_areaAboveWaterline =
+                other.m_areaAboveWaterline;
+            m_bulbousBowCenterHeight =
+                other.m_bulbousBowCenterHeight;
             m_bulbousBowArea = other.m_bulbousBowArea;
-            m_immersedTransomArea = other.m_immersedTransomArea;
-            m_entranceAngle = other.m_entranceAngle;
+            m_immersedTransomArea =
+                other.m_immersedTransomArea;
+            m_entranceAngle    = other.m_entranceAngle;
             m_surfaceRoughness = other.m_surfaceRoughness;
-            m_buoyancyCenter = other.m_buoyancyCenter;
-            m_sternShapeParam = other.m_sternShapeParam;
-            m_midshipSectionCoef = other.m_midshipSectionCoef;
-            m_waterplaneAreaCoef = other.m_waterplaneAreaCoef;
+            m_buoyancyCenter   = other.m_buoyancyCenter;
+            m_sternShapeParam  = other.m_sternShapeParam;
+            m_midshipSectionCoef =
+                other.m_midshipSectionCoef;
+            m_waterplaneAreaCoef =
+                other.m_waterplaneAreaCoef;
             m_prismaticCoef = other.m_prismaticCoef;
-            m_blockCoef = other.m_blockCoef;
-            m_tanksDetails = other.m_tanksDetails;
-            m_enginesPerPropeller = other.m_enginesPerPropeller;
-            m_engineTierII = other.m_engineTierII;
-            m_engineTierIII = other.m_engineTierIII;
+            m_blockCoef     = other.m_blockCoef;
+            m_tanksDetails  = other.m_tanksDetails;
+            m_enginesPerPropeller =
+                other.m_enginesPerPropeller;
+            m_engineTierII      = other.m_engineTierII;
+            m_engineTierIII     = other.m_engineTierIII;
             m_engineTierIICurve = other.m_engineTierIICurve;
-            m_engineTierIIICurve = other.m_engineTierIIICurve;
-            m_gearboxRatio = other.m_gearboxRatio;
+            m_engineTierIIICurve =
+                other.m_engineTierIIICurve;
+            m_gearboxRatio      = other.m_gearboxRatio;
             m_gearboxEfficiency = other.m_gearboxEfficiency;
-            m_shaftEfficiency = other.m_shaftEfficiency;
-            m_propellerCount = other.m_propellerCount;
+            m_shaftEfficiency   = other.m_shaftEfficiency;
+            m_propellerCount    = other.m_propellerCount;
             m_propellerDiameter = other.m_propellerDiameter;
-            m_propellerPitch = other.m_propellerPitch;
-            m_propellerBladesCount = other.m_propellerBladesCount;
+            m_propellerPitch    = other.m_propellerPitch;
+            m_propellerBladesCount =
+                other.m_propellerBladesCount;
             m_expandedAreaRatio = other.m_expandedAreaRatio;
-            m_stopIfNoEnergy = other.m_stopIfNoEnergy;
-            m_maxRudderAngle = other.m_maxRudderAngle;
-            m_vesselWeight = other.m_vesselWeight;
-            m_cargoWeight = other.m_cargoWeight;
-            m_appendagesWettedSurfaces = other.m_appendagesWettedSurfaces;
+            m_stopIfNoEnergy    = other.m_stopIfNoEnergy;
+            m_maxRudderAngle    = other.m_maxRudderAngle;
+            m_vesselWeight      = other.m_vesselWeight;
+            m_cargoWeight       = other.m_cargoWeight;
+            m_appendagesWettedSurfaces =
+                other.m_appendagesWettedSurfaces;
 
-            // Emit signals to notify that ship data has changed
+            // Emit signals to notify that ship data has
+            // changed
             emit shipChanged();
             emit pathChanged();
             emit propertiesChanged();
@@ -283,14 +295,16 @@ public:
      * @return Pointer to a new Ship instance with the same
      *         properties.
      */
-    Ship* copy() const;
+    Ship *copy() const;
 
     // Getters
     /**
      * @brief Get the ship's unique identifier.
      * @return The ship ID.
      */
-    QString getUserId() const { return m_shipId; }
+    QString getUserId() const {
+        return m_shipId;
+    }
 
     /**
      * @brief Get the ship's path coordinates.
@@ -304,13 +318,17 @@ public:
      * @brief Get the ship's maximum speed.
      * @return Maximum speed in knots.
      */
-    float getMaxSpeed() const { return m_maxSpeed; }
+    float getMaxSpeed() const {
+        return m_maxSpeed;
+    }
 
     /**
      * @brief Get the ship's waterline length.
      * @return Waterline length in meters.
      */
-    float getWaterlineLength() const { return m_waterlineLength; }
+    float getWaterlineLength() const {
+        return m_waterlineLength;
+    }
 
     /**
      * @brief Get the ship's length between perpendiculars.
@@ -324,19 +342,25 @@ public:
      * @brief Get the ship's beam (width).
      * @return Beam in meters.
      */
-    float getBeam() const { return m_beam; }
+    float getBeam() const {
+        return m_beam;
+    }
 
     /**
      * @brief Get the ship's draft at the forward.
      * @return Draft at forward in meters.
      */
-    float getDraftAtForward() const { return m_draftAtForward; }
+    float getDraftAtForward() const {
+        return m_draftAtForward;
+    }
 
     /**
      * @brief Get the ship's draft at the aft.
      * @return Draft at aft in meters.
      */
-    float getDraftAtAft() const { return m_draftAtAft; }
+    float getDraftAtAft() const {
+        return m_draftAtAft;
+    }
 
     /**
      * @brief Get the ship's volumetric displacement.
@@ -374,7 +398,9 @@ public:
      * @brief Get the bulbous bow area.
      * @return Bulbous bow area in square meters.
      */
-    float getBulbousBowArea() const { return m_bulbousBowArea; }
+    float getBulbousBowArea() const {
+        return m_bulbousBowArea;
+    }
 
     /**
      * @brief Get the immersed transom area.
@@ -388,7 +414,9 @@ public:
      * @brief Get the entrance angle.
      * @return Entrance angle in degrees.
      */
-    float getEntranceAngle() const { return m_entranceAngle; }
+    float getEntranceAngle() const {
+        return m_entranceAngle;
+    }
 
     /**
      * @brief Get the hull surface roughness.
@@ -402,13 +430,17 @@ public:
      * @brief Get the buoyancy center.
      * @return Longitudinal center of buoyancy.
      */
-    float getBuoyancyCenter() const { return m_buoyancyCenter; }
+    float getBuoyancyCenter() const {
+        return m_buoyancyCenter;
+    }
 
     /**
      * @brief Get the stern shape parameter.
      * @return Stern shape parameter code.
      */
-    int getSternShapeParam() const { return m_sternShapeParam; }
+    int getSternShapeParam() const {
+        return m_sternShapeParam;
+    }
 
     /**
      * @brief Get the midship section coefficient.
@@ -430,13 +462,17 @@ public:
      * @brief Get the prismatic coefficient.
      * @return Prismatic coefficient.
      */
-    float getPrismaticCoef() const { return m_prismaticCoef; }
+    float getPrismaticCoef() const {
+        return m_prismaticCoef;
+    }
 
     /**
      * @brief Get the block coefficient.
      * @return Block coefficient.
      */
-    float getBlockCoef() const { return m_blockCoef; }
+    float getBlockCoef() const {
+        return m_blockCoef;
+    }
 
     /**
      * @brief Get the tank details.
@@ -458,7 +494,8 @@ public:
      * @brief Get Tier II engine specifications.
      * @return Vector of Tier II engine specification maps.
      */
-    QVector<QMap<QString, float>> getEngineTierIISpecs() const {
+    QVector<QMap<QString, float>>
+    getEngineTierIISpecs() const {
         return m_engineTierII;
     }
 
@@ -466,7 +503,8 @@ public:
      * @brief Get Tier III engine specifications.
      * @return Vector of Tier III engine specification maps.
      */
-    QVector<QMap<QString, float>> getEngineTierIIISpecs() const {
+    QVector<QMap<QString, float>>
+    getEngineTierIIISpecs() const {
         return m_engineTierIII;
     }
 
@@ -474,7 +512,8 @@ public:
      * @brief Get Tier II engine performance curve.
      * @return Vector of Tier II curve point maps.
      */
-    QVector<QMap<QString, float>> getEngineTierIIPerformanceCurve() const {
+    QVector<QMap<QString, float>>
+    getEngineTierIIPerformanceCurve() const {
         return m_engineTierIICurve;
     }
 
@@ -482,7 +521,8 @@ public:
      * @brief Get Tier III engine performance curve.
      * @return Vector of Tier III curve point maps.
      */
-    QVector<QMap<QString, float>> getEngineTierIIIPerformanceCurve() const {
+    QVector<QMap<QString, float>>
+    getEngineTierIIIPerformanceCurve() const {
         return m_engineTierIIICurve;
     }
 
@@ -490,7 +530,9 @@ public:
      * @brief Get the gearbox ratio.
      * @return Gearbox ratio.
      */
-    float getGearboxRatio() const { return m_gearboxRatio; }
+    float getGearboxRatio() const {
+        return m_gearboxRatio;
+    }
 
     /**
      * @brief Get the gearbox efficiency.
@@ -504,13 +546,17 @@ public:
      * @brief Get the shaft efficiency.
      * @return Shaft efficiency factor.
      */
-    float getShaftEfficiency() const { return m_shaftEfficiency; }
+    float getShaftEfficiency() const {
+        return m_shaftEfficiency;
+    }
 
     /**
      * @brief Get the number of propellers.
      * @return Propeller count.
      */
-    int getPropellerCount() const { return m_propellerCount; }
+    int getPropellerCount() const {
+        return m_propellerCount;
+    }
 
     /**
      * @brief Get the propeller diameter.
@@ -524,7 +570,9 @@ public:
      * @brief Get the propeller pitch.
      * @return Propeller pitch in meters.
      */
-    float getPropellerPitch() const { return m_propellerPitch; }
+    float getPropellerPitch() const {
+        return m_propellerPitch;
+    }
 
     /**
      * @brief Get the number of blades per propeller.
@@ -546,25 +594,33 @@ public:
      * @brief Get whether the ship stops if no energy.
      * @return True if the ship stops when energy depleted.
      */
-    bool shouldStopIfNoEnergy() const { return m_stopIfNoEnergy; }
+    bool shouldStopIfNoEnergy() const {
+        return m_stopIfNoEnergy;
+    }
 
     /**
      * @brief Get the maximum rudder angle.
      * @return Maximum rudder angle in degrees.
      */
-    float getMaxRudderAngle() const { return m_maxRudderAngle; }
+    float getMaxRudderAngle() const {
+        return m_maxRudderAngle;
+    }
 
     /**
      * @brief Get the vessel weight.
      * @return Vessel weight in tons.
      */
-    float getVesselWeight() const { return m_vesselWeight; }
+    float getVesselWeight() const {
+        return m_vesselWeight;
+    }
 
     /**
      * @brief Get the cargo weight.
      * @return Cargo weight in tons.
      */
-    float getCargoWeight() const { return m_cargoWeight; }
+    float getCargoWeight() const {
+        return m_cargoWeight;
+    }
 
     /**
      * @brief Get the appendages wetted surfaces.
@@ -579,14 +635,14 @@ public:
      * @brief Set the ship's unique identifier.
      * @param shipId The new ship ID.
      */
-    void setUserId(const QString& shipId);
+    void setUserId(const QString &shipId);
 
     /**
      * @brief Set the ship's path coordinates.
      * @param pathCoordinates New vector of coordinates.
      */
     void setPathCoordinates(
-        const QVector<QVector<float>>& pathCoordinates);
+        const QVector<QVector<float>> &pathCoordinates);
 
     /**
      * @brief Set the ship's maximum speed.
@@ -596,7 +652,8 @@ public:
 
     /**
      * @brief Set the ship's waterline length.
-     * @param waterlineLength New waterline length in meters.
+     * @param waterlineLength New waterline length in
+     * meters.
      */
     void setWaterlineLength(float waterlineLength);
 
@@ -631,7 +688,8 @@ public:
      * @param volumetricDisplacement New displacement in
      *        cubic meters.
      */
-    void setVolumetricDisplacement(float volumetricDisplacement);
+    void
+    setVolumetricDisplacement(float volumetricDisplacement);
 
     /**
      * @brief Set the ship's wetted hull surface area.
@@ -650,7 +708,8 @@ public:
      * @brief Set the height of bulbous bow center.
      * @param bulbousBowCenterHeight New height in meters.
      */
-    void setBulbousBowCenterHeight(float bulbousBowCenterHeight);
+    void
+    setBulbousBowCenterHeight(float bulbousBowCenterHeight);
 
     /**
      * @brief Set the bulbous bow area.
@@ -684,7 +743,8 @@ public:
 
     /**
      * @brief Set the stern shape parameter.
-     * @param sternShapeParam New stern shape parameter code.
+     * @param sternShapeParam New stern shape parameter
+     * code.
      */
     void setSternShapeParam(int sternShapeParam);
 
@@ -714,10 +774,11 @@ public:
 
     /**
      * @brief Set the tank details.
-     * @param tanksDetails New vector of tank specifications.
+     * @param tanksDetails New vector of tank
+     * specifications.
      */
     void setTanksDetails(
-        const QVector<QMap<QString, float>>& tanksDetails);
+        const QVector<QMap<QString, float>> &tanksDetails);
 
     /**
      * @brief Set the number of engines per propeller.
@@ -730,28 +791,30 @@ public:
      * @param engineTierII New vector of specifications.
      */
     void setEngineTierII(
-        const QVector<QMap<QString, float>>& engineTierII);
+        const QVector<QMap<QString, float>> &engineTierII);
 
     /**
      * @brief Set the Tier III engine specifications.
      * @param engineTierIII New vector of specifications.
      */
     void setEngineTierIII(
-        const QVector<QMap<QString, float>>& engineTierIII);
+        const QVector<QMap<QString, float>> &engineTierIII);
 
     /**
      * @brief Set the Tier II engine performance curve.
      * @param engineTierIICurve New vector of curve points.
      */
-    void setEngineTierIICurve(
-        const QVector<QMap<QString, float>>& engineTierIICurve);
+    void
+    setEngineTierIICurve(const QVector<QMap<QString, float>>
+                             &engineTierIICurve);
 
     /**
      * @brief Set the Tier III engine performance curve.
      * @param engineTierIIICurve New vector of curve points.
      */
     void setEngineTierIIICurve(
-        const QVector<QMap<QString, float>>& engineTierIIICurve);
+        const QVector<QMap<QString, float>>
+            &engineTierIIICurve);
 
     /**
      * @brief Set the gearbox ratio.
@@ -831,7 +894,7 @@ public:
      *        areas.
      */
     void setAppendagesWettedSurfaces(
-        const QMap<int, float>& appendagesWettedSurfaces);
+        const QMap<int, float> &appendagesWettedSurfaces);
 
     /**
      * @brief Create a Ship instance from dictionary data.
@@ -839,8 +902,8 @@ public:
      * @param parent The parent QObject.
      * @return Pointer to a new Ship instance.
      */
-    static Ship* fromDict(const QJsonObject& data,
-                          QObject* parent = nullptr);
+    static Ship *fromDict(const QJsonObject &data,
+                          QObject *parent = nullptr);
 
 signals:
     /**
@@ -862,7 +925,8 @@ private:
     /** @brief Unique identifier for the ship */
     QString m_shipId;
 
-    /** @brief Vector of coordinate points defining the ship's path */
+    /** @brief Vector of coordinate points defining the
+     * ship's path */
     QVector<QVector<float>> m_pathCoordinates;
 
     /** @brief Maximum speed of the ship in knots */
@@ -886,7 +950,8 @@ private:
     /** @brief Volume of water displaced in cubic meters */
     float m_volumetricDisplacement;
 
-    /** @brief Area of hull below waterline in square meters */
+    /** @brief Area of hull below waterline in square meters
+     */
     float m_wettedHullSurface;
 
     /** @brief Area above waterline in square meters */
@@ -895,7 +960,8 @@ private:
     /** @brief Height of bulbous bow center in meters */
     float m_bulbousBowCenterHeight;
 
-    /** @brief Cross-sectional area of bulbous bow in square meters */
+    /** @brief Cross-sectional area of bulbous bow in square
+     * meters */
     float m_bulbousBowArea;
 
     /** @brief Area of immersed transom in square meters */
@@ -979,95 +1045,97 @@ private:
     /** @brief Weight of cargo in tons */
     float m_cargoWeight;
 
-    /** @brief Map of appendage IDs to wetted surface areas */
+    /** @brief Map of appendage IDs to wetted surface areas
+     */
     QMap<int, float> m_appendagesWettedSurfaces;
 
     /**
-    * @brief Check if a variant contains NaN values.
-    * @param value The variant to check.
-    * @return True if the variant contains NaN.
-    */
-    bool containsNaN(const QVariant& value) const;
+     * @brief Check if a variant contains NaN values.
+     * @param value The variant to check.
+     * @return True if the variant contains NaN.
+     */
+    bool containsNaN(const QVariant &value) const;
 };
 
 /**
-* @class ShipsReader
-* @brief Utility class for reading ship data from files.
-*/
+ * @class ShipsReader
+ * @brief Utility class for reading ship data from files.
+ */
 class ShipsReader : public QObject {
     Q_OBJECT
 
 public:
     /**
-    * @brief Read ships from a file.
-    * @param filePath Path to the ships configuration file.
-    * @param parent The parent QObject.
-    * @return Vector of Ship pointers loaded from the file.
-    */
-    static QVector<Ship*> readShipsFile(
-        const QString& filePath, QObject* parent = nullptr);
+     * @brief Read ships from a file.
+     * @param filePath Path to the ships configuration file.
+     * @param parent The parent QObject.
+     * @return Vector of Ship pointers loaded from the file.
+     */
+    static QVector<Ship *>
+    readShipsFile(const QString &filePath,
+                  QObject       *parent = nullptr);
 
     // Make Ship class a friend of ShipsReader
     friend class Ship;
 
 protected:
     /**
-    * @brief Ordered parameters expected in the ships file.
-    *
-    * Each pair contains the parameter name and a boolean
-    * indicating whether it's required.
-    */
+     * @brief Ordered parameters expected in the ships file.
+     *
+     * Each pair contains the parameter name and a boolean
+     * indicating whether it's required.
+     */
     static const QVector<QPair<QString, bool>>
         FILE_ORDERED_PARAMETERS;
 
     /**
-    * @brief Parse ship parameters from a string list.
-    * @param parts List of string parts to parse.
-    * @return Map of parameter names to values.
-    */
-    static QMap<QString, QVariant> parseShipParameters(
-        const QStringList& parts);
+     * @brief Parse ship parameters from a string list.
+     * @param parts List of string parts to parse.
+     * @return Map of parameter names to values.
+     */
+    static QMap<QString, QVariant>
+    parseShipParameters(const QStringList &parts);
 
     /**
-    * @brief Parse path coordinates from a string.
-    * @param pathString String containing path coordinates.
-    * @return Vector of coordinate pairs.
-    */
-    static QVector<QVector<float>> parsePath(
-        const QString& pathString);
+     * @brief Parse path coordinates from a string.
+     * @param pathString String containing path coordinates.
+     * @return Vector of coordinate pairs.
+     */
+    static QVector<QVector<float>>
+    parsePath(const QString &pathString);
 
     /**
-    * @brief Parse engine points from a string.
-    * @param enginePointsStr String containing engine
-    *        points.
-    * @return Vector of engine point maps.
-    */
-    static QVector<QMap<QString, float>> parseEnginePoints(
-        const QString& enginePointsStr);
+     * @brief Parse engine points from a string.
+     * @param enginePointsStr String containing engine
+     *        points.
+     * @return Vector of engine point maps.
+     */
+    static QVector<QMap<QString, float>>
+    parseEnginePoints(const QString &enginePointsStr);
 
     /**
-    * @brief Parse appendages data from a string.
-    * @param appendagesStr String containing appendages
-    *        data.
-    * @return Map of appendage IDs to wetted surface areas.
-    */
-    static QMap<int, float> parseAppendages(
-        const QString& appendagesStr);
+     * @brief Parse appendages data from a string.
+     * @param appendagesStr String containing appendages
+     *        data.
+     * @return Map of appendage IDs to wetted surface areas.
+     */
+    static QMap<int, float>
+    parseAppendages(const QString &appendagesStr);
 
     /**
-    * @brief Parse tank details from a string.
-    * @param tanksStr String containing tank details.
-    * @return Vector of tank detail maps.
-    */
-    static QVector<QMap<QString, float>> parseTanksDetails(
-        const QString& tanksStr);
+     * @brief Parse tank details from a string.
+     * @param tanksStr String containing tank details.
+     * @return Vector of tank detail maps.
+     */
+    static QVector<QMap<QString, float>>
+    parseTanksDetails(const QString &tanksStr);
 
     /**
-    * @brief Check if a variant contains N/A values.
-    * @param value The variant to check.
-    * @return True if the variant contains N/A.
-    */
-    static bool containsNa(const QVariant& value);
+     * @brief Check if a variant contains N/A values.
+     * @param value The variant to check.
+     * @return True if the variant contains N/A.
+     */
+    static bool containsNa(const QVariant &value);
 };
 
 } // namespace Backend
@@ -1075,6 +1143,6 @@ protected:
 
 // Register custom types with Qt's meta-object system
 Q_DECLARE_METATYPE(CargoNetSim::Backend::Ship)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::Ship*)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::Ship *)
 Q_DECLARE_METATYPE(QVector<CargoNetSim::Backend::Ship>)
-Q_DECLARE_METATYPE(QVector<CargoNetSim::Backend::Ship*>)
+Q_DECLARE_METATYPE(QVector<CargoNetSim::Backend::Ship *>)
