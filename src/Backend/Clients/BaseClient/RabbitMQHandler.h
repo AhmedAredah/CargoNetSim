@@ -1,13 +1,13 @@
 #pragma once
 
-#include <QObject>
+#include <QByteArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMutex>
-#include <QThread>
+#include <QObject>
 #include <QString>
 #include <QStringList>
-#include <QByteArray>
-#include <QJsonObject>
-#include <QJsonDocument>
+#include <QThread>
 #include <atomic>
 #include <rabbitmq-c/amqp.h>
 
@@ -37,15 +37,14 @@ public:
      *                             receive on
      */
     explicit RabbitMQHandler(
-        QObject* parent = nullptr,
-        const QString& host = "localhost",
-        int port = 5672,
-        const QString& exchange = "simulation_exchange",
-        const QString& commandQueue = "command_queue",
-        const QString& responseQueue = "response_queue",
-        const QString& sendingRoutingKey = "default_key",
-        const QStringList& receivingRoutingKeys =
-        QStringList{"default_key"});
+        QObject       *parent = nullptr,
+        const QString &host = "localhost", int port = 5672,
+        const QString &exchange     = "simulation_exchange",
+        const QString &commandQueue = "command_queue",
+        const QString &responseQueue     = "response_queue",
+        const QString &sendingRoutingKey = "default_key",
+        const QStringList &receivingRoutingKeys =
+            QStringList{"default_key"});
 
     /**
      * @brief Destructor
@@ -75,9 +74,8 @@ public:
      * @param routingKey Routing key to use (optional)
      * @return True if message sent successfully
      */
-    bool sendCommand(
-        const QJsonObject& message,
-        const QString& routingKey = QString());
+    bool sendCommand(const QJsonObject &message,
+                     const QString &routingKey = QString());
 
     /**
      * @brief Starts consuming messages from response queue
@@ -106,7 +104,7 @@ signals:
      * @brief Emitted when a message is received
      * @param message JSON message received
      */
-    void messageReceived(const QJsonObject& message);
+    void messageReceived(const QJsonObject &message);
 
     /**
      * @brief Emitted when connection status changes
@@ -118,7 +116,7 @@ signals:
      * @brief Emitted when an error occurs
      * @param errorMessage Error message
      */
-    void errorOccurred(const QString& errorMessage);
+    void errorOccurred(const QString &errorMessage);
 
 private slots:
     /**
@@ -162,9 +160,8 @@ private:
      * @param routingKey Routing key
      * @return True if published successfully
      */
-    bool publishMessage(
-        const QByteArray& message,
-        const QString& routingKey);
+    bool publishMessage(const QByteArray &message,
+                        const QString    &routingKey);
 
     /**
      * @brief Reconnects the sending connection
@@ -179,23 +176,23 @@ private:
     // RabbitMQ connection state
     amqp_connection_state_t m_sendConnection;
     amqp_connection_state_t m_receiveConnection;
-    bool m_connected;
+    bool                    m_connected;
 
     // Connection parameters
-    QString m_host;
-    int m_port;
-    QString m_exchange;
-    QString m_commandQueue;
-    QString m_responseQueue;
-    QString m_sendingRoutingKey;
+    QString     m_host;
+    int         m_port;
+    QString     m_exchange;
+    QString     m_commandQueue;
+    QString     m_responseQueue;
+    QString     m_sendingRoutingKey;
     QStringList m_receivingRoutingKeys;
 
     // Threads
-    QThread* m_consumerThread;
-    QThread* m_heartbeatThread;
+    QThread          *m_consumerThread;
+    QThread          *m_heartbeatThread;
     std::atomic<bool> m_threadRunning;
     std::atomic<bool> m_heartbeatActive;
-    qint64 m_lastHeartbeatSent;
+    qint64            m_lastHeartbeatSent;
 
     // Thread safety
     mutable QMutex m_mutex;
@@ -208,4 +205,4 @@ private:
 } // namespace CargoNetSim
 
 Q_DECLARE_METATYPE(CargoNetSim::Backend::RabbitMQHandler)
-Q_DECLARE_METATYPE(CargoNetSim::Backend::RabbitMQHandler*)
+Q_DECLARE_METATYPE(CargoNetSim::Backend::RabbitMQHandler *)
