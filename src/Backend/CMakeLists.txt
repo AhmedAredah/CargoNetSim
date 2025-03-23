@@ -32,6 +32,8 @@ set(Backend_SOURCES
     Controllers/NetworkController.cpp
     Controllers/RegionDataController.h
     Controllers/RegionDataController.cpp
+    Controllers/CargoNetSimController.h
+    Controllers/CargoNetSimController.cpp
 
     # Clients
 
