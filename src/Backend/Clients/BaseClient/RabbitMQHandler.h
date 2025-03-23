@@ -11,8 +11,10 @@
 #include <atomic>
 #include <rabbitmq-c/amqp.h>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Handles RabbitMQ communication for the simulation
@@ -20,7 +22,8 @@ namespace Backend {
  * Manages connections to RabbitMQ, message sending and
  * receiving, and connection maintenance through heartbeats.
  */
-class RabbitMQHandler : public QObject {
+class RabbitMQHandler : public QObject
+{
     Q_OBJECT
 
 public:

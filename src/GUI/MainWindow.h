@@ -24,8 +24,10 @@
 #include "Widgets/CustomMainWindow.h"
 #include "Widgets/RegionManagerWidget.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class GraphicsView;
 class GraphicsScene;
@@ -44,7 +46,8 @@ class BasicButtonController;
  * manages the entire application UI, including views,
  * scenes, docks, and toolbars.
  */
-class MainWindow : public CustomMainWindow {
+class MainWindow : public CustomMainWindow
+{
     Q_OBJECT
 
     // Declare the ToolbarController and

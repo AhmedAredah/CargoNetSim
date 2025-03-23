@@ -15,14 +15,18 @@
 #include <QRectF>
 #include <cmath>
 
-namespace CargoNetSim {
-namespace GUI {
-namespace IconFactory {
+namespace CargoNetSim
+{
+namespace GUI
+{
+namespace IconFactory
+{
 
 //------------------------------------------------------------------------------
 // Terminal Icons
 //------------------------------------------------------------------------------
-QMap<QString, QPixmap> createTerminalIcons() {
+QMap<QString, QPixmap> createTerminalIcons()
+{
     QMap<QString, QPixmap> icons;
 
     // Define modern colors
@@ -137,7 +141,8 @@ QMap<QString, QPixmap> createTerminalIcons() {
         painter.setPen(QPen(rails_gray, 2));
         painter.drawLine(2, 28, 30, 28);
         painter.drawLine(2, 30, 30, 30);
-        for (int x = 4; x < 29; x += 6) {
+        for (int x = 4; x < 29; x += 6)
+        {
             painter.drawLine(x, 27, x, 31);
         }
         painter.end();
@@ -152,7 +157,8 @@ QMap<QString, QPixmap> createTerminalIcons() {
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setPen(QPen(truck_green, 1));
         painter.setBrush(truck_green.lighter(150));
-        for (int x = 4; x < 28; x += 8) {
+        for (int x = 4; x < 28; x += 8)
+        {
             painter.drawRect(x, 8, 6, 16);
         }
         QFont font("Arial", 14, QFont::Bold);
@@ -170,7 +176,8 @@ QMap<QString, QPixmap> createTerminalIcons() {
 //------------------------------------------------------------------------------
 // Connect Terminals Icon
 //------------------------------------------------------------------------------
-QPixmap createConnectTerminalsPixmap(int size) {
+QPixmap createConnectTerminalsPixmap(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -190,8 +197,8 @@ QPixmap createConnectTerminalsPixmap(int size) {
 //------------------------------------------------------------------------------
 // Assign Selected to Current Region Icon
 //------------------------------------------------------------------------------
-QPixmap
-createAssignSelectedToCurrentRegionPixmap(int size) {
+QPixmap createAssignSelectedToCurrentRegionPixmap(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -236,7 +243,8 @@ createAssignSelectedToCurrentRegionPixmap(int size) {
 //------------------------------------------------------------------------------
 // Set Background Color Icon
 //------------------------------------------------------------------------------
-QPixmap createSetBackgroundColorPixmap(int size) {
+QPixmap createSetBackgroundColorPixmap(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -258,7 +266,8 @@ QPixmap createSetBackgroundColorPixmap(int size) {
 //------------------------------------------------------------------------------
 // Measure Distance Icon
 //------------------------------------------------------------------------------
-QPixmap createMeasureDistancePixmap(int size) {
+QPixmap createMeasureDistancePixmap(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -266,7 +275,8 @@ QPixmap createMeasureDistancePixmap(int size) {
     QPen pen(QColor("#2E86C1"), 2);
     painter.setPen(pen);
     painter.drawLine(4, size / 2, size - 4, size / 2);
-    for (int x = 6; x < size - 4; x += 6) {
+    for (int x = 6; x < size - 4; x += 6)
+    {
         if (x % 12 == 0)
             painter.drawLine(x, size / 2 - 6, x,
                              size / 2 + 6);
@@ -281,7 +291,8 @@ QPixmap createMeasureDistancePixmap(int size) {
 //------------------------------------------------------------------------------
 // Clear Measurements Icon
 //------------------------------------------------------------------------------
-QPixmap createClearMeasurementsPixmap(int size) {
+QPixmap createClearMeasurementsPixmap(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -290,7 +301,8 @@ QPixmap createClearMeasurementsPixmap(int size) {
     painter.setPen(pen);
     int ruler_y = size * 3 / 4;
     painter.drawLine(8, ruler_y, size - 8, ruler_y);
-    for (int x = 10; x < size - 8; x += 5) {
+    for (int x = 10; x < size - 8; x += 5)
+    {
         if (x % 10 == 0)
             painter.drawLine(x, ruler_y - 4, x,
                              ruler_y + 4);
@@ -312,7 +324,8 @@ QPixmap createClearMeasurementsPixmap(int size) {
 //------------------------------------------------------------------------------
 // Properties Icon
 //------------------------------------------------------------------------------
-QPixmap createPropertiesIcon(int size) {
+QPixmap createPropertiesIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -321,7 +334,8 @@ QPixmap createPropertiesIcon(int size) {
              std::max(1, int(size * 0.08)));
     painter.setPen(pen);
     int rect_height = int(size * 0.15);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         int y_offset =
             int((size * 0.2) + (i * rect_height * 1.5));
         painter.drawRect(int(size * 0.2), y_offset,
@@ -334,7 +348,8 @@ QPixmap createPropertiesIcon(int size) {
 //------------------------------------------------------------------------------
 // Freight Terminal Library Icon
 //------------------------------------------------------------------------------
-QPixmap createFreightTerminalLibraryIcon(int size) {
+QPixmap createFreightTerminalLibraryIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -342,7 +357,8 @@ QPixmap createFreightTerminalLibraryIcon(int size) {
     // Use a QStringList to hold the container colors.
     const QStringList colors = {"#FF9800", "#F57C00",
                                 "#FFA726"};
-    for (int i = 0; i < colors.size(); ++i) {
+    for (int i = 0; i < colors.size(); ++i)
+    {
         painter.setBrush(QBrush(QColor(colors[i])));
         painter.setPen(
             QPen(Qt::black, std::max(1, int(size * 0.03))));
@@ -362,7 +378,8 @@ QPixmap createFreightTerminalLibraryIcon(int size) {
 //------------------------------------------------------------------------------
 // Region Manager Icon
 //------------------------------------------------------------------------------
-QPixmap createRegionManagerIcon(int size) {
+QPixmap createRegionManagerIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -385,7 +402,8 @@ QPixmap createRegionManagerIcon(int size) {
     nodes.append(QPoint(int(size * 0.2), int(size * 0.6)));
     nodes.append(QPoint(int(size * 0.5), int(size * 0.5)));
     nodes.append(QPoint(int(size * 0.8), int(size * 0.6)));
-    for (const QPoint &pt : nodes) {
+    for (const QPoint &pt : nodes)
+    {
         painter.setBrush(QBrush(node_color));
         // Draw each node as an ellipse (using half the
         // intended diameter)
@@ -395,7 +413,8 @@ QPixmap createRegionManagerIcon(int size) {
 
     QPen pen(link_color, std::max(1, int(size * 0.03)));
     painter.setPen(pen);
-    for (const QPoint &pt : nodes) {
+    for (const QPoint &pt : nodes)
+    {
         painter.drawLine(hub_x + int(size * 0.06),
                          hub_y + int(size * 0.06),
                          pt.x() + int(size * 0.06),
@@ -409,7 +428,8 @@ QPixmap createRegionManagerIcon(int size) {
 //------------------------------------------------------------------------------
 // Simulation Settings Icon
 //------------------------------------------------------------------------------
-QPixmap createSimulationSettingsIcon(int size) {
+QPixmap createSimulationSettingsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -420,7 +440,8 @@ QPixmap createSimulationSettingsIcon(int size) {
     QVector<int>    x_positions = {
         int(size * 0.2), int(size * 0.45), int(size * 0.7)};
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         painter.setBrush(
             QBrush(QColor("#9C27B0"))); // Purple color
         painter.setPen(Qt::NoPen);
@@ -438,7 +459,8 @@ QPixmap createSimulationSettingsIcon(int size) {
 //------------------------------------------------------------------------------
 // Show/Hide Grid Icon
 //------------------------------------------------------------------------------
-QPixmap createShowHideGridIcon(int size) {
+QPixmap createShowHideGridIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -450,7 +472,8 @@ QPixmap createShowHideGridIcon(int size) {
 
     int num_lines = 4;
     int spacing   = size / (num_lines + 1);
-    for (int i = 1; i <= num_lines; ++i) {
+    for (int i = 1; i <= num_lines; ++i)
+    {
         int x = i * spacing;
         painter.drawLine(x, int(size * 0.1), x,
                          int(size * 0.9));
@@ -481,7 +504,8 @@ QPixmap createShowHideGridIcon(int size) {
 //------------------------------------------------------------------------------
 // Freight Train Icon
 //------------------------------------------------------------------------------
-QPixmap createFreightTrainIcon(int size) {
+QPixmap createFreightTrainIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -524,7 +548,8 @@ QPixmap createFreightTrainIcon(int size) {
 
     QList<QPair<QString, QString>> container_colors = {
         {"#2196F3", "#1565C0"}, {"#4CAF50", "#2E7D32"}};
-    for (int i = 0; i < container_colors.size(); ++i) {
+    for (int i = 0; i < container_colors.size(); ++i)
+    {
         int x_offset = int(size * (0.38 + i * 0.28));
         QLinearGradient container_gradient(
             x_offset, size * 0.3, x_offset,
@@ -541,7 +566,8 @@ QPixmap createFreightTrainIcon(int size) {
             QPen(QColor(container_colors[i].second),
                  std::max(1, int(size * 0.01))));
         for (int y = int(size * 0.34); y < int(size * 0.6);
-             y += int(size * 0.06)) {
+             y += int(size * 0.06))
+        {
             painter.drawLine(
                 x_offset + 2, y,
                 x_offset + int(size * 0.25) - 2, y);
@@ -551,7 +577,8 @@ QPixmap createFreightTrainIcon(int size) {
     QRadialGradient wheel_gradient;
     wheel_gradient.setColorAt(0, QColor("#9E9E9E"));
     wheel_gradient.setColorAt(1, QColor("#424242"));
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         int x_offset = int(size * (0.2 + i * 0.2));
         wheel_gradient.setCenter(x_offset + wheel_radius,
                                  track_y + wheel_radius);
@@ -583,7 +610,8 @@ QPixmap createFreightTrainIcon(int size) {
                                  y_offset + size * 0.04);
     tie_gradient.setColorAt(0, tie_color);
     tie_gradient.setColorAt(1, tie_color.darker(120));
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         int x_tie = int(size * (0.1 + i * 0.1));
         painter.setBrush(tie_gradient);
         painter.setPen(QPen(Qt::black, 1));
@@ -599,7 +627,8 @@ QPixmap createFreightTrainIcon(int size) {
 //------------------------------------------------------------------------------
 // Freight Truck Icon
 //------------------------------------------------------------------------------
-QPixmap createFreightTruckIcon(int size) {
+QPixmap createFreightTruckIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -627,7 +656,8 @@ QPixmap createFreightTruckIcon(int size) {
     painter.setPen(QPen(QColor("#0D47A1"),
                         std::max(1, int(size * 0.01))));
     for (int y = int(size * 0.38); y < int(size * 0.62);
-         y += int(size * 0.06)) {
+         y += int(size * 0.06))
+    {
         painter.drawLine(int(size * 0.22), y,
                          int(size * 0.83), y);
     }
@@ -665,7 +695,8 @@ QPixmap createFreightTruckIcon(int size) {
     wheel_gradient.setColorAt(0, QColor("#9E9E9E"));
     wheel_gradient.setColorAt(1, QColor("#424242"));
     QList<double> wheel_positions = {0.2, 0.4, 0.6, 0.8};
-    for (double pos : wheel_positions) {
+    for (double pos : wheel_positions)
+    {
         int x_offset = int(size * pos);
         wheel_gradient.setCenter(x_offset + wheel_radius,
                                  road_y + wheel_radius);
@@ -702,7 +733,8 @@ QPixmap createFreightTruckIcon(int size) {
 //------------------------------------------------------------------------------
 // Network Manager Icon
 //------------------------------------------------------------------------------
-QPixmap createNetworkManagerIcon(int size) {
+QPixmap createNetworkManagerIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -730,7 +762,8 @@ QPixmap createNetworkManagerIcon(int size) {
 
     QPen pen(link_color, std::max(1, int(size * 0.02)));
     painter.setPen(pen);
-    for (const QPoint &pt : nodes) {
+    for (const QPoint &pt : nodes)
+    {
         QPainterPath path;
         path.moveTo(hub_x + hub_radius / 2,
                     hub_y + hub_radius / 2);
@@ -741,7 +774,8 @@ QPixmap createNetworkManagerIcon(int size) {
                     pt.y() + hub_radius / 2);
         painter.drawPath(path);
     }
-    for (const QPoint &pt : nodes) {
+    for (const QPoint &pt : nodes)
+    {
         painter.setBrush(QBrush(node_color));
         painter.setPen(
             QPen(Qt::black, std::max(1, int(size * 0.02))));
@@ -754,7 +788,8 @@ QPixmap createNetworkManagerIcon(int size) {
 //------------------------------------------------------------------------------
 // Link Terminal Icon
 //------------------------------------------------------------------------------
-QPixmap createLinkTerminalIcon() {
+QPixmap createLinkTerminalIcon()
+{
     QPixmap pixmap(32, 32);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -771,7 +806,8 @@ QPixmap createLinkTerminalIcon() {
 //------------------------------------------------------------------------------
 // Unlink Terminal Icon
 //------------------------------------------------------------------------------
-QPixmap createUnlinkTerminalIcon() {
+QPixmap createUnlinkTerminalIcon()
+{
     QPixmap pixmap(32, 32);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -792,7 +828,8 @@ QPixmap createUnlinkTerminalIcon() {
 //------------------------------------------------------------------------------
 // Auto Connect Terminals Icon
 //------------------------------------------------------------------------------
-QPixmap createAutoConnectTerminalsIcon(int size) {
+QPixmap createAutoConnectTerminalsIcon(int size)
+{
     QPixmap  pixmap = createConnectTerminalsPixmap(size);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -808,7 +845,8 @@ QPixmap createAutoConnectTerminalsIcon(int size) {
 //------------------------------------------------------------------------------
 // Connect by Interface Icon
 //------------------------------------------------------------------------------
-QPixmap createConnectByInterfaceIcon(int size) {
+QPixmap createConnectByInterfaceIcon(int size)
+{
     QPixmap  pixmap = createConnectTerminalsPixmap(size);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -837,7 +875,8 @@ QPixmap createConnectByInterfaceIcon(int size) {
 //------------------------------------------------------------------------------
 // Check Network Icon
 //------------------------------------------------------------------------------
-QPixmap createCheckNetworkIcon(int size) {
+QPixmap createCheckNetworkIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -860,7 +899,8 @@ QPixmap createCheckNetworkIcon(int size) {
     QList<QPair<int, int>> connections = {
         {0, 1}, {0, 2}, {1, 3}, {2, 4},
         {1, 2}, {3, 4}, {3, 0}, {4, 0}};
-    for (const auto &conn : connections) {
+    for (const auto &conn : connections)
+    {
         painter.drawLine(nodes[conn.first],
                          nodes[conn.second]);
     }
@@ -869,7 +909,8 @@ QPixmap createCheckNetworkIcon(int size) {
     painter.setBrush(QBrush(node_color));
     painter.setPen(
         QPen(Qt::black, std::max(1, int(size * 0.02))));
-    for (const QPointF &pt : nodes) {
+    for (const QPointF &pt : nodes)
+    {
         painter.drawEllipse(pt, radius, radius);
     }
 
@@ -889,7 +930,8 @@ QPixmap createCheckNetworkIcon(int size) {
 //------------------------------------------------------------------------------
 // Unconnect Terminals Icon
 //------------------------------------------------------------------------------
-QPixmap createUnconnectTerminalsIcon(int size) {
+QPixmap createUnconnectTerminalsIcon(int size)
+{
     QPixmap  pixmap = createConnectTerminalsPixmap(size);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -907,7 +949,8 @@ QPixmap createUnconnectTerminalsIcon(int size) {
 //------------------------------------------------------------------------------
 // Settings Icon (Gear)
 //------------------------------------------------------------------------------
-QPixmap createSettingsIcon(int size) {
+QPixmap createSettingsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -926,7 +969,8 @@ QPixmap createSettingsIcon(int size) {
     double       tooth_height = size * 0.15;
     QPoint       center(size / 2, size / 2);
     QPainterPath path;
-    for (int i = 0; i < num_teeth; ++i) {
+    for (int i = 0; i < num_teeth; ++i)
+    {
         double angle = i * 360.0 / num_teeth * M_PI / 180.0;
         double x1 =
             center.x() + outer_radius * std::cos(angle);
@@ -973,7 +1017,8 @@ QPixmap createSettingsIcon(int size) {
 //------------------------------------------------------------------------------
 // New Project Icon
 //------------------------------------------------------------------------------
-QPixmap createNewProjectIcon(int size) {
+QPixmap createNewProjectIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1007,7 +1052,8 @@ QPixmap createNewProjectIcon(int size) {
 //------------------------------------------------------------------------------
 // Open Project Icon
 //------------------------------------------------------------------------------
-QPixmap createOpenProjectIcon(int size) {
+QPixmap createOpenProjectIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1039,7 +1085,8 @@ QPixmap createOpenProjectIcon(int size) {
 //------------------------------------------------------------------------------
 // Save Project Icon
 //------------------------------------------------------------------------------
-QPixmap createSaveProjectIcon(int size) {
+QPixmap createSaveProjectIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1070,7 +1117,8 @@ QPixmap createSaveProjectIcon(int size) {
 //------------------------------------------------------------------------------
 // Shortest Paths Icon
 //------------------------------------------------------------------------------
-QPixmap createShortestPathsIcon(int size) {
+QPixmap createShortestPathsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1103,7 +1151,8 @@ QPixmap createShortestPathsIcon(int size) {
     painter.setPen(
         QPen(Qt::black, std::max(1, int(size * 0.02))));
     painter.setBrush(QBrush(node_color));
-    for (const QPointF &pt : nodes) {
+    for (const QPointF &pt : nodes)
+    {
         painter.drawEllipse(pt, radius, radius);
     }
 
@@ -1128,7 +1177,8 @@ QPixmap createShortestPathsIcon(int size) {
 //------------------------------------------------------------------------------
 // Verify Simulation Icon
 //------------------------------------------------------------------------------
-QPixmap createVerifySimulationIcon(int size) {
+QPixmap createVerifySimulationIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1144,7 +1194,8 @@ QPixmap createVerifySimulationIcon(int size) {
 
     QPointF center(size / 2.0, size / 2.0);
     double  radius = size * 0.35;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         int start_angle = i * 120 * 16;
         int span_angle  = 100 * 16;
         painter.drawArc(
@@ -1157,7 +1208,8 @@ QPixmap createVerifySimulationIcon(int size) {
         QPen(arrow_color, std::max(2, int(size * 0.03))));
     int        arrow_size = int(size * 0.1);
     QList<int> angles     = {30, 150, 270};
-    for (int angle : angles) {
+    for (int angle : angles)
+    {
         double  rad = angle * M_PI / 180.0;
         QPointF arrow_center(
             center.x()
@@ -1197,7 +1249,8 @@ QPixmap createVerifySimulationIcon(int size) {
 //------------------------------------------------------------------------------
 // Pan Mode Icon
 //------------------------------------------------------------------------------
-QPixmap createPanModeIcon(int size) {
+QPixmap createPanModeIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1290,7 +1343,8 @@ QPixmap createPanModeIcon(int size) {
 //------------------------------------------------------------------------------
 // Show/Hide Terminals Icon
 //------------------------------------------------------------------------------
-QPixmap createShowHideTerminalsIcon(int size) {
+QPixmap createShowHideTerminalsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1354,7 +1408,8 @@ QPixmap createShowHideTerminalsIcon(int size) {
 //------------------------------------------------------------------------------
 // Show/Hide Connections Icon
 //------------------------------------------------------------------------------
-QPixmap createShowHideConnectionsIcon(int size) {
+QPixmap createShowHideConnectionsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1398,7 +1453,8 @@ QPixmap createShowHideConnectionsIcon(int size) {
     int terminal_size = size * 0.2;
     painter.setPen(
         QPen(Qt::black, std::max(1, int(size * 0.02))));
-    for (const QPointF &pt : terminal_positions) {
+    for (const QPointF &pt : terminal_positions)
+    {
         terminal_gradient.setStart(pt.x(), pt.y());
         terminal_gradient.setFinalStop(
             pt.x(), pt.y() + terminal_size);
@@ -1450,7 +1506,8 @@ QPixmap createShowHideConnectionsIcon(int size) {
 //------------------------------------------------------------------------------
 // Show Eye Icon
 //------------------------------------------------------------------------------
-QPixmap createShowEyeIcon(int size) {
+QPixmap createShowEyeIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1513,7 +1570,8 @@ QPixmap createShowEyeIcon(int size) {
 //------------------------------------------------------------------------------
 // Show/Hide Paths Table Icon
 //------------------------------------------------------------------------------
-QPixmap createShowHidePathsTableIcon(int size) {
+QPixmap createShowHidePathsTableIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1554,11 +1612,13 @@ QPixmap createShowHidePathsTableIcon(int size) {
     painter.setBrush(path_gradient);
 
     double arrow_size = size * 0.06;
-    for (int col = 0; col < 3; ++col) {
+    for (int col = 0; col < 3; ++col)
+    {
         int x = table_rect.left()
                 + (col * table_rect.width() / 3)
                 + (table_rect.width() / 6);
-        for (int row = 0; row < 2; ++row) {
+        for (int row = 0; row < 2; ++row)
+        {
             int y_cell = table_rect.top()
                          + (row * table_rect.height() / 2)
                          + (table_rect.height() / 4);
@@ -1613,7 +1673,8 @@ QPixmap createShowHidePathsTableIcon(int size) {
 //------------------------------------------------------------------------------
 // Thick White Arrow Pixmap
 //------------------------------------------------------------------------------
-QPixmap createThickWhiteArrowPixmap(int size, int width) {
+QPixmap createThickWhiteArrowPixmap(int size, int width)
+{
     QPixmap pixmap(width, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1646,7 +1707,8 @@ QPixmap createThickWhiteArrowPixmap(int size, int width) {
 //------------------------------------------------------------------------------
 // Thick White Line Pixmap
 //------------------------------------------------------------------------------
-QPixmap createThickWhiteLinePixmap(int size, int width) {
+QPixmap createThickWhiteLinePixmap(int size, int width)
+{
     QPixmap pixmap(width, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1666,7 +1728,8 @@ QPixmap createThickWhiteLinePixmap(int size, int width) {
 //------------------------------------------------------------------------------
 // Import Trains Icon
 //------------------------------------------------------------------------------
-QPixmap createImportTrainsIcon(int size) {
+QPixmap createImportTrainsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1716,7 +1779,8 @@ QPixmap createImportTrainsIcon(int size) {
 //------------------------------------------------------------------------------
 // Delete Train Icon
 //------------------------------------------------------------------------------
-QPixmap createDeleteTrainIcon(int size) {
+QPixmap createDeleteTrainIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1746,7 +1810,8 @@ QPixmap createDeleteTrainIcon(int size) {
 //------------------------------------------------------------------------------
 // Import Ships Icon
 //------------------------------------------------------------------------------
-QPixmap createImportShipsIcon(int size) {
+QPixmap createImportShipsIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1801,7 +1866,8 @@ QPixmap createImportShipsIcon(int size) {
 //------------------------------------------------------------------------------
 // Delete Ship Icon
 //------------------------------------------------------------------------------
-QPixmap createDeleteShipIcon(int size) {
+QPixmap createDeleteShipIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1835,7 +1901,8 @@ QPixmap createDeleteShipIcon(int size) {
 //------------------------------------------------------------------------------
 // Train Manager Icon
 //------------------------------------------------------------------------------
-QPixmap createTrainManagerIcon(int size) {
+QPixmap createTrainManagerIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1861,7 +1928,8 @@ QPixmap createTrainManagerIcon(int size) {
         int(size * 0.25), 8, 8);
 
     painter.setBrush(QBrush(QColor("#424242")));
-    for (double x : {0.3, 0.5, 0.7}) {
+    for (double x : {0.3, 0.5, 0.7})
+    {
         painter.drawEllipse(int(size * x), int(size * 0.55),
                             int(size * 0.1),
                             int(size * 0.1));
@@ -1877,7 +1945,8 @@ QPixmap createTrainManagerIcon(int size) {
     painter.setPen(
         QPen(Qt::black, std::max(1, int(size * 0.02))));
     painter.setBrush(QBrush(gear_color));
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         double angle = i * 45 * M_PI / 180.0;
         double x =
             size * 0.5 + size * 0.45 * std::cos(angle);
@@ -1895,7 +1964,8 @@ QPixmap createTrainManagerIcon(int size) {
 //------------------------------------------------------------------------------
 // Ship Manager Icon
 //------------------------------------------------------------------------------
-QPixmap createShipManagerIcon(int size) {
+QPixmap createShipManagerIcon(int size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1938,7 +2008,8 @@ QPixmap createShipManagerIcon(int size) {
     painter.setPen(
         QPen(Qt::black, std::max(1, int(size * 0.02))));
     painter.setBrush(QBrush(gear_color));
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         double angle = i * 45 * M_PI / 180.0;
         double x =
             size * 0.5 + size * 0.45 * std::cos(angle);
@@ -1956,7 +2027,8 @@ QPixmap createShipManagerIcon(int size) {
 //------------------------------------------------------------------------------
 // Set Global Position Icon
 //------------------------------------------------------------------------------
-QPixmap createSetGlobalPositionIcon() {
+QPixmap createSetGlobalPositionIcon()
+{
     QPixmap pixmap(32, 32);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
@@ -1978,8 +2050,8 @@ QPixmap createSetGlobalPositionIcon() {
 // Set Global Position Icon
 //------------------------------------------------------------------------------
 QPixmap createTransportationModePixmap(const QString &mode,
-                                       int            size,
-                                       int width) {
+                                       int size, int width)
+{
     // Create a pixmap for the transportation mode with text
     // and arrow
     QPixmap pixmap(width, 40);
@@ -1990,15 +2062,19 @@ QPixmap createTransportationModePixmap(const QString &mode,
 
     // Set color based on transportation mode
     QColor modeColor = Qt::black;
-    if (mode.contains("Truck", Qt::CaseInsensitive)) {
+    if (mode.contains("Truck", Qt::CaseInsensitive))
+    {
         modeColor =
             QColor(255, 0, 255); // Magenta for truck
-    } else if (mode.contains("Rail", Qt::CaseInsensitive)
-               || mode.contains("Train",
-                                Qt::CaseInsensitive)) {
+    }
+    else if (mode.contains("Rail", Qt::CaseInsensitive)
+             || mode.contains("Train", Qt::CaseInsensitive))
+    {
         modeColor =
             QColor(80, 80, 80); // Dark gray for rail
-    } else if (mode.contains("Ship", Qt::CaseInsensitive)) {
+    }
+    else if (mode.contains("Ship", Qt::CaseInsensitive))
+    {
         modeColor = QColor(0, 0, 255); // Blue for ship
     }
 

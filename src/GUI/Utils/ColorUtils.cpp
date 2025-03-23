@@ -1,11 +1,15 @@
 #include "ColorUtils.h"
 #include <QRandomGenerator>
 
-namespace CargoNetSim {
-namespace GUI {
-namespace ColorUtils {
+namespace CargoNetSim
+{
+namespace GUI
+{
+namespace ColorUtils
+{
 
-QColor getRandomColor() {
+QColor getRandomColor()
+{
     // Generate random integers between 50 and 205
     // (inclusive)
     int r = QRandomGenerator::global()->bounded(50, 206);

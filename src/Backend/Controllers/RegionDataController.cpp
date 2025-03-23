@@ -6,11 +6,15 @@
 #include <QWriteLocker>
 #include <stdexcept>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
-void RegionDataControllerCleanup::cleanup() {
-    if (RegionDataController::m_instance) {
+void RegionDataControllerCleanup::cleanup()
+{
+    if (RegionDataController::m_instance)
+    {
         delete RegionDataController::m_instance;
         RegionDataController::m_instance = nullptr;
     }
@@ -25,7 +29,8 @@ RegionDataController *RegionDataController::m_instance =
 RegionData::RegionData(const QString &regionName,
                        QObject       *parent)
     : QObject(parent)
-    , m_region(regionName) {
+    , m_region(regionName)
+{
     // Initialize networks lists from NetworkController
     auto trainNetworksMap =
         NetworkController::getInstance()
@@ -39,13 +44,16 @@ RegionData::RegionData(const QString &regionName,
 }
 
 bool RegionData::checkNetworkNameConflict(
-    const QString &name) const {
+    const QString &name) const
+{
     return trainNetworkExists(name)
            || truckNetworkExists(name);
 }
 
-void RegionData::setRegionName(const QString &name) {
-    if (m_region == name) {
+void RegionData::setRegionName(const QString &name)
+{
+    if (m_region == name)
+    {
         return; // No change needed
     }
 
@@ -66,34 +74,36 @@ void RegionData::setRegionName(const QString &name) {
 
     // Get references to all networks to move
     auto &controller = NetworkController::getInstance();
-    for (const QString &networkName :
-         currentTrainNetworks) {
+    for (const QString &networkName : currentTrainNetworks)
+    {
         TrainClient::NeTrainSimNetwork *network =
             controller.trainNetwork(networkName, m_region);
-        if (network) {
+        if (network)
+        {
             trainNetworksToMove.append(network);
         }
     }
 
-    for (const QString &networkName :
-         currentTruckNetworks) {
+    for (const QString &networkName : currentTruckNetworks)
+    {
         TruckClient::IntegrationSimulationConfig *config =
             controller.truckNetworkConfig(networkName,
                                           m_region);
-        if (config) {
+        if (config)
+        {
             truckConfigsToMove.append(config);
         }
     }
 
     // Remove networks from old region
-    for (const QString &networkName :
-         currentTrainNetworks) {
+    for (const QString &networkName : currentTrainNetworks)
+    {
         controller.removeTrainNetwork(networkName,
                                       m_region);
     }
 
-    for (const QString &networkName :
-         currentTruckNetworks) {
+    for (const QString &networkName : currentTruckNetworks)
+    {
         controller.removeTruckNetworkConfig(networkName,
                                             m_region);
     }
@@ -102,7 +112,8 @@ void RegionData::setRegionName(const QString &name) {
     m_region = name;
 
     // Add networks to new region
-    for (int i = 0; i < trainNetworksToMove.size(); ++i) {
+    for (int i = 0; i < trainNetworksToMove.size(); ++i)
+    {
         const QString &networkName =
             currentTrainNetworks[i];
         TrainClient::NeTrainSimNetwork *network =
@@ -111,7 +122,8 @@ void RegionData::setRegionName(const QString &name) {
                                    network);
     }
 
-    for (int i = 0; i < truckConfigsToMove.size(); ++i) {
+    for (int i = 0; i < truckConfigsToMove.size(); ++i)
+    {
         const QString &networkName =
             currentTruckNetworks[i];
         TruckClient::IntegrationSimulationConfig *config =
@@ -126,8 +138,10 @@ void RegionData::setRegionName(const QString &name) {
 
 void RegionData::addTrainNetwork(const QString &networkName,
                                  const QString &nodeFile,
-                                 const QString &linkFile) {
-    if (checkNetworkNameConflict(networkName)) {
+                                 const QString &linkFile)
+{
+    if (checkNetworkNameConflict(networkName))
+    {
         throw std::runtime_error(
             QString("Network name '%1' already exists in "
                     "train or "
@@ -136,7 +150,8 @@ void RegionData::addTrainNetwork(const QString &networkName,
                 .toStdString());
     }
 
-    try {
+    try
+    {
         // Create a new train network
         TrainClient::NeTrainSimNetwork *network =
             new TrainClient::NeTrainSimNetwork();
@@ -145,7 +160,8 @@ void RegionData::addTrainNetwork(const QString &networkName,
         // Add the network to NetworkController
         if (!NetworkController::getInstance()
                  .addTrainNetwork(networkName, m_region,
-                                  network)) {
+                                  network))
+        {
             delete network; // Clean up if adding failed
             throw std::runtime_error(
                 "Failed to register train network "
@@ -157,8 +173,9 @@ void RegionData::addTrainNetwork(const QString &networkName,
 
         // Notify listeners
         emit trainNetworkAdded(networkName);
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         throw std::runtime_error(
             QString("Failed to create train network: %1")
                 .arg(e.what())
@@ -166,9 +183,11 @@ void RegionData::addTrainNetwork(const QString &networkName,
     }
 }
 
-void RegionData::addTruckNetwork(
-    const QString &networkName, const QString &configFile) {
-    if (checkNetworkNameConflict(networkName)) {
+void RegionData::addTruckNetwork(const QString &networkName,
+                                 const QString &configFile)
+{
+    if (checkNetworkNameConflict(networkName))
+    {
         throw std::runtime_error(
             QString("Network name '%1' already exists "
                     "in train or truck networks")
@@ -176,7 +195,8 @@ void RegionData::addTruckNetwork(
                 .toStdString());
     }
 
-    try {
+    try
+    {
         // Parse the config file
         auto configReader =
             TruckClient::IntegrationSimulationConfigReader(
@@ -187,7 +207,8 @@ void RegionData::addTruckNetwork(
         // Add the config to NetworkController
         if (!NetworkController::getInstance()
                  .addTruckNetworkConfig(networkName,
-                                        m_region, config)) {
+                                        m_region, config))
+        {
             delete config; // Clean up if adding failed
             throw std::runtime_error(
                 "Failed to register truck network "
@@ -199,8 +220,9 @@ void RegionData::addTruckNetwork(
 
         // Notify listeners
         emit truckNetworkAdded(networkName);
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         throw std::runtime_error(
             QString("Failed to create truck network: %1")
                 .arg(e.what())
@@ -208,9 +230,11 @@ void RegionData::addTruckNetwork(
     }
 }
 
-void RegionData::renameTrainNetwork(
-    const QString &oldName, const QString &newName) {
-    if (!trainNetworkExists(oldName)) {
+void RegionData::renameTrainNetwork(const QString &oldName,
+                                    const QString &newName)
+{
+    if (!trainNetworkExists(oldName))
+    {
         throw std::runtime_error(
             QString(
                 "Train network '%1' not found in region")
@@ -219,19 +243,22 @@ void RegionData::renameTrainNetwork(
     }
 
     if (oldName != newName
-        && checkNetworkNameConflict(newName)) {
+        && checkNetworkNameConflict(newName))
+    {
         throw std::runtime_error(
             QString("Network name '%1' already exists")
                 .arg(newName)
                 .toStdString());
     }
 
-    try {
+    try
+    {
         // Get the network from NetworkController
         TrainClient::NeTrainSimNetwork *network =
             NetworkController::getInstance().trainNetwork(
                 oldName, m_region);
-        if (!network) {
+        if (!network)
+        {
             throw std::runtime_error(
                 "Network exists in local list but "
                 "not in NetworkController");
@@ -240,7 +267,8 @@ void RegionData::renameTrainNetwork(
         // Remove network with old name from
         // NetworkController
         if (!NetworkController::getInstance()
-                 .removeTrainNetwork(oldName, m_region)) {
+                 .removeTrainNetwork(oldName, m_region))
+        {
             throw std::runtime_error(
                 "Failed to remove network with "
                 "old name from NetworkController");
@@ -249,12 +277,14 @@ void RegionData::renameTrainNetwork(
         // Add network with new name to NetworkController
         if (!NetworkController::getInstance()
                  .addTrainNetwork(newName, m_region,
-                                  network)) {
+                                  network))
+        {
             // Try to restore the old name if adding with
             // new name fails
             if (!NetworkController::getInstance()
                      .addTrainNetwork(oldName, m_region,
-                                      network)) {
+                                      network))
+            {
                 // Critical error - network is now not
                 // registered at all
                 delete network;
@@ -270,14 +300,16 @@ void RegionData::renameTrainNetwork(
 
         // Update our local list
         int index = m_trainNetworksList.indexOf(oldName);
-        if (index >= 0) {
+        if (index >= 0)
+        {
             m_trainNetworksList[index] = newName;
         }
 
         // Notify listeners
         emit trainNetworkRenamed(oldName, newName);
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         throw std::runtime_error(
             QString("Failed to rename train network: %1")
                 .arg(e.what())
@@ -285,9 +317,11 @@ void RegionData::renameTrainNetwork(
     }
 }
 
-void RegionData::renameTruckNetwork(
-    const QString &oldName, const QString &newName) {
-    if (!truckNetworkExists(oldName)) {
+void RegionData::renameTruckNetwork(const QString &oldName,
+                                    const QString &newName)
+{
+    if (!truckNetworkExists(oldName))
+    {
         throw std::runtime_error(
             QString(
                 "Truck network '%1' not found in region")
@@ -296,19 +330,22 @@ void RegionData::renameTruckNetwork(
     }
 
     if (oldName != newName
-        && checkNetworkNameConflict(newName)) {
+        && checkNetworkNameConflict(newName))
+    {
         throw std::runtime_error(
             QString("Network name '%1' already exists")
                 .arg(newName)
                 .toStdString());
     }
 
-    try {
+    try
+    {
         // Get the config from NetworkController
         TruckClient::IntegrationSimulationConfig *config =
             NetworkController::getInstance()
                 .truckNetworkConfig(oldName, m_region);
-        if (!config) {
+        if (!config)
+        {
             throw std::runtime_error(
                 "Network exists in local list but "
                 "not in NetworkController");
@@ -318,7 +355,8 @@ void RegionData::renameTruckNetwork(
         // NetworkController
         if (!NetworkController::getInstance()
                  .removeTruckNetworkConfig(oldName,
-                                           m_region)) {
+                                           m_region))
+        {
             throw std::runtime_error(
                 "Failed to remove network with old "
                 "name from NetworkController");
@@ -327,12 +365,14 @@ void RegionData::renameTruckNetwork(
         // Add config with new name to NetworkController
         if (!NetworkController::getInstance()
                  .addTruckNetworkConfig(newName, m_region,
-                                        config)) {
+                                        config))
+        {
             // Try to restore the old name if adding with
             // new name fails
             if (!NetworkController::getInstance()
                      .addTruckNetworkConfig(
-                         oldName, m_region, config)) {
+                         oldName, m_region, config))
+            {
                 // Critical error - network is now not
                 // registered at all
                 delete config;
@@ -348,14 +388,16 @@ void RegionData::renameTruckNetwork(
 
         // Update our local list
         int index = m_truckNetworksList.indexOf(oldName);
-        if (index >= 0) {
+        if (index >= 0)
+        {
             m_truckNetworksList[index] = newName;
         }
 
         // Notify listeners
         emit truckNetworkRenamed(oldName, newName);
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         throw std::runtime_error(
             QString("Failed to rename truck network: %1")
                 .arg(e.what())
@@ -363,8 +405,10 @@ void RegionData::renameTruckNetwork(
     }
 }
 
-void RegionData::removeTrainNetwork(const QString &name) {
-    if (!trainNetworkExists(name)) {
+void RegionData::removeTrainNetwork(const QString &name)
+{
+    if (!trainNetworkExists(name))
+    {
         throw std::runtime_error(
             QString(
                 "Train network '%1' not found in region")
@@ -372,11 +416,13 @@ void RegionData::removeTrainNetwork(const QString &name) {
                 .toStdString());
     }
 
-    try {
+    try
+    {
         // Remove from NetworkController (this will delete
         // the network object)
         if (!NetworkController::getInstance()
-                 .removeTrainNetwork(name, m_region)) {
+                 .removeTrainNetwork(name, m_region))
+        {
             throw std::runtime_error(
                 "Failed to remove network from "
                 "NetworkController");
@@ -387,8 +433,9 @@ void RegionData::removeTrainNetwork(const QString &name) {
 
         // Notify listeners
         emit trainNetworkRemoved(name);
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         throw std::runtime_error(
             QString("Failed to remove train network: %1")
                 .arg(e.what())
@@ -396,8 +443,10 @@ void RegionData::removeTrainNetwork(const QString &name) {
     }
 }
 
-void RegionData::removeTruckNetwork(const QString &name) {
-    if (!truckNetworkExists(name)) {
+void RegionData::removeTruckNetwork(const QString &name)
+{
+    if (!truckNetworkExists(name))
+    {
         throw std::runtime_error(
             QString(
                 "Truck network '%1' not found in region")
@@ -405,12 +454,13 @@ void RegionData::removeTruckNetwork(const QString &name) {
                 .toStdString());
     }
 
-    try {
+    try
+    {
         // Remove from NetworkController (this will delete
         // the config)
         if (!NetworkController::getInstance()
-                 .removeTruckNetworkConfig(name,
-                                           m_region)) {
+                 .removeTruckNetworkConfig(name, m_region))
+        {
             throw std::runtime_error(
                 "Failed to remove network config "
                 "from NetworkController");
@@ -421,8 +471,9 @@ void RegionData::removeTruckNetwork(const QString &name) {
 
         // Notify listeners
         emit truckNetworkRemoved(name);
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         throw std::runtime_error(
             QString("Failed to remove truck network: %1")
                 .arg(e.what())
@@ -431,18 +482,22 @@ void RegionData::removeTruckNetwork(const QString &name) {
 }
 
 bool RegionData::trainNetworkExists(
-    const QString &name) const {
+    const QString &name) const
+{
     return m_trainNetworksList.contains(name);
 }
 
 bool RegionData::truckNetworkExists(
-    const QString &name) const {
+    const QString &name) const
+{
     return m_truckNetworksList.contains(name);
 }
 
 TrainClient::NeTrainSimNetwork *
-RegionData::getTrainNetwork(const QString &name) const {
-    if (!trainNetworkExists(name)) {
+RegionData::getTrainNetwork(const QString &name) const
+{
+    if (!trainNetworkExists(name))
+    {
         return nullptr;
     }
     return NetworkController::getInstance().trainNetwork(
@@ -450,8 +505,10 @@ RegionData::getTrainNetwork(const QString &name) const {
 }
 
 TruckClient::IntegrationNetwork *
-RegionData::getTruckNetwork(const QString &name) const {
-    if (!truckNetworkExists(name)) {
+RegionData::getTruckNetwork(const QString &name) const
+{
+    if (!truckNetworkExists(name))
+    {
         return nullptr;
     }
     return NetworkController::getInstance().truckNetwork(
@@ -459,9 +516,10 @@ RegionData::getTruckNetwork(const QString &name) const {
 }
 
 TruckClient::IntegrationSimulationConfig *
-RegionData::getTruckNetworkConfig(
-    const QString &name) const {
-    if (!truckNetworkExists(name)) {
+RegionData::getTruckNetworkConfig(const QString &name) const
+{
+    if (!truckNetworkExists(name))
+    {
         return nullptr;
     }
     return NetworkController::getInstance()
@@ -470,28 +528,33 @@ RegionData::getTruckNetworkConfig(
         .truckNetworkConfig(name, m_region);
 }
 
-QStringList RegionData::getTrainNetworks() const {
+QStringList RegionData::getTrainNetworks() const
+{
     return m_trainNetworksList;
 }
 
-QStringList RegionData::getTruckNetworks() const {
+QStringList RegionData::getTruckNetworks() const
+{
     return m_truckNetworksList;
 }
 
-QMap<QString, QVariant> RegionData::toMap() const {
+QMap<QString, QVariant> RegionData::toMap() const
+{
     QMap<QString, QVariant> map;
 
     map["region"] = m_region;
 
     // Serialize the network lists
     QVariantList trainList;
-    for (const QString &network : m_trainNetworksList) {
+    for (const QString &network : m_trainNetworksList)
+    {
         trainList.append(network);
     }
     map["train_networks"] = trainList;
 
     QVariantList truckList;
-    for (const QString &network : m_truckNetworksList) {
+    for (const QString &network : m_truckNetworksList)
+    {
         truckList.append(network);
     }
     map["truck_networks"] = truckList;
@@ -504,7 +567,8 @@ QMap<QString, QVariant> RegionData::toMap() const {
 
 RegionData *
 RegionData::fromMap(const QMap<QString, QVariant> &data,
-                    QObject                       *parent) {
+                    QObject                       *parent)
+{
     QString regionName = data["region"].toString();
 
     RegionData *regionData =
@@ -513,20 +577,23 @@ RegionData::fromMap(const QMap<QString, QVariant> &data,
     // Deserialize the network lists
     QVariantList trainList =
         data["train_networks"].toList();
-    for (const QVariant &network : trainList) {
+    for (const QVariant &network : trainList)
+    {
         regionData->m_trainNetworksList.append(
             network.toString());
     }
 
     QVariantList truckList =
         data.value("truck_networks").toList();
-    for (const QVariant &network : truckList) {
+    for (const QVariant &network : truckList)
+    {
         regionData->m_truckNetworksList.append(
             network.toString());
     }
 
     // Deserialize the variables if they exist
-    if (data.contains("variables")) {
+    if (data.contains("variables"))
+    {
         regionData->m_variables = data["variables"].toMap();
     }
 
@@ -538,33 +605,41 @@ RegionData::fromMap(const QMap<QString, QVariant> &data,
 // RegionDataController implementation
 
 RegionDataController &
-RegionDataController::getInstance(QObject *parent) {
-    if (!m_instance) {
+RegionDataController::getInstance(QObject *parent)
+{
+    if (!m_instance)
+    {
         m_instance = new RegionDataController(parent);
     }
     return *m_instance;
 }
 
 RegionDataController::RegionDataController(QObject *parent)
-    : QObject(parent) {}
+    : QObject(parent)
+{
+}
 
-RegionDataController::~RegionDataController() {
+RegionDataController::~RegionDataController()
+{
     clear();
     m_instance = nullptr;
 }
 
 RegionData *
-RegionDataController::getRegionData(const QString &name) {
+RegionDataController::getRegionData(const QString &name)
+{
     return m_regions.value(name, nullptr);
 }
 
-QStringList
-RegionDataController::getAllRegionNames() const {
+QStringList RegionDataController::getAllRegionNames() const
+{
     return m_regions.keys();
 }
 
-bool RegionDataController::addRegion(const QString &name) {
-    if (m_regions.contains(name)) {
+bool RegionDataController::addRegion(const QString &name)
+{
+    if (m_regions.contains(name))
+    {
         return false;
     }
 
@@ -577,9 +652,11 @@ bool RegionDataController::addRegion(const QString &name) {
 }
 
 bool RegionDataController::renameRegion(
-    const QString &oldName, const QString &newName) {
+    const QString &oldName, const QString &newName)
+{
     if (!m_regions.contains(oldName)
-        || m_regions.contains(newName)) {
+        || m_regions.contains(newName))
+    {
         return false;
     }
 
@@ -587,7 +664,8 @@ bool RegionDataController::renameRegion(
     data->setRegionName(newName);
     m_regions[newName] = data;
 
-    if (m_currentRegion == oldName) {
+    if (m_currentRegion == oldName)
+    {
         m_currentRegion = newName;
         // Emit that current region has changed
         emit currentRegionChanged(newName);
@@ -599,9 +677,10 @@ bool RegionDataController::renameRegion(
     return true;
 }
 
-bool RegionDataController::removeRegion(
-    const QString &name) {
-    if (!m_regions.contains(name)) {
+bool RegionDataController::removeRegion(const QString &name)
+{
+    if (!m_regions.contains(name))
+    {
         return false;
     }
 
@@ -613,10 +692,14 @@ bool RegionDataController::removeRegion(
 
     // Remove all train networks in this region
     QStringList trainNetworks = data->getTrainNetworks();
-    for (const QString &network : trainNetworks) {
-        try {
+    for (const QString &network : trainNetworks)
+    {
+        try
+        {
             data->removeTrainNetwork(network);
-        } catch (const std::exception &e) {
+        }
+        catch (const std::exception &e)
+        {
             qWarning()
                 << "Error removing train network" << network
                 << "during region removal:" << e.what();
@@ -625,10 +708,14 @@ bool RegionDataController::removeRegion(
 
     // Remove all truck networks in this region
     QStringList truckNetworks = data->getTruckNetworks();
-    for (const QString &network : truckNetworks) {
-        try {
+    for (const QString &network : truckNetworks)
+    {
+        try
+        {
             data->removeTruckNetwork(network);
-        } catch (const std::exception &e) {
+        }
+        catch (const std::exception &e)
+        {
             qWarning()
                 << "Error removing truck network" << network
                 << "during region removal:" << e.what();
@@ -642,7 +729,8 @@ bool RegionDataController::removeRegion(
     emit regionRemoved(name);
 
     // If current region was removed, update it and notify
-    if (isCurrentRegion) {
+    if (isCurrentRegion)
+    {
         m_currentRegion = QString();
         emit currentRegionChanged(m_currentRegion);
     }
@@ -651,18 +739,23 @@ bool RegionDataController::removeRegion(
 }
 
 RegionData *
-RegionDataController::getCurrentRegionData() const {
-    if (m_currentRegion.isEmpty()) {
+RegionDataController::getCurrentRegionData() const
+{
+    if (m_currentRegion.isEmpty())
+    {
         return nullptr;
     }
     return m_regions.value(m_currentRegion, nullptr);
 }
 
 bool RegionDataController::setCurrentRegion(
-    const QString &name) {
+    const QString &name)
+{
     // If name is empty, clear the current region
-    if (name.isEmpty()) {
-        if (!m_currentRegion.isEmpty()) {
+    if (name.isEmpty())
+    {
+        if (!m_currentRegion.isEmpty())
+        {
             m_currentRegion = QString();
             emit currentRegionChanged(m_currentRegion);
         }
@@ -670,12 +763,14 @@ bool RegionDataController::setCurrentRegion(
     }
 
     // Check if the region exists
-    if (!m_regions.contains(name)) {
+    if (!m_regions.contains(name))
+    {
         return false;
     }
 
     // Set the current region if it's different
-    if (m_currentRegion != name) {
+    if (m_currentRegion != name)
+    {
         m_currentRegion = name;
         emit currentRegionChanged(m_currentRegion);
     }
@@ -683,16 +778,22 @@ bool RegionDataController::setCurrentRegion(
     return true;
 }
 
-void RegionDataController::clear() {
+void RegionDataController::clear()
+{
     // Delete all RegionData objects
-    for (RegionData *data : m_regions.values()) {
+    for (RegionData *data : m_regions.values())
+    {
         // Remove all train networks in this region
         QStringList trainNetworks =
             data->getTrainNetworks();
-        for (const QString &network : trainNetworks) {
-            try {
+        for (const QString &network : trainNetworks)
+        {
+            try
+            {
                 data->removeTrainNetwork(network);
-            } catch (const std::exception &e) {
+            }
+            catch (const std::exception &e)
+            {
                 qWarning() << "Error removing train network"
                            << network
                            << "during clear:" << e.what();
@@ -702,10 +803,14 @@ void RegionDataController::clear() {
         // Remove all truck networks in this region
         QStringList truckNetworks =
             data->getTruckNetworks();
-        for (const QString &network : truckNetworks) {
-            try {
+        for (const QString &network : truckNetworks)
+        {
+            try
+            {
                 data->removeTruckNetwork(network);
-            } catch (const std::exception &e) {
+            }
+            catch (const std::exception &e)
+            {
                 qWarning() << "Error removing truck network"
                            << network
                            << "during clear:" << e.what();
@@ -724,13 +829,14 @@ void RegionDataController::clear() {
     emit currentRegionChanged(m_currentRegion);
 }
 
-QMap<QString, QVariant>
-RegionDataController::toMap() const {
+QMap<QString, QVariant> RegionDataController::toMap() const
+{
     QMap<QString, QVariant> map;
     QMap<QString, QVariant> regionsMap;
 
     for (auto it = m_regions.constBegin();
-         it != m_regions.constEnd(); ++it) {
+         it != m_regions.constEnd(); ++it)
+    {
         regionsMap[it.key()] = it.value()->toMap();
     }
 
@@ -745,16 +851,19 @@ RegionDataController::toMap() const {
 }
 
 bool RegionDataController::fromMap(
-    const QMap<QString, QVariant> &data) {
+    const QMap<QString, QVariant> &data)
+{
     // Clear existing data (this will emit regionsCleared)
     clear();
 
-    try {
+    try
+    {
         QMap<QString, QVariant> regionsMap =
             data["regions"].toMap();
 
         for (auto it = regionsMap.constBegin();
-             it != regionsMap.constEnd(); ++it) {
+             it != regionsMap.constEnd(); ++it)
+        {
             QString                 regionName = it.key();
             QMap<QString, QVariant> regionData =
                 it.value().toMap();
@@ -768,24 +877,29 @@ bool RegionDataController::fromMap(
         }
 
         // Restore current region if it exists
-        if (data.contains("current_region")) {
+        if (data.contains("current_region"))
+        {
             QString newCurrentRegion =
                 data["current_region"].toString();
             if (!newCurrentRegion.isEmpty()
-                && m_regions.contains(newCurrentRegion)) {
+                && m_regions.contains(newCurrentRegion))
+            {
                 m_currentRegion = newCurrentRegion;
                 emit currentRegionChanged(m_currentRegion);
             }
         }
 
         // Restore global variables if they exist
-        if (data.contains("global_variables")) {
+        if (data.contains("global_variables"))
+        {
             m_globalVariables =
                 data["global_variables"].toMap();
         }
 
         return true;
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         qWarning() << "Error deserializing regions data:"
                    << e.what();
         clear();

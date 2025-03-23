@@ -15,15 +15,19 @@
 #include <QVector>
 #include <functional>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @struct TripEndData
  * @brief Data provided when a trip ends
  */
-struct TripEndData {
+struct TripEndData
+{
     QString tripId;      ///< Trip identifier
     QString networkName; ///< Network identifier
     QString origin;      ///< Origin node identifier
@@ -42,7 +46,8 @@ struct TripEndData {
  * Provides a Qt-based mechanism for registering callbacks
  * that trigger when trips end in the simulation.
  */
-class TripEndCallbackManager : public QObject {
+class TripEndCallbackManager : public QObject
+{
     Q_OBJECT
 
 public:

@@ -28,8 +28,10 @@
 
 #include "Backend/Commons/ClientType.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Initializes backend components including metatype
@@ -39,7 +41,8 @@ namespace Backend {
  * startup before using any backend components, especially
  * those that use signals/slots across thread boundaries.
  */
-inline void initializeBackend() {
+inline void initializeBackend()
+{
     // Base classes
     qRegisterMetaType<RabbitMQHandler>(
         "CargoNetSim::Backend::RabbitMQHandler");

@@ -14,12 +14,16 @@
  * reviewing the code.
  */
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 SimulationSummaryData::SimulationSummaryData(
-    const QVector<QPair<QString, QString>> &summaryData) {
+    const QVector<QPair<QString, QString>> &summaryData)
+{
     // Upon construction, immediately parse the provided
     // summary data to initialize the internal data
     // structure (m_parsedData).
@@ -27,7 +31,8 @@ SimulationSummaryData::SimulationSummaryData(
 }
 
 void SimulationSummaryData::parseSummaryData(
-    const QVector<QPair<QString, QString>> &summaryData) {
+    const QVector<QPair<QString, QString>> &summaryData)
+{
     // Temporary map to build the parsed structure before
     // assigning to m_parsedData
     QMap<QString, QVariant> parsed;
@@ -41,7 +46,8 @@ void SimulationSummaryData::parseSummaryData(
 
     // Iterate over each text-value pair in the input
     // summary data
-    for (const auto &pair : summaryData) {
+    for (const auto &pair : summaryData)
+    {
         // Extract and clean the summary text (remove
         // leading/trailing whitespace)
         QString text = pair.first.trimmed();
@@ -51,13 +57,15 @@ void SimulationSummaryData::parseSummaryData(
 
         // Skip irrelevant or formatting lines
         if (text.isEmpty() || text.startsWith("~.~")
-            || text.startsWith("...")) {
+            || text.startsWith("..."))
+        {
             continue; // These are separators or empty
                       // lines, ignore them
         }
 
         // Handle new category (lines starting with '+')
-        if (text.startsWith("+")) {
+        if (text.startsWith("+"))
+        {
             // Extract category name by removing the '+'
             // prefix and trimming
             QString category = text.mid(1).trimmed();
@@ -79,10 +87,12 @@ void SimulationSummaryData::parseSummaryData(
 
         // Handle new subcategory (lines starting with
         // '|->')
-        if (text.startsWith("|->")) {
+        if (text.startsWith("|->"))
+        {
             // Ensure we have a current category to attach
             // the subcategory to
-            if (currentCategoryMap) {
+            if (currentCategoryMap)
+            {
                 // Extract subcategory name by removing
                 // '|->' and trimming
                 QString subcategory = text.mid(3).trimmed();
@@ -102,16 +112,20 @@ void SimulationSummaryData::parseSummaryData(
         }
 
         // Handle key-value pairs (lines starting with '|_')
-        if (text.startsWith("|_")) {
+        if (text.startsWith("|_"))
+        {
             // Extract the key by removing '|_ ' prefix and
             // trimming
             QString key = text.mid(2).trimmed();
             // Determine where to store the key-value pair
-            if (currentSubcategoryMap) {
+            if (currentSubcategoryMap)
+            {
                 // If a subcategory is active, store the
                 // key-value pair there
                 (*currentSubcategoryMap)[key] = value;
-            } else if (currentCategoryMap) {
+            }
+            else if (currentCategoryMap)
+            {
                 // If no subcategory, store directly in the
                 // current category
                 (*currentCategoryMap)[key] = value;
@@ -128,7 +142,8 @@ void SimulationSummaryData::parseSummaryData(
 }
 
 QMap<QString, QVariant> SimulationSummaryData::getCategory(
-    const QString &category) const {
+    const QString &category) const
+{
     // Retrieve the map associated with the specified
     // category If the category doesn't exist, returns an
     // empty QMap
@@ -138,7 +153,8 @@ QMap<QString, QVariant> SimulationSummaryData::getCategory(
 QMap<QString, QVariant>
 SimulationSummaryData::getSubcategory(
     const QString &category,
-    const QString &subcategory) const {
+    const QString &subcategory) const
+{
     // First, get the category map
     QMap<QString, QVariant> catData = getCategory(category);
     // Then, retrieve the subcategory map from within the
@@ -150,7 +166,8 @@ SimulationSummaryData::getSubcategory(
 QVariant
 SimulationSummaryData::getValue(const QString &category,
                                 const QString &subcategory,
-                                const QString &key) const {
+                                const QString &key) const
+{
     // Get the subcategory map
     QMap<QString, QVariant> subcatData =
         getSubcategory(category, subcategory);
@@ -159,8 +176,8 @@ SimulationSummaryData::getValue(const QString &category,
     return subcatData.value(key);
 }
 
-QStringList
-SimulationSummaryData::getAllCategories() const {
+QStringList SimulationSummaryData::getAllCategories() const
+{
     // Simply return a list of all top-level keys (category
     // names) in m_parsedData
     return m_parsedData.keys();
@@ -168,35 +185,44 @@ SimulationSummaryData::getAllCategories() const {
 
 QMap<QString, QStringList>
 SimulationSummaryData::getAllSubcategories(
-    const QString &category) const {
+    const QString &category) const
+{
     // Map to store the result: category names mapped to
     // their subcategory lists
     QMap<QString, QStringList> result;
 
-    if (category == "*") {
+    if (category == "*")
+    {
         // Special case: return subcategories for all
         // categories
-        for (const QString &cat : m_parsedData.keys()) {
+        for (const QString &cat : m_parsedData.keys())
+        {
             QMap<QString, QVariant> catData =
                 m_parsedData[cat].toMap();
             QStringList subcats;
             // Iterate through the category's keys
-            for (const QString &key : catData.keys()) {
+            for (const QString &key : catData.keys())
+            {
                 // If the value is a map, it's a subcategory
-                if (catData[key].type() == QVariant::Map) {
+                if (catData[key].type() == QVariant::Map)
+                {
                     subcats.append(key);
                 }
             }
             result[cat] = subcats;
         }
-    } else {
+    }
+    else
+    {
         // Specific case: return subcategories for the given
         // category
         QMap<QString, QVariant> catData =
             getCategory(category);
         QStringList subcats;
-        for (const QString &key : catData.keys()) {
-            if (catData[key].type() == QVariant::Map) {
+        for (const QString &key : catData.keys())
+        {
+            if (catData[key].type() == QVariant::Map)
+            {
                 subcats.append(key);
             }
         }
@@ -205,8 +231,8 @@ SimulationSummaryData::getAllSubcategories(
     return result;
 }
 
-QMap<QString, QVariant>
-SimulationSummaryData::info() const {
+QMap<QString, QVariant> SimulationSummaryData::info() const
+{
     // Return a copy of the entire parsed data structure
     // Useful for debugging or full data inspection
     return m_parsedData;

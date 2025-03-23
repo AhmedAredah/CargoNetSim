@@ -1,13 +1,17 @@
 // NetworkController.cpp
 #include "NetworkController.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
-void NetworkControllerCleanup::cleanup() {
+void NetworkControllerCleanup::cleanup()
+{
     QWriteLocker writeLocker(
         &NetworkController::m_instanceLock);
-    if (NetworkController::m_instance) {
+    if (NetworkController::m_instance)
+    {
         delete NetworkController::m_instance;
         NetworkController::m_instance = nullptr;
     }
@@ -18,13 +22,16 @@ NetworkController *NetworkController::m_instance = nullptr;
 QReadWriteLock     NetworkController::m_instanceLock;
 
 NetworkController &
-NetworkController::getInstance(QObject *parent) {
+NetworkController::getInstance(QObject *parent)
+{
     QReadLocker locker(&m_instanceLock);
-    if (!m_instance) {
+    if (!m_instance)
+    {
         locker.unlock();
         QWriteLocker writeLocker(&m_instanceLock);
         // Double-check pattern to ensure thread safety
-        if (!m_instance) {
+        if (!m_instance)
+        {
             m_instance = new NetworkController(parent);
         }
         writeLocker.unlock();
@@ -34,12 +41,16 @@ NetworkController::getInstance(QObject *parent) {
 }
 
 NetworkController::NetworkController(QObject *parent)
-    : QObject(parent) {}
+    : QObject(parent)
+{
+}
 
-NetworkController::~NetworkController() {
+NetworkController::~NetworkController()
+{
     // Clean up all train networks
     QWriteLocker trainLocker(&m_trainNetworksLock);
-    for (auto &regionNetworks : m_trainNetworks) {
+    for (auto &regionNetworks : m_trainNetworks)
+    {
         qDeleteAll(regionNetworks);
     }
     m_trainNetworks.clear();
@@ -47,7 +58,8 @@ NetworkController::~NetworkController() {
 
     // Clean up all truck network configs
     QWriteLocker truckLocker(&m_truckNetworkConfigsLock);
-    for (auto &regionConfigs : m_truckNetworkConfigs) {
+    for (auto &regionConfigs : m_truckNetworkConfigs)
+    {
         qDeleteAll(regionConfigs);
     }
     m_truckNetworkConfigs.clear();
@@ -55,8 +67,10 @@ NetworkController::~NetworkController() {
 
 bool NetworkController::addTrainNetwork(
     const QString &name, const QString &region,
-    TrainClient::NeTrainSimNetwork *network) {
-    if (!network) {
+    TrainClient::NeTrainSimNetwork *network)
+{
+    if (!network)
+    {
         qWarning() << "Attempted to add null train network:"
                    << name << "in region" << region;
         return false;
@@ -67,7 +81,8 @@ bool NetworkController::addTrainNetwork(
     // Check if network with this name already exists in the
     // region
     if (m_trainNetworks.contains(region)
-        && m_trainNetworks[region].contains(name)) {
+        && m_trainNetworks[region].contains(name))
+    {
         qWarning() << "Train network with name" << name
                    << "already exists in region" << region;
         return false;
@@ -87,8 +102,10 @@ bool NetworkController::addTrainNetwork(
 
 bool NetworkController::addTruckNetworkConfig(
     const QString &name, const QString &region,
-    TruckClient::IntegrationSimulationConfig *config) {
-    if (!config) {
+    TruckClient::IntegrationSimulationConfig *config)
+{
+    if (!config)
+    {
         qWarning()
             << "Attempted to add null truck network config:"
             << name << "in region" << region;
@@ -100,7 +117,8 @@ bool NetworkController::addTruckNetworkConfig(
     // Check if config with this name already exists in the
     // region
     if (m_truckNetworkConfigs.contains(region)
-        && m_truckNetworkConfigs[region].contains(name)) {
+        && m_truckNetworkConfigs[region].contains(name))
+    {
         qWarning() << "Truck network config with name"
                    << name << "already exists in region"
                    << region;
@@ -120,12 +138,14 @@ bool NetworkController::addTruckNetworkConfig(
 }
 
 TrainClient::NeTrainSimNetwork *
-NetworkController::trainNetwork(
-    const QString &name, const QString &region) const {
+NetworkController::trainNetwork(const QString &name,
+                                const QString &region) const
+{
     QReadLocker locker(&m_trainNetworksLock);
 
     if (!m_trainNetworks.contains(region)
-        || !m_trainNetworks[region].contains(name)) {
+        || !m_trainNetworks[region].contains(name))
+    {
         return nullptr;
     }
 
@@ -134,11 +154,13 @@ NetworkController::trainNetwork(
 
 TruckClient::IntegrationSimulationConfig *
 NetworkController::truckNetworkConfig(
-    const QString &name, const QString &region) const {
+    const QString &name, const QString &region) const
+{
     QReadLocker locker(&m_truckNetworkConfigsLock);
 
     if (!m_truckNetworkConfigs.contains(region)
-        || !m_truckNetworkConfigs[region].contains(name)) {
+        || !m_truckNetworkConfigs[region].contains(name))
+    {
         return nullptr;
     }
 
@@ -146,12 +168,14 @@ NetworkController::truckNetworkConfig(
 }
 
 TruckClient::IntegrationNetwork *
-NetworkController::truckNetwork(
-    const QString &name, const QString &region) const {
+NetworkController::truckNetwork(const QString &name,
+                                const QString &region) const
+{
     QReadLocker locker(&m_truckNetworkConfigsLock);
 
     if (!m_truckNetworkConfigs.contains(region)
-        || !m_truckNetworkConfigs[region].contains(name)) {
+        || !m_truckNetworkConfigs[region].contains(name))
+    {
         return nullptr;
     }
 
@@ -164,11 +188,13 @@ NetworkController::truckNetwork(
 }
 
 bool NetworkController::removeTrainNetwork(
-    const QString &name, const QString &region) {
+    const QString &name, const QString &region)
+{
     QWriteLocker locker(&m_trainNetworksLock);
 
     if (!m_trainNetworks.contains(region)
-        || !m_trainNetworks[region].contains(name)) {
+        || !m_trainNetworks[region].contains(name))
+    {
         return false;
     }
 
@@ -180,7 +206,8 @@ bool NetworkController::removeTrainNetwork(
     m_trainNetworks[region].remove(name);
 
     // Clean up empty regions
-    if (m_trainNetworks[region].isEmpty()) {
+    if (m_trainNetworks[region].isEmpty())
+    {
         m_trainNetworks.remove(region);
     }
 
@@ -195,11 +222,13 @@ bool NetworkController::removeTrainNetwork(
 }
 
 bool NetworkController::removeTruckNetworkConfig(
-    const QString &name, const QString &region) {
+    const QString &name, const QString &region)
+{
     QWriteLocker locker(&m_truckNetworkConfigsLock);
 
     if (!m_truckNetworkConfigs.contains(region)
-        || !m_truckNetworkConfigs[region].contains(name)) {
+        || !m_truckNetworkConfigs[region].contains(name))
+    {
         return false;
     }
 
@@ -211,7 +240,8 @@ bool NetworkController::removeTruckNetworkConfig(
     m_truckNetworkConfigs[region].remove(name);
 
     // Clean up empty regions
-    if (m_truckNetworkConfigs[region].isEmpty()) {
+    if (m_truckNetworkConfigs[region].isEmpty())
+    {
         m_truckNetworkConfigs.remove(region);
     }
 
@@ -228,10 +258,12 @@ bool NetworkController::removeTruckNetworkConfig(
 
 QMap<QString, TrainClient::NeTrainSimNetwork *>
 NetworkController::trainNetworksInRegion(
-    const QString &region) const {
+    const QString &region) const
+{
     QReadLocker locker(&m_trainNetworksLock);
 
-    if (!m_trainNetworks.contains(region)) {
+    if (!m_trainNetworks.contains(region))
+    {
         return QMap<QString,
                     TrainClient::NeTrainSimNetwork *>();
     }
@@ -241,10 +273,12 @@ NetworkController::trainNetworksInRegion(
 
 QMap<QString, TruckClient::IntegrationSimulationConfig *>
 NetworkController::truckNetworkConfigsInRegion(
-    const QString &region) const {
+    const QString &region) const
+{
     QReadLocker locker(&m_truckNetworkConfigsLock);
 
-    if (!m_truckNetworkConfigs.contains(region)) {
+    if (!m_truckNetworkConfigs.contains(region))
+    {
         return QMap<
             QString,
             TruckClient::IntegrationSimulationConfig *>();
@@ -253,7 +287,8 @@ NetworkController::truckNetworkConfigsInRegion(
     return m_truckNetworkConfigs[region];
 }
 
-QStringList NetworkController::regions() const {
+QStringList NetworkController::regions() const
+{
     QStringList result;
 
     {
@@ -264,8 +299,10 @@ QStringList NetworkController::regions() const {
     {
         QReadLocker truckLocker(&m_truckNetworkConfigsLock);
         for (const QString &region :
-             m_truckNetworkConfigs.keys()) {
-            if (!result.contains(region)) {
+             m_truckNetworkConfigs.keys())
+        {
+            if (!result.contains(region))
+            {
                 result.append(region);
             }
         }

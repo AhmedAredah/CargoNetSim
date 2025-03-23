@@ -3,8 +3,10 @@
 #include <QRunnable>
 #include <QString>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Error handling utilities for the CargoNetSim
@@ -14,7 +16,8 @@ namespace GUI {
  * functionality, including global exception handling, Qt
  * message handling, and logging of errors.
  */
-class ErrorHandlers : public QObject {
+class ErrorHandlers : public QObject
+{
     Q_OBJECT
 public:
     /**
@@ -95,7 +98,8 @@ private:
  *
  * Provides exception handling wrapper for QRunnable objects
  */
-class SafeRunnable : public QRunnable {
+class SafeRunnable : public QRunnable
+{
 public:
     void run() override;
 

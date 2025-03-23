@@ -18,8 +18,10 @@
 #include <algorithm>
 #include <limits>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @struct PriorityQueueEntry
@@ -27,7 +29,8 @@ namespace Backend {
  * algorithm.
  * @tparam T The type of node identifier.
  */
-template <typename T> struct PriorityQueueEntry {
+template <typename T> struct PriorityQueueEntry
+{
     /** @brief Cost to reach this node */
     float cost;
     /** @brief Node identifier */
@@ -40,7 +43,8 @@ template <typename T> struct PriorityQueueEntry {
      * @return True if this entry has a higher cost than the
      * other.
      */
-    bool operator>(const PriorityQueueEntry &other) const {
+    bool operator>(const PriorityQueueEntry &other) const
+    {
         return cost > other.cost;
     }
 };
@@ -63,7 +67,8 @@ template <typename T> struct PriorityQueueEntry {
  * storable in QVariant.
  */
 template <typename T>
-class DirectedGraph : public DirectedGraphBase {
+class DirectedGraph : public DirectedGraphBase
+{
 public:
     /**
      * @brief Constructs a DirectedGraph instance.
@@ -291,7 +296,8 @@ private:
 
 template <typename T>
 DirectedGraph<T>::DirectedGraph(QObject *parent)
-    : DirectedGraphBase(parent) {
+    : DirectedGraphBase(parent)
+{
     // Static assertion to ensure T can be stored in
     // QVariant
     static_assert(
@@ -311,23 +317,28 @@ DirectedGraph<T>::DirectedGraph(QObject *parent)
         "signal/slot usage");
 }
 
-template <typename T> DirectedGraph<T>::~DirectedGraph() {
+template <typename T> DirectedGraph<T>::~DirectedGraph()
+{
     clear();
 }
 
 template <typename T>
 void DirectedGraph<T>::addNode(
     const T                       &nodeId,
-    const QMap<QString, QVariant> &attributes) {
+    const QMap<QString, QVariant> &attributes)
+{
     QMutexLocker locker(&m_mutex);
 
     bool nodeExists = m_nodeAttributes.contains(nodeId);
     m_nodeAttributes[nodeId] = attributes;
 
-    if (!nodeExists) {
+    if (!nodeExists)
+    {
         emit nodeAdded(QVariant::fromValue(nodeId));
         emit graphChanged();
-    } else {
+    }
+    else
+    {
         emit nodeModified(QVariant::fromValue(nodeId));
         emit graphChanged();
     }
@@ -336,15 +347,18 @@ void DirectedGraph<T>::addNode(
 template <typename T>
 void DirectedGraph<T>::addEdge(
     const T &fromNodeId, const T &toNodeId, float weight,
-    const QMap<QString, QVariant> &attributes) {
+    const QMap<QString, QVariant> &attributes)
+{
     QMutexLocker locker(&m_mutex);
 
     // Ensure nodes exist
-    if (!m_nodeAttributes.contains(fromNodeId)) {
+    if (!m_nodeAttributes.contains(fromNodeId))
+    {
         addNode(fromNodeId);
     }
 
-    if (!m_nodeAttributes.contains(toNodeId)) {
+    if (!m_nodeAttributes.contains(toNodeId))
+    {
         addNode(toNodeId);
     }
 
@@ -357,11 +371,14 @@ void DirectedGraph<T>::addEdge(
     m_edgeAttributes[fromNodeId][toNodeId] = attributes;
     m_edgeWeights[fromNodeId][toNodeId]    = weight;
 
-    if (!edgeExists) {
+    if (!edgeExists)
+    {
         emit edgeAdded(QVariant::fromValue(fromNodeId),
                        QVariant::fromValue(toNodeId));
         emit graphChanged();
-    } else {
+    }
+    else
+    {
         emit edgeModified(QVariant::fromValue(fromNodeId),
                           QVariant::fromValue(toNodeId));
         emit graphChanged();
@@ -369,20 +386,24 @@ void DirectedGraph<T>::addEdge(
 }
 
 template <typename T>
-void DirectedGraph<T>::removeNode(const T &nodeId) {
+void DirectedGraph<T>::removeNode(const T &nodeId)
+{
     QMutexLocker locker(&m_mutex);
 
-    if (!m_nodeAttributes.contains(nodeId)) {
+    if (!m_nodeAttributes.contains(nodeId))
+    {
         return;
     }
 
     // Remove all edges to and from this node
     for (auto it = m_edgeWeights.begin();
-         it != m_edgeWeights.end(); ++it) {
+         it != m_edgeWeights.end(); ++it)
+    {
         T fromNode = it.key();
 
         // Remove edges to the node
-        if (it.value().contains(nodeId)) {
+        if (it.value().contains(nodeId))
+        {
             it.value().remove(nodeId);
             m_edgeAttributes[fromNode].remove(nodeId);
             emit edgeRemoved(QVariant::fromValue(fromNode),
@@ -390,10 +411,12 @@ void DirectedGraph<T>::removeNode(const T &nodeId) {
         }
 
         // If we're removing the current fromNode
-        if (fromNode == nodeId) {
+        if (fromNode == nodeId)
+        {
             // Notify about each removed edge
             for (auto toNodeIt = it.value().begin();
-                 toNodeIt != it.value().end(); ++toNodeIt) {
+                 toNodeIt != it.value().end(); ++toNodeIt)
+            {
                 emit edgeRemoved(
                     QVariant::fromValue(nodeId),
                     QVariant::fromValue(toNodeIt.key()));
@@ -414,10 +437,12 @@ void DirectedGraph<T>::removeNode(const T &nodeId) {
 
 template <typename T>
 void DirectedGraph<T>::removeEdge(const T &fromNodeId,
-                                  const T &toNodeId) {
+                                  const T &toNodeId)
+{
     QMutexLocker locker(&m_mutex);
 
-    if (!hasEdge(fromNodeId, toNodeId)) {
+    if (!hasEdge(fromNodeId, toNodeId))
+    {
         return;
     }
 
@@ -430,14 +455,16 @@ void DirectedGraph<T>::removeEdge(const T &fromNodeId,
 }
 
 template <typename T>
-bool DirectedGraph<T>::hasNode(const T &nodeId) const {
+bool DirectedGraph<T>::hasNode(const T &nodeId) const
+{
     QMutexLocker locker(&m_mutex);
     return m_nodeAttributes.contains(nodeId);
 }
 
 template <typename T>
 bool DirectedGraph<T>::hasEdge(const T &fromNodeId,
-                               const T &toNodeId) const {
+                               const T &toNodeId) const
+{
     QMutexLocker locker(&m_mutex);
     return m_edgeWeights.contains(fromNodeId)
            && m_edgeWeights[fromNodeId].contains(toNodeId);
@@ -445,7 +472,8 @@ bool DirectedGraph<T>::hasEdge(const T &fromNodeId,
 
 template <typename T>
 QMap<QString, QVariant>
-DirectedGraph<T>::getNodeAttributes(const T &nodeId) const {
+DirectedGraph<T>::getNodeAttributes(const T &nodeId) const
+{
     QMutexLocker locker(&m_mutex);
     return m_nodeAttributes.value(nodeId);
 }
@@ -453,10 +481,12 @@ DirectedGraph<T>::getNodeAttributes(const T &nodeId) const {
 template <typename T>
 void DirectedGraph<T>::setNodeAttributes(
     const T                       &nodeId,
-    const QMap<QString, QVariant> &attributes) {
+    const QMap<QString, QVariant> &attributes)
+{
     QMutexLocker locker(&m_mutex);
 
-    if (!m_nodeAttributes.contains(nodeId)) {
+    if (!m_nodeAttributes.contains(nodeId))
+    {
         addNode(nodeId, attributes);
         return;
     }
@@ -467,11 +497,14 @@ void DirectedGraph<T>::setNodeAttributes(
 }
 
 template <typename T>
-QMap<QString, QVariant> DirectedGraph<T>::getEdgeAttributes(
-    const T &fromNodeId, const T &toNodeId) const {
+QMap<QString, QVariant>
+DirectedGraph<T>::getEdgeAttributes(const T &fromNodeId,
+                                    const T &toNodeId) const
+{
     QMutexLocker locker(&m_mutex);
 
-    if (hasEdge(fromNodeId, toNodeId)) {
+    if (hasEdge(fromNodeId, toNodeId))
+    {
         return m_edgeAttributes[fromNodeId][toNodeId];
     }
     return QMap<QString, QVariant>();
@@ -480,10 +513,12 @@ QMap<QString, QVariant> DirectedGraph<T>::getEdgeAttributes(
 template <typename T>
 void DirectedGraph<T>::setEdgeAttributes(
     const T &fromNodeId, const T &toNodeId,
-    const QMap<QString, QVariant> &attributes) {
+    const QMap<QString, QVariant> &attributes)
+{
     QMutexLocker locker(&m_mutex);
 
-    if (!hasEdge(fromNodeId, toNodeId)) {
+    if (!hasEdge(fromNodeId, toNodeId))
+    {
         // Default weight if edge doesn't exist
         addEdge(fromNodeId, toNodeId, 1.0f, attributes);
         return;
@@ -497,10 +532,12 @@ void DirectedGraph<T>::setEdgeAttributes(
 
 template <typename T>
 float DirectedGraph<T>::getEdgeWeight(
-    const T &fromNodeId, const T &toNodeId) const {
+    const T &fromNodeId, const T &toNodeId) const
+{
     QMutexLocker locker(&m_mutex);
 
-    if (hasEdge(fromNodeId, toNodeId)) {
+    if (hasEdge(fromNodeId, toNodeId))
+    {
         return m_edgeWeights[fromNodeId][toNodeId];
     }
     return std::numeric_limits<float>::infinity();
@@ -509,10 +546,12 @@ float DirectedGraph<T>::getEdgeWeight(
 template <typename T>
 void DirectedGraph<T>::setEdgeWeight(const T &fromNodeId,
                                      const T &toNodeId,
-                                     float    weight) {
+                                     float    weight)
+{
     QMutexLocker locker(&m_mutex);
 
-    if (!hasEdge(fromNodeId, toNodeId)) {
+    if (!hasEdge(fromNodeId, toNodeId))
+    {
         addEdge(fromNodeId, toNodeId, weight);
         return;
     }
@@ -524,20 +563,24 @@ void DirectedGraph<T>::setEdgeWeight(const T &fromNodeId,
 }
 
 template <typename T>
-QVector<T> DirectedGraph<T>::getNodes() const {
+QVector<T> DirectedGraph<T>::getNodes() const
+{
     QMutexLocker locker(&m_mutex);
     return m_nodeAttributes.keys().toVector();
 }
 
 template <typename T>
 QVector<QPair<T, float>>
-DirectedGraph<T>::getOutgoingEdges(const T &nodeId) const {
+DirectedGraph<T>::getOutgoingEdges(const T &nodeId) const
+{
     QMutexLocker             locker(&m_mutex);
     QVector<QPair<T, float>> edges;
 
-    if (m_edgeWeights.contains(nodeId)) {
+    if (m_edgeWeights.contains(nodeId))
+    {
         for (auto it = m_edgeWeights[nodeId].constBegin();
-             it != m_edgeWeights[nodeId].constEnd(); ++it) {
+             it != m_edgeWeights[nodeId].constEnd(); ++it)
+        {
             edges.append(qMakePair(it.key(), it.value()));
         }
     }
@@ -547,13 +590,16 @@ DirectedGraph<T>::getOutgoingEdges(const T &nodeId) const {
 
 template <typename T>
 QVector<QPair<T, float>>
-DirectedGraph<T>::getIncomingEdges(const T &nodeId) const {
+DirectedGraph<T>::getIncomingEdges(const T &nodeId) const
+{
     QMutexLocker             locker(&m_mutex);
     QVector<QPair<T, float>> edges;
 
     for (auto sourceIt = m_edgeWeights.constBegin();
-         sourceIt != m_edgeWeights.constEnd(); ++sourceIt) {
-        if (sourceIt.value().contains(nodeId)) {
+         sourceIt != m_edgeWeights.constEnd(); ++sourceIt)
+    {
+        if (sourceIt.value().contains(nodeId))
+        {
             edges.append(qMakePair(
                 sourceIt.key(), sourceIt.value()[nodeId]));
         }
@@ -563,23 +609,28 @@ DirectedGraph<T>::getIncomingEdges(const T &nodeId) const {
 }
 
 template <typename T>
-int DirectedGraph<T>::getOutDegree(const T &nodeId) const {
+int DirectedGraph<T>::getOutDegree(const T &nodeId) const
+{
     QMutexLocker locker(&m_mutex);
 
-    if (m_edgeWeights.contains(nodeId)) {
+    if (m_edgeWeights.contains(nodeId))
+    {
         return m_edgeWeights[nodeId].size();
     }
     return 0;
 }
 
 template <typename T>
-int DirectedGraph<T>::getInDegree(const T &nodeId) const {
+int DirectedGraph<T>::getInDegree(const T &nodeId) const
+{
     QMutexLocker locker(&m_mutex);
     int          count = 0;
 
     for (auto sourceIt = m_edgeWeights.constBegin();
-         sourceIt != m_edgeWeights.constEnd(); ++sourceIt) {
-        if (sourceIt.value().contains(nodeId)) {
+         sourceIt != m_edgeWeights.constEnd(); ++sourceIt)
+    {
+        if (sourceIt.value().contains(nodeId))
+        {
             count++;
         }
     }
@@ -590,26 +641,34 @@ int DirectedGraph<T>::getInDegree(const T &nodeId) const {
 template <typename T>
 float DirectedGraph<T>::calculateEdgeCost(
     const T &fromNodeId, const T &toNodeId,
-    const QString &optimizeFor) const {
-    if (!hasEdge(fromNodeId, toNodeId)) {
+    const QString &optimizeFor) const
+{
+    if (!hasEdge(fromNodeId, toNodeId))
+    {
         return std::numeric_limits<float>::infinity();
     }
 
     float weight = m_edgeWeights[fromNodeId][toNodeId];
 
-    if (optimizeFor == "distance") {
+    if (optimizeFor == "distance")
+    {
         return weight;
-    } else if (optimizeFor == "time") {
+    }
+    else if (optimizeFor == "time")
+    {
         // If time optimization is requested, check for
         // speed attribute
         QMap<QString, QVariant> attrs =
             m_edgeAttributes[fromNodeId][toNodeId];
 
         if (attrs.contains("max_speed")
-            && attrs["max_speed"].toFloat() > 0) {
+            && attrs["max_speed"].toFloat() > 0)
+        {
             return weight / attrs["max_speed"].toFloat();
-        } else if (attrs.contains("free_speed")
-                   && attrs["free_speed"].toFloat() > 0) {
+        }
+        else if (attrs.contains("free_speed")
+                 && attrs["free_speed"].toFloat() > 0)
+        {
             return weight / attrs["free_speed"].toFloat();
         }
     }
@@ -621,11 +680,13 @@ float DirectedGraph<T>::calculateEdgeCost(
 template <typename T>
 QVector<T> DirectedGraph<T>::findShortestPath(
     const T &startNodeId, const T &endNodeId,
-    const QString &optimizeFor) const {
+    const QString &optimizeFor) const
+{
     QMutexLocker locker(&m_mutex);
 
     // Check if nodes exist
-    if (!hasNode(startNodeId) || !hasNode(endNodeId)) {
+    if (!hasNode(startNodeId) || !hasNode(endNodeId))
+    {
         return QVector<T>();
     }
 
@@ -635,7 +696,8 @@ QVector<T> DirectedGraph<T>::findShortestPath(
     QSet<T>        visited;
 
     // Initialize costs for all nodes
-    for (const T &nodeId : getNodes()) {
+    for (const T &nodeId : getNodes())
+    {
         costs[nodeId] =
             std::numeric_limits<float>::infinity();
         // Use a sentinel value for no predecessor
@@ -652,7 +714,8 @@ QVector<T> DirectedGraph<T>::findShortestPath(
     QVector<PriorityQueueEntry<T>> pq;
     pq.append({0.0f, startNodeId});
 
-    while (!pq.isEmpty()) {
+    while (!pq.isEmpty())
+    {
         // Find minimum cost node in queue
         auto it = std::min_element(
             pq.begin(), pq.end(),
@@ -668,13 +731,15 @@ QVector<T> DirectedGraph<T>::findShortestPath(
         pq.erase(it);
 
         // If we've reached the destination
-        if (currentNode == endNodeId) {
+        if (currentNode == endNodeId)
+        {
             break;
         }
 
         // Skip if already visited or if new path is worse
         if (visited.contains(currentNode)
-            || currentCost > costs[currentNode]) {
+            || currentCost > costs[currentNode])
+        {
             continue;
         }
 
@@ -683,11 +748,13 @@ QVector<T> DirectedGraph<T>::findShortestPath(
 
         // Process neighbors
         for (const QPair<T, float> &edge :
-             getOutgoingEdges(currentNode)) {
+             getOutgoingEdges(currentNode))
+        {
             T neighborId = edge.first;
 
             // Skip already visited nodes
-            if (visited.contains(neighborId)) {
+            if (visited.contains(neighborId))
+            {
                 continue;
             }
 
@@ -698,7 +765,8 @@ QVector<T> DirectedGraph<T>::findShortestPath(
             float totalCost = costs[currentNode] + edgeCost;
 
             // If new path is better
-            if (totalCost < costs[neighborId]) {
+            if (totalCost < costs[neighborId])
+            {
                 costs[neighborId]        = totalCost;
                 predecessors[neighborId] = currentNode;
 
@@ -715,12 +783,14 @@ QVector<T> DirectedGraph<T>::findShortestPath(
     // Check if a path was found - if the end node still
     // points to itself, no path was found
     if (predecessors[endNodeId] == endNodeId
-        && endNodeId != startNodeId) {
+        && endNodeId != startNodeId)
+    {
         return path; // No path found
     }
 
     // Build the path by following predecessors
-    while (current != startNodeId) {
+    while (current != startNodeId)
+    {
         path.prepend(current);
         current = predecessors[current];
     }
@@ -731,7 +801,8 @@ QVector<T> DirectedGraph<T>::findShortestPath(
     return path;
 }
 
-template <typename T> void DirectedGraph<T>::clear() {
+template <typename T> void DirectedGraph<T>::clear()
+{
     QMutexLocker locker(&m_mutex);
 
     m_nodeAttributes.clear();
@@ -742,7 +813,8 @@ template <typename T> void DirectedGraph<T>::clear() {
 }
 
 template <typename T>
-QJsonObject DirectedGraph<T>::toJson() const {
+QJsonObject DirectedGraph<T>::toJson() const
+{
     QMutexLocker locker(&m_mutex);
 
     QJsonObject result;
@@ -750,7 +822,8 @@ QJsonObject DirectedGraph<T>::toJson() const {
     // Export nodes
     QJsonArray nodesArray;
     for (auto it = m_nodeAttributes.constBegin();
-         it != m_nodeAttributes.constEnd(); ++it) {
+         it != m_nodeAttributes.constEnd(); ++it)
+    {
         QJsonObject nodeObj;
         nodeObj["id"] = QJsonValue::fromVariant(
             QVariant::fromValue(it.key()));
@@ -758,7 +831,8 @@ QJsonObject DirectedGraph<T>::toJson() const {
         // Convert attributes to JSON
         QJsonObject attributesObj;
         for (auto attrIt = it.value().constBegin();
-             attrIt != it.value().constEnd(); ++attrIt) {
+             attrIt != it.value().constEnd(); ++attrIt)
+        {
             attributesObj[attrIt.key()] =
                 QJsonValue::fromVariant(attrIt.value());
         }
@@ -770,11 +844,13 @@ QJsonObject DirectedGraph<T>::toJson() const {
     // Export edges
     QJsonArray edgesArray;
     for (auto fromIt = m_edgeWeights.constBegin();
-         fromIt != m_edgeWeights.constEnd(); ++fromIt) {
+         fromIt != m_edgeWeights.constEnd(); ++fromIt)
+    {
         T fromNodeId = fromIt.key();
 
         for (auto toIt = fromIt.value().constBegin();
-             toIt != fromIt.value().constEnd(); ++toIt) {
+             toIt != fromIt.value().constEnd(); ++toIt)
+        {
             T     toNodeId = toIt.key();
             float weight   = toIt.value();
 
@@ -790,7 +866,8 @@ QJsonObject DirectedGraph<T>::toJson() const {
             const QMap<QString, QVariant> &attrs =
                 m_edgeAttributes[fromNodeId][toNodeId];
             for (auto attrIt = attrs.constBegin();
-                 attrIt != attrs.constEnd(); ++attrIt) {
+                 attrIt != attrs.constEnd(); ++attrIt)
+            {
                 attributesObj[attrIt.key()] =
                     QJsonValue::fromVariant(attrIt.value());
             }
@@ -807,7 +884,8 @@ QJsonObject DirectedGraph<T>::toJson() const {
 }
 
 template <typename T>
-void DirectedGraph<T>::fromJson(const QJsonObject &json) {
+void DirectedGraph<T>::fromJson(const QJsonObject &json)
+{
     QMutexLocker locker(&m_mutex);
 
     // Clear existing data
@@ -815,7 +893,8 @@ void DirectedGraph<T>::fromJson(const QJsonObject &json) {
 
     // Import nodes
     QJsonArray nodesArray = json["nodes"].toArray();
-    for (const QJsonValue &nodeValue : nodesArray) {
+    for (const QJsonValue &nodeValue : nodesArray)
+    {
         QJsonObject nodeObj = nodeValue.toObject();
         T nodeId = nodeObj["id"].toVariant().value<T>();
 
@@ -824,7 +903,8 @@ void DirectedGraph<T>::fromJson(const QJsonObject &json) {
         QJsonObject             attributesObj =
             nodeObj["attributes"].toObject();
         for (auto it = attributesObj.constBegin();
-             it != attributesObj.constEnd(); ++it) {
+             it != attributesObj.constEnd(); ++it)
+        {
             attributes[it.key()] = it.value().toVariant();
         }
 
@@ -834,7 +914,8 @@ void DirectedGraph<T>::fromJson(const QJsonObject &json) {
 
     // Import edges
     QJsonArray edgesArray = json["edges"].toArray();
-    for (const QJsonValue &edgeValue : edgesArray) {
+    for (const QJsonValue &edgeValue : edgesArray)
+    {
         QJsonObject edgeObj = edgeValue.toObject();
         T           fromNodeId =
             edgeObj["from"].toVariant().value<T>();
@@ -846,7 +927,8 @@ void DirectedGraph<T>::fromJson(const QJsonObject &json) {
         QJsonObject             attributesObj =
             edgeObj["attributes"].toObject();
         for (auto it = attributesObj.constBegin();
-             it != attributesObj.constEnd(); ++it) {
+             it != attributesObj.constEnd(); ++it)
+        {
             attributes[it.key()] = it.value().toVariant();
         }
 

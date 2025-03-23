@@ -7,9 +7,12 @@
  * \brief The ColorUtil namespace provides utility functions
  * for color operations.
  */
-namespace CargoNetSim {
-namespace GUI {
-namespace ColorUtils {
+namespace CargoNetSim
+{
+namespace GUI
+{
+namespace ColorUtils
+{
 
 /*!
  * \brief Generates a random QColor with RGB values between

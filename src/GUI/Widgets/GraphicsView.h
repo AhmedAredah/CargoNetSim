@@ -6,8 +6,10 @@
 #include <QTimer>
 #include <cmath>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class DistanceMeasurementTool;
 
@@ -19,7 +21,8 @@ class DistanceMeasurementTool;
  * like zooming, panning, coordinate transformations between
  * different coordinate systems, and measurement tools.
  */
-class GraphicsView : public QGraphicsView {
+class GraphicsView : public QGraphicsView
+{
     Q_OBJECT
 
 public:
@@ -116,11 +119,13 @@ public:
      */
     DistanceMeasurementTool *measurementTool;
 
-    QString getCurrentPanMode() {
+    QString getCurrentPanMode()
+    {
         return _panMode;
     }
 
-    void setCurrentPanMode(QString &newPanMode) {
+    void setCurrentPanMode(QString &newPanMode)
+    {
         _panMode = newPanMode;
     }
 

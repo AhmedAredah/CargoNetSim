@@ -18,9 +18,12 @@
 #include <QVariant>
 #include <QVector>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 /**
  * @class SimulationSummaryData
@@ -53,7 +56,8 @@ namespace TrainClient {
  * has a subcategory "Subcategory1" containing "Key1" and
  * "Key2", and "Category2" directly contains "Key3".
  */
-class SimulationSummaryData {
+class SimulationSummaryData
+{
 public:
     /**
      * @brief Constructor

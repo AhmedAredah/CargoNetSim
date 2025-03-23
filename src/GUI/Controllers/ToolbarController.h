@@ -8,8 +8,10 @@
 #include <QToolButton>
 
 // In ToolbarController.h
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class MainWindow;
 class ShipManagerDialog;
@@ -22,7 +24,8 @@ class TrainManagerDialog;
  * managing a ribbon-style toolbar for the main application
  * window.
  */
-class ToolbarController {
+class ToolbarController
+{
 public:
     /**
      * @brief Sets up the ribbon-style toolbar for the main

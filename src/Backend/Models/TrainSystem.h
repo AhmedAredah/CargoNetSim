@@ -18,8 +18,10 @@
 #include <QTextStream>
 #include <QVector>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class Locomotive
@@ -35,7 +37,8 @@ namespace Backend {
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::Locomotive)
  * after class definition.
  */
-class Locomotive : public QObject {
+class Locomotive : public QObject
+{
     Q_OBJECT
 
 public:
@@ -89,7 +92,8 @@ public:
      * @brief Gets the engine power
      * @return Power in kilowatts
      */
-    float getPower() const {
+    float getPower() const
+    {
         return m_power;
     }
 
@@ -97,7 +101,8 @@ public:
      * @brief Gets the transmission efficiency
      * @return Efficiency as a ratio (0.0-1.0)
      */
-    float getTransmissionEff() const {
+    float getTransmissionEff() const
+    {
         return m_transmissionEff;
     }
 
@@ -105,7 +110,8 @@ public:
      * @brief Gets the locomotive length
      * @return Length in meters
      */
-    float getLength() const {
+    float getLength() const
+    {
         return m_length;
     }
 
@@ -113,7 +119,8 @@ public:
      * @brief Gets the air drag coefficient
      * @return Air drag coefficient
      */
-    float getAirDragCoeff() const {
+    float getAirDragCoeff() const
+    {
         return m_airDragCoeff;
     }
 
@@ -121,7 +128,8 @@ public:
      * @brief Gets the frontal area
      * @return Frontal area in square meters
      */
-    float getFrontalArea() const {
+    float getFrontalArea() const
+    {
         return m_frontalArea;
     }
 
@@ -129,7 +137,8 @@ public:
      * @brief Gets the gross weight
      * @return Weight in tonnes
      */
-    float getGrossWeight() const {
+    float getGrossWeight() const
+    {
         return m_grossWeight;
     }
 
@@ -137,7 +146,8 @@ public:
      * @brief Gets the number of axles
      * @return Number of axles
      */
-    int getNoOfAxles() const {
+    int getNoOfAxles() const
+    {
         return m_noOfAxles;
     }
 
@@ -145,7 +155,8 @@ public:
      * @brief Gets the locomotive type
      * @return Type identifier
      */
-    int getLocoType() const {
+    int getLocoType() const
+    {
         return m_locoType;
     }
 
@@ -153,7 +164,8 @@ public:
      * @brief Gets the Count of identical locomotives
      * @return Count value
      */
-    int getCount() const {
+    int getCount() const
+    {
         return m_count;
     }
 
@@ -245,7 +257,8 @@ private:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::Car) after class
  * definition.
  */
-class Car : public QObject {
+class Car : public QObject
+{
     Q_OBJECT
 
 public:
@@ -295,7 +308,8 @@ public:
      * @brief Gets the car length
      * @return Length in meters
      */
-    float getLength() const {
+    float getLength() const
+    {
         return m_length;
     }
 
@@ -303,7 +317,8 @@ public:
      * @brief Gets the air drag coefficient
      * @return Air drag coefficient
      */
-    float getAirDragCoeff() const {
+    float getAirDragCoeff() const
+    {
         return m_airDragCoeff;
     }
 
@@ -311,7 +326,8 @@ public:
      * @brief Gets the frontal area
      * @return Frontal area in square meters
      */
-    float getFrontalArea() const {
+    float getFrontalArea() const
+    {
         return m_frontalArea;
     }
 
@@ -319,7 +335,8 @@ public:
      * @brief Gets the tare (empty) weight
      * @return Tare weight in tonnes
      */
-    float getTareWeight() const {
+    float getTareWeight() const
+    {
         return m_tareWeight;
     }
 
@@ -327,7 +344,8 @@ public:
      * @brief Gets the gross weight (with cargo)
      * @return Gross weight in tonnes
      */
-    float getGrossWeight() const {
+    float getGrossWeight() const
+    {
         return m_grossWeight;
     }
 
@@ -335,7 +353,8 @@ public:
      * @brief Gets the number of axles
      * @return Number of axles
      */
-    int getNoOfAxles() const {
+    int getNoOfAxles() const
+    {
         return m_noOfAxles;
     }
 
@@ -343,7 +362,8 @@ public:
      * @brief Gets the car type
      * @return Type identifier
      */
-    int getCarType() const {
+    int getCarType() const
+    {
         return m_carType;
     }
 
@@ -351,7 +371,8 @@ public:
      * @brief Gets the getCount of identical cars
      * @return Count value
      */
-    int getCount() const {
+    int getCount() const
+    {
         return m_count;
     }
 
@@ -434,7 +455,8 @@ private:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::Train) after
  * class definition.
  */
-class Train : public QObject {
+class Train : public QObject
+{
     Q_OBJECT
 
 public:
@@ -494,7 +516,8 @@ public:
      * @brief Gets the user identifier
      * @return User ID string
      */
-    QString getUserId() const {
+    QString getUserId() const
+    {
         return m_userId;
     }
 
@@ -502,7 +525,8 @@ public:
      * @brief Gets the path node IDs
      * @return Vector of node IDs representing the path
      */
-    QVector<int> getTrainPathOnNodeIds() const {
+    QVector<int> getTrainPathOnNodeIds() const
+    {
         return m_trainPathOnNodeIds;
     }
 
@@ -510,7 +534,8 @@ public:
      * @brief Gets the loading time
      * @return Loading time in hours
      */
-    float getLoadTime() const {
+    float getLoadTime() const
+    {
         return m_loadTime;
     }
 
@@ -518,7 +543,8 @@ public:
      * @brief Gets the friction coefficient
      * @return Coefficient of friction
      */
-    float getFrictionCoef() const {
+    float getFrictionCoef() const
+    {
         return m_frictionCoef;
     }
 
@@ -526,7 +552,8 @@ public:
      * @brief Gets the locomotives
      * @return Vector of locomotive objects
      */
-    QVector<Locomotive *> getLocomotives() const {
+    QVector<Locomotive *> getLocomotives() const
+    {
         return m_locomotives;
     }
 
@@ -534,7 +561,8 @@ public:
      * @brief Gets the cars
      * @return Vector of car objects
      */
-    QVector<Car *> getCars() const {
+    QVector<Car *> getCars() const
+    {
         return m_cars;
     }
 
@@ -542,7 +570,8 @@ public:
      * @brief Gets the optimization flag
      * @return True if optimization is enabled
      */
-    bool isOptimizing() const {
+    bool isOptimizing() const
+    {
         return m_optimize;
     }
 
@@ -629,7 +658,8 @@ private:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::TrainsReader)
  * after class definition.
  */
-class TrainsReader : public QObject {
+class TrainsReader : public QObject
+{
     Q_OBJECT
 
 public:

@@ -12,9 +12,12 @@
  * Each function returns a QPixmap that has been drawn using
  * QPainter and related Qt classes.
  */
-namespace CargoNetSim {
-namespace GUI {
-namespace IconFactory {
+namespace CargoNetSim
+{
+namespace GUI
+{
+namespace IconFactory
+{
 // Returns a map of terminal icon names to their
 // corresponding QPixmaps.
 QMap<QString, QPixmap> createTerminalIcons();

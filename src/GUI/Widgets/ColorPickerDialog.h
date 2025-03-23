@@ -8,8 +8,10 @@
 #include <QPushButton>
 #include <QTabWidget>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class ColorPalette;
 
@@ -23,7 +25,8 @@ class ColorPalette;
  * 2. A custom color selection tab with a color dialog
  * button
  */
-class ColorPickerDialog : public QDialog {
+class ColorPickerDialog : public QDialog
+{
     Q_OBJECT
 
 public:

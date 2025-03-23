@@ -16,17 +16,21 @@
 #include <QStatusBar>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 RegionManagerWidget::RegionManagerWidget(
     MainWindow *mainWindow, QWidget *parent)
     : QWidget(parent)
-    , mainWindow(mainWindow) {
+    , mainWindow(mainWindow)
+{
     setupUI();
 }
 
-void RegionManagerWidget::setupUI() {
+void RegionManagerWidget::setupUI()
+{
     QVBoxLayout *layout = new QVBoxLayout(this);
 
     // Create region list with color swatches
@@ -51,9 +55,9 @@ void RegionManagerWidget::setupUI() {
     buttonLayout->addWidget(colorButton, 1, 1);
 
     // Make buttons expand horizontally
-    for (QPushButton *button :
-         {addButton, renameButton, deleteButton,
-          colorButton}) {
+    for (QPushButton *button : {addButton, renameButton,
+                                deleteButton, colorButton})
+    {
         button->setSizePolicy(QSizePolicy::Expanding,
                               QSizePolicy::Fixed);
     }
@@ -76,12 +80,14 @@ void RegionManagerWidget::setupUI() {
             this, &RegionManagerWidget::updateButtonStates);
 }
 
-void RegionManagerWidget::updateRegionList() {
+void RegionManagerWidget::updateRegionList()
+{
     regionList->clear();
 
     for (const QString &regionName :
          Backend::RegionDataController::getInstance()
-             .getAllRegionNames()) {
+             .getAllRegionNames())
+    {
 
         // get the color assigned to the region
         QColor color =
@@ -101,7 +107,8 @@ void RegionManagerWidget::updateRegionList() {
     }
 }
 
-void RegionManagerWidget::updateButtonStates() {
+void RegionManagerWidget::updateButtonStates()
+{
     bool hasSelection =
         !regionList->selectedItems().isEmpty();
     renameButton->setEnabled(hasSelection);
@@ -112,10 +119,12 @@ void RegionManagerWidget::updateButtonStates() {
                              && regionList->count() > 1);
 }
 
-void RegionManagerWidget::changeRegionColor() {
+void RegionManagerWidget::changeRegionColor()
+{
     QListWidgetItem *currentItem =
         regionList->currentItem();
-    if (!currentItem) {
+    if (!currentItem)
+    {
         return;
     }
 
@@ -126,9 +135,11 @@ void RegionManagerWidget::changeRegionColor() {
             ->getVariableAs<QColor>("color");
 
     ColorPickerDialog dialog(currentColor, this);
-    if (dialog.exec()) {
+    if (dialog.exec())
+    {
         QColor newColor = dialog.getSelectedColor();
-        if (newColor.isValid()) {
+        if (newColor.isValid())
+        {
             // Update color in main window
             Backend::RegionDataController::getInstance()
                 .getRegionData(regionName)
@@ -142,7 +153,8 @@ void RegionManagerWidget::changeRegionColor() {
                             .getAllRegionVariableAs<
                                 RegionCenterPoint *>(
                                 "regionCenterPoint");
-            if (regionCenters.contains(regionName)) {
+            if (regionCenters.contains(regionName))
+            {
                 RegionCenterPoint *center =
                     regionCenters[regionName];
                 center->setColor(newColor);
@@ -164,18 +176,21 @@ void RegionManagerWidget::changeRegionColor() {
     }
 }
 
-void RegionManagerWidget::addRegion() {
+void RegionManagerWidget::addRegion()
+{
     bool    ok;
     QString newRegionName = QInputDialog::getText(
         this, tr("Add Region"),
         tr("Enter new region name:"), QLineEdit::Normal,
         QString(), &ok);
 
-    if (ok && !newRegionName.isEmpty()) {
+    if (ok && !newRegionName.isEmpty())
+    {
         // Check if name already exists
         if (Backend::RegionDataController::getInstance()
                 .getAllRegionNames()
-                .contains(newRegionName)) {
+                .contains(newRegionName))
+        {
             QMessageBox::warning(
                 this, tr("Error"),
                 tr("A region with this name already "
@@ -204,10 +219,12 @@ void RegionManagerWidget::addRegion() {
     }
 }
 
-void RegionManagerWidget::renameRegion() {
+void RegionManagerWidget::renameRegion()
+{
     QListWidgetItem *currentItem =
         regionList->currentItem();
-    if (!currentItem) {
+    if (!currentItem)
+    {
         return;
     }
 
@@ -219,11 +236,13 @@ void RegionManagerWidget::renameRegion() {
 
     // TODO
 
-    if (ok && !newName.isEmpty() && newName != oldName) {
+    if (ok && !newName.isEmpty() && newName != oldName)
+    {
         // Check if name already exists
         if (Backend::RegionDataController::getInstance()
                 .getAllRegionNames()
-                .contains(newName)) {
+                .contains(newName))
+        {
             QMessageBox::warning(
                 this, tr("Error"),
                 tr("A region with this name already "
@@ -273,10 +292,12 @@ void RegionManagerWidget::renameRegion() {
     }
 }
 
-void RegionManagerWidget::deleteRegion() {
+void RegionManagerWidget::deleteRegion()
+{
     QListWidgetItem *currentItem =
         regionList->currentItem();
-    if (!currentItem || regionList->count() <= 1) {
+    if (!currentItem || regionList->count() <= 1)
+    {
         return;
     }
 
@@ -291,7 +312,8 @@ void RegionManagerWidget::deleteRegion() {
         QMessageBox::No);
 
     // TODO
-    if (reply == QMessageBox::Yes) {
+    if (reply == QMessageBox::Yes)
+    {
         // Return color to available colors
         Backend::RegionDataController::getInstance()
             .removeRegion(regionName);
@@ -326,19 +348,23 @@ void RegionManagerWidget::deleteRegion() {
     }
 }
 
-void RegionManagerWidget::clearRegions() {
+void RegionManagerWidget::clearRegions()
+{
     // TODO
     // Get all regions except Default Region
     QStringList regionsToRemove;
-    for (int i = 0; i < regionList->count(); i++) {
+    for (int i = 0; i < regionList->count(); i++)
+    {
         QString regionName = regionList->item(i)->text();
-        if (regionName != "Default Region") {
+        if (regionName != "Default Region")
+        {
             regionsToRemove.append(regionName);
         }
     }
 
     // Process each region
-    for (const QString &regionName : regionsToRemove) {
+    for (const QString &regionName : regionsToRemove)
+    {
         // Remove from RegionsData
         Backend::RegionDataController::getInstance()
             .removeRegion(regionName);
@@ -359,8 +385,10 @@ void RegionManagerWidget::clearRegions() {
         // }
 
         // Remove from region list
-        for (int i = 0; i < regionList->count(); i++) {
-            if (regionList->item(i)->text() == regionName) {
+        for (int i = 0; i < regionList->count(); i++)
+        {
+            if (regionList->item(i)->text() == regionName)
+            {
                 delete regionList->takeItem(i);
                 break;
             }

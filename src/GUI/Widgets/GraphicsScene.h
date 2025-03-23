@@ -4,8 +4,10 @@
 #include <QPointF>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Forward declarations
 class TerminalItem;
@@ -20,7 +22,8 @@ class DistanceMeasurementTool;
  * modes like connection creation, terminal linking, and
  * measurement tools.
  */
-class GraphicsScene : public QGraphicsScene {
+class GraphicsScene : public QGraphicsScene
+{
     Q_OBJECT
 
 public:

@@ -8,8 +8,10 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief The CustomMainWindow class is a specialized
@@ -20,7 +22,8 @@ namespace GUI {
  * locations, including in the central area via a splitter
  * widget.
  */
-class CustomMainWindow : public QMainWindow {
+class CustomMainWindow : public QMainWindow
+{
     Q_OBJECT
 
 public:

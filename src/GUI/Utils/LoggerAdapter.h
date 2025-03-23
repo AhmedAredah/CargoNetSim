@@ -3,21 +3,26 @@
 #include "ApplicationLogger.h"
 #include "Backend/Commons/LoggerInterface.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
- * @brief Adapter to bridge ApplicationLogger to LoggerInterface
+ * @brief Adapter to bridge ApplicationLogger to
+ * LoggerInterface
  *
  * Implements the backend LoggerInterface using the GUI's
  * ApplicationLogger singleton, enabling backend logging.
  */
-class LoggerAdapter : public Backend::LoggerInterface {
+class LoggerAdapter : public Backend::LoggerInterface
+{
 public:
     /**
      * @brief Constructor
      *
-     * Uses the existing ApplicationLogger singleton instance.
+     * Uses the existing ApplicationLogger singleton
+     * instance.
      */
     LoggerAdapter() = default;
 
@@ -26,7 +31,9 @@ public:
      * @param message Message text to log
      * @param clientType Client type/index for the message
      */
-    void log(const QString& message, int clientType) override {
+    void log(const QString &message,
+             int            clientType) override
+    {
         ApplicationLogger::log(message, clientType);
     }
 
@@ -35,7 +42,9 @@ public:
      * @param message Error message text to log
      * @param clientType Client type/index for the error
      */
-    void logError(const QString& message, int clientType) override {
+    void logError(const QString &message,
+                  int            clientType) override
+    {
         ApplicationLogger::logError(message, clientType);
     }
 
@@ -44,8 +53,11 @@ public:
      * @param progressValue Progress value (0-100)
      * @param clientType Client type/index for the update
      */
-    void updateProgress(float progressValue, int clientType) override {
-        ApplicationLogger::updateProgress(progressValue, clientType);
+    void updateProgress(float progressValue,
+                        int   clientType) override
+    {
+        ApplicationLogger::updateProgress(progressValue,
+                                          clientType);
     }
 };
 

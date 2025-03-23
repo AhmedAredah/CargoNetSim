@@ -17,11 +17,13 @@
 #include "../Widgets/TrainManagerDialog.h"
 #include "Backend/Controllers/VehicleController.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
-void ToolbarController::setupToolbar(
-    MainWindow *mainWindow) {
+void ToolbarController::setupToolbar(MainWindow *mainWindow)
+{
     // Create ribbon-style toolbar
     mainWindow->ribbon_ = new QTabWidget();
 
@@ -886,7 +888,8 @@ void ToolbarController::setupToolbar(
     // need a different approach Perhaps store it separately
     // or cast it if it's safe to do so
     if (QToolButton *toolButton =
-            dynamic_cast<QToolButton *>(regionWidget)) {
+            dynamic_cast<QToolButton *>(regionWidget))
+    {
         mainWindow->toolsButtonsVisibility_[toolButton] =
             QList<int>{0};
     }

@@ -8,42 +8,52 @@
 #include <QPixmap>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 ColorPickerDialog::ColorPickerDialog(
     const QColor &currentColor, QWidget *parent)
     : QDialog(parent)
     , currentColor(currentColor)
-    , customColor(currentColor) {
+    , customColor(currentColor)
+{
     setWindowTitle(tr("Select Color"));
     setModal(true);
     setupUI();
 }
 
-QColor ColorPickerDialog::getSelectedColor() const {
+QColor ColorPickerDialog::getSelectedColor() const
+{
     int currentTabIndex = tabWidget->currentIndex();
 
-    if (currentTabIndex == 0) { // Predefined colors tab
+    if (currentTabIndex == 0)
+    { // Predefined colors tab
         QListWidgetItem *item = colorList->currentItem();
-        if (item) {
+        if (item)
+        {
             QString colorName = item->text();
             return ColorPalette::getColor(colorName);
         }
-    } else { // Custom color tab
+    }
+    else
+    { // Custom color tab
         return customColor;
     }
 
     return QColor(); // Invalid color if nothing selected
 }
 
-void ColorPickerDialog::openColorDialog() {
+void ColorPickerDialog::openColorDialog()
+{
     QColor initialColor =
         customColor.isValid() ? customColor : Qt::white;
     QColor color =
         QColorDialog::getColor(initialColor, this);
 
-    if (color.isValid()) {
+    if (color.isValid())
+    {
         customColor = color;
 
         // Update custom preview
@@ -57,15 +67,17 @@ void ColorPickerDialog::openColorDialog() {
         customPreview->setStyleSheet(styleSheet);
 
         // Also update the main preview if on custom tab
-        if (tabWidget->currentIndex() == 1) {
+        if (tabWidget->currentIndex() == 1)
+        {
             previewLabel->setStyleSheet(styleSheet);
         }
     }
 }
 
-void ColorPickerDialog::updatePreview(
-    QListWidgetItem *item) {
-    if (!item) {
+void ColorPickerDialog::updatePreview(QListWidgetItem *item)
+{
+    if (!item)
+    {
         return;
     }
 
@@ -82,13 +94,19 @@ void ColorPickerDialog::updatePreview(
     previewLabel->setStyleSheet(styleSheet);
 }
 
-void ColorPickerDialog::onTabChanged(int index) {
-    if (index == 0) { // Predefined colors tab
-        if (colorList->currentItem()) {
+void ColorPickerDialog::onTabChanged(int index)
+{
+    if (index == 0)
+    { // Predefined colors tab
+        if (colorList->currentItem())
+        {
             updatePreview(colorList->currentItem());
         }
-    } else { // Custom color tab
-        if (customColor.isValid()) {
+    }
+    else
+    { // Custom color tab
+        if (customColor.isValid())
+        {
             QString styleSheet =
                 QString(
                     "background-color: rgb(%1, %2, %3); "
@@ -102,7 +120,8 @@ void ColorPickerDialog::onTabChanged(int index) {
     }
 }
 
-void ColorPickerDialog::setupUI() {
+void ColorPickerDialog::setupUI()
+{
     // Main layout
     QVBoxLayout *layout = new QVBoxLayout(this);
 
@@ -120,7 +139,8 @@ void ColorPickerDialog::setupUI() {
 
     // Add color swatches
     QStringList colorNames = ColorPalette::getAllColors();
-    for (const QString &colorName : colorNames) {
+    for (const QString &colorName : colorNames)
+    {
         QColor qcolor = ColorPalette::getColor(colorName);
 
         // Create color swatch pixmap
@@ -134,7 +154,8 @@ void ColorPickerDialog::setupUI() {
 
         // Select the current color if it matches
         if (currentColor.isValid()
-            && qcolor == currentColor) {
+            && qcolor == currentColor)
+        {
             colorList->setCurrentItem(item);
         }
     }
@@ -160,7 +181,8 @@ void ColorPickerDialog::setupUI() {
     customLayout->addWidget(customPreview, 0,
                             Qt::AlignCenter);
 
-    if (currentColor.isValid()) {
+    if (currentColor.isValid())
+    {
         QString styleSheet =
             QString("background-color: rgb(%1, %2, %3); "
                     "border: 1px solid black;")
@@ -207,7 +229,8 @@ void ColorPickerDialog::setupUI() {
             &ColorPickerDialog::onTabChanged);
 
     // ------- Initial preview update -------
-    if (colorList->currentItem()) {
+    if (colorList->currentItem())
+    {
         updatePreview(colorList->currentItem());
     }
 

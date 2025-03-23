@@ -7,8 +7,10 @@
 #include <QStyle>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 SplashScreen::SplashScreen()
     : QSplashScreen()
@@ -16,12 +18,14 @@ SplashScreen::SplashScreen()
     , m_statusLabel(nullptr)
     , m_progress(0)
     , m_statusMessage("Loading...")
-    , m_isFinished(false) {
+    , m_isFinished(false)
+{
     // Load splash image
     QString imagePath = ":/Splash";
     m_originalPixmap  = QPixmap(imagePath);
 
-    if (m_originalPixmap.isNull()) {
+    if (m_originalPixmap.isNull())
+    {
         qWarning() << "Failed to load splash image:"
                    << imagePath;
         // Create a default splash pixmap
@@ -37,7 +41,8 @@ SplashScreen::SplashScreen()
 
     // Scale splash image for high DPI screens
     qreal dpiScale = qApp->devicePixelRatio();
-    if (dpiScale > 1.0) {
+    if (dpiScale > 1.0)
+    {
         m_originalPixmap.setDevicePixelRatio(dpiScale);
     }
 
@@ -50,7 +55,8 @@ SplashScreen::SplashScreen()
     // Center on screen
     QScreen *primaryScreen =
         QGuiApplication::primaryScreen();
-    if (primaryScreen) {
+    if (primaryScreen)
+    {
         QRect screenGeometry =
             primaryScreen->availableGeometry();
         move(screenGeometry.center() - rect().center());
@@ -61,18 +67,22 @@ SplashScreen::SplashScreen()
                    | Qt::WindowStaysOnTopHint);
 }
 
-SplashScreen::~SplashScreen() {
+SplashScreen::~SplashScreen()
+{
     // Clean up owned widgets if not already deleted
-    if (m_progressBar && !m_progressBar->parent()) {
+    if (m_progressBar && !m_progressBar->parent())
+    {
         delete m_progressBar;
     }
 
-    if (m_statusLabel && !m_statusLabel->parent()) {
+    if (m_statusLabel && !m_statusLabel->parent())
+    {
         delete m_statusLabel;
     }
 }
 
-void SplashScreen::initUI() {
+void SplashScreen::initUI()
+{
     // Create progress bar
     m_progressBar = new QProgressBar(this);
     m_progressBar->setRange(0, 100);
@@ -106,7 +116,8 @@ void SplashScreen::initUI() {
     updateLayout();
 }
 
-void SplashScreen::updateLayout() {
+void SplashScreen::updateLayout()
+{
     if (!m_progressBar || !m_statusLabel)
         return;
 
@@ -130,29 +141,35 @@ void SplashScreen::updateLayout() {
         barWidth, 20);
 }
 
-void SplashScreen::drawContents(QPainter *painter) {
+void SplashScreen::drawContents(QPainter *painter)
+{
     // First let the base class draw the pixmap
     QSplashScreen::drawContents(painter);
 
     // Additional custom drawing if needed
 }
 
-void SplashScreen::resizeEvent(QResizeEvent *event) {
+void SplashScreen::resizeEvent(QResizeEvent *event)
+{
     QSplashScreen::resizeEvent(event);
     updateLayout();
 }
 
-void SplashScreen::setProgress(int progress) {
-    if (m_progress != progress) {
+void SplashScreen::setProgress(int progress)
+{
+    if (m_progress != progress)
+    {
         m_progress = qBound(0, progress, 100);
-        if (m_progressBar) {
+        if (m_progressBar)
+        {
             m_progressBar->setValue(m_progress);
         }
 
         emit progressChanged(m_progress);
 
         // If progress reaches 100%, emit loading complete
-        if (m_progress == 100 && !m_isFinished) {
+        if (m_progress == 100 && !m_isFinished)
+        {
             m_isFinished = true;
             emit loadingComplete();
         }
@@ -162,11 +179,13 @@ void SplashScreen::setProgress(int progress) {
     }
 }
 
-void SplashScreen::setStatusMessage(
-    const QString &message) {
-    if (m_statusMessage != message) {
+void SplashScreen::setStatusMessage(const QString &message)
+{
+    if (m_statusMessage != message)
+    {
         m_statusMessage = message;
-        if (m_statusLabel) {
+        if (m_statusLabel)
+        {
             m_statusLabel->setText(message);
         }
 
@@ -179,7 +198,8 @@ void SplashScreen::setStatusMessage(
 
 void SplashScreen::showMessage(const QString &message,
                                int            alignment,
-                               const QColor  &color) {
+                               const QColor  &color)
+{
     // Update internal status message
     setStatusMessage(message);
 

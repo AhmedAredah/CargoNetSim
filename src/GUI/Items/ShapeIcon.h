@@ -4,8 +4,10 @@
 #include <QString>
 #include <QWidget>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief The ShapeIcon class draws different geometric
@@ -14,7 +16,8 @@ namespace GUI {
  * Supports various shapes like circle, rectangle, triangle,
  * diamond.
  */
-class ShapeIcon : public QWidget {
+class ShapeIcon : public QWidget
+{
     Q_OBJECT
     Q_PROPERTY(QString shapeType READ shapeType WRITE
                    setShapeType NOTIFY shapeTypeChanged)

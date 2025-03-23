@@ -5,8 +5,10 @@
 #include <QRectF>
 #include <memory>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class GraphicsView;
 
@@ -19,7 +21,8 @@ class GraphicsView;
  * between two points with the calculated distance displayed
  * in the appropriate units (meters or kilometers).
  */
-class DistanceMeasurementTool : public QGraphicsObject {
+class DistanceMeasurementTool : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -54,7 +57,8 @@ public:
      * @brief Get the start point of the measurement
      * @return The start point in scene coordinates
      */
-    QPointF getStartPoint() const {
+    QPointF getStartPoint() const
+    {
         return startPoint;
     }
 
@@ -62,7 +66,8 @@ public:
      * @brief Get the end point of the measurement
      * @return The end point in scene coordinates
      */
-    QPointF getEndPoint() const {
+    QPointF getEndPoint() const
+    {
         return endPoint;
     }
 

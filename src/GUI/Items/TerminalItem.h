@@ -8,8 +8,10 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Graphical representation of a terminal in the
@@ -20,7 +22,8 @@ namespace GUI {
  * application. Terminals can be dragged, selected, and
  * connected to form a transportation network.
  */
-class TerminalItem : public QGraphicsObject {
+class TerminalItem : public QGraphicsObject
+{
     Q_OBJECT
     Q_PROPERTY(QPointF pos READ pos WRITE setPos)
 
@@ -60,7 +63,8 @@ public:
      *
      * @return Current region name
      */
-    QString getRegion() const {
+    QString getRegion() const
+    {
         return region;
     }
 
@@ -69,7 +73,8 @@ public:
      *
      * @return Current pixmap
      */
-    QPixmap getPixmap() const {
+    QPixmap getPixmap() const
+    {
         return pixmap;
     }
 
@@ -78,7 +83,8 @@ public:
      *
      * @return Terminal type string
      */
-    QString getTerminalType() const {
+    QString getTerminalType() const
+    {
         return terminalType;
     }
 
@@ -87,7 +93,8 @@ public:
      *
      * @return Reference to properties map
      */
-    const QMap<QString, QVariant> &getProperties() const {
+    const QMap<QString, QVariant> &getProperties() const
+    {
         return properties;
     }
 

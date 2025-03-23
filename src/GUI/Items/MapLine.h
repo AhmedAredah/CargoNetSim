@@ -7,8 +7,10 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Represents a line connecting two points in a
@@ -18,7 +20,8 @@ namespace GUI {
  * between two points in a network. It belongs to a specific
  * network region and can have various properties.
  */
-class MapLine : public QGraphicsObject {
+class MapLine : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -55,35 +58,40 @@ public:
     /**
      * @brief Sets the region of the line
      */
-    void setRegion(const QString region) {
+    void setRegion(const QString region)
+    {
         this->region = region;
     }
 
     /**
      * @brief Get the start point
      */
-    const QPointF &getStartPoint() const {
+    const QPointF &getStartPoint() const
+    {
         return startPoint;
     }
 
     /**
      * @brief Get the end point
      */
-    const QPointF &getEndPoint() const {
+    const QPointF &getEndPoint() const
+    {
         return endPoint;
     }
 
     /**
      * @brief Get the region
      */
-    const QString &getRegion() const {
+    const QString &getRegion() const
+    {
         return region;
     }
 
     /**
      * @brief Get the properties
      */
-    const QMap<QString, QVariant> &getProperties() const {
+    const QMap<QString, QVariant> &getProperties() const
+    {
         return properties;
     }
 

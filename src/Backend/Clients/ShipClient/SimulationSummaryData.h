@@ -15,14 +15,18 @@
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
 #include "Backend/Commons/ClientType.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 
 /**
  * @brief Stores and parses simulation summary data
  */
-class SimulationSummaryData {
+class SimulationSummaryData
+{
 public:
     using SummaryPair = QPair<QString, QString>;
 

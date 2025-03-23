@@ -23,9 +23,12 @@
 #include <QStringList>
 #include <containerLib/container.h>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class TruckSimulationClient
@@ -35,7 +38,8 @@ namespace TruckClient {
  * monitoring truck simulations, handling trip creation
  * and completion, and managing containers.
  */
-class TruckSimulationClient : public SimulationClientBase {
+class TruckSimulationClient : public SimulationClientBase
+{
     Q_OBJECT
 
 public:
@@ -54,6 +58,23 @@ public:
      * @brief Destructor
      */
     ~TruckSimulationClient() override;
+
+    /**
+     * @brief Initializes the client in its thread
+     *
+     * Configures thread-specific resources, such as
+     * RabbitMQ heartbeat, after moving to its thread.
+     * Called automatically via QThread::started signal.
+     *
+     * @param logger Optional logger for initialization
+     * logging
+     * @throws std::runtime_error If RabbitMQ handler setup
+     * fails
+     * @note Avoid manual invocation unless synchronized
+     * @warning Call only once after thread start
+     */
+    void initializeClient(
+        LoggerInterface *logger = nullptr) override;
 
     /**
      * @brief Defines a new simulator instance

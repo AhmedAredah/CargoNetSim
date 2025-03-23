@@ -7,17 +7,24 @@
 
 #include "ContainerManager.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 ContainerManager::ContainerManager(QObject *parent)
-    : QObject(parent) {}
+    : QObject(parent)
+{
+}
 
 void ContainerManager::assignContainersToVehicle(
     const QString                           &vehicleId,
-    const QList<ContainerCore::Container *> &containers) {
-    if (containers.isEmpty()) {
+    const QList<ContainerCore::Container *> &containers)
+{
+    if (containers.isEmpty())
+    {
         return;
     }
 
@@ -25,19 +32,23 @@ void ContainerManager::assignContainersToVehicle(
     // signal
     QStringList containerIds;
 
-    for (auto *container : containers) {
+    for (auto *container : containers)
+    {
         // Skip null containers
-        if (!container) {
+        if (!container)
+        {
             continue;
         }
 
         // Check if container is already assigned elsewhere
-        if (m_vehicleByContainer.contains(container)) {
+        if (m_vehicleByContainer.contains(container))
+        {
             QString currentVehicle =
                 m_vehicleByContainer[container];
 
             // Skip if already assigned to this vehicle
-            if (currentVehicle == vehicleId) {
+            if (currentVehicle == vehicleId)
+            {
                 continue;
             }
 
@@ -58,7 +69,8 @@ void ContainerManager::assignContainersToVehicle(
     }
 
     // Emit signal if any containers were assigned
-    if (!containerIds.isEmpty()) {
+    if (!containerIds.isEmpty())
+    {
         emit containersAssigned(vehicleId, containerIds);
     }
 }
@@ -66,24 +78,29 @@ void ContainerManager::assignContainersToVehicle(
 QList<ContainerCore::Container *>
 ContainerManager::removeContainersFromVehicle(
     const QString                           &vehicleId,
-    const QList<ContainerCore::Container *> &containers) {
+    const QList<ContainerCore::Container *> &containers)
+{
     if (!m_containersByVehicle.contains(vehicleId)
-        || containers.isEmpty()) {
+        || containers.isEmpty())
+    {
         return QList<ContainerCore::Container *>();
     }
 
     QList<ContainerCore::Container *> removedContainers;
     QStringList                       containerIds;
 
-    for (auto *container : containers) {
+    for (auto *container : containers)
+    {
         // Skip null containers
-        if (!container) {
+        if (!container)
+        {
             continue;
         }
 
         // Check if container is assigned to this vehicle
         if (m_vehicleByContainer.value(container)
-            == vehicleId) {
+            == vehicleId)
+        {
             // Remove from mappings
             m_containersByVehicle[vehicleId].removeOne(
                 container);
@@ -101,7 +118,8 @@ ContainerManager::removeContainersFromVehicle(
     }
 
     // Emit signal if any containers were removed
-    if (!containerIds.isEmpty()) {
+    if (!containerIds.isEmpty())
+    {
         emit containersRemoved(vehicleId, containerIds);
     }
 
@@ -110,8 +128,10 @@ ContainerManager::removeContainersFromVehicle(
 
 QList<ContainerCore::Container *>
 ContainerManager::removeAllContainersFromVehicle(
-    const QString &vehicleId) {
-    if (!m_containersByVehicle.contains(vehicleId)) {
+    const QString &vehicleId)
+{
+    if (!m_containersByVehicle.contains(vehicleId))
+    {
         return QList<ContainerCore::Container *>();
     }
 
@@ -121,12 +141,14 @@ ContainerManager::removeAllContainersFromVehicle(
 
     // Create container ID list for signal
     QStringList containerIds;
-    for (const auto *container : allContainers) {
+    for (const auto *container : allContainers)
+    {
         containerIds.append(container->getContainerID());
     }
 
     // Update mappings
-    for (auto *container : allContainers) {
+    for (auto *container : allContainers)
+    {
         container->setContainerCurrentLocation(
             "unassigned");
         m_vehicleByContainer.remove(container);
@@ -135,7 +157,8 @@ ContainerManager::removeAllContainersFromVehicle(
     m_containersByVehicle.remove(vehicleId);
 
     // Emit signal if any containers were removed
-    if (!containerIds.isEmpty()) {
+    if (!containerIds.isEmpty())
+    {
         emit containersRemoved(vehicleId, containerIds);
     }
 
@@ -145,15 +168,19 @@ ContainerManager::removeAllContainersFromVehicle(
 bool ContainerManager::transferContainers(
     const QString &sourceVehicleId,
     const QString &destVehicleId,
-    const QList<ContainerCore::Container *> &containers) {
-    if (containers.isEmpty()) {
+    const QList<ContainerCore::Container *> &containers)
+{
+    if (containers.isEmpty())
+    {
         return false;
     }
 
     // Validate that containers are on source vehicle
-    for (const auto *container : containers) {
+    for (const auto *container : containers)
+    {
         if (!isContainerAssignedToVehicle(sourceVehicleId,
-                                          container)) {
+                                          container))
+        {
             return false;
         }
     }
@@ -162,7 +189,8 @@ bool ContainerManager::transferContainers(
     QList<ContainerCore::Container *> transferContainers;
     QStringList                       containerIds;
 
-    for (auto *container : containers) {
+    for (auto *container : containers)
+    {
         // Remove from source
         m_containersByVehicle[sourceVehicleId].removeOne(
             container);
@@ -171,7 +199,8 @@ bool ContainerManager::transferContainers(
     }
 
     // Add to destination vehicle
-    for (auto *container : transferContainers) {
+    for (auto *container : transferContainers)
+    {
         container->setContainerCurrentLocation(
             destVehicleId);
         m_containersByVehicle[destVehicleId].append(
@@ -188,18 +217,21 @@ bool ContainerManager::transferContainers(
 
 QList<ContainerCore::Container *>
 ContainerManager::getContainersForVehicle(
-    const QString &vehicleId) const {
+    const QString &vehicleId) const
+{
     return m_containersByVehicle.value(vehicleId);
 }
 
 QString ContainerManager::getVehicleForContainer(
-    const ContainerCore::Container *container) const {
+    const ContainerCore::Container *container) const
+{
     return m_vehicleByContainer.value(container, QString());
 }
 
 bool ContainerManager::isContainerAssignedToVehicle(
     const QString                  &vehicleId,
-    const ContainerCore::Container *container) const {
+    const ContainerCore::Container *container) const
+{
     return m_vehicleByContainer.value(container)
            == vehicleId;
 }

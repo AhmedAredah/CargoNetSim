@@ -7,14 +7,17 @@
 #include <QPropertyAnimation>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class TerminalItem;
 class GlobalTerminalItem;
 class ConnectionLabel;
 
-class ConnectionLine : public QGraphicsObject {
+class ConnectionLine : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -32,24 +35,30 @@ public:
     virtual ~ConnectionLine();
 
     // Access to members
-    QGraphicsItem *startItem() const {
+    QGraphicsItem *startItem() const
+    {
         return m_startItem;
     }
-    QGraphicsItem *endItem() const {
+    QGraphicsItem *endItem() const
+    {
         return m_endItem;
     }
-    QString connectionType() const {
+    QString connectionType() const
+    {
         return m_connectionType;
     }
-    QString getRegion() const {
+    QString getRegion() const
+    {
         return m_region;
     }
-    int connectionId() const {
+    int connectionId() const
+    {
         return m_id;
     }
     void updateProperties(
         const QMap<QString, QVariant> &newProperties);
-    const QMap<QString, QVariant> &getProperties() const {
+    const QMap<QString, QVariant> &getProperties() const
+    {
         return m_properties;
     }
 

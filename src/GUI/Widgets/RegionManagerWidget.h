@@ -8,8 +8,10 @@
 #include <QPushButton>
 #include <QWidget>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class MainWindow;
 
@@ -22,7 +24,8 @@ class MainWindow;
  * colors. Each region is displayed in a list with a color
  * swatch.
  */
-class RegionManagerWidget : public QWidget {
+class RegionManagerWidget : public QWidget
+{
     Q_OBJECT
 
 public:

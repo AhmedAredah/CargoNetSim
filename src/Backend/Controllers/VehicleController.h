@@ -15,8 +15,10 @@
 #include <QObject>
 #include <QVector>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class VehicleController
@@ -28,7 +30,8 @@ namespace Backend {
  * loading from files, tracking, and updating vehicle
  * states.
  */
-class VehicleController : public QObject {
+class VehicleController : public QObject
+{
     Q_OBJECT
 public:
     /**

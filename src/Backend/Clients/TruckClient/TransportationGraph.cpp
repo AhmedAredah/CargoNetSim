@@ -7,9 +7,12 @@
 
 #include "TransportationGraph.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 // Explicit instantiations for common types
 template class TransportationGraph<int>;

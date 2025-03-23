@@ -15,9 +15,12 @@
 #include <QString>
 #include <QStringList>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class SimulationConfig
@@ -26,7 +29,8 @@ namespace TruckClient {
  * Provides a centralized configuration management system
  * for simulation parameters, file paths, and options.
  */
-class SimulationConfig : public QObject {
+class SimulationConfig : public QObject
+{
     Q_OBJECT
 
 public:

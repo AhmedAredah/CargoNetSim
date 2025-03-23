@@ -7,9 +7,12 @@
 
 #include "IntegrationNode.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 IntegrationNode::IntegrationNode(QObject *parent)
     : QObject(parent)
@@ -21,7 +24,9 @@ IntegrationNode::IntegrationNode(QObject *parent)
     , m_informationAvailability(0)
     , m_description("")
     , m_xScale(1.0f)
-    , m_yScale(1.0f) {}
+    , m_yScale(1.0f)
+{
+}
 
 IntegrationNode::IntegrationNode(
     int nodeId, float xCoordinate, float yCoordinate,
@@ -37,11 +42,14 @@ IntegrationNode::IntegrationNode(
     , m_informationAvailability(informationAvailability)
     , m_description(description)
     , m_xScale(xScale)
-    , m_yScale(yScale) {}
+    , m_yScale(yScale)
+{
+}
 
 IntegrationNode::IntegrationNode(const QJsonObject &json,
                                  QObject           *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     m_nodeId           = json["node_id"].toInt();
     m_xCoordinate      = json["x_coordinate"].toDouble();
     m_yCoordinate      = json["y_coordinate"].toDouble();
@@ -54,7 +62,8 @@ IntegrationNode::IntegrationNode(const QJsonObject &json,
     m_yScale      = json["y_scale"].toDouble(1.0);
 }
 
-QJsonObject IntegrationNode::toDict() const {
+QJsonObject IntegrationNode::toDict() const
+{
     QJsonObject dict;
     dict["node_id"]            = m_nodeId;
     dict["x_coordinate"]       = m_xCoordinate;
@@ -71,7 +80,8 @@ QJsonObject IntegrationNode::toDict() const {
 
 IntegrationNode *
 IntegrationNode::fromDict(const QJsonObject &data,
-                          QObject           *parent) {
+                          QObject           *parent)
+{
     return new IntegrationNode(
         data["node_id"].toInt(),
         data["x_coordinate"].toDouble(),
@@ -84,68 +94,86 @@ IntegrationNode::fromDict(const QJsonObject &data,
         data["y_scale"].toDouble(1.0), parent);
 }
 
-void IntegrationNode::setNodeId(int nodeId) {
-    if (m_nodeId != nodeId) {
+void IntegrationNode::setNodeId(int nodeId)
+{
+    if (m_nodeId != nodeId)
+    {
         m_nodeId = nodeId;
         emit nodeChanged();
     }
 }
 
-void IntegrationNode::setXCoordinate(float xCoordinate) {
-    if (m_xCoordinate != xCoordinate) {
+void IntegrationNode::setXCoordinate(float xCoordinate)
+{
+    if (m_xCoordinate != xCoordinate)
+    {
         m_xCoordinate = xCoordinate;
         emit nodeChanged();
     }
 }
 
-void IntegrationNode::setYCoordinate(float yCoordinate) {
-    if (m_yCoordinate != yCoordinate) {
+void IntegrationNode::setYCoordinate(float yCoordinate)
+{
+    if (m_yCoordinate != yCoordinate)
+    {
         m_yCoordinate = yCoordinate;
         emit nodeChanged();
     }
 }
 
-void IntegrationNode::setNodeType(int nodeType) {
-    if (m_nodeType != nodeType) {
+void IntegrationNode::setNodeType(int nodeType)
+{
+    if (m_nodeType != nodeType)
+    {
         m_nodeType = nodeType;
         emit nodeChanged();
     }
 }
 
 void IntegrationNode::setMacroZoneCluster(
-    int macroZoneCluster) {
-    if (m_macroZoneCluster != macroZoneCluster) {
+    int macroZoneCluster)
+{
+    if (m_macroZoneCluster != macroZoneCluster)
+    {
         m_macroZoneCluster = macroZoneCluster;
         emit nodeChanged();
     }
 }
 
 void IntegrationNode::setInformationAvailability(
-    int informationAvailability) {
+    int informationAvailability)
+{
     if (m_informationAvailability
-        != informationAvailability) {
+        != informationAvailability)
+    {
         m_informationAvailability = informationAvailability;
         emit nodeChanged();
     }
 }
 
 void IntegrationNode::setDescription(
-    const QString &description) {
-    if (m_description != description) {
+    const QString &description)
+{
+    if (m_description != description)
+    {
         m_description = description;
         emit nodeChanged();
     }
 }
 
-void IntegrationNode::setXScale(float xScale) {
-    if (m_xScale != xScale) {
+void IntegrationNode::setXScale(float xScale)
+{
+    if (m_xScale != xScale)
+    {
         m_xScale = xScale;
         emit nodeChanged();
     }
 }
 
-void IntegrationNode::setYScale(float yScale) {
-    if (m_yScale != yScale) {
+void IntegrationNode::setYScale(float yScale)
+{
+    if (m_yScale != yScale)
+    {
         m_yScale = yScale;
         emit nodeChanged();
     }

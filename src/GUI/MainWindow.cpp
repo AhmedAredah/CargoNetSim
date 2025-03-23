@@ -50,20 +50,25 @@
 
 #include "Serializers/ProjectSerializer.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 MainWindow *MainWindow::instance_ = nullptr;
 
-MainWindow *MainWindow::getInstance() {
-    if (!instance_) {
+MainWindow *MainWindow::getInstance()
+{
+    if (!instance_)
+    {
         instance_ = new MainWindow();
     }
     return instance_;
 }
 
 MainWindow::MainWindow()
-    : CustomMainWindow() {
+    : CustomMainWindow()
+{
     // Initialize region management
     Backend::RegionDataController::getInstance().addRegion(
         "Default Region");
@@ -106,17 +111,20 @@ MainWindow::MainWindow()
     BasicButtonController::setupSignals(this);
 }
 
-MainWindow::~MainWindow() {
+MainWindow::~MainWindow()
+{
     // Cleanup resources
     // delete heartbeatController_;
 
     // Clear log timers
-    if (logTimer_) {
+    if (logTimer_)
+    {
         logTimer_->stop();
         delete logTimer_;
     }
 
-    if (progressTimer_) {
+    if (progressTimer_)
+    {
         progressTimer_->stop();
         delete progressTimer_;
     }
@@ -125,12 +133,14 @@ MainWindow::~MainWindow() {
     // mechanism
 }
 
-void MainWindow::initializeUI() {
+void MainWindow::initializeUI()
+{
     // Load the window icon
     QString imagePath      = ":/Logo25";
     auto    originalPixmap = QPixmap(imagePath);
 
-    if (originalPixmap.isNull()) {
+    if (originalPixmap.isNull())
+    {
         qWarning() << "Failed to load logo image:"
                    << imagePath;
         // Create a default splash pixmap
@@ -145,7 +155,8 @@ void MainWindow::initializeUI() {
     }
 
     QIcon appIcon(originalPixmap);
-    if (!appIcon.isNull()) {
+    if (!appIcon.isNull())
+    {
         setWindowIcon(appIcon);
     }
 
@@ -195,7 +206,8 @@ void MainWindow::initializeUI() {
     currentConnectionType_ = "Truck";
 
     // Add connection types to menu
-    for (const QString &connType : connectionTypes_) {
+    for (const QString &connType : connectionTypes_)
+    {
         QAction *action =
             connectionMenu_->addAction(connType);
         action->setCheckable(true);
@@ -221,7 +233,8 @@ void MainWindow::initializeUI() {
     startQueueProcessing();
 }
 
-void MainWindow::setupRegionMapScene() {
+void MainWindow::setupRegionMapScene()
+{
     // Setup scene and view
     scene_      = new GraphicsScene(this);
     regionView_ = new GraphicsView(scene_);
@@ -232,7 +245,8 @@ void MainWindow::setupRegionMapScene() {
     scene_->connectFirstItem = QVariant();
 }
 
-void MainWindow::setupGlobalMapScene() {
+void MainWindow::setupGlobalMapScene()
+{
     globalMapScene_ = new GraphicsScene(this);
     globalMapView_  = new GraphicsView(globalMapScene_);
 
@@ -245,7 +259,8 @@ void MainWindow::setupGlobalMapScene() {
     globalMapScene_->connectFirstItem = QVariant();
 }
 
-void MainWindow::setupDocks() {
+void MainWindow::setupDocks()
+{
     // Properties panel dock
     propertiesDock_  = new QDockWidget("Properties", this);
     propertiesPanel_ = new PropertiesPanel(this);
@@ -291,7 +306,8 @@ void MainWindow::setupDocks() {
         networkManagerDock_->width(), 200);
 }
 
-void MainWindow::setupTerminalLibrary() {
+void MainWindow::setupTerminalLibrary()
+{
     libraryDock_ =
         new QDockWidget("Terminal Library", this);
     libraryList_ = new QListWidget();
@@ -304,7 +320,8 @@ void MainWindow::setupTerminalLibrary() {
 
     // Add items with custom icons
     for (auto it = terminalIcons.constBegin();
-         it != terminalIcons.constEnd(); ++it) {
+         it != terminalIcons.constEnd(); ++it)
+    {
         QListWidgetItem *item = new QListWidgetItem(
             QIcon(it.value()), it.key());
         item->setData(
@@ -317,7 +334,8 @@ void MainWindow::setupTerminalLibrary() {
     addDockWidget(Qt::LeftDockWidgetArea, libraryDock_);
 }
 
-void MainWindow::setupRegionManager() {
+void MainWindow::setupRegionManager()
+{
     regionManagerDock_ =
         new QDockWidget("Region Manager", this);
     regionManager_ = new RegionManagerWidget(this);
@@ -328,7 +346,8 @@ void MainWindow::setupRegionManager() {
                                200);
 }
 
-void MainWindow::setupLoggingTab() {
+void MainWindow::setupLoggingTab()
+{
     // Create main layout for logging tab
     QGridLayout *layout = new QGridLayout(loggingTab_);
 
@@ -339,10 +358,13 @@ void MainWindow::setupLoggingTab() {
 
     // Create 2x2 grid of logging widgets for first 4
     // clients
-    for (int i = 0; i < 2; ++i) {
-        for (int j = 0; j < 2; ++j) {
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
             int clientIndex = i * 2 + j;
-            if (clientIndex >= clientNames_.size() - 1) {
+            if (clientIndex >= clientNames_.size() - 1)
+            {
                 continue;
             }
 
@@ -403,7 +425,8 @@ void MainWindow::setupLoggingTab() {
     layout->addWidget(generalGroup, 2, 0, 1, 2);
 }
 
-void MainWindow::startQueueProcessing() {
+void MainWindow::startQueueProcessing()
+{
     // Create timers for processing queues
     logTimer_ = new QTimer(this);
     connect(logTimer_, &QTimer::timeout, this,
@@ -416,7 +439,8 @@ void MainWindow::startQueueProcessing() {
     progressTimer_->start(100);
 }
 
-void MainWindow::processLogQueue() {
+void MainWindow::processLogQueue()
+{
     // while (!ApplicationLogger::logQueueEmpty()) {
     //     ApplicationLogger::LogMessage message =
     //     ApplicationLogger::getNextLogMessage();
@@ -453,7 +477,8 @@ void MainWindow::processLogQueue() {
     // }
 }
 
-void MainWindow::processProgressQueue() {
+void MainWindow::processProgressQueue()
+{
     // while (!ApplicationLogger::progressQueueEmpty()) {
     //     ApplicationLogger::ProgressInfo progress =
     //     ApplicationLogger::getNextProgressUpdate(); if
@@ -464,8 +489,10 @@ void MainWindow::processProgressQueue() {
 }
 
 void MainWindow::appendLog(const QString &message,
-                           int widgetIndex, bool isError) {
-    if (widgetIndex >= logTextWidgets_.size()) {
+                           int widgetIndex, bool isError)
+{
+    if (widgetIndex >= logTextWidgets_.size())
+    {
         return;
     }
 
@@ -475,7 +502,8 @@ void MainWindow::appendLog(const QString &message,
     textWidget->setTextCursor(cursor);
 
     // Create format for error messages
-    if (isError) {
+    if (isError)
+    {
         QTextCharFormat format;
         format.setForeground(QColor("red"));
         cursor.setCharFormat(format);
@@ -486,7 +514,8 @@ void MainWindow::appendLog(const QString &message,
         textWidget->verticalScrollBar()->maximum());
 }
 
-void MainWindow::setupStatusBar() {
+void MainWindow::setupStatusBar()
+{
     // First, get the existing status bar
     QStatusBar *statusBar = this->statusBar();
 
@@ -541,7 +570,8 @@ void MainWindow::setupStatusBar() {
     QMap<QString, QMap<QString, QVariant>> serverIndicators;
 
     for (auto it = serverInfo.constBegin();
-         it != serverInfo.constEnd(); ++it) {
+         it != serverInfo.constEnd(); ++it)
+    {
         QString serverId  = it.key();
         QString shortDesc = it.value()["shortDesc"];
         QString longDesc  = it.value()["longDesc"];
@@ -625,7 +655,8 @@ void MainWindow::setupStatusBar() {
 RegionCenterPoint *
 MainWindow::createRegionCenter(const QString &regionName,
                                const QColor  &color,
-                               const QPointF *pos) {
+                               const QPointF *pos)
+{
     RegionCenterPoint *centerPoint =
         new RegionCenterPoint(color);
     connect(centerPoint, &RegionCenterPoint::clicked, this,
@@ -639,9 +670,12 @@ MainWindow::createRegionCenter(const QString &regionName,
             });
 
     QPointF position;
-    if (pos) {
+    if (pos)
+    {
         position = *pos;
-    } else {
+    }
+    else
+    {
         // Place at origin (0,0) if no position specified
         position = QPointF(0, 0);
     }
@@ -656,8 +690,10 @@ MainWindow::createRegionCenter(const QString &regionName,
 }
 
 void MainWindow::updateGlobalMapForRegion(
-    const QString &regionName) {
-    for (QGraphicsItem *item : scene_->items()) {
+    const QString &regionName)
+{
+    for (QGraphicsItem *item : scene_->items())
+    {
         TerminalItem *terminalItem =
             dynamic_cast<TerminalItem *>(item);
         // if (terminalItem && terminalItem->region ==
@@ -669,11 +705,13 @@ void MainWindow::updateGlobalMapForRegion(
 }
 
 void MainWindow::setConnectionType(
-    const QString &connectionType) {
+    const QString &connectionType)
+{
     currentConnectionType_ = connectionType;
 
     // Uncheck all other actions
-    for (QAction *action : connectionMenu_->actions()) {
+    for (QAction *action : connectionMenu_->actions())
+    {
         action->setChecked(action->text()
                            == connectionType);
     }
@@ -684,12 +722,15 @@ void MainWindow::setConnectionType(
         2000);
 }
 
-void MainWindow::updatePropertiesPanel(
-    QGraphicsItem *item) {
-    if (!item) {
+void MainWindow::updatePropertiesPanel(QGraphicsItem *item)
+{
+    if (!item)
+    {
         // If no item is selected, hide the properties dock
         hidePropertiesPanel();
-    } else {
+    }
+    else
+    {
         // Show properties dock and update its contents
         propertiesDock_->show();
         // propertiesPanel_->displayProperties(item); //
@@ -697,51 +738,63 @@ void MainWindow::updatePropertiesPanel(
     }
 }
 
-void MainWindow::hidePropertiesPanel() {
+void MainWindow::hidePropertiesPanel()
+{
     // Show map properties only if on main view or global
     // map tabs
     int currentTab = tabWidget_->currentIndex();
     if (currentTab
-        == tabWidget_->indexOf(
-            tabWidget_->widget(0))) { // Main view tab
+        == tabWidget_->indexOf(tabWidget_->widget(0)))
+    { // Main view tab
         propertiesPanel_->displayProperties(nullptr);
         propertiesDock_->show();
         propertiesPanel_->displayMapProperties();
-    } else {
+    }
+    else
+    {
         propertiesDock_->hide();
         propertiesPanel_->displayProperties(nullptr);
     }
 }
 
-GraphicsView *MainWindow::getCurrentView() const {
-    if (tabWidget_->currentIndex() == 0) { // Main view tab
+GraphicsView *MainWindow::getCurrentView() const
+{
+    if (tabWidget_->currentIndex() == 0)
+    { // Main view tab
         return regionView_;
-    } else if (tabWidget_->currentIndex()
-               == 1) { // Global map tab
+    }
+    else if (tabWidget_->currentIndex() == 1)
+    { // Global map tab
         return globalMapView_;
     }
     return nullptr;
 }
 
-GraphicsScene *MainWindow::getCurrentScene() const {
-    if (tabWidget_->currentIndex() == 0) { // Main view tab
+GraphicsScene *MainWindow::getCurrentScene() const
+{
+    if (tabWidget_->currentIndex() == 0)
+    { // Main view tab
         return scene_;
-    } else if (tabWidget_->currentIndex()
-               == 1) { // Global map tab
+    }
+    else if (tabWidget_->currentIndex() == 1)
+    { // Global map tab
         return globalMapScene_;
     }
     return nullptr;
 }
 
-bool MainWindow::isGlobalViewActive() const {
+bool MainWindow::isGlobalViewActive() const
+{
     return tabWidget_->currentIndex() == 1;
 }
 
-bool MainWindow::isRegionViewActive() const {
+bool MainWindow::isRegionViewActive() const
+{
     return tabWidget_->currentIndex() == 0;
 }
 
-void MainWindow::handleTabChange(int index) {
+void MainWindow::handleTabChange(int index)
+{
     bool isGlobalMap =
         index == tabWidget_->indexOf(tabWidget_->widget(1));
     bool isLoggingTab =
@@ -759,7 +812,8 @@ void MainWindow::handleTabChange(int index) {
 
     // Handle tool button visibility based on current tab
     for (auto it = toolsButtonsVisibility_.begin();
-         it != toolsButtonsVisibility_.end(); ++it) {
+         it != toolsButtonsVisibility_.end(); ++it)
+    {
         QToolButton *button     = it.key();
         QList<int>   tabIndices = it.value();
         button->setVisible(tabIndices.contains(index));
@@ -767,7 +821,8 @@ void MainWindow::handleTabChange(int index) {
 
     // Handle tab visibility in the toolbar
     for (auto it = tabsVisibility_.begin();
-         it != tabsVisibility_.end(); ++it) {
+         it != tabsVisibility_.end(); ++it)
+    {
         int        toolbarTabIndex = it.key();
         QList<int> tabIndices      = it.value();
         // ToolbarController::getRibbon(this)->setTabVisible(toolbarTabIndex,
@@ -776,7 +831,8 @@ void MainWindow::handleTabChange(int index) {
 
     // Handle dock window visibility
     for (auto it = windowVisibility_.begin();
-         it != windowVisibility_.end(); ++it) {
+         it != windowVisibility_.end(); ++it)
+    {
         QDockWidget            *dockWindow = it.key();
         QMap<QString, QVariant> config     = it.value();
 
@@ -812,15 +868,18 @@ void MainWindow::handleTabChange(int index) {
                           visibilityButtons_);
 
     // Handle shortest paths table visibility
-    if (isLoggingTab) {
+    if (isLoggingTab)
+    {
         // Save current visibility state before hiding
         tableWasVisible_ =
             shortestPathTableDock_->isVisible();
         shortestPathTableDock_->hide();
-    } else if (previousTabIndex_
-               == tabWidget_->indexOf(tabWidget_->widget(
-                   2))) { // Coming from logging tab
-        if (tableWasVisible_) {
+    }
+    else if (previousTabIndex_
+             == tabWidget_->indexOf(tabWidget_->widget(2)))
+    { // Coming from logging tab
+        if (tableWasVisible_)
+        {
             shortestPathTableDock_->show();
         }
     }
@@ -830,19 +889,25 @@ void MainWindow::handleTabChange(int index) {
 }
 
 void MainWindow::updateGroupVisibility(
-    QGroupBox *group, const QList<QToolButton *> &buttons) {
+    QGroupBox *group, const QList<QToolButton *> &buttons)
+{
     int  currentTab         = tabWidget_->currentIndex();
     bool anyShouldBeVisible = false;
 
-    for (QToolButton *button : buttons) {
+    for (QToolButton *button : buttons)
+    {
         // If button has tab visibility rules, check them
-        if (toolsButtonsVisibility_.contains(button)) {
+        if (toolsButtonsVisibility_.contains(button))
+        {
             if (toolsButtonsVisibility_[button].contains(
-                    currentTab)) {
+                    currentTab))
+            {
                 anyShouldBeVisible = true;
                 break;
             }
-        } else {
+        }
+        else
+        {
             // If button has no visibility rules, assume it
             // should be visible
             anyShouldBeVisible = true;
@@ -853,8 +918,10 @@ void MainWindow::updateGroupVisibility(
     group->setVisible(anyShouldBeVisible);
 }
 
-void MainWindow::addBackgroundPhoto() {
-    try {
+void MainWindow::addBackgroundPhoto()
+{
+    try
+    {
         // Open file dialog (using non-native dialog for
         // consistency)
         QString fileName = QFileDialog::getOpenFileName(
@@ -862,12 +929,14 @@ void MainWindow::addBackgroundPhoto() {
             "Images (*.png *.jpg *.bmp)", nullptr,
             QFileDialog::DontUseNativeDialog);
 
-        if (fileName.isEmpty()) {
+        if (fileName.isEmpty())
+        {
             return;
         }
 
         QPixmap pixmap(fileName);
-        if (pixmap.isNull()) {
+        if (pixmap.isNull())
+        {
             QMessageBox::warning(this, "Error",
                                  "Failed to load image.");
             return;
@@ -875,7 +944,8 @@ void MainWindow::addBackgroundPhoto() {
 
         // Check which tab is currently active
         if (tabWidget_->currentWidget()
-            == tabWidget_->widget(0)) { // Main view tab
+            == tabWidget_->widget(0))
+        { // Main view tab
             // Create a new BackgroundPhotoItem for the main
             // view
             QString currentRegion =
@@ -892,7 +962,8 @@ void MainWindow::addBackgroundPhoto() {
                 &BackgroundPhotoItem::positionChanged,
                 [this, background](const QPointF &pos) {
                     if (propertiesPanel_->getCurrentItem()
-                        == background) {
+                        == background)
+                    {
                         propertiesPanel_
                             ->updatePositionFields(pos);
                     }
@@ -918,7 +989,9 @@ void MainWindow::addBackgroundPhoto() {
                 .setRegionVariable(
                     currentRegion, "backgroundPhotoItem",
                     QVariant::fromValue(background));
-        } else { // Global map tab
+        }
+        else
+        { // Global map tab
             // Create a new BackgroundPhotoItem for the
             // global map
             BackgroundPhotoItem *background =
@@ -932,7 +1005,8 @@ void MainWindow::addBackgroundPhoto() {
                 &BackgroundPhotoItem::positionChanged,
                 [this, background](const QPointF &pos) {
                     if (propertiesPanel_->getCurrentItem()
-                        == background) {
+                        == background)
+                    {
                         propertiesPanel_
                             ->updatePositionFields(pos);
                     }
@@ -960,7 +1034,9 @@ void MainWindow::addBackgroundPhoto() {
                     "globalBackgroundPhotoItem",
                     QVariant::fromValue(background));
         }
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         qWarning() << "Error in addBackgroundPhoto:"
                    << e.what();
         QMessageBox::warning(
@@ -970,7 +1046,8 @@ void MainWindow::addBackgroundPhoto() {
     }
 }
 
-void MainWindow::updateAllCoordinates() {
+void MainWindow::updateAllCoordinates()
+{
     // TODO
     // for (auto it = regionCenters_.begin(); it !=
     // regionCenters_.end(); ++it) {
@@ -997,16 +1074,19 @@ void MainWindow::updateAllCoordinates() {
 }
 
 void MainWindow::showStatusBarMessage(QString message,
-                                      int     timeout) {
+                                      int     timeout)
+{
     statusBar()->showMessage(message, timeout);
 }
 
 void MainWindow::showStatusBarError(QString message,
-                                    int     timeout) {
+                                    int     timeout)
+{
     statusBar()->showMessage(message, timeout);
 }
 
-void MainWindow::togglePanMode() {
+void MainWindow::togglePanMode()
+{
     // Toggle between pan modes
     GraphicsView *view = getCurrentView();
     if (!view)
@@ -1037,14 +1117,17 @@ void MainWindow::togglePanMode() {
 }
 
 void MainWindow::handleTerminalNodeLinking(
-    QGraphicsItem *item) {
-    if (!scene_->linkTerminalMode) {
+    QGraphicsItem *item)
+{
+    if (!scene_->linkTerminalMode)
+    {
         return;
     }
 
     TerminalItem *terminalItem =
         dynamic_cast<TerminalItem *>(item);
-    if (terminalItem) {
+    if (terminalItem)
+    {
         selectedTerminal_ = terminalItem;
         showStatusBarMessage(
             "Terminal selected. Now select a node to link "
@@ -1054,7 +1137,8 @@ void MainWindow::handleTerminalNodeLinking(
     }
 
     MapPoint *mapPoint = dynamic_cast<MapPoint *>(item);
-    if (mapPoint && selectedTerminal_) {
+    if (mapPoint && selectedTerminal_)
+    {
         // Link the terminal to the node
         mapPoint->setLinkedTerminal(selectedTerminal_);
         mapPoint->getProperties()["LinkedTerminal"] =
@@ -1062,8 +1146,8 @@ void MainWindow::handleTerminalNodeLinking(
 
         // Update the properties panel if this item is
         // currently selected
-        if (propertiesPanel_->getCurrentItem()
-            == mapPoint) {
+        if (propertiesPanel_->getCurrentItem() == mapPoint)
+        {
             propertiesPanel_->displayProperties(mapPoint);
         }
 
@@ -1077,27 +1161,32 @@ void MainWindow::handleTerminalNodeLinking(
         // Force a redraw of the MapPoint to show the
         // terminal icon
         mapPoint->update();
-    } else if (!selectedTerminal_) {
+    }
+    else if (!selectedTerminal_)
+    {
         showStatusBarError("Please select a terminal first",
                            2000);
     }
 }
 
 void MainWindow::handleTerminalNodeUnlinking(
-    QGraphicsItem *item) {
-    if (!scene_->unlinkTerminalMode) {
+    QGraphicsItem *item)
+{
+    if (!scene_->unlinkTerminalMode)
+    {
         return;
     }
 
     MapPoint *mapPoint = dynamic_cast<MapPoint *>(item);
-    if (mapPoint) {
+    if (mapPoint)
+    {
         mapPoint->setLinkedTerminal(
             nullptr); // Unlink the terminal from the node
 
         // Update the properties panel if this item is
         // currently selected
-        if (propertiesPanel_->getCurrentItem()
-            == mapPoint) {
+        if (propertiesPanel_->getCurrentItem() == mapPoint)
+        {
             propertiesPanel_->displayProperties(mapPoint);
         }
 
@@ -1113,7 +1202,8 @@ void MainWindow::handleTerminalNodeUnlinking(
     }
 }
 
-void MainWindow::toggleShortestPathsTable(bool show) {
+void MainWindow::toggleShortestPathsTable(bool show)
+{
     // if (!show) {
     //     shortestPathTableDock_->hide();
     //     // Save the current sizes before hiding
@@ -1136,7 +1226,8 @@ void MainWindow::toggleShortestPathsTable(bool show) {
     // }
 }
 
-void MainWindow::showError(const QString &errorText) {
+void MainWindow::showError(const QString &errorText)
+{
     QMessageBox msg;
     msg.setIcon(QMessageBox::Critical);
     msg.setText("An error occurred");
@@ -1146,7 +1237,8 @@ void MainWindow::showError(const QString &errorText) {
 }
 
 void MainWindow::updateServerHeartbeat(
-    const QString &serverId, float timestamp) {
+    const QString &serverId, float timestamp)
+{
     // Delegate to heartbeat controller
     // heartbeatController_->updateServerHeartbeat(serverId,
     // timestamp);
@@ -1154,26 +1246,31 @@ void MainWindow::updateServerHeartbeat(
 
 void MainWindow::updateBackendMessage(
     const QString &message, const QString &status,
-    int timeout) {
+    int timeout)
+{
     // Show the backend icon
     backendIcon_->setVisible(true);
 
     // Set style based on message type
     if (status.toLower() == "error"
         || message.toLower().contains("not exist")
-        || message.toLower().contains("failed")) {
+        || message.toLower().contains("failed"))
+    {
         backendReportLabel_->setStyleSheet(
             "color: #cc0000; font-weight: bold;"); // Red
                                                    // for
                                                    // errors
-    } else if (status.toLower() == "success"
-               || message.toLower().contains("success")
-               || message.toLower().contains("created")
-               || message.toLower().contains(
-                   "established")) {
+    }
+    else if (status.toLower() == "success"
+             || message.toLower().contains("success")
+             || message.toLower().contains("created")
+             || message.toLower().contains("established"))
+    {
         backendReportLabel_->setStyleSheet(
             "color: #007700;"); // Green for success
-    } else {
+    }
+    else
+    {
         backendReportLabel_->setStyleSheet(
             "color: #0066cc;"); // Blue for info
     }
@@ -1182,32 +1279,39 @@ void MainWindow::updateBackendMessage(
     backendReportLabel_->setText(message);
 
     // Auto-clear after a timeout if specified
-    if (timeout > 0) {
+    if (timeout > 0)
+    {
         QTimer::singleShot(
             timeout, this,
             &MainWindow::clearBackendMessage);
     }
 }
 
-void MainWindow::clearBackendMessage() {
+void MainWindow::clearBackendMessage()
+{
     backendReportLabel_->setText("");
     backendIcon_->setVisible(false);
 }
 
-void MainWindow::shutdown() {
+void MainWindow::shutdown()
+{
     // Signal application shutdown
     QApplication::quit();
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event) {
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
     CustomMainWindow::resizeEvent(event);
 }
 
-void MainWindow::assignSelectedToCurrentRegion() {
-    for (QGraphicsItem *item : scene_->selectedItems()) {
+void MainWindow::assignSelectedToCurrentRegion()
+{
+    for (QGraphicsItem *item : scene_->selectedItems())
+    {
         RegionCenterPoint *centerPoint =
             dynamic_cast<RegionCenterPoint *>(item);
-        if (centerPoint) {
+        if (centerPoint)
+        {
             showStatusBarError(
                 "Region center point cannot be assigned to "
                 "other regions.",
@@ -1220,32 +1324,35 @@ void MainWindow::assignSelectedToCurrentRegion() {
                 .getCurrentRegion();
 
         // Handle items with a 'region' property
-        if (item->type()
-            == QGraphicsItem::UserType
-                   + 1) { // TerminalItem
+        if (item->type() == QGraphicsItem::UserType + 1)
+        { // TerminalItem
             TerminalItem *terminal =
                 static_cast<TerminalItem *>(item);
             terminal->setRegion(currentRegion);
-        } else if (item->type()
-                   == QGraphicsItem::UserType
-                          + 2) { // ConnectionLine
+        }
+        else if (item->type()
+                 == QGraphicsItem::UserType + 2)
+        { // ConnectionLine
             ConnectionLine *connection =
                 static_cast<ConnectionLine *>(item);
             connection->setRegion(currentRegion);
-        } else if (item->type()
-                   == QGraphicsItem::UserType
-                          + 4) { // BackgroundPhotoItem
+        }
+        else if (item->type()
+                 == QGraphicsItem::UserType + 4)
+        { // BackgroundPhotoItem
             BackgroundPhotoItem *photo =
                 static_cast<BackgroundPhotoItem *>(item);
             photo->setRegion(currentRegion);
-        } else if (item->type()
-                   == QGraphicsItem::UserType
-                          + 7) { // MapPoint
+        }
+        else if (item->type()
+                 == QGraphicsItem::UserType + 7)
+        { // MapPoint
             MapPoint *point = static_cast<MapPoint *>(item);
             point->setRegion(currentRegion);
-        } else if (item->type()
-                   == QGraphicsItem::UserType
-                          + 8) { // MapLine
+        }
+        else if (item->type()
+                 == QGraphicsItem::UserType + 8)
+        { // MapLine
             MapLine *line = static_cast<MapLine *>(item);
             line->setRegion(currentRegion);
         }
@@ -1257,7 +1364,8 @@ void MainWindow::assignSelectedToCurrentRegion() {
         "Selected items assigned to current region.", 2000);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event) {
+void MainWindow::closeEvent(QCloseEvent *event)
+{
     // Ask for confirmation
     QMessageBox::StandardButton reply =
         QMessageBox::question(
@@ -1266,22 +1374,28 @@ void MainWindow::closeEvent(QCloseEvent *event) {
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::No);
 
-    if (reply == QMessageBox::Yes) {
+    if (reply == QMessageBox::Yes)
+    {
         // Save any application state if needed
 
         // Perform shutdown procedures
         shutdown();
         event->accept();
-    } else {
+    }
+    else
+    {
         event->ignore();
     }
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *event) {
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
     // Handle Delete key for removing selected items
-    if (event->key() == Qt::Key_Delete) {
+    if (event->key() == Qt::Key_Delete)
+    {
         GraphicsScene *currentScene = getCurrentScene();
-        if (!currentScene) {
+        if (!currentScene)
+        {
             CustomMainWindow::keyPressEvent(event);
             return;
         }
@@ -1296,18 +1410,23 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         QList<ConnectionLine *> parentLinesToRemove;
 
         for (auto it = selectedItems.begin();
-             it != selectedItems.end();) {
+             it != selectedItems.end();)
+        {
             ConnectionLabel *label =
                 dynamic_cast<ConnectionLabel *>(*it);
-            if (label) {
+            if (label)
+            {
                 ConnectionLine *parent =
                     dynamic_cast<ConnectionLine *>(
                         label->parentItem());
-                if (parent) {
+                if (parent)
+                {
                     parentLinesToRemove.append(parent);
                 }
                 it = selectedItems.erase(it);
-            } else {
+            }
+            else
+            {
                 ++it;
             }
         }
@@ -1315,8 +1434,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         // Add parent lines to our selection if not already
         // there
         for (ConnectionLine *parentLine :
-             parentLinesToRemove) {
-            if (!selectedItems.contains(parentLine)) {
+             parentLinesToRemove)
+        {
+            if (!selectedItems.contains(parentLine))
+            {
                 selectedItems.append(parentLine);
             }
         }
@@ -1434,10 +1555,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         event->accept();
     }
     // Handle escape key to cancel current operations
-    else if (event->key() == Qt::Key_Escape) {
+    else if (event->key() == Qt::Key_Escape)
+    {
         // Clear selection in the current scene
         GraphicsScene *currentScene = getCurrentScene();
-        if (currentScene) {
+        if (currentScene)
+        {
             currentScene->clearSelection();
         }
 
@@ -1459,7 +1582,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         unsetCursor();
 
         event->accept();
-    } else {
+    }
+    else
+    {
         CustomMainWindow::keyPressEvent(event);
     }
 }

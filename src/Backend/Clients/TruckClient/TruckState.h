@@ -12,11 +12,15 @@
 #include <QString>
 #include <QVariantMap>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
-class TruckState : public QObject {
+class TruckState : public QObject
+{
     Q_OBJECT
 
 public:
@@ -34,34 +38,44 @@ public:
     void updateFromJson(const QJsonObject &jsonData);
     void updateInfoFromJson(const QJsonObject &jsonData);
 
-    QString networkName() const {
+    QString networkName() const
+    {
         return m_networkName;
     }
-    QString tripId() const {
+    QString tripId() const
+    {
         return QString::number(m_tripId);
     }
-    QString originId() const {
+    QString originId() const
+    {
         return m_originId;
     }
-    QString destinationId() const {
+    QString destinationId() const
+    {
         return m_destinationId;
     }
-    QString linkId() const {
+    QString linkId() const
+    {
         return m_linkId;
     }
-    double distance() const {
+    double distance() const
+    {
         return m_distance;
     }
-    double speed() const {
+    double speed() const
+    {
         return m_speed;
     }
-    double fuelConsumption() const {
+    double fuelConsumption() const
+    {
         return m_fuelConsumption;
     }
-    double travelTime() const {
+    double travelTime() const
+    {
         return m_travelTime;
     }
-    bool isCompleted() const {
+    bool isCompleted() const
+    {
         return m_isCompleted;
     }
 

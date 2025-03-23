@@ -14,9 +14,12 @@
 #include <QMap>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 /**
  * @class TrainState
@@ -26,7 +29,8 @@ namespace TrainClient {
  * and JSON serialization methods. This class encapsulates
  * the dynamic state of a train during simulation.
  */
-class TrainState {
+class TrainState
+{
 public:
     /**
      * @brief Constructor

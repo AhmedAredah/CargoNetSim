@@ -32,9 +32,12 @@
 #include "Backend/Models/ShipSystem.h"
 
 // Forward declarations
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 class TerminalGraphServer;
 class SimulatorTimeServer;
 class ProgressBarManager;
@@ -50,9 +53,12 @@ class ApplicationLogger;
  * Contains classes and utilities for managing ship
  * simulation operations within the CargoNetSim backend.
  */
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 
 /**
  * @class ShipSimulationClient
@@ -67,7 +73,8 @@ namespace ShipClient {
  *
  * @ingroup ShipSimulation
  */
-class ShipSimulationClient : public SimulationClientBase {
+class ShipSimulationClient : public SimulationClientBase
+{
     Q_OBJECT
 
 public:

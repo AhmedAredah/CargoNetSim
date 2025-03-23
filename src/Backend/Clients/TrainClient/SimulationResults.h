@@ -16,9 +16,12 @@
 #include <QJsonObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 /**
  * @class SimulationResults
@@ -30,7 +33,8 @@ namespace TrainClient {
  * to create an instance from JSON data. This class is used
  * to encapsulate the output of a simulation run.
  */
-class SimulationResults {
+class SimulationResults
+{
 public:
     /**
      * @brief Constructor

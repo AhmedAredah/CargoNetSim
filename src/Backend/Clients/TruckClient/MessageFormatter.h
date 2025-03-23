@@ -12,9 +12,12 @@
 #include <QList>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class MessageFormatter
@@ -24,13 +27,15 @@ namespace TruckClient {
  * communication with the simulation backend across
  * different modules.
  */
-class MessageFormatter {
+class MessageFormatter
+{
 public:
     /**
      * @enum MessageType
      * @brief Defines message type categories
      */
-    enum class MessageType {
+    enum class MessageType
+    {
         SYNC       = 1000, ///< Synchronization messages
         TRIP_CTRL  = 1001, ///< Trip control messages
         TRIPS_INFO = 1002  ///< Trip information messages
@@ -40,7 +45,8 @@ public:
      * @enum MessageCode
      * @brief Defines specific message codes within types
      */
-    enum class MessageCode {
+    enum class MessageCode
+    {
         // Sync codes
         SYNC_REQ  = 0, ///< Request synchronization
         SYNC_GO   = 1, ///< Proceed with synchronization

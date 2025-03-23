@@ -8,14 +8,18 @@
 #include "MessageFormatter.h"
 #include <QJsonDocument>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 QString MessageFormatter::formatMessage(
     int msgId, bool acknowledgement,
     MessageType messageType, MessageCode messageCode,
-    const QString &content) {
+    const QString &content)
+{
     // Standard format:
     // id/ack/type/code/00/00/00/00/content/-1
     return QString("%1/%2/%3/%4/00/00/00/00/%5/-1")
@@ -27,7 +31,8 @@ QString MessageFormatter::formatMessage(
 }
 
 QString MessageFormatter::formatSyncRequest(
-    int msgId, double simTime, double simHorizon) {
+    int msgId, double simTime, double simHorizon)
+{
     QString content =
         QString("%1/%2").arg(simTime).arg(simHorizon);
 
@@ -37,7 +42,8 @@ QString MessageFormatter::formatSyncRequest(
 
 QString MessageFormatter::formatSyncGo(int    msgId,
                                        double currentTime,
-                                       double nextTime) {
+                                       double nextTime)
+{
     QString content =
         QString("%1/%2")
             .arg(static_cast<int>(currentTime))
@@ -48,7 +54,8 @@ QString MessageFormatter::formatSyncGo(int    msgId,
 }
 
 QString MessageFormatter::formatSyncEnd(int    msgId,
-                                        double simTime) {
+                                        double simTime)
+{
     QString content =
         QString("%1").arg(static_cast<int>(simTime));
 
@@ -58,7 +65,8 @@ QString MessageFormatter::formatSyncEnd(int    msgId,
 
 QString MessageFormatter::formatAddTrip(
     int msgId, int tripId, int originId, int destinationId,
-    double startTime, const QList<int> &linkIds) {
+    double startTime, const QList<int> &linkIds)
+{
     // Format content with link count and links
     QString content = QString("%1/%2/%3/%4/%5")
                           .arg(tripId)
@@ -68,7 +76,8 @@ QString MessageFormatter::formatAddTrip(
                           .arg(linkIds.size());
 
     // Add each link ID to the content
-    for (int linkId : linkIds) {
+    for (int linkId : linkIds)
+    {
         content += QString("/%1").arg(linkId);
     }
 
@@ -78,11 +87,13 @@ QString MessageFormatter::formatAddTrip(
 }
 
 QJsonObject
-MessageFormatter::parseMessage(const QString &message) {
+MessageFormatter::parseMessage(const QString &message)
+{
     QJsonObject result;
     QStringList parts = message.split('/');
 
-    if (parts.size() < 9) {
+    if (parts.size() < 9)
+    {
         // Invalid message format
         result["valid"] = false;
         return result;
@@ -97,12 +108,15 @@ MessageFormatter::parseMessage(const QString &message) {
 
     // Extract content
     QString content;
-    for (int i = 8; i < parts.size(); ++i) {
-        if (parts[i] == "-1") {
+    for (int i = 8; i < parts.size(); ++i)
+    {
+        if (parts[i] == "-1")
+        {
             break;
         }
 
-        if (i > 8) {
+        if (i > 8)
+        {
             content += "/";
         }
 
@@ -115,15 +129,16 @@ MessageFormatter::parseMessage(const QString &message) {
 }
 
 QJsonObject
-MessageFormatter::parseTripInfo(const QString &message) {
+MessageFormatter::parseTripInfo(const QString &message)
+{
     QJsonObject parsed = parseMessage(message);
 
     if (!parsed["valid"].toBool()
         || parsed["messageType"].toInt()
                != static_cast<int>(MessageType::TRIPS_INFO)
         || parsed["messageCode"].toInt()
-               != static_cast<int>(
-                   MessageCode::TRIP_INFO)) {
+               != static_cast<int>(MessageCode::TRIP_INFO))
+    {
         // Not a valid trip info message
         return QJsonObject();
     }
@@ -133,7 +148,8 @@ MessageFormatter::parseTripInfo(const QString &message) {
     QJsonDocument doc =
         QJsonDocument::fromJson(content.toUtf8());
 
-    if (doc.isNull() || !doc.isObject()) {
+    if (doc.isNull() || !doc.isObject())
+    {
         return QJsonObject();
     }
 
@@ -141,14 +157,16 @@ MessageFormatter::parseTripInfo(const QString &message) {
 }
 
 QJsonObject
-MessageFormatter::parseTripEnd(const QString &message) {
+MessageFormatter::parseTripEnd(const QString &message)
+{
     QJsonObject parsed = parseMessage(message);
 
     if (!parsed["valid"].toBool()
         || parsed["messageType"].toInt()
                != static_cast<int>(MessageType::TRIPS_INFO)
         || parsed["messageCode"].toInt()
-               != static_cast<int>(MessageCode::TRIP_END)) {
+               != static_cast<int>(MessageCode::TRIP_END))
+    {
         // Not a valid trip end message
         return QJsonObject();
     }
@@ -158,7 +176,8 @@ MessageFormatter::parseTripEnd(const QString &message) {
     QJsonDocument doc =
         QJsonDocument::fromJson(content.toUtf8());
 
-    if (doc.isNull() || !doc.isObject()) {
+    if (doc.isNull() || !doc.isObject())
+    {
         return QJsonObject();
     }
 

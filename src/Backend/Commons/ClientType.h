@@ -9,8 +9,10 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class ClientType
@@ -23,7 +25,8 @@ namespace Backend {
  * system integration, enabling use in QML, signal-slot
  * connections, and property systems.
  */
-class ClientType {
+class ClientType
+{
     Q_GADGET
 public:
     /**
@@ -31,7 +34,8 @@ public:
      * @brief Enumeration of available client types in the
      * cargo network system.
      */
-    enum Value {
+    enum Value
+    {
         ShipClient     = 0, /**< Maritime vessel client */
         TrainClient    = 1, /**< Railway transport client */
         TruckClient    = 2, /**< Road transport client */
@@ -44,7 +48,9 @@ public:
      * Initializes with ShipClient as the default value.
      */
     constexpr ClientType()
-        : m_value(ShipClient) {}
+        : m_value(ShipClient)
+    {
+    }
 
     /**
      * @brief Constructor from enum value.
@@ -52,13 +58,16 @@ public:
      * with.
      */
     constexpr ClientType(Value value)
-        : m_value(value) {}
+        : m_value(value)
+    {
+    }
 
     /**
      * @brief Implicit conversion operator to enum Value.
      * @return The underlying enum value.
      */
-    constexpr operator Value() const {
+    constexpr operator Value() const
+    {
         return m_value;
     }
 
@@ -67,8 +76,10 @@ public:
      * string.
      * @return String representation of the client type.
      */
-    QString toString() const {
-        switch (m_value) {
+    QString toString() const
+    {
+        switch (m_value)
+        {
         case ShipClient:
             return QStringLiteral("ShipClient");
         case TrainClient:
@@ -93,7 +104,8 @@ private:
  * @return True if the client types are the same, false
  * otherwise.
  */
-inline bool operator==(ClientType lhs, ClientType rhs) {
+inline bool operator==(ClientType lhs, ClientType rhs)
+{
     return lhs.operator ClientType::Value()
            == rhs.operator ClientType::Value();
 }
@@ -105,7 +117,8 @@ inline bool operator==(ClientType lhs, ClientType rhs) {
  * @return True if the client types are different, false
  * otherwise.
  */
-inline bool operator!=(ClientType lhs, ClientType rhs) {
+inline bool operator!=(ClientType lhs, ClientType rhs)
+{
     return !(lhs == rhs);
 }
 

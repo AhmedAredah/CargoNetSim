@@ -7,8 +7,10 @@
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 ConnectionLabel::ConnectionLabel(QGraphicsItem *parent)
     : QGraphicsObject(parent)
@@ -30,43 +32,53 @@ ConnectionLabel::ConnectionLabel(QGraphicsItem *parent)
     setZValue(5);
 }
 
-void ConnectionLabel::setText(const QString &text) {
-    if (m_text != text) {
+void ConnectionLabel::setText(const QString &text)
+{
+    if (m_text != text)
+    {
         m_text = text;
         update();
         emit textChanged(text);
     }
 }
 
-void ConnectionLabel::setColor(const QColor &color) {
-    if (m_color != color) {
+void ConnectionLabel::setColor(const QColor &color)
+{
+    if (m_color != color)
+    {
         m_color = color;
         update();
         emit colorChanged(color);
     }
 }
 
-void ConnectionLabel::setSelected(bool selected) {
-    if (m_isSelected != selected) {
+void ConnectionLabel::setSelected(bool selected)
+{
+    if (m_isSelected != selected)
+    {
         m_isSelected = selected;
         update();
         emit selectionChanged(selected);
     }
 }
 
-QRectF ConnectionLabel::boundingRect() const {
+QRectF ConnectionLabel::boundingRect() const
+{
     return m_boundingRect;
 }
 
 void ConnectionLabel::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
     // Draw label background
-    if (m_isHovered) {
+    if (m_isHovered)
+    {
         painter->setBrush(QBrush(QColor(
             255, 255, 0))); // Light yellow when hovered
-    } else {
+    }
+    else
+    {
         painter->setBrush(QBrush(Qt::white));
     }
 
@@ -82,7 +94,8 @@ void ConnectionLabel::paint(
                       m_text);
 
     // Draw selection indicator if selected
-    if (m_isSelected) {
+    if (m_isSelected)
+    {
         painter->setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter->setBrush(Qt::NoBrush);
         painter->drawRect(
@@ -91,10 +104,13 @@ void ConnectionLabel::paint(
 }
 
 void ConnectionLabel::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
-    if (event->button() == Qt::LeftButton) {
+    QGraphicsSceneMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
         // Clear previous selections
-        if (scene()) {
+        if (scene())
+        {
             scene()->clearSelection();
         }
 
@@ -106,13 +122,16 @@ void ConnectionLabel::mousePressEvent(
         emit clicked();
 
         event->accept();
-    } else {
+    }
+    else
+    {
         QGraphicsObject::mousePressEvent(event);
     }
 }
 
 void ConnectionLabel::hoverEnterEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     m_isHovered = true;
     setCursor(QCursor(Qt::PointingHandCursor));
     update();
@@ -120,14 +139,16 @@ void ConnectionLabel::hoverEnterEvent(
 }
 
 void ConnectionLabel::hoverLeaveEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     m_isHovered = false;
     unsetCursor();
     update();
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
-QMap<QString, QVariant> ConnectionLabel::toDict() const {
+QMap<QString, QVariant> ConnectionLabel::toDict() const
+{
     QMap<QString, QVariant> data;
 
     data["text"]  = m_text;
@@ -147,7 +168,8 @@ QMap<QString, QVariant> ConnectionLabel::toDict() const {
 
 ConnectionLabel *ConnectionLabel::fromDict(
     const QMap<QString, QVariant> &data,
-    QGraphicsItem                 *parent) {
+    QGraphicsItem                 *parent)
+{
     ConnectionLabel *instance = new ConnectionLabel(parent);
 
     // Set properties

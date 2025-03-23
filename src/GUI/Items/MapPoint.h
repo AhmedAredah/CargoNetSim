@@ -7,8 +7,10 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class TerminalItem;
 
@@ -19,7 +21,8 @@ class TerminalItem;
  * that can be linked to a terminal. It can have different
  * shapes and belongs to a specific network region.
  */
-class MapPoint : public QGraphicsObject {
+class MapPoint : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -65,7 +68,8 @@ public:
     /**
      * @brief Sets the region of the point
      */
-    void setRegion(const QString &region) {
+    void setRegion(const QString &region)
+    {
         this->region = region;
     }
 
@@ -81,35 +85,40 @@ public:
      *
      * @return TerminalItem* The linked terminal or nullptr
      */
-    TerminalItem *getLinkedTerminal() const {
+    TerminalItem *getLinkedTerminal() const
+    {
         return terminal;
     }
 
     /**
      * @brief Get the x coordinate
      */
-    qreal getX() const {
+    qreal getX() const
+    {
         return x;
     }
 
     /**
      * @brief Get the y coordinate
      */
-    qreal getY() const {
+    qreal getY() const
+    {
         return y;
     }
 
     /**
      * @brief Get the network region
      */
-    QString getRegion() const {
+    QString getRegion() const
+    {
         return region;
     }
 
     /**
      * @brief Get the properties map
      */
-    const QMap<QString, QVariant> &getProperties() const {
+    const QMap<QString, QVariant> &getProperties() const
+    {
         return properties;
     }
 

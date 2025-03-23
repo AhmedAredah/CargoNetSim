@@ -11,9 +11,12 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class IntegrationLink
@@ -22,7 +25,8 @@ namespace TruckClient {
  * Models a connection between nodes with detailed traffic
  * properties such as speed, capacity, and signal phasing.
  */
-class IntegrationLink : public QObject {
+class IntegrationLink : public QObject
+{
     Q_OBJECT
 
     // Link properties as Q_PROPERTY for meta-object access
@@ -172,82 +176,108 @@ public:
              QObject           *parent = nullptr);
 
     // Getters
-    int linkId() const {
+    int linkId() const
+    {
         return m_linkId;
     }
-    int upstreamNodeId() const {
+    int upstreamNodeId() const
+    {
         return m_upstreamNodeId;
     }
-    int downstreamNodeId() const {
+    int downstreamNodeId() const
+    {
         return m_downstreamNodeId;
     }
-    float length() const {
+    float length() const
+    {
         return m_length;
     }
-    float freeSpeed() const {
+    float freeSpeed() const
+    {
         return m_freeSpeed;
     }
-    float saturationFlow() const {
+    float saturationFlow() const
+    {
         return m_saturationFlow;
     }
-    float lanes() const {
+    float lanes() const
+    {
         return m_lanes;
     }
-    float speedCoeffVariation() const {
+    float speedCoeffVariation() const
+    {
         return m_speedCoeffVariation;
     }
-    float speedAtCapacity() const {
+    float speedAtCapacity() const
+    {
         return m_speedAtCapacity;
     }
-    float jamDensity() const {
+    float jamDensity() const
+    {
         return m_jamDensity;
     }
-    int turnProhibition() const {
+    int turnProhibition() const
+    {
         return m_turnProhibition;
     }
-    int prohibitionStart() const {
+    int prohibitionStart() const
+    {
         return m_prohibitionStart;
     }
-    int prohibitionEnd() const {
+    int prohibitionEnd() const
+    {
         return m_prohibitionEnd;
     }
-    int opposingLink1() const {
+    int opposingLink1() const
+    {
         return m_opposingLink1;
     }
-    int opposingLink2() const {
+    int opposingLink2() const
+    {
         return m_opposingLink2;
     }
-    int trafficSignal() const {
+    int trafficSignal() const
+    {
         return m_trafficSignal;
     }
-    int phase1() const {
+    int phase1() const
+    {
         return m_phase1;
     }
-    int phase2() const {
+    int phase2() const
+    {
         return m_phase2;
     }
-    int vehicleClassProhibition() const {
+    int vehicleClassProhibition() const
+    {
         return m_vehicleClassProhibition;
     }
-    int surveillanceLevel() const {
+    int surveillanceLevel() const
+    {
         return m_surveillanceLevel;
     }
-    QString description() const {
+    QString description() const
+    {
         return m_description;
     }
-    float lengthScale() const {
+    float lengthScale() const
+    {
         return m_lengthScale;
     }
-    float speedScale() const {
+    float speedScale() const
+    {
         return m_speedScale;
     }
-    float saturationFlowScale() const {
+    float saturationFlowScale() const
+    {
         return m_saturationFlowScale;
     }
-    float speedAtCapacityScale() const {
+    float speedAtCapacityScale() const
+    {
         return m_speedAtCapacityScale;
     }
-    float jamDensityScale() const {
+    float jamDensityScale() const
+    {
         return m_jamDensityScale;
     }
 

@@ -13,8 +13,10 @@
 #include <QStyle>
 #include <QStyleOption>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 int MapPoint::POINT_ID = 0;
 
@@ -30,9 +32,11 @@ MapPoint::MapPoint(
     , region(region)
     , terminal(terminal)
     , color(Qt::black)
-    , properties(properties) {
+    , properties(properties)
+{
     // Initialize properties if none provided
-    if (this->properties.isEmpty()) {
+    if (this->properties.isEmpty())
+    {
         this->properties["x"] = x;
         this->properties["y"] = y;
         this->properties["Network_ID"] =
@@ -53,15 +57,18 @@ MapPoint::MapPoint(
     setAcceptHoverEvents(true);
 }
 
-void MapPoint::setLinkedTerminal(
-    TerminalItem *newTerminal) {
+void MapPoint::setLinkedTerminal(TerminalItem *newTerminal)
+{
     TerminalItem *oldTerminal = terminal;
     terminal                  = newTerminal;
 
-    if (terminal) {
+    if (terminal)
+    {
         properties["LinkedTerminal"] =
             terminal->getProperties()["ID"];
-    } else {
+    }
+    else
+    {
         properties.remove("LinkedTerminal");
     }
 
@@ -72,8 +79,10 @@ void MapPoint::setLinkedTerminal(
     update();
 }
 
-void MapPoint::setColor(const QColor &newColor) {
-    if (color != newColor) {
+void MapPoint::setColor(const QColor &newColor)
+{
+    if (color != newColor)
+    {
         color = newColor;
         emit colorChanged(color);
         update();
@@ -81,18 +90,23 @@ void MapPoint::setColor(const QColor &newColor) {
 }
 
 void MapPoint::updateProperties(
-    const QMap<QString, QVariant> &newProperties) {
+    const QMap<QString, QVariant> &newProperties)
+{
     for (auto it = newProperties.constBegin();
-         it != newProperties.constEnd(); ++it) {
+         it != newProperties.constEnd(); ++it)
+    {
         properties[it.key()] = it.value();
     }
     emit propertiesChanged();
 }
 
-QRectF MapPoint::boundingRect() const {
-    if (terminal) {
+QRectF MapPoint::boundingRect() const
+{
+    if (terminal)
+    {
         const QPixmap &pixmap = terminal->getPixmap();
-        if (!pixmap.isNull()) {
+        if (!pixmap.isNull())
+        {
             int pixmapWidth  = pixmap.width();
             int pixmapHeight = pixmap.height();
             return QRectF(-pixmapWidth / 2,
@@ -107,12 +121,15 @@ QRectF MapPoint::boundingRect() const {
 
 void MapPoint::paint(QPainter *painter,
                      const QStyleOptionGraphicsItem *option,
-                     QWidget *widget) {
-    if (terminal) {
+                     QWidget                        *widget)
+{
+    if (terminal)
+    {
         // If linked to a terminal, draw terminal icon at
         // reduced opacity
         const QPixmap &pixmap = terminal->getPixmap();
-        if (!pixmap.isNull()) {
+        if (!pixmap.isNull())
+        {
             painter->setOpacity(
                 0.7); // Slightly transparent to show it's a
                       // link
@@ -122,16 +139,23 @@ void MapPoint::paint(QPainter *painter,
                                 -pixmapHeight / 2, pixmap);
             painter->setOpacity(1.0);
         }
-    } else {
+    }
+    else
+    {
         // Draw a shape if no terminal
         painter->setPen(QPen(Qt::black, 2));
         painter->setBrush(QBrush(color));
 
-        if (shape == "circle") {
+        if (shape == "circle")
+        {
             painter->drawEllipse(-7, -7, 14, 14);
-        } else if (shape == "rectangle") {
+        }
+        else if (shape == "rectangle")
+        {
             painter->drawRect(-7, -7, 14, 14);
-        } else if (shape == "triangle") {
+        }
+        else if (shape == "triangle")
+        {
             QPainterPath path;
             path.moveTo(0, -7);
             path.lineTo(7, 7);
@@ -142,7 +166,8 @@ void MapPoint::paint(QPainter *painter,
     }
 
     // Draw selection indicator
-    if (option->state & QStyle::State_Selected) {
+    if (option->state & QStyle::State_Selected)
+    {
         painter->setPen(QPen(Qt::blue, 2, Qt::DashLine));
         painter->setBrush(Qt::NoBrush);
         painter->drawRect(boundingRect());
@@ -150,15 +175,19 @@ void MapPoint::paint(QPainter *painter,
 }
 
 void MapPoint::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
-    if (event->button() == Qt::RightButton) {
+    QGraphicsSceneMouseEvent *event)
+{
+    if (event->button() == Qt::RightButton)
+    {
         // Forward to context menu event handler
         QGraphicsSceneContextMenuEvent contextEvent(
             QEvent::GraphicsSceneContextMenu);
         contextEvent.setScenePos(event->scenePos());
         contextEvent.setScreenPos(event->screenPos());
         contextMenuEvent(&contextEvent);
-    } else {
+    }
+    else
+    {
         // Emit clicked signal
         emit clicked(this);
         QGraphicsObject::mousePressEvent(event);
@@ -166,13 +195,15 @@ void MapPoint::mousePressEvent(
 }
 
 void MapPoint::contextMenuEvent(
-    QGraphicsSceneContextMenuEvent *event) {
+    QGraphicsSceneContextMenuEvent *event)
+{
     showContextMenu(event);
     event->accept();
 }
 
 void MapPoint::showContextMenu(
-    QGraphicsSceneContextMenuEvent *event) {
+    QGraphicsSceneContextMenuEvent *event)
+{
     QMenu menu;
 
     // Create sub-actions for terminal creation
@@ -200,26 +231,40 @@ void MapPoint::showContextMenu(
 
     QAction *selectedAction = menu.exec(event->screenPos());
 
-    if (selectedAction == originAction) {
+    if (selectedAction == originAction)
+    {
         createTerminalAtPosition("Origin");
-    } else if (selectedAction == destinationAction) {
+    }
+    else if (selectedAction == destinationAction)
+    {
         createTerminalAtPosition("Destination");
-    } else if (selectedAction == seaTerminalAction) {
+    }
+    else if (selectedAction == seaTerminalAction)
+    {
         createTerminalAtPosition("Sea Port Terminal");
-    } else if (selectedAction == intermodalTerminalAction) {
+    }
+    else if (selectedAction == intermodalTerminalAction)
+    {
         createTerminalAtPosition(
             "Intermodal Land Terminal");
-    } else if (selectedAction == trainDepotAction) {
+    }
+    else if (selectedAction == trainDepotAction)
+    {
         createTerminalAtPosition("Train Stop/Depot");
-    } else if (selectedAction == parkingAction) {
+    }
+    else if (selectedAction == parkingAction)
+    {
         createTerminalAtPosition("Truck Parking");
-    } else if (selectedAction == unlinkAction) {
+    }
+    else if (selectedAction == unlinkAction)
+    {
         setLinkedTerminal(nullptr);
     }
 }
 
 void MapPoint::createTerminalAtPosition(
-    const QString &terminalType) {
+    const QString &terminalType)
+{
     // This will be implemented to call the ViewController's
     // terminal creation method Since we need to avoid
     // circular dependencies, this should be handled by
@@ -235,7 +280,8 @@ void MapPoint::createTerminalAtPosition(
     // link it, but that requires access to MainWindow
 }
 
-QMap<QString, QVariant> MapPoint::toDict() const {
+QMap<QString, QVariant> MapPoint::toDict() const
+{
     QMap<QString, QVariant> data;
 
     data["referenced_network_ID"] =
@@ -250,7 +296,8 @@ QMap<QString, QVariant> MapPoint::toDict() const {
     data["z_value"]    = zValue();
 
     // Add terminal ID if there's a linked terminal
-    if (terminal) {
+    if (terminal)
+    {
         data["terminal_id"] =
             terminal->getProperties().value("ID");
     }
@@ -260,12 +307,14 @@ QMap<QString, QVariant> MapPoint::toDict() const {
 
 MapPoint *MapPoint::fromDict(
     const QMap<QString, QVariant>   &data,
-    const QMap<int, TerminalItem *> &terminalsById) {
+    const QMap<int, TerminalItem *> &terminalsById)
+{
     // Find linked terminal by ID if terminals dictionary is
     // provided
     TerminalItem *terminal = nullptr;
     if (data.contains("terminal_id")
-        && !terminalsById.isEmpty()) {
+        && !terminalsById.isEmpty())
+    {
         int terminalId = data["terminal_id"].toInt();
         terminal       = terminalsById.value(terminalId);
     }

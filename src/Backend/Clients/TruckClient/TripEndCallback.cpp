@@ -7,35 +7,45 @@
 
 #include "TripEndCallback.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 TripEndCallbackManager::TripEndCallbackManager(
     QObject *parent)
-    : QObject(parent) {}
+    : QObject(parent)
+{
+}
 
 void TripEndCallbackManager::registerGlobalCallback(
     const QString                           &callbackId,
-    std::function<void(const TripEndData &)> callback) {
+    std::function<void(const TripEndData &)> callback)
+{
     m_globalCallbacks[callbackId] = callback;
 }
 
 void TripEndCallbackManager::registerTripCallback(
     const QString &tripId, const QString &callbackId,
-    std::function<void(const TripEndData &)> callback) {
+    std::function<void(const TripEndData &)> callback)
+{
     m_tripCallbacks[tripId][callbackId] = callback;
 }
 
 void TripEndCallbackManager::registerNetworkCallback(
     const QString &networkName, const QString &callbackId,
-    std::function<void(const TripEndData &)> callback) {
+    std::function<void(const TripEndData &)> callback)
+{
     m_networkCallbacks[networkName][callbackId] = callback;
 }
 
 bool TripEndCallbackManager::unregisterGlobalCallback(
-    const QString &callbackId) {
-    if (!m_globalCallbacks.contains(callbackId)) {
+    const QString &callbackId)
+{
+    if (!m_globalCallbacks.contains(callbackId))
+    {
         return false;
     }
 
@@ -44,16 +54,19 @@ bool TripEndCallbackManager::unregisterGlobalCallback(
 }
 
 bool TripEndCallbackManager::unregisterTripCallback(
-    const QString &tripId, const QString &callbackId) {
+    const QString &tripId, const QString &callbackId)
+{
     if (!m_tripCallbacks.contains(tripId)
-        || !m_tripCallbacks[tripId].contains(callbackId)) {
+        || !m_tripCallbacks[tripId].contains(callbackId))
+    {
         return false;
     }
 
     m_tripCallbacks[tripId].remove(callbackId);
 
     // Clean up empty maps
-    if (m_tripCallbacks[tripId].isEmpty()) {
+    if (m_tripCallbacks[tripId].isEmpty())
+    {
         m_tripCallbacks.remove(tripId);
     }
 
@@ -61,52 +74,62 @@ bool TripEndCallbackManager::unregisterTripCallback(
 }
 
 bool TripEndCallbackManager::unregisterNetworkCallback(
-    const QString &networkName, const QString &callbackId) {
+    const QString &networkName, const QString &callbackId)
+{
     if (!m_networkCallbacks.contains(networkName)
         || !m_networkCallbacks[networkName].contains(
-            callbackId)) {
+            callbackId))
+    {
         return false;
     }
 
     m_networkCallbacks[networkName].remove(callbackId);
 
     // Clean up empty maps
-    if (m_networkCallbacks[networkName].isEmpty()) {
+    if (m_networkCallbacks[networkName].isEmpty())
+    {
         m_networkCallbacks.remove(networkName);
     }
 
     return true;
 }
 
-void TripEndCallbackManager::unregisterAllCallbacks() {
+void TripEndCallbackManager::unregisterAllCallbacks()
+{
     m_globalCallbacks.clear();
     m_tripCallbacks.clear();
     m_networkCallbacks.clear();
 }
 
 void TripEndCallbackManager::onTripEnded(
-    const TripEndData &data) {
+    const TripEndData &data)
+{
 
     // Emit the signal for QObject connections
     emit tripEnded(data);
 
     // Execute global callbacks
-    for (const auto &callback : m_globalCallbacks) {
+    for (const auto &callback : m_globalCallbacks)
+    {
         callback(data);
     }
 
     // Execute trip-specific callbacks
-    if (m_tripCallbacks.contains(data.tripId)) {
+    if (m_tripCallbacks.contains(data.tripId))
+    {
         for (const auto &callback :
-             m_tripCallbacks[data.tripId]) {
+             m_tripCallbacks[data.tripId])
+        {
             callback(data);
         }
     }
 
     // Execute network-specific callbacks
-    if (m_networkCallbacks.contains(data.networkName)) {
+    if (m_networkCallbacks.contains(data.networkName))
+    {
         for (const auto &callback :
-             m_networkCallbacks[data.networkName]) {
+             m_networkCallbacks[data.networkName])
+        {
             callback(data);
         }
     }

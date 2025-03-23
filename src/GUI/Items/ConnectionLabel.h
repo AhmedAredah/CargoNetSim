@@ -7,10 +7,13 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
-class ConnectionLabel : public QGraphicsObject {
+class ConnectionLabel : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -19,13 +22,16 @@ public:
     virtual ~ConnectionLabel() = default;
 
     // Accessors
-    QString text() const {
+    QString text() const
+    {
         return m_text;
     }
-    QColor color() const {
+    QColor color() const
+    {
         return m_color;
     }
-    bool isSelected() const {
+    bool isSelected() const
+    {
         return m_isSelected;
     }
 

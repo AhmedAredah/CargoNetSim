@@ -4,8 +4,10 @@
 #include <QPainter>
 #include <QPainterPath>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 ShapeIcon::ShapeIcon(const QString &shapeType,
                      QWidget       *parent)
@@ -13,7 +15,8 @@ ShapeIcon::ShapeIcon(const QString &shapeType,
     , m_shapeType(shapeType)
     , m_fillColor(Qt::lightGray)
     , m_borderColor(Qt::black)
-    , m_borderWidth(1) {
+    , m_borderWidth(1)
+{
     // Set transparent background
     setStyleSheet("background-color: transparent;");
 
@@ -24,63 +27,78 @@ ShapeIcon::ShapeIcon(const QString &shapeType,
     setFocusPolicy(Qt::NoFocus);
 }
 
-QString ShapeIcon::shapeType() const {
+QString ShapeIcon::shapeType() const
+{
     return m_shapeType;
 }
 
-void ShapeIcon::setShapeType(const QString &type) {
-    if (m_shapeType != type) {
+void ShapeIcon::setShapeType(const QString &type)
+{
+    if (m_shapeType != type)
+    {
         m_shapeType = type;
         update();
         emit shapeTypeChanged(m_shapeType);
     }
 }
 
-QColor ShapeIcon::fillColor() const {
+QColor ShapeIcon::fillColor() const
+{
     return m_fillColor;
 }
 
-void ShapeIcon::setFillColor(const QColor &color) {
-    if (m_fillColor != color) {
+void ShapeIcon::setFillColor(const QColor &color)
+{
+    if (m_fillColor != color)
+    {
         m_fillColor = color;
         update();
         emit fillColorChanged(m_fillColor);
     }
 }
 
-QColor ShapeIcon::borderColor() const {
+QColor ShapeIcon::borderColor() const
+{
     return m_borderColor;
 }
 
-void ShapeIcon::setBorderColor(const QColor &color) {
-    if (m_borderColor != color) {
+void ShapeIcon::setBorderColor(const QColor &color)
+{
+    if (m_borderColor != color)
+    {
         m_borderColor = color;
         update();
         emit borderColorChanged(m_borderColor);
     }
 }
 
-int ShapeIcon::borderWidth() const {
+int ShapeIcon::borderWidth() const
+{
     return m_borderWidth;
 }
 
-void ShapeIcon::setBorderWidth(int width) {
-    if (m_borderWidth != width) {
+void ShapeIcon::setBorderWidth(int width)
+{
+    if (m_borderWidth != width)
+    {
         m_borderWidth = width;
         update();
         emit borderWidthChanged(m_borderWidth);
     }
 }
 
-QSize ShapeIcon::sizeHint() const {
+QSize ShapeIcon::sizeHint() const
+{
     return QSize(24, 24);
 }
 
-QSize ShapeIcon::minimumSizeHint() const {
+QSize ShapeIcon::minimumSizeHint() const
+{
     return QSize(12, 12);
 }
 
-void ShapeIcon::paintEvent(QPaintEvent *event) {
+void ShapeIcon::paintEvent(QPaintEvent *event)
+{
     Q_UNUSED(event);
 
     QPainter painter(this);
@@ -96,18 +114,25 @@ void ShapeIcon::paintEvent(QPaintEvent *event) {
         -m_borderWidth);
 
     // Draw the appropriate shape
-    if (m_shapeType == "circle") {
+    if (m_shapeType == "circle")
+    {
         painter.drawEllipse(rect);
-    } else if (m_shapeType == "rectangle") {
+    }
+    else if (m_shapeType == "rectangle")
+    {
         painter.drawRect(rect);
-    } else if (m_shapeType == "triangle") {
+    }
+    else if (m_shapeType == "triangle")
+    {
         QPainterPath path;
         path.moveTo(rect.center().x(), rect.top());
         path.lineTo(rect.left(), rect.bottom());
         path.lineTo(rect.right(), rect.bottom());
         path.lineTo(rect.center().x(), rect.top());
         painter.drawPath(path);
-    } else if (m_shapeType == "diamond") {
+    }
+    else if (m_shapeType == "diamond")
+    {
         QPainterPath path;
         path.moveTo(rect.center().x(), rect.top());
         path.lineTo(rect.right(), rect.center().y());
@@ -115,7 +140,9 @@ void ShapeIcon::paintEvent(QPaintEvent *event) {
         path.lineTo(rect.left(), rect.center().y());
         path.lineTo(rect.center().x(), rect.top());
         painter.drawPath(path);
-    } else {
+    }
+    else
+    {
         // Default to circle if shape type is unknown
         painter.drawEllipse(rect);
     }

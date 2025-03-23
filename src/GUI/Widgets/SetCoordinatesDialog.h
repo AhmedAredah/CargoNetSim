@@ -10,8 +10,10 @@
 #include <QString>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Dialog for setting geographic coordinates for a
@@ -22,7 +24,8 @@ namespace GUI {
  * validates the input and provides a clean interface for
  * coordinate editing.
  */
-class SetCoordinatesDialog : public QDialog {
+class SetCoordinatesDialog : public QDialog
+{
     Q_OBJECT
 
 public:

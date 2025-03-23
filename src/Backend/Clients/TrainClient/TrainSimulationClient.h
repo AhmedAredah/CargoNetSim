@@ -28,9 +28,12 @@
 #include <containerLib/container.h>
 
 // Forward declarations for dependencies
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 class TerminalGraphServer;
 class SimulatorTimeServer;
 class ProgressBarManager;
@@ -46,9 +49,12 @@ class ApplicationLogger;
  * Encapsulates classes and utilities related to train
  * simulation within the CargoNetSim backend infrastructure.
  */
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 /**
  * @class TrainSimulationClient
@@ -61,7 +67,8 @@ namespace TrainClient {
  *
  * @ingroup TrainSimulation
  */
-class TrainSimulationClient : public SimulationClientBase {
+class TrainSimulationClient : public SimulationClientBase
+{
     Q_OBJECT
 
 public:
@@ -113,7 +120,8 @@ public:
      * @note Avoid manual invocation unless synchronized
      * @warning Call only once after thread start
      */
-    void initializeClient(LoggerInterface *logger) override;
+    void initializeClient(
+        LoggerInterface *logger = nullptr) override;
 
     /**
      * @brief Defines a simulator using a network name

@@ -12,15 +12,19 @@
 #include <QStringList>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class SimulationSummaryData
  * @brief Manages truck simulation summary data
  */
-class SimulationSummaryData : public QObject {
+class SimulationSummaryData : public QObject
+{
     Q_OBJECT
 
 public:

@@ -11,9 +11,12 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class IntegrationNode
@@ -23,7 +26,8 @@ namespace TruckClient {
  * properties such as node type and information
  * availability.
  */
-class IntegrationNode : public QObject {
+class IntegrationNode : public QObject
+{
     Q_OBJECT
 
     // Node properties as Q_PROPERTY for meta-object access
@@ -103,31 +107,40 @@ public:
              QObject           *parent = nullptr);
 
     // Getters
-    int nodeId() const {
+    int nodeId() const
+    {
         return m_nodeId;
     }
-    float xCoordinate() const {
+    float xCoordinate() const
+    {
         return m_xCoordinate;
     }
-    float yCoordinate() const {
+    float yCoordinate() const
+    {
         return m_yCoordinate;
     }
-    int nodeType() const {
+    int nodeType() const
+    {
         return m_nodeType;
     }
-    int macroZoneCluster() const {
+    int macroZoneCluster() const
+    {
         return m_macroZoneCluster;
     }
-    int informationAvailability() const {
+    int informationAvailability() const
+    {
         return m_informationAvailability;
     }
-    QString description() const {
+    QString description() const
+    {
         return m_description;
     }
-    float xScale() const {
+    float xScale() const
+    {
         return m_xScale;
     }
-    float yScale() const {
+    float yScale() const
+    {
         return m_yScale;
     }
 

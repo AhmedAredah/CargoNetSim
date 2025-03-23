@@ -1,10 +1,13 @@
 #include "TerminalInterface.h"
 
-namespace CargoNetSim {
-namespace Backend {
-QString
-TerminalTypes::toString(TerminalInterface interface) {
-    switch (interface) {
+namespace CargoNetSim
+{
+namespace Backend
+{
+QString TerminalTypes::toString(TerminalInterface interface)
+{
+    switch (interface)
+    {
     case TerminalInterface::LAND_SIDE:
         return "land_side";
     case TerminalInterface::SEA_SIDE:

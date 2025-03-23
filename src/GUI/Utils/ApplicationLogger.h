@@ -10,15 +10,18 @@
 #include <QTextStream>
 #include <QWaitCondition>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Log message entry class
  *
  * Contains a single log message with its metadata
  */
-class LogEntry {
+class LogEntry
+{
 public:
     /**
      * @brief Create a new log entry
@@ -47,7 +50,8 @@ public:
  * multiple clients, error levels, and signal-based
  * notification.
  */
-class ApplicationLogger : public QObject {
+class ApplicationLogger : public QObject
+{
     Q_OBJECT
 
 public:
@@ -219,7 +223,8 @@ private:
 /**
  * @brief Custom event for log messages
  */
-class LogEvent : public QEvent {
+class LogEvent : public QEvent
+{
 public:
     static const QEvent::Type LogEventType =
         static_cast<QEvent::Type>(QEvent::User + 1);
@@ -231,7 +236,8 @@ public:
 /**
  * @brief Custom event for progress updates
  */
-class ProgressEvent : public QEvent {
+class ProgressEvent : public QEvent
+{
 public:
     static const QEvent::Type ProgressEventType =
         static_cast<QEvent::Type>(QEvent::User + 2);

@@ -4,8 +4,10 @@
 #include <QThread>
 #include <stdexcept>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 // Constructor implementation
 TerminalSimulationClient::TerminalSimulationClient(
@@ -16,18 +18,21 @@ TerminalSimulationClient::TerminalSimulationClient(
           "CargoNetSim.ResponseQueue.TerminalSim",
           "CargoNetSim.Command.TerminalSim",
           QStringList{"CargoNetSim.Response.TerminalSim"},
-          ClientType::TerminalClient) {
+          ClientType::TerminalClient)
+{
     // Log initialization for debugging and auditing
     qDebug() << "TerminalSimulationClient initialized";
 }
 
 // Destructor implementation
-TerminalSimulationClient::~TerminalSimulationClient() {
+TerminalSimulationClient::~TerminalSimulationClient()
+{
     // Lock mutex to ensure thread-safe cleanup
     QMutexLocker locker(&m_dataMutex);
 
     // Clean up terminal status objects
-    for (Terminal *terminal : m_terminalStatus.values()) {
+    for (Terminal *terminal : m_terminalStatus.values())
+    {
         delete terminal;
     }
     m_terminalStatus.clear();
@@ -37,16 +42,20 @@ TerminalSimulationClient::~TerminalSimulationClient() {
 
     // Clean up shortest path segments
     for (const QList<PathSegment *> &segments :
-         m_shortestPaths.values()) {
-        for (PathSegment *segment : segments) {
+         m_shortestPaths.values())
+    {
+        for (PathSegment *segment : segments)
+        {
             delete segment;
         }
     }
     m_shortestPaths.clear();
 
     // Clean up top paths (Path destructor handles segments)
-    for (const QList<Path *> &paths : m_topPaths.values()) {
-        for (Path *path : paths) {
+    for (const QList<Path *> &paths : m_topPaths.values())
+    {
+        for (Path *path : paths)
+        {
             delete path;
         }
     }
@@ -54,9 +63,11 @@ TerminalSimulationClient::~TerminalSimulationClient() {
 
     // Clean up only dequeued containers
     for (const QList<ContainerCore::Container *>
-             &containers : m_containers.values()) {
+             &containers : m_containers.values())
+    {
         for (ContainerCore::Container *container :
-             containers) {
+             containers)
+        {
             delete container; // Only if ownership
                               // transferred
         }
@@ -74,7 +85,8 @@ TerminalSimulationClient::~TerminalSimulationClient() {
 }
 
 // Reset server state
-bool TerminalSimulationClient::resetServer() {
+bool TerminalSimulationClient::resetServer()
+{
     // Execute reset command in serialized manner
     return executeSerializedCommand([this]() {
         // Send reset command with no parameters
@@ -85,12 +97,14 @@ bool TerminalSimulationClient::resetServer() {
 
 // Initialize client in thread
 void TerminalSimulationClient::initializeClient(
-    LoggerInterface *logger) {
+    LoggerInterface *logger)
+{
     // Call base class initialization first
     SimulationClientBase::initializeClient(logger);
 
     // Validate RabbitMQ handler presence
-    if (!m_rabbitMQHandler) {
+    if (!m_rabbitMQHandler)
+    {
         throw std::runtime_error(
             "RabbitMQ handler not set");
     }
@@ -105,11 +119,13 @@ void TerminalSimulationClient::initializeClient(
 
 // Add terminal
 bool TerminalSimulationClient::addTerminal(
-    const Terminal *terminal) {
+    const Terminal *terminal)
+{
     // Execute command with serialization
     return executeSerializedCommand([&]() {
         // Validate terminal pointer
-        if (!terminal) {
+        if (!terminal)
+        {
             qCritical() << "Null terminal pointer";
             return false;
         }
@@ -122,7 +138,8 @@ bool TerminalSimulationClient::addTerminal(
 
 // Add terminal alias
 bool TerminalSimulationClient::addTerminalAlias(
-    const QString &terminalId, const QString &alias) {
+    const QString &terminalId, const QString &alias)
+{
     // Execute alias addition serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for alias addition
@@ -138,7 +155,8 @@ bool TerminalSimulationClient::addTerminalAlias(
 
 // Get terminal aliases
 QStringList TerminalSimulationClient::getTerminalAliases(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute alias fetch command serially
     executeSerializedCommand([&]() {
         // Prepare parameters for alias retrieval
@@ -160,7 +178,8 @@ QStringList TerminalSimulationClient::getTerminalAliases(
 
 // Remove terminal
 bool TerminalSimulationClient::removeTerminal(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute removal command serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for removal
@@ -173,7 +192,8 @@ bool TerminalSimulationClient::removeTerminal(
 }
 
 // Get terminal count
-int TerminalSimulationClient::getTerminalCount() {
+int TerminalSimulationClient::getTerminalCount()
+{
     // Execute count fetch serially
     executeSerializedCommand([&]() {
         // Send count command with no parameters
@@ -188,11 +208,13 @@ int TerminalSimulationClient::getTerminalCount() {
 
 // Get terminal status
 Terminal *TerminalSimulationClient::getTerminalStatus(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute status fetch serially
     executeSerializedCommand([&]() {
         // Validate input parameter
-        if (terminalId.isEmpty()) {
+        if (terminalId.isEmpty())
+        {
             qWarning() << "Empty terminalId not supported";
             return false;
         }
@@ -210,11 +232,13 @@ Terminal *TerminalSimulationClient::getTerminalStatus(
 
 // Add route
 bool TerminalSimulationClient::addRoute(
-    const PathSegment *route) {
+    const PathSegment *route)
+{
     // Execute route addition serially
     return executeSerializedCommand([&]() {
         // Validate route pointer
-        if (!route) {
+        if (!route)
+        {
             qCritical() << "Null PathSegment pointer";
             return false;
         }
@@ -227,7 +251,8 @@ bool TerminalSimulationClient::addRoute(
 // Change route weight
 bool TerminalSimulationClient::changeRouteWeight(
     const QString &start, const QString &end, int mode,
-    const QJsonObject &attributes) {
+    const QJsonObject &attributes)
+{
     // Execute weight update serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for weight update
@@ -244,7 +269,8 @@ bool TerminalSimulationClient::changeRouteWeight(
 
 // Connect terminals by interface modes
 bool TerminalSimulationClient::
-    connectTerminalsByInterfaceModes() {
+    connectTerminalsByInterfaceModes()
+{
     // Execute connection command serially
     return executeSerializedCommand([&]() {
         // Send command with no parameters
@@ -256,7 +282,8 @@ bool TerminalSimulationClient::
 
 // Connect terminals in region by mode
 bool TerminalSimulationClient::
-    connectTerminalsInRegionByMode(const QString &region) {
+    connectTerminalsInRegionByMode(const QString &region)
+{
     // Execute region connection serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for region connection
@@ -271,7 +298,8 @@ bool TerminalSimulationClient::
 
 // Connect regions by mode
 bool TerminalSimulationClient::connectRegionsByMode(
-    int mode) {
+    int mode)
+{
     // Execute mode connection serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for mode connection
@@ -286,7 +314,8 @@ bool TerminalSimulationClient::connectRegionsByMode(
 // Find shortest path
 QList<PathSegment *>
 TerminalSimulationClient::findShortestPath(
-    const QString &start, const QString &end, int mode) {
+    const QString &start, const QString &end, int mode)
+{
     // Execute path finding serially
     executeSerializedCommand([&]() {
         // Prepare parameters for shortest path
@@ -309,7 +338,8 @@ TerminalSimulationClient::findShortestPath(
 // Find top paths
 QList<Path *> TerminalSimulationClient::findTopPaths(
     const QString &start, const QString &end, int n,
-    int mode, bool skipDelays) {
+    int mode, bool skipDelays)
+{
     // Execute top paths finding serially
     executeSerializedCommand([&]() {
         // Prepare parameters for top paths
@@ -335,14 +365,16 @@ QList<Path *> TerminalSimulationClient::findTopPaths(
 bool TerminalSimulationClient::addContainer(
     const QString                  &terminalId,
     const ContainerCore::Container *container,
-    double                          addTime) {
+    double                          addTime)
+{
     // Execute container addition serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for container addition
         QJsonObject params;
         params["terminal_id"] = terminalId;
         params["container"]   = container->toJson();
-        if (addTime >= 0.0) {
+        if (addTime >= 0.0)
+        {
             params["adding_time"] = addTime;
         }
         // Send container addition command
@@ -355,20 +387,24 @@ bool TerminalSimulationClient::addContainer(
 bool TerminalSimulationClient::addContainers(
     const QString                     &terminalId,
     QList<ContainerCore::Container *> &containers,
-    double                             addTime) {
+    double                             addTime)
+{
     // Execute containers addition serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for containers addition
         QJsonObject params;
         params["terminal_id"] = terminalId;
         QJsonArray containersArray;
-        for (const auto *container : containers) {
-            if (container) {
+        for (const auto *container : containers)
+        {
+            if (container)
+            {
                 containersArray.append(container->toJson());
             }
         }
         params["containers"] = containersArray;
-        if (addTime >= 0.0) {
+        if (addTime >= 0.0)
+        {
             params["adding_time"] = addTime;
         }
         // Send containers addition command
@@ -380,14 +416,16 @@ bool TerminalSimulationClient::addContainers(
 // Add containers from JSON
 bool TerminalSimulationClient::addContainersFromJson(
     const QString &terminalId, const QString &json,
-    double addTime) {
+    double addTime)
+{
     // Execute JSON addition serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for JSON addition
         QJsonObject params;
         params["terminal_id"]     = terminalId;
         params["containers_json"] = json;
-        if (addTime >= 0.0) {
+        if (addTime >= 0.0)
+        {
             params["adding_time"] = addTime;
         }
         // Send JSON containers command
@@ -401,7 +439,8 @@ bool TerminalSimulationClient::addContainersFromJson(
 QList<ContainerCore::Container *>
 TerminalSimulationClient::getContainersByDepartingTime(
     const QString &terminalId, double time,
-    const QString &condition) {
+    const QString &condition)
+{
     // Execute fetch by departing time serially
     executeSerializedCommand([&]() {
         // Prepare parameters for fetch
@@ -424,7 +463,8 @@ TerminalSimulationClient::getContainersByDepartingTime(
 QList<ContainerCore::Container *>
 TerminalSimulationClient::getContainersByAddedTime(
     const QString &terminalId, double time,
-    const QString &condition) {
+    const QString &condition)
+{
     // Execute fetch by added time serially
     executeSerializedCommand([&]() {
         // Prepare parameters for fetch
@@ -446,7 +486,8 @@ TerminalSimulationClient::getContainersByAddedTime(
 // Get containers by next destination
 QList<ContainerCore::Container *>
 TerminalSimulationClient::getContainersByNextDestination(
-    const QString &terminalId, const QString &destination) {
+    const QString &terminalId, const QString &destination)
+{
     // Execute fetch by destination serially
     executeSerializedCommand([&]() {
         // Prepare parameters for fetch
@@ -468,7 +509,8 @@ TerminalSimulationClient::getContainersByNextDestination(
 QList<ContainerCore::Container *> TerminalSimulationClient::
     dequeueContainersByNextDestination(
         const QString &terminalId,
-        const QString &destination) {
+        const QString &destination)
+{
     // Execute dequeue serially
     executeSerializedCommand([&]() {
         // Prepare parameters for dequeue
@@ -488,7 +530,8 @@ QList<ContainerCore::Container *> TerminalSimulationClient::
 
 // Get container count
 int TerminalSimulationClient::getContainerCount(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute count fetch serially
     executeSerializedCommand([&]() {
         // Prepare parameters for count fetch
@@ -507,7 +550,8 @@ int TerminalSimulationClient::getContainerCount(
 
 // Get available capacity
 double TerminalSimulationClient::getAvailableCapacity(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute capacity fetch serially
     executeSerializedCommand([&]() {
         // Prepare parameters for capacity fetch
@@ -525,7 +569,8 @@ double TerminalSimulationClient::getAvailableCapacity(
 
 // Get maximum capacity
 double TerminalSimulationClient::getMaxCapacity(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute max capacity fetch serially
     executeSerializedCommand([&]() {
         // Prepare parameters for max capacity fetch
@@ -543,7 +588,8 @@ double TerminalSimulationClient::getMaxCapacity(
 
 // Clear terminal containers
 bool TerminalSimulationClient::clearTerminal(
-    const QString &terminalId) {
+    const QString &terminalId)
+{
     // Execute clear command serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for clear command
@@ -556,7 +602,8 @@ bool TerminalSimulationClient::clearTerminal(
 }
 
 // Serialize server graph
-QJsonObject TerminalSimulationClient::serializeGraph() {
+QJsonObject TerminalSimulationClient::serializeGraph()
+{
     // Execute serialize command serially
     executeSerializedCommand([&]() {
         // Send serialize command with no parameters
@@ -572,7 +619,8 @@ QJsonObject TerminalSimulationClient::serializeGraph() {
 
 // Deserialize server graph
 bool TerminalSimulationClient::deserializeGraph(
-    const QJsonObject &graphData) {
+    const QJsonObject &graphData)
+{
     // Execute deserialize command serially
     return executeSerializedCommand([&]() {
         // Prepare parameters for deserialize
@@ -587,12 +635,14 @@ bool TerminalSimulationClient::deserializeGraph(
 
 // Ping server
 QJsonObject
-TerminalSimulationClient::ping(const QString &echo) {
+TerminalSimulationClient::ping(const QString &echo)
+{
     // Execute ping command serially
     executeSerializedCommand([&]() {
         // Prepare parameters for ping
         QJsonObject params;
-        if (!echo.isEmpty()) {
+        if (!echo.isEmpty())
+        {
             params["echo"] = echo;
         }
         // Send ping command to server
@@ -606,9 +656,11 @@ TerminalSimulationClient::ping(const QString &echo) {
 
 // Process incoming server messages
 void TerminalSimulationClient::processMessage(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Check for event field presence
-    if (!message.contains("event")) {
+    if (!message.contains("event"))
+    {
         return;
     }
 
@@ -617,39 +669,67 @@ void TerminalSimulationClient::processMessage(
     QString normEvent = normalizeEventName(event);
 
     // Dispatch event to appropriate handler
-    if (normEvent == "terminaladded") {
+    if (normEvent == "terminaladded")
+    {
         onTerminalAdded(message);
-    } else if (normEvent == "routeadded") {
+    }
+    else if (normEvent == "routeadded")
+    {
         onRouteAdded(message);
-    } else if (normEvent == "pathfound") {
+    }
+    else if (normEvent == "pathfound")
+    {
         onPathFound(message);
-    } else if (normEvent == "containersadded") {
+    }
+    else if (normEvent == "containersadded")
+    {
         onContainersAdded(message);
-    } else if (normEvent == "serverreset") {
+    }
+    else if (normEvent == "serverreset")
+    {
         onServerReset(message);
-    } else if (normEvent == "erroroccurred") {
+    }
+    else if (normEvent == "erroroccurred")
+    {
         onErrorOccurred(message);
-    } else if (normEvent == "terminalremoved") {
+    }
+    else if (normEvent == "terminalremoved")
+    {
         onTerminalRemoved(message);
-    } else if (normEvent == "terminalcount") {
+    }
+    else if (normEvent == "terminalcount")
+    {
         onTerminalCount(message);
-    } else if (normEvent == "containersfetched") {
+    }
+    else if (normEvent == "containersfetched")
+    {
         onContainersFetched(message);
-    } else if (normEvent == "capacityfetched") {
+    }
+    else if (normEvent == "capacityfetched")
+    {
         onCapacityFetched(message);
-    } else if (normEvent == "graphserialized") {
+    }
+    else if (normEvent == "graphserialized")
+    {
         QMutexLocker locker(&m_dataMutex);
         m_serializedGraph = message["result"].toObject();
-    } else if (normEvent == "pingresponse") {
+    }
+    else if (normEvent == "pingresponse")
+    {
         QMutexLocker locker(&m_dataMutex);
         m_pingResponse = message["result"].toObject();
-    } else {
-        if (m_logger) {
+    }
+    else
+    {
+        if (m_logger)
+        {
             m_logger->logError(
                 QString("Unknown event received:%1")
                     .arg(event),
                 static_cast<int>(m_clientType));
-        } else {
+        }
+        else
+        {
             // Log unknown events for debugging
             qWarning()
                 << "Unknown event received:" << event;
@@ -662,13 +742,15 @@ void TerminalSimulationClient::processMessage(
 
 // Handle terminal added event
 void TerminalSimulationClient::onTerminalAdded(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     QJsonObject  result = message["result"].toObject();
     QString      name = result["terminal_name"].toString();
     QMutexLocker locker(&m_dataMutex);
     Terminal    *existing =
         m_terminalStatus.value(name, nullptr);
-    if (existing) {
+    if (existing)
+    {
         delete existing;
     }
     Terminal *terminal =
@@ -677,10 +759,12 @@ void TerminalSimulationClient::onTerminalAdded(
     m_terminalStatus[name] = terminal;
 
     // Update aliases if present
-    if (result.contains("aliases")) {
+    if (result.contains("aliases"))
+    {
         QJsonArray  aliases = result["aliases"].toArray();
         QStringList aliasList;
-        for (const QJsonValue &val : aliases) {
+        for (const QJsonValue &val : aliases)
+        {
             aliasList.append(val.toString());
         }
         m_terminalAliases[name] = aliasList;
@@ -690,7 +774,8 @@ void TerminalSimulationClient::onTerminalAdded(
 
 // Handle route added event
 void TerminalSimulationClient::onRouteAdded(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract result data from message
     QJsonObject result  = message["result"].toObject();
     QString     routeId = result["route_id"].toString();
@@ -701,7 +786,8 @@ void TerminalSimulationClient::onRouteAdded(
 
 // Handle path found event
 void TerminalSimulationClient::onPathFound(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract result and parameters from message
     QJsonArray  result = message["result"].toArray();
     QJsonObject params = message["params"].toObject();
@@ -715,14 +801,17 @@ void TerminalSimulationClient::onPathFound(
     QMutexLocker locker(&m_dataMutex);
 
     // Handle top paths if 'n' is present
-    if (params.contains("n")) {
+    if (params.contains("n"))
+    {
         QList<Path *> paths;
-        for (const QJsonValue &pathVal : result) {
+        for (const QJsonValue &pathVal : result)
+        {
             QJsonObject pathObj = pathVal.toObject();
             QList<PathSegment *> segments;
             QJsonArray           segArray =
                 pathObj["segments"].toArray();
-            for (const QJsonValue &segVal : segArray) {
+            for (const QJsonValue &segVal : segArray)
+            {
                 QJsonObject  segObj  = segVal.toObject();
                 PathSegment *segment = new PathSegment(
                     QString("seg_%1").arg(
@@ -736,7 +825,8 @@ void TerminalSimulationClient::onPathFound(
             QList<QJsonObject> terminals;
             QJsonArray         termArray =
                 pathObj["terminalsInPath"].toArray();
-            for (const QJsonValue &termVal : termArray) {
+            for (const QJsonValue &termVal : termArray)
+            {
                 terminals.append(termVal.toObject());
             }
             Path *path = new Path(
@@ -749,14 +839,18 @@ void TerminalSimulationClient::onPathFound(
         }
         // Clean up old top paths
         QList<Path *> oldPaths = m_topPaths.value(key);
-        for (Path *oldPath : oldPaths) {
+        for (Path *oldPath : oldPaths)
+        {
             delete oldPath;
         }
         m_topPaths[key] = paths;
-    } else {
+    }
+    else
+    {
         // Handle shortest path
         QList<PathSegment *> segments;
-        for (const QJsonValue &segVal : result) {
+        for (const QJsonValue &segVal : result)
+        {
             QJsonObject  segObj  = segVal.toObject();
             PathSegment *segment = new PathSegment(
                 QString("seg_%1").arg(
@@ -770,7 +864,8 @@ void TerminalSimulationClient::onPathFound(
         // Clean up old shortest paths
         QList<PathSegment *> oldSegments =
             m_shortestPaths.value(key);
-        for (PathSegment *oldSeg : oldSegments) {
+        for (PathSegment *oldSeg : oldSegments)
+        {
             delete oldSeg;
         }
         m_shortestPaths[key] = segments;
@@ -781,7 +876,8 @@ void TerminalSimulationClient::onPathFound(
 
 // Handle containers added event
 void TerminalSimulationClient::onContainersAdded(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract parameters from message
     QJsonObject params = message["params"].toObject();
     QString terminalId = params["terminal_id"].toString();
@@ -792,12 +888,14 @@ void TerminalSimulationClient::onContainersAdded(
 
 // Handle server reset event
 void TerminalSimulationClient::onServerReset(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Lock mutex for thread-safe cleanup
     QMutexLocker locker(&m_dataMutex);
 
     // Clean up all terminal status objects
-    for (Terminal *terminal : m_terminalStatus.values()) {
+    for (Terminal *terminal : m_terminalStatus.values())
+    {
         delete terminal;
     }
     m_terminalStatus.clear();
@@ -805,16 +903,20 @@ void TerminalSimulationClient::onServerReset(
 
     // Clean up all shortest path segments
     for (const QList<PathSegment *> &segments :
-         m_shortestPaths.values()) {
-        for (PathSegment *segment : segments) {
+         m_shortestPaths.values())
+    {
+        for (PathSegment *segment : segments)
+        {
             delete segment;
         }
     }
     m_shortestPaths.clear();
 
     // Clean up all top paths
-    for (const QList<Path *> &paths : m_topPaths.values()) {
-        for (Path *path : paths) {
+    for (const QList<Path *> &paths : m_topPaths.values())
+    {
+        for (Path *path : paths)
+        {
             delete path;
         }
     }
@@ -822,9 +924,11 @@ void TerminalSimulationClient::onServerReset(
 
     // Clean up dequeued containers only
     for (const QList<ContainerCore::Container *>
-             &containers : m_containers.values()) {
+             &containers : m_containers.values())
+    {
         for (ContainerCore::Container *container :
-             containers) {
+             containers)
+        {
             delete container;
         }
     }
@@ -842,7 +946,8 @@ void TerminalSimulationClient::onServerReset(
 
 // Handle error event
 void TerminalSimulationClient::onErrorOccurred(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract error message from response
     QString error = message["error"].toString();
 
@@ -852,7 +957,8 @@ void TerminalSimulationClient::onErrorOccurred(
 
 // Handle terminal removed event
 void TerminalSimulationClient::onTerminalRemoved(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract parameters from message
     QJsonObject params = message["params"].toObject();
     QString terminalId = params["terminal_name"].toString();
@@ -862,7 +968,8 @@ void TerminalSimulationClient::onTerminalRemoved(
 
     // Remove and delete terminal if exists
     Terminal *terminal = m_terminalStatus.take(terminalId);
-    if (terminal) {
+    if (terminal)
+    {
         delete terminal;
     }
 
@@ -874,7 +981,8 @@ void TerminalSimulationClient::onTerminalRemoved(
 
 // Handle terminal count event
 void TerminalSimulationClient::onTerminalCount(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract count from message
     int count = message["result"].toInt();
 
@@ -888,7 +996,8 @@ void TerminalSimulationClient::onTerminalCount(
 
 // Handle containers fetched event
 void TerminalSimulationClient::onContainersFetched(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract containers and parameters
     QJsonArray  containers = message["result"].toArray();
     QJsonObject params     = message["params"].toObject();
@@ -904,16 +1013,19 @@ void TerminalSimulationClient::onContainersFetched(
     // Clean up old containers if dequeued
     QList<ContainerCore::Container *> oldContainers =
         m_containers.value(terminalId);
-    if (isDequeue) {
+    if (isDequeue)
+    {
         for (ContainerCore::Container *container :
-             oldContainers) {
+             oldContainers)
+        {
             delete container; // Ownership transferred
         }
     }
 
     // Create new container list from response
     QList<ContainerCore::Container *> newContainers;
-    for (const QJsonValue &val : containers) {
+    for (const QJsonValue &val : containers)
+    {
         ContainerCore::Container *container =
             new ContainerCore::Container(val.toObject());
         newContainers.append(container);
@@ -928,7 +1040,8 @@ void TerminalSimulationClient::onContainersFetched(
 
 // Handle capacity fetched event
 void TerminalSimulationClient::onCapacityFetched(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract capacity and parameters
     double      capacity = message["result"].toDouble();
     QJsonObject params   = message["params"].toObject();

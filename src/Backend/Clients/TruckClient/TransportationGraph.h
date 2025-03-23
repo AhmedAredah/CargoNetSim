@@ -19,9 +19,12 @@
 #include <queue>
 #include <set>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class TransportationGraph
@@ -32,7 +35,8 @@ namespace TruckClient {
  * network metrics.
  */
 template <typename T>
-class TransportationGraph : public DirectedGraph<T> {
+class TransportationGraph : public DirectedGraph<T>
+{
 public:
     /**
      * @brief Constructor
@@ -148,19 +152,25 @@ private:
 // Include implementation
 template <typename T>
 TransportationGraph<T>::TransportationGraph(QObject *parent)
-    : DirectedGraph<T>(parent) {}
+    : DirectedGraph<T>(parent)
+{
+}
 
 template <typename T>
-TransportationGraph<T>::~TransportationGraph() {}
+TransportationGraph<T>::~TransportationGraph()
+{
+}
 
 template <typename T>
 QVector<T> TransportationGraph<T>::findPathWithConstraints(
     const T &startNodeId, const T &endNodeId,
     const std::function<bool(const T &, const T &)>
-        &edgeFilter) const {
+        &edgeFilter) const
+{
     // Validate inputs
     if (!this->hasNode(startNodeId)
-        || !this->hasNode(endNodeId)) {
+        || !this->hasNode(endNodeId))
+    {
         return QVector<T>();
     }
 
@@ -176,7 +186,8 @@ QVector<T> TransportationGraph<T>::findPathWithConstraints(
         pq;
 
     // Initialize distances and predecessors
-    for (const T &node : this->getNodes()) {
+    for (const T &node : this->getNodes())
+    {
         distances[node] =
             std::numeric_limits<float>::infinity();
         predecessors[node] =
@@ -188,14 +199,16 @@ QVector<T> TransportationGraph<T>::findPathWithConstraints(
     pq.push(std::make_pair(0.0f, startNodeId));
 
     // Process nodes in order of distance
-    while (!pq.empty()) {
+    while (!pq.empty())
+    {
         float currentDist = pq.top().first;
         T     currentNode = pq.top().second;
         pq.pop();
 
         // Skip if already visited or not the best path
         if (visited.count(currentNode) > 0
-            || currentDist > distances[currentNode]) {
+            || currentDist > distances[currentNode])
+        {
             continue;
         }
 
@@ -203,23 +216,27 @@ QVector<T> TransportationGraph<T>::findPathWithConstraints(
         visited.insert(currentNode);
 
         // Destination reached?
-        if (currentNode == endNodeId) {
+        if (currentNode == endNodeId)
+        {
             break;
         }
 
         // Check all neighbors
         for (const auto &edge :
-             this->getOutgoingEdges(currentNode)) {
+             this->getOutgoingEdges(currentNode))
+        {
             T     neighbor = edge.first;
             float weight   = edge.second;
 
             // Skip if already visited
-            if (visited.count(neighbor) > 0) {
+            if (visited.count(neighbor) > 0)
+            {
                 continue;
             }
 
             // Apply edge filter
-            if (!edgeFilter(currentNode, neighbor)) {
+            if (!edgeFilter(currentNode, neighbor))
+            {
                 continue;
             }
 
@@ -227,7 +244,8 @@ QVector<T> TransportationGraph<T>::findPathWithConstraints(
             float newDist = distances[currentNode] + weight;
 
             // Update if better path found
-            if (newDist < distances[neighbor]) {
+            if (newDist < distances[neighbor])
+            {
                 distances[neighbor]    = newDist;
                 predecessors[neighbor] = currentNode;
                 pq.push(std::make_pair(newDist, neighbor));
@@ -240,14 +258,16 @@ QVector<T> TransportationGraph<T>::findPathWithConstraints(
 
     // Check if a path exists
     if (predecessors[endNodeId] == endNodeId
-        && endNodeId != startNodeId) {
+        && endNodeId != startNodeId)
+    {
         // No path found
         return path;
     }
 
     // Build path by following predecessors
     T current = endNodeId;
-    while (current != startNodeId) {
+    while (current != startNodeId)
+    {
         path.prepend(current);
         current = predecessors[current];
     }
@@ -258,7 +278,8 @@ QVector<T> TransportationGraph<T>::findPathWithConstraints(
 
 template <typename T>
 float TransportationGraph<T>::calculateCongestion(
-    const T &fromNodeId, const T &toNodeId) const {
+    const T &fromNodeId, const T &toNodeId) const
+{
     // Get traffic count for this edge
     QPair<T, T> edge    = qMakePair(fromNodeId, toNodeId);
     int         traffic = m_trafficMap.value(edge, 0);
@@ -274,7 +295,8 @@ float TransportationGraph<T>::calculateCongestion(
     float capacity = lanes * satFlow;
 
     // Calculate congestion factor
-    if (capacity <= 0.0f) {
+    if (capacity <= 0.0f)
+    {
         return 1.0f; // Default no congestion
     }
 
@@ -286,7 +308,8 @@ float TransportationGraph<T>::calculateCongestion(
 template <typename T>
 void TransportationGraph<T>::addTraffic(const T &fromNodeId,
                                         const T &toNodeId,
-                                        int vehicleCount) {
+                                        int vehicleCount)
+{
     QPair<T, T> edge = qMakePair(fromNodeId, toNodeId);
     m_trafficMap[edge] += vehicleCount;
 }
@@ -294,7 +317,8 @@ void TransportationGraph<T>::addTraffic(const T &fromNodeId,
 template <typename T>
 void TransportationGraph<T>::removeTraffic(
     const T &fromNodeId, const T &toNodeId,
-    int vehicleCount) {
+    int vehicleCount)
+{
     QPair<T, T> edge = qMakePair(fromNodeId, toNodeId);
 
     // Ensure we don't go below zero
@@ -302,36 +326,43 @@ void TransportationGraph<T>::removeTraffic(
     m_trafficMap[edge] = qMax(0, current - vehicleCount);
 
     // Remove entry if traffic is zero
-    if (m_trafficMap[edge] == 0) {
+    if (m_trafficMap[edge] == 0)
+    {
         m_trafficMap.remove(edge);
     }
 }
 
 template <typename T>
 double TransportationGraph<T>::calculatePathMetric(
-    const QVector<T> &path,
-    const QString    &metricName) const {
+    const QVector<T> &path, const QString &metricName) const
+{
     double total = 0.0;
 
     // Empty path has zero metric
-    if (path.size() <= 1) {
+    if (path.size() <= 1)
+    {
         return total;
     }
 
     // Calculate metric for each segment
-    for (int i = 0; i < path.size() - 1; ++i) {
+    for (int i = 0; i < path.size() - 1; ++i)
+    {
         T fromNode = path[i];
         T toNode   = path[i + 1];
 
         // Skip if edge doesn't exist
-        if (!this->hasEdge(fromNode, toNode)) {
+        if (!this->hasEdge(fromNode, toNode))
+        {
             continue;
         }
 
-        if (metricName == "distance") {
+        if (metricName == "distance")
+        {
             // Distance is just the edge weight
             total += this->getEdgeWeight(fromNode, toNode);
-        } else if (metricName == "time") {
+        }
+        else if (metricName == "time")
+        {
             // Time is distance / speed * congestion
             float distance =
                 this->getEdgeWeight(fromNode, toNode);
@@ -342,10 +373,13 @@ double TransportationGraph<T>::calculatePathMetric(
             float congestion =
                 calculateCongestion(fromNode, toNode);
 
-            if (speed > 0.0f) {
+            if (speed > 0.0f)
+            {
                 total += (distance / speed) * congestion;
             }
-        } else if (metricName == "cost") {
+        }
+        else if (metricName == "cost")
+        {
             // Cost model could include fuel, tolls, etc.
             float distance =
                 this->getEdgeWeight(fromNode, toNode);
@@ -363,23 +397,27 @@ double TransportationGraph<T>::calculatePathMetric(
 template <typename T>
 QList<QVector<T>>
 TransportationGraph<T>::findKShortestPaths(
-    const T &startNodeId, const T &endNodeId, int k) const {
+    const T &startNodeId, const T &endNodeId, int k) const
+{
     return yenKSP(startNodeId, endNodeId, k);
 }
 
 template <typename T>
 QVector<int>
 TransportationGraph<T>::convertNodePathToLinkPath(
-    const QVector<T> &nodePath) const {
+    const QVector<T> &nodePath) const
+{
     QVector<int> linkPath;
 
     // Skip empty paths
-    if (nodePath.size() <= 1) {
+    if (nodePath.size() <= 1)
+    {
         return linkPath;
     }
 
     // Convert nodes to links
-    for (int i = 0; i < nodePath.size() - 1; ++i) {
+    for (int i = 0; i < nodePath.size() - 1; ++i)
+    {
         T fromNode = nodePath[i];
         T toNode   = nodePath[i + 1];
 
@@ -387,7 +425,8 @@ TransportationGraph<T>::convertNodePathToLinkPath(
         QMap<QString, QVariant> attrs =
             this->getEdgeAttributes(fromNode, toNode);
 
-        if (attrs.contains("link_id")) {
+        if (attrs.contains("link_id"))
+        {
             linkPath.append(attrs["link_id"].toInt());
         }
     }
@@ -397,19 +436,22 @@ TransportationGraph<T>::convertNodePathToLinkPath(
 
 template <typename T>
 int TransportationGraph<T>::getLinkTransportationMode(
-    int linkId) const {
+    int linkId) const
+{
     return m_linkModes.value(linkId, 0);
 }
 
 template <typename T>
 void TransportationGraph<T>::setLinkTransportationMode(
-    int linkId, int modeId) {
+    int linkId, int modeId)
+{
     m_linkModes[linkId] = modeId;
 }
 
 template <typename T>
 QList<QVector<T>> TransportationGraph<T>::yenKSP(
-    const T &startNodeId, const T &endNodeId, int k) const {
+    const T &startNodeId, const T &endNodeId, int k) const
+{
     QList<QVector<T>> results;
 
     // Get first shortest path using Dijkstra
@@ -417,7 +459,8 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
         this->findShortestPath(startNodeId, endNodeId);
 
     // If no path exists or k <= 0, return empty list
-    if (firstPath.isEmpty() || k <= 0) {
+    if (firstPath.isEmpty() || k <= 0)
+    {
         return results;
     }
 
@@ -436,18 +479,21 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
     pathSet.insert(firstPath);
 
     // Find k-1 more paths
-    for (int i = 1; i < k; ++i) {
+    for (int i = 1; i < k; ++i)
+    {
         // Previous path
         const QVector<T> &prevPath = results.last();
 
         // For each node in the previous path (except last)
-        for (int j = 0; j < prevPath.size() - 1; ++j) {
+        for (int j = 0; j < prevPath.size() - 1; ++j)
+        {
             // This node is the deviation point
             T spurNode = prevPath[j];
 
             // Root path is path to deviation point
             QVector<T> rootPath;
-            for (int m = 0; m <= j; ++m) {
+            for (int m = 0; m <= j; ++m)
+            {
                 rootPath.append(prevPath[m]);
             }
 
@@ -456,7 +502,8 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
             TransportationGraph<T> tempGraph(nullptr);
 
             // Copy all nodes from original graph
-            for (const T &nodeId : this->getNodes()) {
+            for (const T &nodeId : this->getNodes())
+            {
                 tempGraph.addNode(
                     nodeId,
                     this->getNodeAttributes(nodeId));
@@ -464,27 +511,32 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
 
             // Copy all edges except those that would lead
             // to a repeat path
-            for (const T &fromNode : this->getNodes()) {
+            for (const T &fromNode : this->getNodes())
+            {
                 for (const auto &edge :
-                     this->getOutgoingEdges(fromNode)) {
+                     this->getOutgoingEdges(fromNode))
+                {
                     T     toNode = edge.first;
                     float weight = edge.second;
 
                     // Skip edges that would lead to a
                     // repeat path
                     bool shouldSkip = false;
-                    for (const QVector<T> &path : results) {
+                    for (const QVector<T> &path : results)
+                    {
                         if (path.size() > j + 1
                             && path.mid(0, j + 1)
                                    == rootPath
                             && path[j] == fromNode
-                            && path[j + 1] == toNode) {
+                            && path[j + 1] == toNode)
+                        {
                             shouldSkip = true;
                             break;
                         }
                     }
 
-                    if (!shouldSkip) {
+                    if (!shouldSkip)
+                    {
                         tempGraph.addEdge(
                             fromNode, toNode, weight,
                             this->getEdgeAttributes(
@@ -498,7 +550,8 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
                 tempGraph.findShortestPath(spurNode,
                                            endNodeId);
 
-            if (spurPath.isEmpty()) {
+            if (spurPath.isEmpty())
+            {
                 continue;
             }
 
@@ -510,16 +563,19 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
 
             // Calculate path cost
             float pathCost = 0.0f;
-            for (int m = 0; m < totalPath.size() - 1; ++m) {
+            for (int m = 0; m < totalPath.size() - 1; ++m)
+            {
                 if (this->hasEdge(totalPath[m],
-                                  totalPath[m + 1])) {
+                                  totalPath[m + 1]))
+                {
                     pathCost += this->getEdgeWeight(
                         totalPath[m], totalPath[m + 1]);
                 }
             }
 
             // Add to candidates if not already found
-            if (pathSet.find(totalPath) == pathSet.end()) {
+            if (pathSet.find(totalPath) == pathSet.end())
+            {
                 candidates.push(
                     std::make_pair(pathCost, totalPath));
                 pathSet.insert(totalPath);
@@ -527,7 +583,8 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
         }
 
         // No more candidates?
-        if (candidates.empty()) {
+        if (candidates.empty())
+        {
             break;
         }
 
@@ -544,8 +601,10 @@ QList<QVector<T>> TransportationGraph<T>::yenKSP(
 } // namespace CargoNetSim
 
 // Explicit instantiations for common types
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 extern template class TruckClient::TransportationGraph<int>;
 extern template class TruckClient::TransportationGraph<
     QString>;

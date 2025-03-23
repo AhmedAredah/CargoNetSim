@@ -6,8 +6,10 @@
 #include <QPointF>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @class RegionCenterPoint
@@ -19,7 +21,8 @@ namespace GUI {
  * including geographic coordinates and shared coordinates
  * that are used for global map positioning.
  */
-class RegionCenterPoint : public QGraphicsObject {
+class RegionCenterPoint : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -75,7 +78,8 @@ public:
      * @return QMap<QString, QVariant> of the item
      * properties
      */
-    QMap<QString, QVariant> getProperties() const {
+    QMap<QString, QVariant> getProperties() const
+    {
         return properties;
     }
 

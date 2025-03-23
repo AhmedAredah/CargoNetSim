@@ -1,12 +1,16 @@
 #include "TransportationMode.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 ContainerCore::Container::HaulerType
 TransportationTypes::toContainerHauler(
-    TransportationMode mode) {
-    switch (mode) {
+    TransportationMode mode)
+{
+    switch (mode)
+    {
     case TransportationMode::Ship:
         return ContainerCore::Container::HaulerType::
             waterTransport;
@@ -22,8 +26,10 @@ TransportationTypes::toContainerHauler(
 
 TransportationTypes::TransportationMode
 TransportationTypes::fromContainerHauler(
-    ContainerCore::Container::HaulerType hauler) {
-    switch (hauler) {
+    ContainerCore::Container::HaulerType hauler)
+{
+    switch (hauler)
+    {
     case ContainerCore::Container::HaulerType::
         waterTransport:
         return TransportationMode::Ship;
@@ -38,8 +44,10 @@ TransportationTypes::fromContainerHauler(
 }
 
 TransportationTypes::TransportationMode
-TransportationTypes::fromInt(int value) {
-    switch (value) {
+TransportationTypes::fromInt(int value)
+{
+    switch (value)
+    {
     case static_cast<int>(TransportationMode::Ship):
         return TransportationMode::Ship;
     case static_cast<int>(TransportationMode::Truck):
@@ -53,7 +61,8 @@ TransportationTypes::fromInt(int value) {
 }
 
 QString
-TransportationTypes::toString(TransportationMode mode) {
+TransportationTypes::toString(TransportationMode mode)
+{
     const QMetaEnum metaEnum =
         QMetaEnum::fromType<TransportationMode>();
     return QString(

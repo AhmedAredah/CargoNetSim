@@ -13,8 +13,10 @@
 #include <QStyleOptionGraphicsItem>
 #include <cmath>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Initialize static members
 int ConnectionLine::CONNECTION_LINE_ID = 0;
@@ -52,7 +54,8 @@ ConnectionLine::ConnectionLine(
     , m_id(getNewConnectionID())
     , m_isHovered(false)
     , m_animObject(nullptr)
-    , m_animation(nullptr) {
+    , m_animation(nullptr)
+{
     // Set higher z-value to ensure visibility
     setZValue(4);
 
@@ -63,7 +66,8 @@ ConnectionLine::ConnectionLine(
     setFlags(QGraphicsItem::ItemIsSelectable);
 
     // Initialize properties if needed
-    if (m_properties.isEmpty()) {
+    if (m_properties.isEmpty())
+    {
         initializeProperties();
     }
 
@@ -84,22 +88,26 @@ ConnectionLine::ConnectionLine(
     updatePosition();
 }
 
-ConnectionLine::~ConnectionLine() {
+ConnectionLine::~ConnectionLine()
+{
     // Label is automatically deleted as a child item
 }
 
-void ConnectionLine::setRegion(const QString &region) {
-    if (m_region != region) {
+void ConnectionLine::setRegion(const QString &region)
+{
+    if (m_region != region)
+    {
         m_region               = region;
         m_properties["Region"] = region;
         emit regionChanged(region);
     }
 }
 
-void ConnectionLine::setConnectionType(
-    const QString &type) {
+void ConnectionLine::setConnectionType(const QString &type)
+{
     if (m_connectionType != type
-        && CONNECTION_STYLES.contains(type)) {
+        && CONNECTION_STYLES.contains(type))
+    {
         m_connectionType                = type;
         m_properties["Connection type"] = type;
 
@@ -119,35 +127,43 @@ void ConnectionLine::setConnectionType(
 }
 
 void ConnectionLine::setProperty(const QString  &key,
-                                 const QVariant &value) {
-    if (m_properties.value(key) != value) {
+                                 const QVariant &value)
+{
+    if (m_properties.value(key) != value)
+    {
         m_properties[key] = value;
         update(); // Redraw if necessary
         emit propertyChanged(key, value);
     }
 }
 
-void ConnectionLine::createConnections() {
+void ConnectionLine::createConnections()
+{
     // Connect to start and end items' position changes
-    if (dynamic_cast<TerminalItem *>(m_startItem)) {
+    if (dynamic_cast<TerminalItem *>(m_startItem))
+    {
         connect(
             dynamic_cast<TerminalItem *>(m_startItem),
             &TerminalItem::positionChanged, this,
             &ConnectionLine::onStartItemPositionChanged);
-    } else if (dynamic_cast<GlobalTerminalItem *>(
-                   m_startItem)) {
+    }
+    else if (dynamic_cast<GlobalTerminalItem *>(
+                 m_startItem))
+    {
         connect(
             dynamic_cast<GlobalTerminalItem *>(m_startItem),
             &GlobalTerminalItem::positionChanged, this,
             &ConnectionLine::onStartItemPositionChanged);
     }
 
-    if (dynamic_cast<TerminalItem *>(m_endItem)) {
+    if (dynamic_cast<TerminalItem *>(m_endItem))
+    {
         connect(dynamic_cast<TerminalItem *>(m_endItem),
                 &TerminalItem::positionChanged, this,
                 &ConnectionLine::onEndItemPositionChanged);
-    } else if (dynamic_cast<GlobalTerminalItem *>(
-                   m_endItem)) {
+    }
+    else if (dynamic_cast<GlobalTerminalItem *>(m_endItem))
+    {
         connect(
             dynamic_cast<GlobalTerminalItem *>(m_endItem),
             &GlobalTerminalItem::positionChanged, this,
@@ -159,7 +175,8 @@ void ConnectionLine::createConnections() {
             [this]() { emit clicked(this); });
 }
 
-void ConnectionLine::initializeProperties() {
+void ConnectionLine::initializeProperties()
+{
     m_properties = {
         {"Type", "Connection"},
         {"Connection type", m_connectionType},
@@ -174,26 +191,30 @@ void ConnectionLine::initializeProperties() {
 }
 
 void ConnectionLine::onStartItemPositionChanged(
-    const QPointF &newPos) {
+    const QPointF &newPos)
+{
     updatePosition(newPos, true);
     emit startPositionChanged(newPos);
 }
 
 void ConnectionLine::onEndItemPositionChanged(
-    const QPointF &newPos) {
+    const QPointF &newPos)
+{
     updatePosition(newPos, false);
     emit endPositionChanged(newPos);
 }
 
 void ConnectionLine::updatePosition(const QPointF &newPos,
-                                    bool isStart) {
+                                    bool           isStart)
+{
     prepareGeometryChange();
 
     // Calculate terminal centers
     QPointF startCenter;
     QPointF endCenter;
 
-    if (isStart && !newPos.isNull()) {
+    if (isStart && !newPos.isNull())
+    {
         startCenter =
             newPos
             + QPointF(
@@ -204,7 +225,9 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
             + QPointF(m_endItem->boundingRect().width() / 2,
                       m_endItem->boundingRect().height()
                           / 2);
-    } else if (!isStart && !newPos.isNull()) {
+    }
+    else if (!isStart && !newPos.isNull())
+    {
         startCenter =
             m_startItem->scenePos()
             + QPointF(
@@ -215,7 +238,9 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
             + QPointF(m_endItem->boundingRect().width() / 2,
                       m_endItem->boundingRect().height()
                           / 2);
-    } else {
+    }
+    else
+    {
         startCenter =
             m_startItem->scenePos()
             + QPointF(
@@ -243,15 +268,18 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
     qreal ctrlX = midX, ctrlY = midY;
     qreal labelX = midX, labelY = midY;
 
-    if (lineLength > 0) {
+    if (lineLength > 0)
+    {
         // Determine curve direction based on line
         // orientation
-        if (m_connectionType != "Truck") {
+        if (m_connectionType != "Truck")
+        {
             // Choose perpendicular offset direction
             bool  isVertical = std::abs(dy) > std::abs(dx);
             qreal offset     = 30; // Control point offset
 
-            if (isVertical) {
+            if (isVertical)
+            {
                 // For vertical alignments, curve
                 // horizontally Use normalized perpendicular
                 // vector
@@ -263,7 +291,9 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
                 // Set control point
                 ctrlX = midX + nx * offset;
                 ctrlY = midY + ny * offset;
-            } else {
+            }
+            else
+            {
                 // For horizontal alignments, curve
                 // vertically
                 qreal nx = 0.0;
@@ -303,7 +333,8 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
                .value("width")
                .toInt());
 
-    if (m_connectionType == "Truck") {
+    if (m_connectionType == "Truck")
+    {
         // Simple rectangle for straight lines
         m_boundingRect = QRectF(
             std::min(m_line.x1(), m_line.x2()) - padding,
@@ -312,7 +343,9 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
                 + (2 * padding),
             std::abs(m_line.y2() - m_line.y1())
                 + (2 * padding));
-    } else {
+    }
+    else
+    {
         // For curves, include the control point
         QList<QPointF> points = {m_line.p1(), m_ctrlPoint,
                                  m_line.p2()};
@@ -321,7 +354,8 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
         qreal maxX = std::numeric_limits<qreal>::min();
         qreal maxY = std::numeric_limits<qreal>::min();
 
-        for (const QPointF &p : points) {
+        for (const QPointF &p : points)
+        {
             minX = std::min(minX, p.x());
             minY = std::min(minY, p.y());
             maxX = std::max(maxX, p.x());
@@ -338,13 +372,15 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
 }
 
 QLineF ConnectionLine::calculateOffsetLine(
-    const QLineF &originalLine) const {
+    const QLineF &originalLine) const
+{
     // Get the offset distance for this connection type
     qreal offset = CONNECTION_STYLES.value(m_connectionType)
                        .value("offset")
                        .toDouble();
 
-    if (offset == 0) {
+    if (offset == 0)
+    {
         return originalLine;
     }
 
@@ -353,7 +389,8 @@ QLineF ConnectionLine::calculateOffsetLine(
     qreal dy     = originalLine.dy();
     qreal length = std::sqrt(dx * dx + dy * dy);
 
-    if (length == 0) {
+    if (length == 0)
+    {
         return originalLine;
     }
 
@@ -370,11 +407,13 @@ QLineF ConnectionLine::calculateOffsetLine(
     return QLineF(startX, startY, endX, endY);
 }
 
-QRectF ConnectionLine::boundingRect() const {
+QRectF ConnectionLine::boundingRect() const
+{
     return m_boundingRect;
 }
 
-QPainterPath ConnectionLine::shape() const {
+QPainterPath ConnectionLine::shape() const
+{
     // For selection purposes, use a simplified selection
     // area that focuses more on the label and less on the
     // line itself
@@ -400,7 +439,8 @@ QPainterPath ConnectionLine::shape() const {
 
     // Create a narrow rectangle along the line for
     // selection
-    if (m_connectionType == "Truck") {
+    if (m_connectionType == "Truck")
+    {
         // For straight line
         qreal angle =
             m_line.angle()
@@ -416,7 +456,9 @@ QPainterPath ConnectionLine::shape() const {
         poly.append(QPointF(end.x() - dx, end.y() + dy));
         poly.append(QPointF(end.x() + dx, end.y() - dy));
         path.addPolygon(poly);
-    } else {
+    }
+    else
+    {
         // For curved lines, use a simplified approach
         qreal midX = (start.x() + end.x()) / 2;
         qreal midY = (start.y() + end.y()) / 2;
@@ -435,8 +477,8 @@ QPainterPath ConnectionLine::shape() const {
 
 void ConnectionLine::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
     // Get style for this connection type
     QMap<QString, QVariant> style =
         CONNECTION_STYLES.value(m_connectionType);
@@ -457,16 +499,20 @@ void ConnectionLine::paint(
     QPainterPath path;
     path.moveTo(m_line.p1());
 
-    if (m_connectionType == "Truck") {
+    if (m_connectionType == "Truck")
+    {
         path.lineTo(m_line.p2());
-    } else {
+    }
+    else
+    {
         path.quadTo(m_ctrlPoint, m_line.p2());
     }
 
     painter->drawPath(path);
 
     // Draw debug bounding rect if needed
-    if (false) { // Set to true for debugging
+    if (false)
+    { // Set to true for debugging
         QPen debugPen(QColor(0, 255, 0), 1, Qt::DashLine);
         debugPen.setCosmetic(true);
         painter->setPen(debugPen);
@@ -475,47 +521,56 @@ void ConnectionLine::paint(
 }
 
 void ConnectionLine::updateProperties(
-    const QMap<QString, QVariant> &newProperties) {
+    const QMap<QString, QVariant> &newProperties)
+{
     for (auto it = newProperties.constBegin();
-         it != newProperties.constEnd(); ++it) {
+         it != newProperties.constEnd(); ++it)
+    {
         m_properties[it.key()] = it.value();
     }
     emit propertiesChanged();
 }
 
-bool ConnectionLine::isSelected() const {
+bool ConnectionLine::isSelected() const
+{
     return m_label->isSelected();
 }
 
-void ConnectionLine::setSelected(bool selected) {
+void ConnectionLine::setSelected(bool selected)
+{
     m_label->setSelected(selected);
     m_label->update();
 }
 
 void ConnectionLine::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
+    QGraphicsSceneMouseEvent *event)
+{
     // Prevent selection by ignoring the event
     event->ignore();
 }
 
 void ConnectionLine::hoverEnterEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     m_isHovered = true;
     update();
     QGraphicsObject::hoverEnterEvent(event);
 }
 
 void ConnectionLine::hoverLeaveEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     m_isHovered = false;
     update();
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
 void ConnectionLine::flash(bool          evenIfHidden,
-                           const QColor &color) {
+                           const QColor &color)
+{
     bool wasHidden = !isVisible();
-    if (evenIfHidden && wasHidden) {
+    if (evenIfHidden && wasHidden)
+    {
         setVisible(true);
     }
 
@@ -530,9 +585,12 @@ void ConnectionLine::flash(bool          evenIfHidden,
     QPen pen(color, penWidth, Qt::SolidLine);
     path.moveTo(m_line.p1());
 
-    if (m_connectionType == "Truck") {
+    if (m_connectionType == "Truck")
+    {
         path.lineTo(m_line.p2());
-    } else {
+    }
+    else
+    {
         path.quadTo(m_ctrlPoint, m_line.p2());
     }
 
@@ -542,22 +600,28 @@ void ConnectionLine::flash(bool          evenIfHidden,
     overlay->setZValue(100);
 
     // Create animation object to hold opacity value
-    class AnimationObject : public QObject {
+    class AnimationObject : public QObject
+    {
     public:
         AnimationObject(QObject *parent = nullptr)
             : QObject(parent)
-            , _opacity(1.0) {}
+            , _opacity(1.0)
+        {
+        }
 
-        qreal opacity() const {
+        qreal opacity() const
+        {
             return _opacity;
         }
-        void setOpacity(qreal value) {
+        void setOpacity(qreal value)
+        {
             _opacity = value;
             if (_overlay)
                 _overlay->setOpacity(value);
         }
 
-        void setOverlay(QGraphicsPathItem *overlay) {
+        void setOverlay(QGraphicsPathItem *overlay)
+        {
             _overlay = overlay;
         }
 
@@ -582,11 +646,13 @@ void ConnectionLine::flash(bool          evenIfHidden,
     // Set up cleanup on animation completion
     connect(m_animation, &QPropertyAnimation::finished,
             [=]() {
-                if (overlay && scene()) {
+                if (overlay && scene())
+                {
                     scene()->removeItem(overlay);
                 }
 
-                if (evenIfHidden && wasHidden) {
+                if (evenIfHidden && wasHidden)
+                {
                     setVisible(false);
                 }
 
@@ -600,7 +666,8 @@ void ConnectionLine::flash(bool          evenIfHidden,
     m_animation->start();
 }
 
-QMap<QString, QVariant> ConnectionLine::toDict() const {
+QMap<QString, QVariant> ConnectionLine::toDict() const
+{
     QMap<QString, QVariant> data;
 
     // Store IDs for serialization
@@ -611,14 +678,18 @@ QMap<QString, QVariant> ConnectionLine::toDict() const {
 
     // Extract IDs from terminal items
     if (TerminalItem *terminal =
-            dynamic_cast<TerminalItem *>(m_startItem)) {
+            dynamic_cast<TerminalItem *>(m_startItem))
+    {
         startItemId =
             terminal->getProperties().value("ID").toInt();
         startItemType = "TerminalItem";
-    } else if (GlobalTerminalItem *globalTerminal =
-                   dynamic_cast<GlobalTerminalItem *>(
-                       m_startItem)) {
-        if (globalTerminal->getLinkedTerminalItem()) {
+    }
+    else if (GlobalTerminalItem *globalTerminal =
+                 dynamic_cast<GlobalTerminalItem *>(
+                     m_startItem))
+    {
+        if (globalTerminal->getLinkedTerminalItem())
+        {
             startItemId =
                 globalTerminal->getLinkedTerminalItem()
                     ->getProperties()
@@ -629,14 +700,18 @@ QMap<QString, QVariant> ConnectionLine::toDict() const {
     }
 
     if (TerminalItem *terminal =
-            dynamic_cast<TerminalItem *>(m_endItem)) {
+            dynamic_cast<TerminalItem *>(m_endItem))
+    {
         endItemId =
             terminal->getProperties().value("ID").toInt();
         endItemType = "TerminalItem";
-    } else if (GlobalTerminalItem *globalTerminal =
-                   dynamic_cast<GlobalTerminalItem *>(
-                       m_endItem)) {
-        if (globalTerminal->getLinkedTerminalItem()) {
+    }
+    else if (GlobalTerminalItem *globalTerminal =
+                 dynamic_cast<GlobalTerminalItem *>(
+                     m_endItem))
+    {
+        if (globalTerminal->getLinkedTerminalItem())
+        {
             endItemId =
                 globalTerminal->getLinkedTerminalItem()
                     ->getProperties()
@@ -667,7 +742,8 @@ QMap<QString, QVariant> ConnectionLine::toDict() const {
 ConnectionLine *ConnectionLine::fromDict(
     const QMap<QString, QVariant>    &data,
     const QMap<int, QGraphicsItem *> &terminalsByID,
-    QGraphicsScene *globalScene, QGraphicsItem *parent) {
+    QGraphicsScene *globalScene, QGraphicsItem *parent)
+{
     // Find terminals
     int startId = data["start_item_id"].toInt();
     int endId   = data["end_item_id"].toInt();
@@ -675,13 +751,15 @@ ConnectionLine *ConnectionLine::fromDict(
     QGraphicsItem *startItem = terminalsByID.value(startId);
     QGraphicsItem *endItem   = terminalsByID.value(endId);
 
-    if (!startItem) {
+    if (!startItem)
+    {
         qWarning() << "Start terminal with ID" << startId
                    << "not found";
         return nullptr;
     }
 
-    if (!endItem) {
+    if (!endItem)
+    {
         qWarning() << "End terminal with ID" << endId
                    << "not found";
         return nullptr;
@@ -690,8 +768,10 @@ ConnectionLine *ConnectionLine::fromDict(
     // Handle global items if needed
     if (globalScene
         && data["start_item_type"].toString()
-               == "GlobalTerminalItem") {
-        for (QGraphicsItem *item : globalScene->items()) {
+               == "GlobalTerminalItem")
+    {
+        for (QGraphicsItem *item : globalScene->items())
+        {
             GlobalTerminalItem *globalItem =
                 dynamic_cast<GlobalTerminalItem *>(item);
             if (globalItem
@@ -700,7 +780,8 @@ ConnectionLine *ConnectionLine::fromDict(
                            ->getProperties()
                            .value("ID")
                            .toInt()
-                       == startId) {
+                       == startId)
+            {
                 startItem = globalItem;
                 break;
             }
@@ -709,8 +790,10 @@ ConnectionLine *ConnectionLine::fromDict(
 
     if (globalScene
         && data["end_item_type"].toString()
-               == "GlobalTerminalItem") {
-        for (QGraphicsItem *item : globalScene->items()) {
+               == "GlobalTerminalItem")
+    {
+        for (QGraphicsItem *item : globalScene->items())
+        {
             GlobalTerminalItem *globalItem =
                 dynamic_cast<GlobalTerminalItem *>(item);
             if (globalItem
@@ -719,7 +802,8 @@ ConnectionLine *ConnectionLine::fromDict(
                            ->getProperties()
                            .value("ID")
                            .toInt()
-                       == endId) {
+                       == endId)
+            {
                 endItem = globalItem;
                 break;
             }
@@ -751,13 +835,16 @@ ConnectionLine *ConnectionLine::fromDict(
     return connection;
 }
 
-void ConnectionLine::resetClassIDs() {
+void ConnectionLine::resetClassIDs()
+{
     CONNECTION_LINE_ID = 0;
 }
 
 void ConnectionLine::setClassIDs(
-    const QMap<int, ConnectionLine *> &allConnectionsById) {
-    if (allConnectionsById.isEmpty()) {
+    const QMap<int, ConnectionLine *> &allConnectionsById)
+{
+    if (allConnectionsById.isEmpty())
+    {
         CONNECTION_LINE_ID = 0;
         return;
     }
@@ -765,14 +852,16 @@ void ConnectionLine::setClassIDs(
     // Find maximum ID
     int maxId = 0;
     for (ConnectionLine *connection :
-         allConnectionsById.values()) {
+         allConnectionsById.values())
+    {
         maxId = std::max(maxId, connection->connectionId());
     }
 
     CONNECTION_LINE_ID = maxId;
 }
 
-int ConnectionLine::getNewConnectionID() {
+int ConnectionLine::getNewConnectionID()
+{
     CONNECTION_LINE_ID++;
     return CONNECTION_LINE_ID;
 }

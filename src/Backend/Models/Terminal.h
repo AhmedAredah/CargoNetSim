@@ -6,13 +6,16 @@
 #include <QSet>
 #include <QStringList>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Represents a terminal for simulation
  */
-class Terminal : public QObject {
+class Terminal : public QObject
+{
     Q_OBJECT
 
 public:
@@ -34,7 +37,8 @@ public:
      * @brief Get terminal names
      * @return List of names
      */
-    QStringList getNames() const {
+    QStringList getNames() const
+    {
         return m_names;
     }
 
@@ -42,7 +46,8 @@ public:
      * @brief Get canonical name
      * @return First name in the list
      */
-    QString getCanonicalName() const {
+    QString getCanonicalName() const
+    {
         return m_names.first();
     }
 
@@ -50,7 +55,8 @@ public:
      * @brief Get custom configuration
      * @return Configuration as JSON
      */
-    QJsonObject getConfig() const {
+    QJsonObject getConfig() const
+    {
         return m_config;
     }
 
@@ -58,7 +64,8 @@ public:
      * @brief Get interfaces
      * @return Map of interfaces to modes
      */
-    QMap<int, QSet<int>> getInterfaces() const {
+    QMap<int, QSet<int>> getInterfaces() const
+    {
         return m_interfaces;
     }
 
@@ -66,7 +73,8 @@ public:
      * @brief Get region
      * @return Region string
      */
-    QString getRegion() const {
+    QString getRegion() const
+    {
         return m_region;
     }
 

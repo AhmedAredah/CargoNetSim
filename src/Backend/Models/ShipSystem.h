@@ -23,14 +23,17 @@
 
 #include "../Commons/ClientType.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class ApplicationLogger
  * @brief Utility class for logging system messages.
  */
-class ApplicationLogger {
+class ApplicationLogger
+{
 public:
     /**
      * @brief Log an error message with client type.
@@ -39,7 +42,8 @@ public:
      *        error.
      */
     static void log_error(const QString &message,
-                          ClientType     clientType) {
+                          ClientType     clientType)
+    {
         qCritical() << "Error ["
                     << static_cast<int>(clientType)
                     << "]: " << message;
@@ -53,7 +57,8 @@ public:
  * This class models a ship with its physical properties,
  * performance characteristics, and path information.
  */
-class Ship : public QObject {
+class Ship : public QObject
+{
     Q_OBJECT
 
 public:
@@ -198,7 +203,8 @@ public:
      * @param other The Ship to copy from.
      */
     Ship(const Ship &other)
-        : QObject(nullptr) {
+        : QObject(nullptr)
+    {
         *this = other; // Use the assignment operator
     }
 
@@ -212,8 +218,10 @@ public:
      * @param other The Ship to copy from.
      * @return Reference to this Ship after copying.
      */
-    Ship &operator=(const Ship &other) {
-        if (this != &other) { // Check for self-assignment
+    Ship &operator=(const Ship &other)
+    {
+        if (this != &other)
+        { // Check for self-assignment
             // Don't copy QObject properties, only copy the
             // Ship's data fields
             m_shipId          = other.m_shipId;
@@ -302,7 +310,8 @@ public:
      * @brief Get the ship's unique identifier.
      * @return The ship ID.
      */
-    QString getUserId() const {
+    QString getUserId() const
+    {
         return m_shipId;
     }
 
@@ -310,7 +319,8 @@ public:
      * @brief Get the ship's path coordinates.
      * @return Vector of coordinate points.
      */
-    QVector<QVector<float>> getPathCoordinates() const {
+    QVector<QVector<float>> getPathCoordinates() const
+    {
         return m_pathCoordinates;
     }
 
@@ -318,7 +328,8 @@ public:
      * @brief Get the ship's maximum speed.
      * @return Maximum speed in knots.
      */
-    float getMaxSpeed() const {
+    float getMaxSpeed() const
+    {
         return m_maxSpeed;
     }
 
@@ -326,7 +337,8 @@ public:
      * @brief Get the ship's waterline length.
      * @return Waterline length in meters.
      */
-    float getWaterlineLength() const {
+    float getWaterlineLength() const
+    {
         return m_waterlineLength;
     }
 
@@ -334,7 +346,8 @@ public:
      * @brief Get the ship's length between perpendiculars.
      * @return Length between perpendiculars in meters.
      */
-    float getLengthBetweenPerpendiculars() const {
+    float getLengthBetweenPerpendiculars() const
+    {
         return m_lengthBetweenPerpendiculars;
     }
 
@@ -342,7 +355,8 @@ public:
      * @brief Get the ship's beam (width).
      * @return Beam in meters.
      */
-    float getBeam() const {
+    float getBeam() const
+    {
         return m_beam;
     }
 
@@ -350,7 +364,8 @@ public:
      * @brief Get the ship's draft at the forward.
      * @return Draft at forward in meters.
      */
-    float getDraftAtForward() const {
+    float getDraftAtForward() const
+    {
         return m_draftAtForward;
     }
 
@@ -358,7 +373,8 @@ public:
      * @brief Get the ship's draft at the aft.
      * @return Draft at aft in meters.
      */
-    float getDraftAtAft() const {
+    float getDraftAtAft() const
+    {
         return m_draftAtAft;
     }
 
@@ -366,7 +382,8 @@ public:
      * @brief Get the ship's volumetric displacement.
      * @return Volumetric displacement in cubic meters.
      */
-    float getVolumetricDisplacement() const {
+    float getVolumetricDisplacement() const
+    {
         return m_volumetricDisplacement;
     }
 
@@ -374,7 +391,8 @@ public:
      * @brief Get the ship's wetted hull surface area.
      * @return Wetted hull surface in square meters.
      */
-    float getWettedHullSurface() const {
+    float getWettedHullSurface() const
+    {
         return m_wettedHullSurface;
     }
 
@@ -382,7 +400,8 @@ public:
      * @brief Get the ship's area above waterline.
      * @return Area above waterline in square meters.
      */
-    float getAreaAboveWaterline() const {
+    float getAreaAboveWaterline() const
+    {
         return m_areaAboveWaterline;
     }
 
@@ -390,7 +409,8 @@ public:
      * @brief Get the height of bulbous bow center.
      * @return Bulbous bow center height in meters.
      */
-    float getBulbousBowCenterHeight() const {
+    float getBulbousBowCenterHeight() const
+    {
         return m_bulbousBowCenterHeight;
     }
 
@@ -398,7 +418,8 @@ public:
      * @brief Get the bulbous bow area.
      * @return Bulbous bow area in square meters.
      */
-    float getBulbousBowArea() const {
+    float getBulbousBowArea() const
+    {
         return m_bulbousBowArea;
     }
 
@@ -406,7 +427,8 @@ public:
      * @brief Get the immersed transom area.
      * @return Immersed transom area in square meters.
      */
-    float getImmersedTransomArea() const {
+    float getImmersedTransomArea() const
+    {
         return m_immersedTransomArea;
     }
 
@@ -414,7 +436,8 @@ public:
      * @brief Get the entrance angle.
      * @return Entrance angle in degrees.
      */
-    float getEntranceAngle() const {
+    float getEntranceAngle() const
+    {
         return m_entranceAngle;
     }
 
@@ -422,7 +445,8 @@ public:
      * @brief Get the hull surface roughness.
      * @return Surface roughness in millimeters.
      */
-    float getSurfaceRoughness() const {
+    float getSurfaceRoughness() const
+    {
         return m_surfaceRoughness;
     }
 
@@ -430,7 +454,8 @@ public:
      * @brief Get the buoyancy center.
      * @return Longitudinal center of buoyancy.
      */
-    float getBuoyancyCenter() const {
+    float getBuoyancyCenter() const
+    {
         return m_buoyancyCenter;
     }
 
@@ -438,7 +463,8 @@ public:
      * @brief Get the stern shape parameter.
      * @return Stern shape parameter code.
      */
-    int getSternShapeParam() const {
+    int getSternShapeParam() const
+    {
         return m_sternShapeParam;
     }
 
@@ -446,7 +472,8 @@ public:
      * @brief Get the midship section coefficient.
      * @return Midship section coefficient.
      */
-    float getMidshipSectionCoef() const {
+    float getMidshipSectionCoef() const
+    {
         return m_midshipSectionCoef;
     }
 
@@ -454,7 +481,8 @@ public:
      * @brief Get the waterplane area coefficient.
      * @return Waterplane area coefficient.
      */
-    float getWaterplaneAreaCoef() const {
+    float getWaterplaneAreaCoef() const
+    {
         return m_waterplaneAreaCoef;
     }
 
@@ -462,7 +490,8 @@ public:
      * @brief Get the prismatic coefficient.
      * @return Prismatic coefficient.
      */
-    float getPrismaticCoef() const {
+    float getPrismaticCoef() const
+    {
         return m_prismaticCoef;
     }
 
@@ -470,7 +499,8 @@ public:
      * @brief Get the block coefficient.
      * @return Block coefficient.
      */
-    float getBlockCoef() const {
+    float getBlockCoef() const
+    {
         return m_blockCoef;
     }
 
@@ -478,7 +508,8 @@ public:
      * @brief Get the tank details.
      * @return Vector of maps with tank specifications.
      */
-    QVector<QMap<QString, float>> getTanksDetails() const {
+    QVector<QMap<QString, float>> getTanksDetails() const
+    {
         return m_tanksDetails;
     }
 
@@ -486,7 +517,8 @@ public:
      * @brief Get the number of engines per propeller.
      * @return Number of engines per propeller.
      */
-    int getEnginesPerPropellerCount() const {
+    int getEnginesPerPropellerCount() const
+    {
         return m_enginesPerPropeller;
     }
 
@@ -495,7 +527,8 @@ public:
      * @return Vector of Tier II engine specification maps.
      */
     QVector<QMap<QString, float>>
-    getEngineTierIISpecs() const {
+    getEngineTierIISpecs() const
+    {
         return m_engineTierII;
     }
 
@@ -504,7 +537,8 @@ public:
      * @return Vector of Tier III engine specification maps.
      */
     QVector<QMap<QString, float>>
-    getEngineTierIIISpecs() const {
+    getEngineTierIIISpecs() const
+    {
         return m_engineTierIII;
     }
 
@@ -513,7 +547,8 @@ public:
      * @return Vector of Tier II curve point maps.
      */
     QVector<QMap<QString, float>>
-    getEngineTierIIPerformanceCurve() const {
+    getEngineTierIIPerformanceCurve() const
+    {
         return m_engineTierIICurve;
     }
 
@@ -522,7 +557,8 @@ public:
      * @return Vector of Tier III curve point maps.
      */
     QVector<QMap<QString, float>>
-    getEngineTierIIIPerformanceCurve() const {
+    getEngineTierIIIPerformanceCurve() const
+    {
         return m_engineTierIIICurve;
     }
 
@@ -530,7 +566,8 @@ public:
      * @brief Get the gearbox ratio.
      * @return Gearbox ratio.
      */
-    float getGearboxRatio() const {
+    float getGearboxRatio() const
+    {
         return m_gearboxRatio;
     }
 
@@ -538,7 +575,8 @@ public:
      * @brief Get the gearbox efficiency.
      * @return Gearbox efficiency factor.
      */
-    float getGearboxEfficiency() const {
+    float getGearboxEfficiency() const
+    {
         return m_gearboxEfficiency;
     }
 
@@ -546,7 +584,8 @@ public:
      * @brief Get the shaft efficiency.
      * @return Shaft efficiency factor.
      */
-    float getShaftEfficiency() const {
+    float getShaftEfficiency() const
+    {
         return m_shaftEfficiency;
     }
 
@@ -554,7 +593,8 @@ public:
      * @brief Get the number of propellers.
      * @return Propeller count.
      */
-    int getPropellerCount() const {
+    int getPropellerCount() const
+    {
         return m_propellerCount;
     }
 
@@ -562,7 +602,8 @@ public:
      * @brief Get the propeller diameter.
      * @return Propeller diameter in meters.
      */
-    float getPropellerDiameter() const {
+    float getPropellerDiameter() const
+    {
         return m_propellerDiameter;
     }
 
@@ -570,7 +611,8 @@ public:
      * @brief Get the propeller pitch.
      * @return Propeller pitch in meters.
      */
-    float getPropellerPitch() const {
+    float getPropellerPitch() const
+    {
         return m_propellerPitch;
     }
 
@@ -578,7 +620,8 @@ public:
      * @brief Get the number of blades per propeller.
      * @return Propeller blades count.
      */
-    int getPropellerBladesCount() const {
+    int getPropellerBladesCount() const
+    {
         return m_propellerBladesCount;
     }
 
@@ -586,7 +629,8 @@ public:
      * @brief Get the expanded area ratio of propeller.
      * @return Expanded area ratio.
      */
-    float getExpandedAreaRatio() const {
+    float getExpandedAreaRatio() const
+    {
         return m_expandedAreaRatio;
     }
 
@@ -594,7 +638,8 @@ public:
      * @brief Get whether the ship stops if no energy.
      * @return True if the ship stops when energy depleted.
      */
-    bool shouldStopIfNoEnergy() const {
+    bool shouldStopIfNoEnergy() const
+    {
         return m_stopIfNoEnergy;
     }
 
@@ -602,7 +647,8 @@ public:
      * @brief Get the maximum rudder angle.
      * @return Maximum rudder angle in degrees.
      */
-    float getMaxRudderAngle() const {
+    float getMaxRudderAngle() const
+    {
         return m_maxRudderAngle;
     }
 
@@ -610,7 +656,8 @@ public:
      * @brief Get the vessel weight.
      * @return Vessel weight in tons.
      */
-    float getVesselWeight() const {
+    float getVesselWeight() const
+    {
         return m_vesselWeight;
     }
 
@@ -618,7 +665,8 @@ public:
      * @brief Get the cargo weight.
      * @return Cargo weight in tons.
      */
-    float getCargoWeight() const {
+    float getCargoWeight() const
+    {
         return m_cargoWeight;
     }
 
@@ -626,7 +674,8 @@ public:
      * @brief Get the appendages wetted surfaces.
      * @return Map of appendage ID to wetted surface area.
      */
-    QMap<int, float> getAppendagesWettedSurfaces() const {
+    QMap<int, float> getAppendagesWettedSurfaces() const
+    {
         return m_appendagesWettedSurfaces;
     }
 
@@ -1061,7 +1110,8 @@ private:
  * @class ShipsReader
  * @brief Utility class for reading ship data from files.
  */
-class ShipsReader : public QObject {
+class ShipsReader : public QObject
+{
     Q_OBJECT
 
 public:

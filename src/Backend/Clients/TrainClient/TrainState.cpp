@@ -10,9 +10,12 @@
  * and review, managing train state in the simulation.
  */
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 TrainState::TrainState(const QJsonObject &trainData)
     : m_cumEnergyStat(trainData["cumEnergyStat"].toDouble())
@@ -51,14 +54,16 @@ TrainState::TrainState(const QJsonObject &trainData)
     , m_travelledDistance(
           trainData["travelledDistance"].toDouble())
     , m_containersCount(
-          trainData["containersCount"].toInt()) {
+          trainData["containersCount"].toInt())
+{
     // Extract fuel consumption data from JSON
     QJsonObject fuelObj =
         trainData["totalFuelConsumed"].toObject();
 
     // Iterate over fuel types and their values
     for (auto it = fuelObj.begin(); it != fuelObj.end();
-         ++it) {
+         ++it)
+    {
         // Store each fuel type and its consumption
         m_totalFuelConsumed[it.key()] =
             it.value().toDouble();
@@ -102,18 +107,21 @@ TrainState::TrainState(const QJsonObject &trainData)
 }
 
 QVariant
-TrainState::getMetric(const QString &metricName) const {
+TrainState::getMetric(const QString &metricName) const
+{
     // Return the value of the requested metric
     return m_metrics.value(metricName);
 }
 
-QJsonObject TrainState::toJson() const {
+QJsonObject TrainState::toJson() const
+{
     // Create a JSON object to hold the train state
     QJsonObject obj;
 
     // Convert fuel map to JSON object
     QMap<QString, QVariant> fuelVariantMap;
-    for (const QString &key : m_totalFuelConsumed.keys()) {
+    for (const QString &key : m_totalFuelConsumed.keys())
+    {
         fuelVariantMap[key] =
             QVariant(m_totalFuelConsumed[key]);
     }

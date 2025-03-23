@@ -30,8 +30,10 @@
 #include <QString>
 #include <containerLib/container.h>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class TerminalSimulationClient
@@ -47,8 +49,8 @@ namespace Backend {
  * @warning Thread-safe via mutex; ensure proper pointer
  * management.
  */
-class TerminalSimulationClient
-    : public SimulationClientBase {
+class TerminalSimulationClient : public SimulationClientBase
+{
     Q_OBJECT
 
 public:

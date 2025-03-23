@@ -19,14 +19,17 @@
 #include "Backend/Clients/TrainClient/TrainNetwork.h"
 #include "Backend/Clients/TruckClient/TruckNetwork.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class NetworkControllerCleanup
  * @brief Utility class to handle singleton cleanup.
  */
-class NetworkControllerCleanup {
+class NetworkControllerCleanup
+{
 public:
     /**
      * @brief Cleanup the NetworkController singleton
@@ -45,7 +48,8 @@ public:
  * It ensures thread-safety and prevents name conflicts
  * within the same region.
  */
-class NetworkController : public QObject {
+class NetworkController : public QObject
+{
     Q_OBJECT
 
     // Make the cleanup class a friend
@@ -252,9 +256,8 @@ private:
      * - Inner key is the network name
      * - Value is the pointer to the network/configuration
      */
-    QMap<
-        QString,
-        QMap<QString, TrainClient::NeTrainSimNetwork *>>
+    QMap<QString,
+         QMap<QString, TrainClient::NeTrainSimNetwork *>>
         m_trainNetworks;
 
     QMap<QString,

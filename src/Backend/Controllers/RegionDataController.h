@@ -18,14 +18,17 @@
 
 #include "NetworkController.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class RegionDataControllerCleanup
  * @brief Utility class to handle singleton cleanup.
  */
-class RegionDataControllerCleanup {
+class RegionDataControllerCleanup
+{
 public:
     /**
      * @brief Cleanup the RegionDataController singleton
@@ -43,7 +46,8 @@ public:
  * associated networks, and provides methods to manage
  * the region's resources.
  */
-class RegionData : public QObject {
+class RegionData : public QObject
+{
     Q_OBJECT
 
 public:
@@ -177,7 +181,8 @@ public:
      * @param value The value to store.
      */
     void setVariable(const QString  &key,
-                     const QVariant &value) {
+                     const QVariant &value)
+    {
         m_variables[key] = value;
     }
 
@@ -192,7 +197,8 @@ public:
      */
     QVariant getVariable(
         const QString  &key,
-        const QVariant &defaultValue = QVariant()) const {
+        const QVariant &defaultValue = QVariant()) const
+    {
         return m_variables.value(key, defaultValue);
     }
 
@@ -208,9 +214,11 @@ public:
      */
     template <typename T>
     T getVariableAs(const QString &key,
-                    const T &defaultValue = T()) const {
+                    const T       &defaultValue = T()) const
+    {
         QVariant var = m_variables.value(key, QVariant());
-        if (var.isValid() && var.canConvert<T>()) {
+        if (var.isValid() && var.canConvert<T>())
+        {
             return var.value<T>();
         }
         return defaultValue;
@@ -222,7 +230,8 @@ public:
      * @param key The name/key of the variable to check.
      * @return True if the variable exists.
      */
-    bool hasVariable(const QString &key) const {
+    bool hasVariable(const QString &key) const
+    {
         return m_variables.contains(key);
     }
 
@@ -233,7 +242,8 @@ public:
      * @return True if the variable was removed, false if
      *         it didn't exist.
      */
-    bool removeVariable(const QString &key) {
+    bool removeVariable(const QString &key)
+    {
         return m_variables.remove(key) > 0;
     }
 
@@ -241,7 +251,8 @@ public:
      * @brief Get all m_variables for this region.
      * @return A copy of the m_variables map.
      */
-    QVariantMap getAllVariables() const {
+    QVariantMap getAllVariables() const
+    {
         return m_variables;
     }
 
@@ -268,7 +279,8 @@ public:
      * @brief Get the m_region name.
      * @return The name of the m_region.
      */
-    const QString &getRegion() const {
+    const QString &getRegion() const
+    {
         return m_region;
     }
 
@@ -355,7 +367,8 @@ private:
  * provides methods to add, remove, and query regions and
  * their associated data.
  */
-class RegionDataController : public QObject {
+class RegionDataController : public QObject
+{
     Q_OBJECT
 
     // Make the cleanup class a friend
@@ -424,7 +437,8 @@ public:
      * @return Current region name, or empty string if none
      *         selected.
      */
-    QString getCurrentRegion() const {
+    QString getCurrentRegion() const
+    {
         return m_currentRegion;
     }
 
@@ -450,7 +464,8 @@ public:
      * @param value The value to store.
      */
     void setGlobalVariable(const QString  &key,
-                           const QVariant &value) {
+                           const QVariant &value)
+    {
         m_globalVariables[key] = value;
         emit globalVariableChanged(key, value);
     }
@@ -460,7 +475,8 @@ public:
      * @param key The name/key of the variable to check.
      * @return True if the variable exists.
      */
-    bool hasGlobalVariable(const QString &key) const {
+    bool hasGlobalVariable(const QString &key) const
+    {
         return m_globalVariables.contains(key);
     }
 
@@ -470,8 +486,10 @@ public:
      * @return True if the variable was removed, false if
      *         it didn't exist.
      */
-    bool removeGlobalVariable(const QString &key) {
-        if (m_globalVariables.contains(key)) {
+    bool removeGlobalVariable(const QString &key)
+    {
+        if (m_globalVariables.contains(key))
+        {
             m_globalVariables.remove(key);
             emit globalVariableRemoved(key);
             return true;
@@ -483,7 +501,8 @@ public:
      * @brief Get all global variables.
      * @return A copy of the global variables map.
      */
-    QVariantMap getAllGlobalVariables() const {
+    QVariantMap getAllGlobalVariables() const
+    {
         return m_globalVariables;
     }
 
@@ -497,9 +516,11 @@ public:
      */
     bool setRegionVariable(const QString  &regionName,
                            const QString  &key,
-                           const QVariant &value) {
+                           const QVariant &value)
+    {
         RegionData *region = getRegionData(regionName);
-        if (region) {
+        if (region)
+        {
             region->setVariable(key, value);
             emit regionVariableChanged(regionName, key,
                                        value);
@@ -519,12 +540,13 @@ public:
      *         defaultValue if not found.
      */
     template <typename T>
-    T getGlobalVariableAs(
-        const QString &key,
-        const T       &defaultValue = T()) const {
+    T getGlobalVariableAs(const QString &key,
+                          const T &defaultValue = T()) const
+    {
         QVariant var =
             m_globalVariables.value(key, QVariant());
-        if (var.isValid() && var.canConvert<T>()) {
+        if (var.isValid() && var.canConvert<T>())
+        {
             return var.value<T>();
         }
         return defaultValue;
@@ -540,12 +562,15 @@ public:
      */
     template <typename T>
     QMap<QString, T>
-    getAllRegionVariableAs(const QString &key) const {
+    getAllRegionVariableAs(const QString &key) const
+    {
         QMap<QString, T> result;
         for (auto it = m_regions.cbegin();
-             it != m_regions.cend(); ++it) {
+             it != m_regions.cend(); ++it)
+        {
             QVariant var = it.value()->getVariable(key);
-            if (var.isValid() && var.canConvert<T>()) {
+            if (var.isValid() && var.canConvert<T>())
+            {
                 result.insert(it.key(), var.value<T>());
             }
         }
@@ -565,11 +590,13 @@ public:
      *         constructed T if region not found.
      */
     template <typename T>
-    T getRegionVariableAs(
-        const QString &regionName, const QString &key,
-        const T &defaultValue = T()) const {
+    T getRegionVariableAs(const QString &regionName,
+                          const QString &key,
+                          const T &defaultValue = T()) const
+    {
         auto it = m_regions.find(regionName);
-        if (it != m_regions.end()) {
+        if (it != m_regions.end())
+        {
             return it.value()->getVariableAs<T>(
                 key, defaultValue);
         }

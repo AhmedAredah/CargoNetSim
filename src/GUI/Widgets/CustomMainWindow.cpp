@@ -4,11 +4,14 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 CustomMainWindow::CustomMainWindow(QWidget *parent)
-    : QMainWindow(parent) {
+    : QMainWindow(parent)
+{
     // Create a central widget
     centralWidget = new QWidget();
     setCentralWidget(centralWidget);
@@ -37,20 +40,25 @@ CustomMainWindow::CustomMainWindow(QWidget *parent)
     mainLayout->addWidget(centerWidget);
 }
 
-CustomMainWindow::~CustomMainWindow() {
+CustomMainWindow::~CustomMainWindow()
+{
     // Qt's parent-child mechanism handles cleanup
 }
 
 void CustomMainWindow::addDockWidget(
-    Qt::DockWidgetArea area, QDockWidget *dockWidget) {
+    Qt::DockWidgetArea area, QDockWidget *dockWidget)
+{
     // Check if this is a special case dock that should go
     // in the center splitter
     if (dockWidget
         && dockWidget->objectName()
-               == "ShortestPathTableDock") {
+               == "ShortestPathTableDock")
+    {
         // Add bottom dock to center splitter
         centerSplitter->addWidget(dockWidget);
-    } else {
+    }
+    else
+    {
         // Use normal docking for other widgets
         QMainWindow::addDockWidget(area, dockWidget);
     }

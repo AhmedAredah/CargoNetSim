@@ -5,8 +5,10 @@
 #include <QPointF>
 #include <QString>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class TerminalItem;
 
@@ -17,7 +19,8 @@ class TerminalItem;
  * TerminalItem but scaled down. Links to the original
  * terminal item and represents it on the global map.
  */
-class GlobalTerminalItem : public QGraphicsObject {
+class GlobalTerminalItem : public QGraphicsObject
+{
     Q_OBJECT
 
 public:
@@ -40,7 +43,8 @@ public:
      * @brief Get the linked terminal item
      * @return Pointer to the linked terminal item
      */
-    TerminalItem *getLinkedTerminalItem() const {
+    TerminalItem *getLinkedTerminalItem() const
+    {
         return linkedTerminalItem;
     }
 

@@ -1,41 +1,50 @@
-# Use a base style and then override selected options:
 BasedOnStyle: LLVM
-
-# Target C++ code:
 Language: Cpp
 
-# Enforce a strict column limit for all lines:
+# Maximum line width
 ColumnLimit: 60
 
-# Indentation and tab usage:
+# Use spaces, 4-wide
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 
-# Adjust how access modifiers are indented (e.g., public:, private:):
+# Control exactly how braces are broken
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+
+# Keep access specifiers (public:, private:, protected:) unindented
 AccessModifierOffset: -4
 
-# Keep consistent alignment for brackets, assignments, and declarations:
+# Align consecutive statements for readability
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignOperands: true
 AlignTrailingComments: true
 
-# Controls how short statements (e.g., short if or for statements) are handled:
+# Disallow short forms on a single line
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 
-# Handle where braces break:
-BreakBeforeBraces: Attach
-
-# Adjust binary operator breaking:
-BreakBeforeBinaryOperators: NonAssignment
-
-# Break constructor initializer lists before the comma to keep them on separate lines:
+# Break constructor initializer lists before commas
 BreakConstructorInitializers: BeforeComma
 
-# Limit consecutive empty lines to keep code tidy:
+# Break before binary operators (except `=`) for clarity
+BreakBeforeBinaryOperators: NonAssignment
+
+# Limit consecutive blank lines
 MaxEmptyLinesToKeep: 1

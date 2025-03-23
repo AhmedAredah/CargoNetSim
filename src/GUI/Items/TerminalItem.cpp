@@ -9,8 +9,10 @@
 #include <QPropertyAnimation>
 #include <QStyleOptionGraphicsItem>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Initialize static variables
 int                TerminalItem::TERMINAL_ID = 0;
@@ -28,13 +30,15 @@ TerminalItem::TerminalItem(
     , properties(properties)
     , animObject(nullptr)
     , animation(nullptr)
-    , wasSelected(false) {
+    , wasSelected(false)
+{
     // Set a higher Z-value for terminals (will be drawn on
     // top)
     setZValue(11);
 
     // Initialize properties if not provided
-    if (properties.isEmpty()) {
+    if (properties.isEmpty())
+    {
         initializeDefaultProperties();
     }
 
@@ -55,24 +59,29 @@ TerminalItem::TerminalItem(
                pixmapWidth, pixmapHeight);
 }
 
-TerminalItem::~TerminalItem() {
+TerminalItem::~TerminalItem()
+{
     // Clean up any active animations
-    if (animation) {
+    if (animation)
+    {
         animation->stop();
         animation->deleteLater();
     }
 
-    if (animObject) {
+    if (animObject)
+    {
         animObject->deleteLater();
     }
 }
 
-void TerminalItem::initializeDefaultProperties() {
+void TerminalItem::initializeDefaultProperties()
+{
     int generalId = getNewTerminalID();
     int typeId    = getNewTerminalID(terminalType);
 
     if (terminalType == "Origin"
-        || terminalType == "Destination") {
+        || terminalType == "Destination")
+    {
         QMap<QString, QVariant> interfaces;
         QStringList             landSide, seaSide;
         landSide << "Train" << "Truck";
@@ -86,7 +95,9 @@ void TerminalItem::initializeDefaultProperties() {
         this->properties["Show on Global Map"] = "True";
         this->properties["Available Interfaces"] =
             interfaces;
-    } else {
+    }
+    else
+    {
         this->properties["ID"] = generalId;
         this->properties["Name"] =
             QString("%1%2").arg(terminalType).arg(typeId);
@@ -108,7 +119,8 @@ void TerminalItem::initializeDefaultProperties() {
         this->properties["dwell_time"] = dwellTime;
 
         if (terminalType == "Sea Port Terminal"
-            || terminalType == "Intermodal Land Terminal") {
+            || terminalType == "Intermodal Land Terminal")
+        {
             QMap<QString, QVariant> customs;
             customs["probability"]      = "0.08";
             customs["delay_mean"]       = "48";
@@ -125,23 +137,31 @@ void TerminalItem::initializeDefaultProperties() {
         QMap<QString, QVariant> interfaces;
         QStringList             landSide, seaSide;
 
-        if (terminalType == "Sea Port Terminal") {
+        if (terminalType == "Sea Port Terminal")
+        {
             landSide << "Truck" << "Train";
             seaSide << "Ship";
-        } else if (terminalType
-                   == "Intermodal Land Terminal") {
+        }
+        else if (terminalType == "Intermodal Land Terminal")
+        {
             landSide << "Truck" << "Train";
             this->properties["Show on Global Map"] =
                 "False";
-        } else if (terminalType == "Train Stop/Depot") {
+        }
+        else if (terminalType == "Train Stop/Depot")
+        {
             landSide << "Train";
             this->properties["Show on Global Map"] =
                 "False";
-        } else if (terminalType == "Truck Parking") {
+        }
+        else if (terminalType == "Truck Parking")
+        {
             landSide << "Truck";
             this->properties["Show on Global Map"] =
                 "False";
-        } else {
+        }
+        else
+        {
             // Default case
             landSide << "Truck";
         }
@@ -152,14 +172,17 @@ void TerminalItem::initializeDefaultProperties() {
             interfaces;
     }
 
-    if (terminalType == "Origin") {
+    if (terminalType == "Origin")
+    {
         this->properties["Containers"] =
             QMap<QString, QVariant>();
     }
 }
 
-void TerminalItem::setRegion(const QString &newRegion) {
-    if (region != newRegion) {
+void TerminalItem::setRegion(const QString &newRegion)
+{
+    if (region != newRegion)
+    {
         QString oldRegion    = region;
         region               = newRegion;
         properties["Region"] = newRegion;
@@ -168,43 +191,51 @@ void TerminalItem::setRegion(const QString &newRegion) {
 }
 
 void TerminalItem::updateProperties(
-    const QMap<QString, QVariant> &newProperties) {
+    const QMap<QString, QVariant> &newProperties)
+{
     for (auto it = newProperties.constBegin();
-         it != newProperties.constEnd(); ++it) {
+         it != newProperties.constEnd(); ++it)
+    {
         properties[it.key()] = it.value();
     }
     emit propertiesChanged();
 }
 
 void TerminalItem::setProperty(const QString  &key,
-                               const QVariant &value) {
+                               const QVariant &value)
+{
     // Check if property exists and is different
     if (!properties.contains(key)
-        || properties[key] != value) {
+        || properties[key] != value)
+    {
         properties[key] = value;
         emit propertyChanged(key, value);
 
         // If this is a visual property, update the item
-        if (key == "Name" || key == "Show on Global Map") {
+        if (key == "Name" || key == "Show on Global Map")
+        {
             update();
         }
     }
 }
 
 QVariant TerminalItem::getProperty(
-    const QString  &key,
-    const QVariant &defaultValue) const {
+    const QString &key, const QVariant &defaultValue) const
+{
     return properties.value(key, defaultValue);
 }
 
-void TerminalItem::resetClassIDs() {
+void TerminalItem::resetClassIDs()
+{
     TERMINAL_ID = 0;
     TERMINAL_TYPES_IDs.clear();
 }
 
 void TerminalItem::setClassIDs(
-    const QMap<int, TerminalItem *> &allTerminalsById) {
-    if (allTerminalsById.isEmpty()) {
+    const QMap<int, TerminalItem *> &allTerminalsById)
+{
+    if (allTerminalsById.isEmpty())
+    {
         TERMINAL_ID = 1;
         TERMINAL_TYPES_IDs.clear();
         return;
@@ -212,9 +243,11 @@ void TerminalItem::setClassIDs(
 
     // Find max ID used
     int maxId = 0;
-    for (auto terminal : allTerminalsById) {
+    for (auto terminal : allTerminalsById)
+    {
         int currentId = terminal->properties["ID"].toInt();
-        if (currentId > maxId) {
+        if (currentId > maxId)
+        {
             maxId = currentId;
         }
     }
@@ -224,13 +257,17 @@ void TerminalItem::setClassIDs(
     // Reset TERMINAL_TYPES_IDs by iterating over all
     // terminals
     TERMINAL_TYPES_IDs.clear();
-    for (auto terminal : allTerminalsById) {
+    for (auto terminal : allTerminalsById)
+    {
         QString terminalType = terminal->terminalType;
         int terminalId = terminal->properties["ID"].toInt();
 
-        if (!TERMINAL_TYPES_IDs.contains(terminalType)) {
+        if (!TERMINAL_TYPES_IDs.contains(terminalType))
+        {
             TERMINAL_TYPES_IDs[terminalType] = terminalId;
-        } else {
+        }
+        else
+        {
             TERMINAL_TYPES_IDs[terminalType] =
                 qMax(TERMINAL_TYPES_IDs[terminalType],
                      terminalId);
@@ -240,17 +277,22 @@ void TerminalItem::setClassIDs(
     // Ensure the next ID for each terminal type starts from
     // max_ID + 1
     for (auto it = TERMINAL_TYPES_IDs.begin();
-         it != TERMINAL_TYPES_IDs.end(); ++it) {
+         it != TERMINAL_TYPES_IDs.end(); ++it)
+    {
         *it = *it + 1;
     }
 }
 
 int TerminalItem::getNewTerminalID(
-    const QString &terminalType) {
-    if (terminalType.isEmpty()) {
+    const QString &terminalType)
+{
+    if (terminalType.isEmpty())
+    {
         TERMINAL_ID++;
         return TERMINAL_ID;
-    } else {
+    }
+    else
+    {
         int value =
             TERMINAL_TYPES_IDs.value(terminalType, 0);
         value++;
@@ -259,22 +301,25 @@ int TerminalItem::getNewTerminalID(
     }
 }
 
-QRectF TerminalItem::boundingRect() const {
+QRectF TerminalItem::boundingRect() const
+{
     return boundingRectValue;
 }
 
 void TerminalItem::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
-    if (!pixmap.isNull()) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    if (!pixmap.isNull())
+    {
         int pixmapWidth  = pixmap.width();
         int pixmapHeight = pixmap.height();
         painter->drawPixmap(-pixmapWidth / 2,
                             -pixmapHeight / 2, pixmap);
     }
 
-    if (option->state & QStyle::State_Selected) {
+    if (option->state & QStyle::State_Selected)
+    {
         QPen pen(Qt::red, 2, Qt::DashLine);
         painter->setPen(pen);
         painter->drawRect(boundingRect());
@@ -282,7 +327,8 @@ void TerminalItem::paint(
 }
 
 void TerminalItem::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
+    QGraphicsSceneMouseEvent *event)
+{
     // Store the initial click position relative to the
     // item's origin
     dragOffset = event->pos();
@@ -295,17 +341,21 @@ void TerminalItem::mousePressEvent(
 }
 
 QVariant TerminalItem::itemChange(GraphicsItemChange change,
-                                  const QVariant &value) {
-    if (change == ItemPositionChange && scene()) {
+                                  const QVariant    &value)
+{
+    if (change == ItemPositionChange && scene())
+    {
         // If this is a position change and we have a drag
         // offset, adjust the position
-        if (dragOffset != QPointF()) {
+        if (dragOffset != QPointF())
+        {
             // Get the proposed new position
             QPointF newPos = value.toPointF();
 
             // Get current mouse position in scene
             // coordinates
-            if (scene()->mouseGrabberItem() == this) {
+            if (scene()->mouseGrabberItem() == this)
+            {
                 QGraphicsView *view =
                     scene()->views().first();
                 QPointF mousePos = view->mapToScene(
@@ -316,14 +366,18 @@ QVariant TerminalItem::itemChange(GraphicsItemChange change,
                 return mousePos - dragOffset;
             }
         }
-    } else if (change == ItemPositionHasChanged
-               && scene()) {
+    }
+    else if (change == ItemPositionHasChanged && scene())
+    {
         // Emit position changed signal when position has
         // been changed
         emit positionChanged(pos());
-    } else if (change == ItemSelectedChange) {
+    }
+    else if (change == ItemSelectedChange)
+    {
         bool selected = value.toBool();
-        if (selected != wasSelected) {
+        if (selected != wasSelected)
+        {
             wasSelected = selected;
             emit selectionChanged(selected);
         }
@@ -333,32 +387,38 @@ QVariant TerminalItem::itemChange(GraphicsItemChange change,
 }
 
 void TerminalItem::hoverEnterEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     setCursor(QCursor(Qt::PointingHandCursor));
     QGraphicsObject::hoverEnterEvent(event);
 }
 
 void TerminalItem::hoverLeaveEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     unsetCursor();
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
 void TerminalItem::flash(bool          evenIfHidden,
-                         const QColor &color) {
+                         const QColor &color)
+{
     bool wasHidden = !isVisible();
-    if (evenIfHidden && wasHidden) {
+    if (evenIfHidden && wasHidden)
+    {
         setVisible(true);
     }
 
     // Clean up any existing animation
-    if (animation) {
+    if (animation)
+    {
         animation->stop();
         animation->deleteLater();
         animation = nullptr;
     }
 
-    if (animObject) {
+    if (animObject)
+    {
         animObject->deleteLater();
         animObject = nullptr;
     }
@@ -371,22 +431,28 @@ void TerminalItem::flash(bool          evenIfHidden,
     rect->setZValue(100);
 
     // Create an animation object to control opacity
-    class AnimationObject : public QObject {
+    class AnimationObject : public QObject
+    {
     public:
         AnimationObject(QObject *parent = nullptr)
             : QObject(parent)
-            , _opacity(1.0) {}
+            , _opacity(1.0)
+        {
+        }
 
-        qreal opacity() const {
+        qreal opacity() const
+        {
             return _opacity;
         }
-        void setOpacity(qreal opacity) {
+        void setOpacity(qreal opacity)
+        {
             _opacity = opacity;
             if (_rect)
                 _rect->setOpacity(opacity);
         }
 
-        void setRect(QGraphicsRectItem *rect) {
+        void setRect(QGraphicsRectItem *rect)
+        {
             _rect = rect;
         }
 
@@ -412,12 +478,14 @@ void TerminalItem::flash(bool          evenIfHidden,
     // Connect finished signal for cleanup
     connect(animation, &QPropertyAnimation::finished,
             [=]() {
-                if (rect && scene()) {
+                if (rect && scene())
+                {
                     scene()->removeItem(rect);
                     delete rect;
                 }
 
-                if (evenIfHidden && wasHidden) {
+                if (evenIfHidden && wasHidden)
+                {
                     setVisible(false);
                 }
 
@@ -432,7 +500,8 @@ void TerminalItem::flash(bool          evenIfHidden,
     animation->start();
 }
 
-QMap<QString, QVariant> TerminalItem::toDict() const {
+QMap<QString, QVariant> TerminalItem::toDict() const
+{
     QMap<QString, QVariant> data;
 
     // Store position
@@ -455,7 +524,8 @@ QMap<QString, QVariant> TerminalItem::toDict() const {
 TerminalItem *
 TerminalItem::fromDict(const QMap<QString, QVariant> &data,
                        const QPixmap &pixmap,
-                       QGraphicsItem *parent) {
+                       QGraphicsItem *parent)
+{
     // Create new instance with essential data
     TerminalItem *instance =
         new TerminalItem(pixmap, data["properties"].toMap(),

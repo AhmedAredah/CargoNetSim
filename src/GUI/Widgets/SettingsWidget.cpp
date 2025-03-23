@@ -14,13 +14,16 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Constructor
 SettingsWidget::SettingsWidget(QWidget *parent)
     : QWidget(parent)
-    , configLoader(nullptr) {
+    , configLoader(nullptr)
+{
     // Initialize with default values for fuel types
     fuelTypes = {{"HFO",
                   {{"cost", 580.0},
@@ -44,7 +47,8 @@ SettingsWidget::SettingsWidget(QWidget *parent)
     loadSettings();
 }
 
-void SettingsWidget::initUI() {
+void SettingsWidget::initUI()
+{
     // Main layout for the widget
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -379,14 +383,16 @@ void SettingsWidget::initUI() {
     mainLayout->addWidget(scrollArea);
 }
 
-void SettingsWidget::updateFuelTable() {
+void SettingsWidget::updateFuelTable()
+{
     fuelTable->setRowCount(
         fuelTypes.size()); // Set row count to match number
                            // of fuel types
 
     int row = 0;
     for (auto it = fuelTypes.begin(); it != fuelTypes.end();
-         ++it, ++row) {
+         ++it, ++row)
+    {
         const QString                 &fuelType = it.key();
         const QMap<QString, QVariant> &data = it.value();
 
@@ -401,9 +407,12 @@ void SettingsWidget::updateFuelTable() {
         costSpin->setDecimals(2);
         costSpin->setValue(data["cost"].toDouble());
 
-        if (data["unit"].toString() == "kg") {
+        if (data["unit"].toString() == "kg")
+        {
             costSpin->setSuffix(tr(" per ton"));
-        } else {
+        }
+        else
+        {
             costSpin->setSuffix(tr(" per ")
                                 + data["unit"].toString());
         }
@@ -471,18 +480,23 @@ void SettingsWidget::updateFuelTable() {
 
 void SettingsWidget::updateFuelData(const QString &fuelType,
                                     const QString &key,
-                                    const QVariant &value) {
-    if (fuelTypes.contains(fuelType)) {
+                                    const QVariant &value)
+{
+    if (fuelTypes.contains(fuelType))
+    {
         fuelTypes[fuelType][key] = value;
 
         // If unit changes, update the suffixes in the table
-        if (key == "unit") {
+        if (key == "unit")
+        {
             for (int row = 0; row < fuelTable->rowCount();
-                 ++row) {
+                 ++row)
+            {
                 QTableWidgetItem *nameItem =
                     fuelTable->item(row, 0);
                 if (nameItem
-                    && nameItem->text() == fuelType) {
+                    && nameItem->text() == fuelType)
+                {
                     QDoubleSpinBox *costSpin =
                         qobject_cast<QDoubleSpinBox *>(
                             fuelTable->cellWidget(row, 1));
@@ -494,9 +508,12 @@ void SettingsWidget::updateFuelData(const QString &fuelType,
                             fuelTable->cellWidget(row, 3));
 
                     QString unitStr = value.toString();
-                    if (unitStr == "kg") {
+                    if (unitStr == "kg")
+                    {
                         costSpin->setSuffix(tr(" per ton"));
-                    } else {
+                    }
+                    else
+                    {
                         costSpin->setSuffix(tr(" per ")
                                             + unitStr);
                     }
@@ -512,7 +529,8 @@ void SettingsWidget::updateFuelData(const QString &fuelType,
     }
 }
 
-void SettingsWidget::addFuelType() {
+void SettingsWidget::addFuelType()
+{
     // Create a dialog to get the fuel type name
     QDialog dialog(this);
     dialog.setWindowTitle(tr("Add Fuel Type"));
@@ -539,10 +557,12 @@ void SettingsWidget::addFuelType() {
     buttonLayout->addWidget(addButton);
     layout->addLayout(buttonLayout);
 
-    if (dialog.exec() == QDialog::Accepted) {
+    if (dialog.exec() == QDialog::Accepted)
+    {
         QString fuelName = nameEdit->text().trimmed();
         if (!fuelName.isEmpty()
-            && !fuelTypes.contains(fuelName)) {
+            && !fuelTypes.contains(fuelName))
+        {
             // Add new fuel type with default values
             fuelTypes[fuelName] = {{"cost", 1.0},
                                    {"calorific", 10.0},
@@ -556,7 +576,8 @@ void SettingsWidget::addFuelType() {
     }
 }
 
-void SettingsWidget::updateFuelTypeDropdowns() {
+void SettingsWidget::updateFuelTypeDropdowns()
+{
     // Store current selections
     QString shipFuel  = shipFuelType->count() > 0
                             ? shipFuelType->currentText()
@@ -574,7 +595,8 @@ void SettingsWidget::updateFuelTypeDropdowns() {
     truckFuelType->clear();
 
     for (auto it = fuelTypes.begin(); it != fuelTypes.end();
-         ++it) {
+         ++it)
+    {
         const QString &fuelType = it.key();
         shipFuelType->addItem(fuelType);
         trainFuelType->addItem(fuelType);
@@ -594,8 +616,10 @@ void SettingsWidget::updateFuelTypeDropdowns() {
         truckFuelType->setCurrentIndex(truckIdx);
 }
 
-bool SettingsWidget::loadSettings() {
-    try {
+bool SettingsWidget::loadSettings()
+{
+    try
+    {
         // TODO
         // configLoader = GlobalConfigLoader::getInstance();
         // settings = configLoader->getAllParams();
@@ -779,10 +803,12 @@ bool SettingsWidget::loadSettings() {
                 .toMap()["ship"]
                 .toMap()["fuel_type"]
                 .toString();
-        if (!shipFuelTypeName.isEmpty()) {
+        if (!shipFuelTypeName.isEmpty())
+        {
             int idx =
                 shipFuelType->findText(shipFuelTypeName);
-            if (idx >= 0) {
+            if (idx >= 0)
+            {
                 shipFuelType->setCurrentIndex(idx);
             }
         }
@@ -792,10 +818,12 @@ bool SettingsWidget::loadSettings() {
                 .toMap()["train"]
                 .toMap()["fuel_type"]
                 .toString();
-        if (!trainFuelTypeName.isEmpty()) {
+        if (!trainFuelTypeName.isEmpty())
+        {
             int idx =
                 trainFuelType->findText(trainFuelTypeName);
-            if (idx >= 0) {
+            if (idx >= 0)
+            {
                 trainFuelType->setCurrentIndex(idx);
             }
         }
@@ -805,16 +833,20 @@ bool SettingsWidget::loadSettings() {
                 .toMap()["truck"]
                 .toMap()["fuel_type"]
                 .toString();
-        if (!truckFuelTypeName.isEmpty()) {
+        if (!truckFuelTypeName.isEmpty())
+        {
             int idx =
                 truckFuelType->findText(truckFuelTypeName);
-            if (idx >= 0) {
+            if (idx >= 0)
+            {
                 truckFuelType->setCurrentIndex(idx);
             }
         }
 
         return true;
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         qWarning()
             << "Failed to load settings from config file:"
             << e.what();
@@ -822,14 +854,16 @@ bool SettingsWidget::loadSettings() {
     }
 }
 
-void SettingsWidget::applySettings() {
+void SettingsWidget::applySettings()
+{
     // Collect fuel energy and prices data
     QMap<QString, QVariant> fuelEnergy;
     QMap<QString, QVariant> fuelPrices;
     QMap<QString, QVariant> fuelCarbonContent;
 
     for (auto it = fuelTypes.begin(); it != fuelTypes.end();
-         ++it) {
+         ++it)
+    {
         const QString                 &fuelType = it.key();
         const QMap<QString, QVariant> &data = it.value();
 
@@ -942,13 +976,14 @@ void SettingsWidget::applySettings() {
     // }
 }
 
-QMap<QString, QVariant>
-SettingsWidget::getSettings() const {
+QMap<QString, QVariant> SettingsWidget::getSettings() const
+{
     return settings;
 }
 
 void SettingsWidget::showEnergyCalculator(
-    const QString &mode) {
+    const QString &mode)
+{
     QDialog dialog(this);
     dialog.setWindowTitle(
         tr("Energy Consumption Calculator"));
@@ -957,10 +992,12 @@ void SettingsWidget::showEnergyCalculator(
     // Get current fuel consumption from settings
     double currentFuelConsumption = 0.0;
     if (!settings.isEmpty()
-        && settings.contains("transport_modes")) {
+        && settings.contains("transport_modes"))
+    {
         auto transportModes =
             settings["transport_modes"].toMap();
-        if (transportModes.contains(mode)) {
+        if (transportModes.contains(mode))
+        {
             currentFuelConsumption =
                 transportModes[mode]
                     .toMap()["average_fuel_consumption"]
@@ -972,13 +1009,18 @@ void SettingsWidget::showEnergyCalculator(
     QString         fuelType;
     QDoubleSpinBox *modeFuelSpin = nullptr;
 
-    if (mode == "ship") {
+    if (mode == "ship")
+    {
         fuelType     = shipFuelType->currentText();
         modeFuelSpin = shipFuelSpin;
-    } else if (mode == "train") {
+    }
+    else if (mode == "train")
+    {
         fuelType     = trainFuelType->currentText();
         modeFuelSpin = trainFuelSpin;
-    } else if (mode == "truck") {
+    }
+    else if (mode == "truck")
+    {
         fuelType     = truckFuelType->currentText();
         modeFuelSpin = truckFuelSpin;
     }
@@ -1034,7 +1076,8 @@ void SettingsWidget::showEnergyCalculator(
                 .arg(energy, 0, 'f', 2));
 
         // Update the corresponding spin box
-        if (modeFuelSpin) {
+        if (modeFuelSpin)
+        {
             modeFuelSpin->setValue(fuelConsumption);
         }
     });
@@ -1053,14 +1096,16 @@ void SettingsWidget::showEnergyCalculator(
 QPair<QFormLayout *, QMap<QString, QWidget *>>
 SettingsWidget::createDwellTimeParameters(
     const QString                 &method,
-    const QMap<QString, QVariant> &currentParams) {
+    const QMap<QString, QVariant> &currentParams)
+{
 
     QFormLayout *paramLayout = new QFormLayout();
     paramLayout->setFieldGrowthPolicy(
         QFormLayout::AllNonFixedFieldsGrow);
     QMap<QString, QWidget *> paramFields;
 
-    if (method == "gamma") {
+    if (method == "gamma")
+    {
         // Shape parameter
         QLineEdit *shape = new QLineEdit(
             currentParams.value("shape", "2.0").toString());
@@ -1074,7 +1119,9 @@ SettingsWidget::createDwellTimeParameters(
         paramFields["scale"] = scale;
         paramLayout->addRow(tr("Scale (θ) minutes:"),
                             scale);
-    } else if (method == "exponential") {
+    }
+    else if (method == "exponential")
+    {
         // Scale parameter
         QLineEdit *scale = new QLineEdit(
             currentParams.value("scale", "2880")
@@ -1082,7 +1129,9 @@ SettingsWidget::createDwellTimeParameters(
         paramFields["scale"] = scale;
         paramLayout->addRow(tr("Scale (λ) minutes:"),
                             scale);
-    } else if (method == "normal") {
+    }
+    else if (method == "normal")
+    {
         // Mean parameter
         QLineEdit *mean = new QLineEdit(
             currentParams.value("mean", "2880").toString());
@@ -1096,7 +1145,9 @@ SettingsWidget::createDwellTimeParameters(
         paramFields["std_dev"] = stdDev;
         paramLayout->addRow(tr("Std Dev (minutes):"),
                             stdDev);
-    } else if (method == "lognormal") {
+    }
+    else if (method == "lognormal")
+    {
         // Mean parameter (log-scale)
         QLineEdit *mean = new QLineEdit(
             currentParams.value("mean", "3.45").toString());
@@ -1115,27 +1166,31 @@ SettingsWidget::createDwellTimeParameters(
 }
 
 void SettingsWidget::onDwellMethodChanged(
-    const QString &method, QGroupBox *dwellGroup) {
+    const QString &method, QGroupBox *dwellGroup)
+{
     // Remove old parameter fields
     QFormLayout *oldParamLayout = nullptr;
-    for (int i = 0; i < dwellGroup->layout()->count();
-         ++i) {
+    for (int i = 0; i < dwellGroup->layout()->count(); ++i)
+    {
         QLayoutItem *item = dwellGroup->layout()->itemAt(i);
         if (QFormLayout *formLayout =
-                qobject_cast<QFormLayout *>(
-                    item->layout())) {
+                qobject_cast<QFormLayout *>(item->layout()))
+        {
             oldParamLayout = formLayout;
             break;
         }
     }
 
-    if (oldParamLayout) {
+    if (oldParamLayout)
+    {
         // Get the current parameters if they exist
         QMap<QString, QVariant> currentParams;
         for (auto it = settings.begin();
-             it != settings.end(); ++it) {
+             it != settings.end(); ++it)
+        {
             if (it.key().startsWith(
-                    "dwell_time.parameters.")) {
+                    "dwell_time.parameters."))
+            {
                 QString paramName =
                     it.key().split(".").last();
                 currentParams[paramName] = it.value();
@@ -1143,9 +1198,11 @@ void SettingsWidget::onDwellMethodChanged(
         }
 
         // Remove the old layout
-        while (oldParamLayout->count()) {
+        while (oldParamLayout->count())
+        {
             QLayoutItem *item = oldParamLayout->takeAt(0);
-            if (item->widget()) {
+            if (item->widget())
+            {
                 item->widget()->deleteLater();
             }
             delete item;
@@ -1163,7 +1220,8 @@ void SettingsWidget::onDwellMethodChanged(
     // Set parent for widgets created in
     // createDwellTimeParameters
     for (auto it = paramFields.begin();
-         it != paramFields.end(); ++it) {
+         it != paramFields.end(); ++it)
+    {
         QWidget *widget = it.value();
         widget->setParent(dwellGroup); // FIXED: Set correct
                                        // parent for widgets
@@ -1172,23 +1230,28 @@ void SettingsWidget::onDwellMethodChanged(
     // FIXED: Properly add the layout to the group box
     QVBoxLayout *dwellLayout =
         qobject_cast<QVBoxLayout *>(dwellGroup->layout());
-    if (dwellLayout) {
+    if (dwellLayout)
+    {
         dwellLayout->addLayout(paramLayout);
     }
 
     // Update settings with new parameter fields
     for (auto it = paramFields.begin();
-         it != paramFields.end(); ++it) {
+         it != paramFields.end(); ++it)
+    {
         QString  paramName = it.key();
         QWidget *widget    = it.value();
 
         if (QLineEdit *lineEdit =
-                qobject_cast<QLineEdit *>(widget)) {
+                qobject_cast<QLineEdit *>(widget))
+        {
             settings[QString("dwell_time.parameters.%1")
                          .arg(paramName)] =
                 lineEdit->text();
-        } else if (QComboBox *comboBox =
-                       qobject_cast<QComboBox *>(widget)) {
+        }
+        else if (QComboBox *comboBox =
+                     qobject_cast<QComboBox *>(widget))
+        {
             settings[QString("dwell_time.parameters.%1")
                          .arg(paramName)] =
                 comboBox->currentText();
@@ -1199,9 +1262,11 @@ void SettingsWidget::onDwellMethodChanged(
 void SettingsWidget::addNestedPropertiesSection(
     const QMap<QString, QVariant> &item,
     const QString                 &sectionName,
-    const QString                 &propertiesKey) {
+    const QString                 &propertiesKey)
+{
 
-    if (!item.contains(propertiesKey)) {
+    if (!item.contains(propertiesKey))
+    {
         return;
     }
 
@@ -1216,14 +1281,17 @@ void SettingsWidget::addNestedPropertiesSection(
     QMap<QString, QPair<QString, QValidator *>>
         propertyConfigs;
 
-    if (propertiesKey == "capacity") {
+    if (propertiesKey == "capacity")
+    {
         propertyConfigs["storage"] =
             qMakePair(tr("Storage Capacity (TEU)"),
                       new QDoubleValidator(group));
         propertyConfigs["processing"] =
             qMakePair(tr("Processing Capacity (TEU/day)"),
                       new QDoubleValidator(group));
-    } else if (propertiesKey == "cost") {
+    }
+    else if (propertiesKey == "cost")
+    {
         propertyConfigs["fixed"] =
             qMakePair(tr("Fixed Cost (USD/year)"),
                       new QDoubleValidator(group));
@@ -1233,7 +1301,9 @@ void SettingsWidget::addNestedPropertiesSection(
         propertyConfigs["penalty"] =
             qMakePair(tr("Penalty Cost (USD/day)"),
                       new QDoubleValidator(group));
-    } else if (propertiesKey == "customs") {
+    }
+    else if (propertiesKey == "customs")
+    {
         propertyConfigs["processing_time"] =
             qMakePair(tr("Processing Time (hours)"),
                       new QDoubleValidator(group));
@@ -1246,22 +1316,26 @@ void SettingsWidget::addNestedPropertiesSection(
         item[propertiesKey].toMap();
 
     for (auto it = properties.begin();
-         it != properties.end(); ++it) {
+         it != properties.end(); ++it)
+    {
         const QString  &subkey   = it.key();
         const QVariant &subvalue = it.value();
 
         QLineEdit *lineEdit =
             new QLineEdit(subvalue.toString(), group);
 
-        if (propertyConfigs.contains(subkey)) {
+        if (propertyConfigs.contains(subkey))
+        {
             QString label = propertyConfigs[subkey].first;
             QValidator *validator =
                 propertyConfigs[subkey].second;
 
-            if (validator) {
+            if (validator)
+            {
                 if (QDoubleValidator *doubleValidator =
                         qobject_cast<QDoubleValidator *>(
-                            validator)) {
+                            validator))
+                {
                     doubleValidator->setBottom(
                         0.0); // Ensure non-negative values
                 }
@@ -1269,7 +1343,9 @@ void SettingsWidget::addNestedPropertiesSection(
             }
 
             layout->addRow(label + ":", lineEdit);
-        } else {
+        }
+        else
+        {
             layout->addRow(subkey + ":", lineEdit);
         }
     }

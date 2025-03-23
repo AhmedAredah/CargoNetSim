@@ -16,8 +16,10 @@
 #include <QWaitCondition>
 #include <atomic>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Base class for simulation clients
@@ -26,7 +28,8 @@ namespace Backend {
  * processing responses. Ensures commands are processed one
  * at a time with proper waiting for server responses.
  */
-class SimulationClientBase : public QObject {
+class SimulationClientBase : public QObject
+{
     Q_OBJECT
 
 public:
@@ -301,11 +304,12 @@ protected:
      */
     template <typename Func>
     auto executeSerializedCommand(Func func)
-        -> decltype(func()) {
+        -> decltype(func())
+    {
         // Check if m_rabbitMQHandler exists and is
         // connected
-        if (m_rabbitMQHandler == nullptr
-            || !isConnected()) {
+        if (m_rabbitMQHandler == nullptr || !isConnected())
+        {
             qWarning()
                 << "Cannot execute command: RabbitMQ "
                    "handler"

@@ -15,8 +15,10 @@
 #include <QVariant>
 #include <QWidget>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Forward declarations
 class MainWindow;
@@ -27,7 +29,8 @@ class ConnectionLine;
 class BackgroundPhotoItem;
 class MapPoint;
 
-class PropertiesPanel : public QWidget {
+class PropertiesPanel : public QWidget
+{
     Q_OBJECT
 
 public:
@@ -42,7 +45,8 @@ public:
     void updatePositionFields(const QPointF &pos);
     void updateCoordinateFields(double lat, double lon);
 
-    QGraphicsItem *getCurrentItem() {
+    QGraphicsItem *getCurrentItem()
+    {
         return currentItem;
     }
 

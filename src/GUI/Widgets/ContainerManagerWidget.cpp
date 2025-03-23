@@ -12,8 +12,10 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Implementation of ContainerManagerWidget
 
@@ -21,7 +23,8 @@ ContainerManagerWidget::ContainerManagerWidget(
     const QMap<QString, QVariant> &containers,
     QWidget                       *parent)
     : QDialog(parent)
-    , containers(containers) {
+    , containers(containers)
+{
     setWindowTitle(tr("Container Management"));
     setMinimumWidth(400);
 
@@ -84,16 +87,19 @@ ContainerManagerWidget::ContainerManagerWidget(
 }
 
 QMap<QString, QVariant>
-ContainerManagerWidget::getContainers() const {
+ContainerManagerWidget::getContainers() const
+{
     return containers;
 }
 
 int ContainerManagerWidget::convertToContainerlibSize(
-    ContainerSize customSize) {
+    ContainerSize customSize)
+{
     // Mapping to containerlib size constants
     // These values should match the ones defined in the
     // containerlib library
-    switch (customSize) {
+    switch (customSize)
+    {
     case ContainerSize::TwentyFT:
         return 0;
     case ContainerSize::TwentyFT_HighCube:
@@ -123,7 +129,8 @@ int ContainerManagerWidget::convertToContainerlibSize(
 
 ContainerSize
 ContainerManagerWidget::containerSizeFromString(
-    const QString &sizeStr) {
+    const QString &sizeStr)
+{
     if (sizeStr == "TwentyFT")
         return ContainerSize::TwentyFT;
     if (sizeStr == "TwentyFT_HighCube")
@@ -150,8 +157,10 @@ ContainerManagerWidget::containerSizeFromString(
 }
 
 QString ContainerManagerWidget::containerSizeToString(
-    ContainerSize size) {
-    switch (size) {
+    ContainerSize size)
+{
+    switch (size)
+    {
     case ContainerSize::TwentyFT:
         return "TwentyFT";
     case ContainerSize::TwentyFT_HighCube:
@@ -180,7 +189,8 @@ QString ContainerManagerWidget::containerSizeToString(
 }
 
 QComboBox *ContainerManagerWidget::createSizeComboBox(
-    const QString &currentSize) {
+    const QString &currentSize)
+{
     QComboBox *combo = new QComboBox();
 
     // Add all container sizes with their display names
@@ -201,7 +211,8 @@ QComboBox *ContainerManagerWidget::createSizeComboBox(
 
     // Set current selection
     int sizeIndex = combo->findData(currentSize);
-    if (sizeIndex >= 0) {
+    if (sizeIndex >= 0)
+    {
         combo->setCurrentIndex(sizeIndex);
     }
 
@@ -214,10 +225,11 @@ QComboBox *ContainerManagerWidget::createSizeComboBox(
     return combo;
 }
 
-void ContainerManagerWidget::onSizeChanged(
-    QComboBox *combo) {
+void ContainerManagerWidget::onSizeChanged(QComboBox *combo)
+{
     int row = containerList->indexAt(combo->pos()).row();
-    if (row >= 0) {
+    if (row >= 0)
+    {
         QString containerId =
             containerList->item(row, 0)->text();
         QMap<QString, QVariant> containerData =
@@ -228,12 +240,14 @@ void ContainerManagerWidget::onSizeChanged(
     }
 }
 
-void ContainerManagerWidget::updateContainerList() {
+void ContainerManagerWidget::updateContainerList()
+{
     containerList->setRowCount(containers.size());
     int row = 0;
 
     for (auto it = containers.begin();
-         it != containers.end(); ++it, ++row) {
+         it != containers.end(); ++it, ++row)
+    {
         const QString          &containerId = it.key();
         QMap<QString, QVariant> containerData =
             it.value().toMap();
@@ -252,7 +266,8 @@ void ContainerManagerWidget::updateContainerList() {
     }
 }
 
-void ContainerManagerWidget::addContainer() {
+void ContainerManagerWidget::addContainer()
+{
     QString containerId =
         QString::number(containers.size() + 1);
 
@@ -266,16 +281,19 @@ void ContainerManagerWidget::addContainer() {
     containerList->selectRow(containers.size() - 1);
 }
 
-void ContainerManagerWidget::editContainer() {
+void ContainerManagerWidget::editContainer()
+{
     int currentRow = containerList->currentRow();
-    if (currentRow >= 0) {
+    if (currentRow >= 0)
+    {
         QString containerId =
             containerList->item(currentRow, 0)->text();
         QMap<QString, QVariant> containerData =
             containers[containerId].toMap();
 
         ContainerEditDialog dialog(containerData, this);
-        if (dialog.exec() == QDialog::Accepted) {
+        if (dialog.exec() == QDialog::Accepted)
+        {
             // Preserve the size while updating other
             // properties
             QString size = containerData["size"].toString();
@@ -287,9 +305,11 @@ void ContainerManagerWidget::editContainer() {
     }
 }
 
-void ContainerManagerWidget::deleteContainer() {
+void ContainerManagerWidget::deleteContainer()
+{
     int currentRow = containerList->currentRow();
-    if (currentRow >= 0) {
+    if (currentRow >= 0)
+    {
         QString containerId =
             containerList->item(currentRow, 0)->text();
         containers.remove(containerId);
@@ -297,9 +317,11 @@ void ContainerManagerWidget::deleteContainer() {
     }
 }
 
-void ContainerManagerWidget::generateContainers() {
+void ContainerManagerWidget::generateContainers()
+{
     GenerateContainersDialog dialog(this);
-    if (dialog.exec() == QDialog::Accepted) {
+    if (dialog.exec() == QDialog::Accepted)
+    {
         QMap<QString, QVariant> data =
             dialog.getGenerationData();
         int     count = data["count"].toInt();
@@ -308,7 +330,8 @@ void ContainerManagerWidget::generateContainers() {
         int startId = containers.size() + 1;
 
         // Generate the containers
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; ++i)
+        {
             QString containerId =
                 QString::number(startId + i);
             QMap<QString, QVariant> containerData;
@@ -319,7 +342,8 @@ void ContainerManagerWidget::generateContainers() {
         updateContainerList();
 
         // Select the first new container
-        if (count > 0) {
+        if (count > 0)
+        {
             containerList->selectRow(startId - 1);
         }
     }
@@ -330,7 +354,8 @@ void ContainerManagerWidget::generateContainers() {
 ContainerEditDialog::ContainerEditDialog(
     const QMap<QString, QVariant> &containerData,
     QWidget                       *parent)
-    : QDialog(parent) {
+    : QDialog(parent)
+{
     setWindowTitle(tr("Edit Container Properties"));
     setMinimumWidth(400);
 
@@ -371,8 +396,10 @@ ContainerEditDialog::ContainerEditDialog(
     // handled separately
     QMap<QString, QVariant> props;
     for (auto it = containerData.begin();
-         it != containerData.end(); ++it) {
-        if (it.key() != "size") {
+         it != containerData.end(); ++it)
+    {
+        if (it.key() != "size")
+        {
             props[it.key()] = it.value();
         }
     }
@@ -385,12 +412,14 @@ ContainerEditDialog::ContainerEditDialog(
 }
 
 void ContainerEditDialog::loadProperties(
-    const QMap<QString, QVariant> &props) {
+    const QMap<QString, QVariant> &props)
+{
     propTable->setRowCount(props.size());
     int row = 0;
 
     for (auto it = props.begin(); it != props.end();
-         ++it, ++row) {
+         ++it, ++row)
+    {
         propTable->setItem(row, 0,
                            new QTableWidgetItem(it.key()));
         propTable->setItem(
@@ -399,7 +428,8 @@ void ContainerEditDialog::loadProperties(
     }
 }
 
-void ContainerEditDialog::addProperty() {
+void ContainerEditDialog::addProperty()
+{
     int currentRow = propTable->rowCount();
     propTable->setRowCount(currentRow + 1);
     propTable->setItem(currentRow, 0,
@@ -408,24 +438,29 @@ void ContainerEditDialog::addProperty() {
                        new QTableWidgetItem(""));
 }
 
-void ContainerEditDialog::deleteProperty() {
+void ContainerEditDialog::deleteProperty()
+{
     int currentRow = propTable->currentRow();
-    if (currentRow >= 0) {
+    if (currentRow >= 0)
+    {
         propTable->removeRow(currentRow);
     }
 }
 
 QMap<QString, QVariant>
-ContainerEditDialog::getContainerData() const {
+ContainerEditDialog::getContainerData() const
+{
     QMap<QString, QVariant> data;
 
-    for (int row = 0; row < propTable->rowCount(); ++row) {
+    for (int row = 0; row < propTable->rowCount(); ++row)
+    {
         QTableWidgetItem *keyItem = propTable->item(row, 0);
         QTableWidgetItem *valueItem =
             propTable->item(row, 1);
 
         if (keyItem && valueItem
-            && !keyItem->text().trimmed().isEmpty()) {
+            && !keyItem->text().trimmed().isEmpty())
+        {
             data[keyItem->text().trimmed()] =
                 valueItem->text().trimmed();
         }
@@ -438,7 +473,8 @@ ContainerEditDialog::getContainerData() const {
 
 GenerateContainersDialog::GenerateContainersDialog(
     QWidget *parent)
-    : QDialog(parent) {
+    : QDialog(parent)
+{
     setWindowTitle(tr("Generate Containers"));
     setMinimumWidth(300);
 
@@ -493,7 +529,8 @@ GenerateContainersDialog::GenerateContainersDialog(
 }
 
 QMap<QString, QVariant>
-GenerateContainersDialog::getGenerationData() const {
+GenerateContainersDialog::getGenerationData() const
+{
     QMap<QString, QVariant> data;
     data["count"] = numberSpin->value();
     data["size"]  = sizeCombo->currentData().toString();

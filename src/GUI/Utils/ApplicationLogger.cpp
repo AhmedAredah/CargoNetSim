@@ -7,8 +7,10 @@
 #include <QThread>
 #include <QTimer>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Initialize static members
 ApplicationLogger *ApplicationLogger::s_instance = nullptr;
@@ -26,21 +28,29 @@ LogEntry::LogEntry(const QString &message, int clientIndex,
     : message(message)
     , clientIndex(clientIndex)
     , isError(isError)
-    , timestamp(timestamp) {}
+    , timestamp(timestamp)
+{
+}
 
 // LogEvent implementation
 LogEvent::LogEvent(const LogEntry &entry)
     : QEvent(LogEventType)
-    , entry(entry) {}
+    , entry(entry)
+{
+}
 
 // ProgressEvent implementation
 ProgressEvent::ProgressEvent(float value, int clientIndex)
     : QEvent(ProgressEventType)
     , value(value)
-    , clientIndex(clientIndex) {}
+    , clientIndex(clientIndex)
+{
+}
 
-ApplicationLogger *ApplicationLogger::getInstance() {
-    if (!s_instance) {
+ApplicationLogger *ApplicationLogger::getInstance()
+{
+    if (!s_instance)
+    {
         s_instance = new ApplicationLogger();
     }
     return s_instance;
@@ -48,9 +58,11 @@ ApplicationLogger *ApplicationLogger::getInstance() {
 
 ApplicationLogger::ApplicationLogger()
     : QObject(nullptr)
-    , m_isRunning(false) {
+    , m_isRunning(false)
+{
     // Create client logs maps with default entries
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i)
+    {
         m_clientLogs[i]     = QStringList();
         m_clientProgress[i] = 0;
     }
@@ -58,7 +70,8 @@ ApplicationLogger::ApplicationLogger()
     // Move to the main thread if created in a different
     // thread
     if (QThread::currentThread()
-        != QApplication::instance()->thread()) {
+        != QApplication::instance()->thread())
+    {
         moveToThread(QApplication::instance()->thread());
     }
 
@@ -66,7 +79,8 @@ ApplicationLogger::ApplicationLogger()
     QTimer::singleShot(0, this, &ApplicationLogger::start);
 }
 
-void ApplicationLogger::start() {
+void ApplicationLogger::start()
+{
     if (m_isRunning)
         return;
 
@@ -87,28 +101,33 @@ void ApplicationLogger::start() {
     qDebug() << "ApplicationLogger started";
 }
 
-void ApplicationLogger::stop() {
+void ApplicationLogger::stop()
+{
     m_isRunning = false;
 
     // Delete timers
-    for (QTimer *timer : findChildren<QTimer *>()) {
+    for (QTimer *timer : findChildren<QTimer *>())
+    {
         timer->stop();
         timer->deleteLater();
     }
 }
 
 void ApplicationLogger::log(const QString &message,
-                            int            clientType) {
+                            int            clientType)
+{
     logMessageInternal(message, clientType, false);
 }
 
 void ApplicationLogger::logError(const QString &message,
-                                 int clientType) {
+                                 int            clientType)
+{
     logMessageInternal(message, clientType, true);
 }
 
 void ApplicationLogger::updateProgress(float progressValue,
-                                       int   clientType) {
+                                       int   clientType)
+{
     // Clamp progress value to 0-100 range
     progressValue = qBound(0.0f, progressValue, 100.0f);
     int progress  = static_cast<int>(progressValue);
@@ -125,30 +144,35 @@ void ApplicationLogger::updateProgress(float progressValue,
         qMakePair(progressValue, clientType));
 
     // Post event to main thread if not already there
-    if (QThread::currentThread()
-        != getInstance()->thread()) {
+    if (QThread::currentThread() != getInstance()->thread())
+    {
         QApplication::postEvent(
             getInstance(),
             new ProgressEvent(progressValue, clientType));
-    } else {
+    }
+    else
+    {
         // Process immediately if already in the main thread
         getInstance()->m_clientProgress[clientType] =
             progress;
-        emit getInstance()->progressUpdated(progress,
-                                            clientType);
+        emit getInstance()
+            -> progressUpdated(progress, clientType);
     }
 }
 
-void ApplicationLogger::signalInitComplete() {
+void ApplicationLogger::signalInitComplete()
+{
     QMutexLocker locker(&s_logMutex);
     s_isInitialized = true;
     s_initCondition.wakeAll();
-    emit getInstance()->initializationComplete();
+    emit getInstance() -> initializationComplete();
 }
 
-bool ApplicationLogger::waitForInitComplete(int timeoutMs) {
+bool ApplicationLogger::waitForInitComplete(int timeoutMs)
+{
     QMutexLocker locker(&s_logMutex);
-    if (s_isInitialized) {
+    if (s_isInitialized)
+    {
         return true;
     }
 
@@ -156,38 +180,44 @@ bool ApplicationLogger::waitForInitComplete(int timeoutMs) {
         &s_logMutex, timeoutMs < 0 ? ULONG_MAX : timeoutMs);
 }
 
-void ApplicationLogger::processLogQueue() {
+void ApplicationLogger::processLogQueue()
+{
     // Get pending log entries
     QList<LogEntry> entries;
 
     // Use a mutex to safely access the queue
     {
         QMutexLocker locker(&s_logMutex);
-        while (!s_logQueue.isEmpty()) {
+        while (!s_logQueue.isEmpty())
+        {
             entries.append(s_logQueue.dequeue());
         }
     }
 
     // Process each log entry
-    foreach (const LogEntry &entry, entries) {
+    foreach (const LogEntry &entry, entries)
+    {
         appendLogEntry(entry);
     }
 }
 
-void ApplicationLogger::processProgressQueue() {
+void ApplicationLogger::processProgressQueue()
+{
     // Get pending progress updates
     QList<QPair<float, int>> updates;
 
     // Use a mutex to safely access the queue
     {
         QMutexLocker locker(&s_progressMutex);
-        while (!s_progressQueue.isEmpty()) {
+        while (!s_progressQueue.isEmpty())
+        {
             updates.append(s_progressQueue.dequeue());
         }
     }
 
     // Process each progress update
-    for (const auto &update : updates) {
+    for (const auto &update : updates)
+    {
         int progress    = static_cast<int>(update.first);
         int clientIndex = update.second;
 
@@ -197,7 +227,8 @@ void ApplicationLogger::processProgressQueue() {
 }
 
 void ApplicationLogger::logMessageInternal(
-    const QString &message, int clientType, bool isError) {
+    const QString &message, int clientType, bool isError)
+{
     // Ensure valid client index (default to "general" log
     // at index 4)
     clientType = (clientType >= 0 && clientType < 4)
@@ -212,26 +243,31 @@ void ApplicationLogger::logMessageInternal(
     s_logQueue.enqueue(entry);
 
     // Post event to main thread if not already there
-    if (QThread::currentThread()
-        != getInstance()->thread()) {
+    if (QThread::currentThread() != getInstance()->thread())
+    {
         QApplication::postEvent(getInstance(),
                                 new LogEvent(entry));
-    } else {
+    }
+    else
+    {
         // Process immediately if already in the main thread
         getInstance()->appendLogEntry(entry);
     }
 }
 
-void ApplicationLogger::customEvent(QEvent *event) {
+void ApplicationLogger::customEvent(QEvent *event)
+{
     // Handle log events
-    if (event->type() == LogEvent::LogEventType) {
+    if (event->type() == LogEvent::LogEventType)
+    {
         LogEvent *logEvent = static_cast<LogEvent *>(event);
         appendLogEntry(logEvent->entry);
         return;
     }
 
     // Handle progress events
-    if (event->type() == ProgressEvent::ProgressEventType) {
+    if (event->type() == ProgressEvent::ProgressEventType)
+    {
         ProgressEvent *progressEvent =
             static_cast<ProgressEvent *>(event);
         m_clientProgress[progressEvent->clientIndex] =
@@ -247,7 +283,8 @@ void ApplicationLogger::customEvent(QEvent *event) {
 }
 
 void ApplicationLogger::appendLogEntry(
-    const LogEntry &entry) {
+    const LogEntry &entry)
+{
     // Format timestamp
     QDateTime dateTime =
         QDateTime::fromMSecsSinceEpoch(entry.timestamp);
@@ -268,20 +305,23 @@ void ApplicationLogger::appendLogEntry(
 }
 
 bool ApplicationLogger::saveLogsToFile(
-    const QString &filePath) {
+    const QString &filePath)
+{
     QFile file(filePath);
 
     // Ensure parent directory exists
     QDir parentDir = QFileInfo(file).dir();
-    if (!parentDir.exists()) {
-        if (!parentDir.mkpath(".")) {
+    if (!parentDir.exists())
+    {
+        if (!parentDir.mkpath("."))
+        {
             return false;
         }
     }
 
     // Open file for writing
-    if (!file.open(QIODevice::WriteOnly
-                   | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
         return false;
     }
 
@@ -305,8 +345,10 @@ bool ApplicationLogger::saveLogsToFile(
 
     // Write logs for each client type
     for (int clientIndex = 0; clientIndex < 5;
-         ++clientIndex) {
-        if (m_clientLogs[clientIndex].isEmpty()) {
+         ++clientIndex)
+    {
+        if (m_clientLogs[clientIndex].isEmpty())
+        {
             continue;
         }
 
@@ -314,7 +356,8 @@ bool ApplicationLogger::saveLogsToFile(
             << " Logs ===" << Qt::endl;
 
         foreach (const QString &logEntry,
-                 m_clientLogs[clientIndex]) {
+                 m_clientLogs[clientIndex])
+        {
             out << logEntry << Qt::endl;
         }
 

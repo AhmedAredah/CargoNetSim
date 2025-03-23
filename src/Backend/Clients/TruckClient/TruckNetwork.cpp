@@ -13,9 +13,12 @@
 #include <QRegularExpression>
 #include <QTextStream>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 // Node and Link class forward declarations
 class IntegrationNode;
@@ -24,13 +27,17 @@ class IntegrationLink;
 /**************** SharedIntegrationNetwork ****************/
 
 IntegrationNetwork::IntegrationNetwork(QObject *parent)
-    : QObject(parent) {}
+    : QObject(parent)
+{
+}
 
-IntegrationNetwork::~IntegrationNetwork() {
+IntegrationNetwork::~IntegrationNetwork()
+{
     // Clean up resources
     qDeleteAll(m_nodeObjects);
     qDeleteAll(m_linkObjects);
-    if (m_graph) {
+    if (m_graph)
+    {
         m_graph->deleteLater();
         m_graph = nullptr;
     }
@@ -41,7 +48,8 @@ IntegrationNetwork::~IntegrationNetwork() {
 
 void IntegrationNetwork::initializeNetwork(
     const QVector<IntegrationNode *> &nodes,
-    const QVector<IntegrationLink *> &links) {
+    const QVector<IntegrationLink *> &links)
+{
     QMutexLocker locker(&m_mutex);
 
     // Clean up existing resources
@@ -50,7 +58,8 @@ void IntegrationNetwork::initializeNetwork(
 
     m_nodeObjects.clear();
     m_linkObjects.clear();
-    if (m_graph) {
+    if (m_graph)
+    {
         m_graph->deleteLater();
         m_graph = nullptr;
     }
@@ -61,7 +70,8 @@ void IntegrationNetwork::initializeNetwork(
     m_linkObjects = links;
 
     // Take ownership of objects
-    for (auto *node : nodes) {
+    for (auto *node : nodes)
+    {
         node->setParent(this);
 
         // Add node to graph with relevant attributes
@@ -73,7 +83,8 @@ void IntegrationNetwork::initializeNetwork(
     }
 
     // Process links
-    for (auto *link : links) {
+    for (auto *link : links)
+    {
         link->setParent(this);
 
         // Add edge to graph
@@ -96,14 +107,16 @@ void IntegrationNetwork::initializeNetwork(
     emit linksChanged();
 }
 
-bool IntegrationNetwork::nodeExists(int nodeId) const {
+bool IntegrationNetwork::nodeExists(int nodeId) const
+{
     QMutexLocker locker(&m_mutex);
     return m_graph->hasNode(nodeId);
 }
 
 QJsonObject
 IntegrationNetwork::findShortestPath(int startNodeId,
-                                     int endNodeId) {
+                                     int endNodeId)
+{
     QMutexLocker locker(&m_mutex);
 
     // Find path using transportation graph
@@ -111,7 +124,8 @@ IntegrationNetwork::findShortestPath(int startNodeId,
         startNodeId, endNodeId, "distance");
 
     // Return empty object if no path found
-    if (pathNodes.isEmpty()) {
+    if (pathNodes.isEmpty())
+    {
         return QJsonObject();
     }
 
@@ -128,14 +142,16 @@ IntegrationNetwork::findShortestPath(int startNodeId,
 
     // Convert nodes to JSON array
     QJsonArray nodesArray;
-    for (int nodeId : pathNodes) {
+    for (int nodeId : pathNodes)
+    {
         nodesArray.append(nodeId);
     }
     result["path_nodes"] = nodesArray;
 
     // Convert links to JSON array
     QJsonArray linksArray;
-    for (int linkId : pathLinks) {
+    for (int linkId : pathLinks)
+    {
         linksArray.append(linkId);
     }
     result["path_links"] = linksArray;
@@ -147,13 +163,16 @@ IntegrationNetwork::findShortestPath(int startNodeId,
     return result;
 }
 
-QVector<int> IntegrationNetwork::getEndNodes() const {
+QVector<int> IntegrationNetwork::getEndNodes() const
+{
     QMutexLocker locker(&m_mutex);
     QVector<int> endNodes;
 
     // Find nodes with no outgoing edges
-    for (int nodeId : m_graph->getNodes()) {
-        if (m_graph->getOutDegree(nodeId) == 0) {
+    for (int nodeId : m_graph->getNodes())
+    {
+        if (m_graph->getOutDegree(nodeId) == 0)
+        {
             endNodes.append(nodeId);
         }
     }
@@ -161,13 +180,16 @@ QVector<int> IntegrationNetwork::getEndNodes() const {
     return endNodes;
 }
 
-QVector<int> IntegrationNetwork::getStartNodes() const {
+QVector<int> IntegrationNetwork::getStartNodes() const
+{
     QMutexLocker locker(&m_mutex);
     QVector<int> startNodes;
 
     // Find nodes with no incoming edges
-    for (int nodeId : m_graph->getNodes()) {
-        if (m_graph->getInDegree(nodeId) == 0) {
+    for (int nodeId : m_graph->getNodes())
+    {
+        if (m_graph->getInDegree(nodeId) == 0)
+        {
             startNodes.append(nodeId);
         }
     }
@@ -176,29 +198,35 @@ QVector<int> IntegrationNetwork::getStartNodes() const {
 }
 
 QVector<IntegrationNode *>
-IntegrationNetwork::getNodes() const {
+IntegrationNetwork::getNodes() const
+{
     QMutexLocker locker(&m_mutex);
     return m_nodeObjects;
 }
 
 QVector<IntegrationLink *>
-IntegrationNetwork::getLinks() const {
+IntegrationNetwork::getLinks() const
+{
     QMutexLocker locker(&m_mutex);
     return m_linkObjects;
 }
 
 const TransportationGraph<int> *
-IntegrationNetwork::getGraph() const {
+IntegrationNetwork::getGraph() const
+{
     return m_graph;
 }
 
 IntegrationNode *
-IntegrationNetwork::getNode(int nodeId) const {
+IntegrationNetwork::getNode(int nodeId) const
+{
     QMutexLocker locker(&m_mutex);
 
     // Find node by ID
-    for (IntegrationNode *node : m_nodeObjects) {
-        if (node->nodeId() == nodeId) {
+    for (IntegrationNode *node : m_nodeObjects)
+    {
+        if (node->nodeId() == nodeId)
+        {
             return node;
         }
     }
@@ -207,12 +235,15 @@ IntegrationNetwork::getNode(int nodeId) const {
 }
 
 IntegrationLink *
-IntegrationNetwork::getLink(int linkId) const {
+IntegrationNetwork::getLink(int linkId) const
+{
     QMutexLocker locker(&m_mutex);
 
     // Find link by ID
-    for (IntegrationLink *link : m_linkObjects) {
-        if (link->linkId() == linkId) {
+    for (IntegrationLink *link : m_linkObjects)
+    {
+        if (link->linkId() == linkId)
+        {
             return link;
         }
     }
@@ -221,7 +252,8 @@ IntegrationNetwork::getLink(int linkId) const {
 }
 
 QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
-    int startNodeId, int endNodeId, int maxPaths) {
+    int startNodeId, int endNodeId, int maxPaths)
+{
     QMutexLocker       locker(&m_mutex);
     QList<QJsonObject> results;
 
@@ -230,7 +262,8 @@ QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
         startNodeId, endNodeId, maxPaths);
 
     // Process each path
-    for (const QVector<int> &path : paths) {
+    for (const QVector<int> &path : paths)
+    {
         // Get links for path
         QVector<int> links = getPathLinks(path);
 
@@ -244,14 +277,16 @@ QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
 
         // Add nodes
         QJsonArray nodesArray;
-        for (int nodeId : path) {
+        for (int nodeId : path)
+        {
             nodesArray.append(nodeId);
         }
         pathObj["path_nodes"] = nodesArray;
 
         // Add links
         QJsonArray linksArray;
-        for (int linkId : links) {
+        for (int linkId : links)
+        {
             linksArray.append(linkId);
         }
         pathObj["path_links"] = linksArray;
@@ -266,20 +301,23 @@ QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
     return results;
 }
 
-QJsonObject IntegrationNetwork::toJson() const {
+QJsonObject IntegrationNetwork::toJson() const
+{
     QMutexLocker locker(&m_mutex);
     QJsonObject  result;
 
     // Add nodes
     QJsonArray nodesArray;
-    for (const IntegrationNode *node : m_nodeObjects) {
+    for (const IntegrationNode *node : m_nodeObjects)
+    {
         nodesArray.append(node->toDict());
     }
     result["nodes"] = nodesArray;
 
     // Add links
     QJsonArray linksArray;
-    for (const IntegrationLink *link : m_linkObjects) {
+    for (const IntegrationLink *link : m_linkObjects)
+    {
         linksArray.append(link->toDict());
     }
     result["links"] = linksArray;
@@ -288,16 +326,19 @@ QJsonObject IntegrationNetwork::toJson() const {
 }
 
 QVector<int> IntegrationNetwork::getPathLinks(
-    const QVector<int> &pathNodes) const {
+    const QVector<int> &pathNodes) const
+{
     QVector<int> pathLinks;
 
     // Skip empty paths
-    if (pathNodes.size() <= 1) {
+    if (pathNodes.size() <= 1)
+    {
         return pathLinks;
     }
 
     // Find links connecting consecutive nodes
-    for (int i = 0; i < pathNodes.size() - 1; ++i) {
+    for (int i = 0; i < pathNodes.size() - 1; ++i)
+    {
         int fromNode = pathNodes[i];
         int toNode   = pathNodes[i + 1];
 
@@ -305,7 +346,8 @@ QVector<int> IntegrationNetwork::getPathLinks(
         QMap<QString, QVariant> edgeAttrs =
             m_graph->getEdgeAttributes(fromNode, toNode);
 
-        if (edgeAttrs.contains("link_id")) {
+        if (edgeAttrs.contains("link_id"))
+        {
             pathLinks.append(edgeAttrs["link_id"].toInt());
         }
     }
@@ -314,14 +356,18 @@ QVector<int> IntegrationNetwork::getPathLinks(
 }
 
 double IntegrationNetwork::getPathLengthByLinks(
-    const QVector<int> &linkIds) const {
+    const QVector<int> &linkIds) const
+{
     double totalLength = 0.0;
 
     // Sum lengths of all links
-    for (int linkId : linkIds) {
+    for (int linkId : linkIds)
+    {
         // Find link
-        for (const IntegrationLink *link : m_linkObjects) {
-            if (link->linkId() == linkId) {
+        for (const IntegrationLink *link : m_linkObjects)
+        {
+            if (link->linkId() == linkId)
+            {
                 totalLength += link->length();
                 break;
             }
@@ -336,14 +382,16 @@ double IntegrationNetwork::getPathLengthByLinks(
 IntegrationSimulationConfig::IntegrationSimulationConfig(
     QObject *parent)
     : QObject(parent)
-    , m_simTime(0.0) {
+    , m_simTime(0.0)
+{
     // Create network object
     m_network = new IntegrationNetwork(this);
 }
 
-IntegrationSimulationConfig::
-    ~IntegrationSimulationConfig() {
-    if (m_network) {
+IntegrationSimulationConfig::~IntegrationSimulationConfig()
+{
+    if (m_network)
+    {
         m_network->deleteLater();
     }
 }
@@ -352,7 +400,8 @@ bool IntegrationSimulationConfig::initialize(
     const QString &configDir, const QString &title,
     double                        simTime,
     const QMap<QString, QString> &inputFiles,
-    const QMap<QString, QString> &outputFiles) {
+    const QMap<QString, QString> &outputFiles)
+{
     QMutexLocker locker(&m_mutex);
 
     // Store basic configuration
@@ -366,13 +415,15 @@ bool IntegrationSimulationConfig::initialize(
     m_inputFolder  = ".";
     m_outputFolder = ".";
 
-    try {
+    try
+    {
         // Read node data
         QString nodeFilePath =
             getInputFilePath("node_coordinates");
         QFile nodeFile(nodeFilePath);
         if (!nodeFile.open(QIODevice::ReadOnly
-                           | QIODevice::Text)) {
+                           | QIODevice::Text))
+        {
             return false;
         }
 
@@ -385,7 +436,8 @@ bool IntegrationSimulationConfig::initialize(
             getInputFilePath("link_structure");
         QFile linkFile(linkFilePath);
         if (!linkFile.open(QIODevice::ReadOnly
-                           | QIODevice::Text)) {
+                           | QIODevice::Text))
+        {
             return false;
         }
 
@@ -398,21 +450,25 @@ bool IntegrationSimulationConfig::initialize(
 
         emit configChanged();
         return true;
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         // Log error and return failure
         return false;
     }
 }
 
 IntegrationNetwork *
-IntegrationSimulationConfig::getNetwork() const {
+IntegrationSimulationConfig::getNetwork() const
+{
     return m_network;
 }
 
 QString IntegrationSimulationConfig::getInputFilePath(
-    const QString &key) const {
-    if (!m_inputFiles.contains(key)) {
+    const QString &key) const
+{
+    if (!m_inputFiles.contains(key))
+    {
         throw std::runtime_error(
             QString("No input file found with key '%1'")
                 .arg(key)
@@ -425,8 +481,10 @@ QString IntegrationSimulationConfig::getInputFilePath(
 }
 
 QString IntegrationSimulationConfig::getOutputFilePath(
-    const QString &key) const {
-    if (!m_outputFiles.contains(key)) {
+    const QString &key) const
+{
+    if (!m_outputFiles.contains(key))
+    {
         throw std::runtime_error(
             QString("No output file found with key '%1'")
                 .arg(key)
@@ -438,7 +496,8 @@ QString IntegrationSimulationConfig::getOutputFilePath(
                       .filePath(m_outputFiles[key]));
 }
 
-QJsonObject IntegrationSimulationConfig::toJson() const {
+QJsonObject IntegrationSimulationConfig::toJson() const
+{
     QMutexLocker locker(&m_mutex);
     QJsonObject  result;
 
@@ -452,7 +511,8 @@ QJsonObject IntegrationSimulationConfig::toJson() const {
     // Add input files
     QJsonObject inputFilesObj;
     for (auto it = m_inputFiles.constBegin();
-         it != m_inputFiles.constEnd(); ++it) {
+         it != m_inputFiles.constEnd(); ++it)
+    {
         inputFilesObj[it.key()] = it.value();
     }
     result["input_files"] = inputFilesObj;
@@ -460,7 +520,8 @@ QJsonObject IntegrationSimulationConfig::toJson() const {
     // Add output files
     QJsonObject outputFilesObj;
     for (auto it = m_outputFiles.constBegin();
-         it != m_outputFiles.constEnd(); ++it) {
+         it != m_outputFiles.constEnd(); ++it)
+    {
         outputFilesObj[it.key()] = it.value();
     }
     result["output_files"] = outputFilesObj;
@@ -468,7 +529,8 @@ QJsonObject IntegrationSimulationConfig::toJson() const {
     // Add variables
     QJsonObject varsObj;
     for (auto it = m_variables.constBegin();
-         it != m_variables.constEnd(); ++it) {
+         it != m_variables.constEnd(); ++it)
+    {
         varsObj[it.key()] = it.value();
     }
     result["variables"] = varsObj;
@@ -485,7 +547,8 @@ QJsonObject IntegrationSimulationConfig::toJson() const {
 IntegrationSimulationConfigReader::
     IntegrationSimulationConfigReader(
         const QString &configFilePath, QObject *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     // Read configuration
     QJsonObject configJson = readConfig(configFilePath);
 
@@ -503,7 +566,8 @@ IntegrationSimulationConfigReader::
     QJsonObject            inputFilesObj =
         configJson["input_files"].toObject();
     for (auto it = inputFilesObj.constBegin();
-         it != inputFilesObj.constEnd(); ++it) {
+         it != inputFilesObj.constEnd(); ++it)
+    {
         inputFiles[it.key()] = it.value().toString();
     }
 
@@ -512,7 +576,8 @@ IntegrationSimulationConfigReader::
     QJsonObject            outputFilesObj =
         configJson["output_files"].toObject();
     for (auto it = outputFilesObj.constBegin();
-         it != outputFilesObj.constEnd(); ++it) {
+         it != outputFilesObj.constEnd(); ++it)
+    {
         outputFiles[it.key()] = it.value().toString();
     }
 
@@ -522,18 +587,22 @@ IntegrationSimulationConfigReader::
 }
 
 IntegrationSimulationConfigReader::
-    ~IntegrationSimulationConfigReader() {
+    ~IntegrationSimulationConfigReader()
+{
 
-    if (m_config) {
+    if (m_config)
+    {
         m_config->deleteLater();
     }
 }
 
 QJsonObject IntegrationSimulationConfigReader::readConfig(
-    const QString &configFilePath) {
+    const QString &configFilePath)
+{
     QJsonObject result;
 
-    try {
+    try
+    {
         // Get config directory
         QString configDir =
             QFileInfo(configFilePath).dir().absolutePath();
@@ -541,7 +610,8 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         // Open file
         QFile file(configFilePath);
         if (!file.open(QIODevice::ReadOnly
-                       | QIODevice::Text)) {
+                       | QIODevice::Text))
+        {
             throw std::runtime_error(
                 QString("Error opening file: %1")
                     .arg(file.errorString())
@@ -551,13 +621,15 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         // Read lines
         QTextStream in(&file);
         QStringList lines;
-        while (!in.atEnd()) {
+        while (!in.atEnd())
+        {
             lines.append(in.readLine());
         }
         file.close();
 
         // Validate file
-        if (lines.isEmpty()) {
+        if (lines.isEmpty())
+        {
             throw std::runtime_error(
                 "Configuration file is empty");
         }
@@ -568,7 +640,8 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         // Parse simulation parameters (line 2)
         QStringList simParams = lines[1].trimmed().split(
             QRegularExpression("\\s+"));
-        if (simParams.size() < 5) {
+        if (simParams.size() < 5)
+        {
             throw std::runtime_error(
                 "Invalid simulation parameters");
         }
@@ -613,8 +686,10 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
             "link_flow_mesoscopic",
             "time_space_output"};
 
-        for (const QString &key : outputKeys) {
-            if (lineIndex < lines.size()) {
+        for (const QString &key : outputKeys)
+        {
+            if (lineIndex < lines.size())
+            {
                 outputFiles[key] =
                     lines[lineIndex++].trimmed();
             }
@@ -622,8 +697,9 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         result["output_files"] = outputFiles;
 
         return result;
-
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         // Return empty object on error
         return QJsonObject();
     }

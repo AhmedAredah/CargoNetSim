@@ -1,12 +1,15 @@
 #include "SetCoordinatesDialog.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 SetCoordinatesDialog::SetCoordinatesDialog(
     const QString &terminalName, double currentLat,
     double currentLon, QWidget *parent)
-    : QDialog(parent) {
+    : QDialog(parent)
+{
     // Set window properties
     setWindowTitle(
         tr("Set Global Position for %1").arg(terminalName));
@@ -81,12 +84,14 @@ SetCoordinatesDialog::SetCoordinatesDialog(
 }
 
 std::pair<double, double>
-SetCoordinatesDialog::getCoordinates() const {
+SetCoordinatesDialog::getCoordinates() const
+{
     return std::make_pair(latInput->value(),
                           lonInput->value());
 }
 
-void SetCoordinatesDialog::onCoordinatesChanged() {
+void SetCoordinatesDialog::onCoordinatesChanged()
+{
     // Emit signal with new coordinate values
     emit coordinatesChanged(latInput->value(),
                             lonInput->value());

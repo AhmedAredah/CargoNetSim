@@ -6,8 +6,10 @@
 #include <QPropertyAnimation>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief A custom QGraphicsObject for displaying background
@@ -18,7 +20,8 @@ namespace GUI {
  * properties and can be serialized/deserialized for project
  * saving.
  */
-class BackgroundPhotoItem : public QGraphicsObject {
+class BackgroundPhotoItem : public QGraphicsObject
+{
     Q_OBJECT
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity)
 
@@ -92,7 +95,8 @@ public:
      * @brief get Properties
      * @return QMap<QString, QVariant>
      */
-    QMap<QString, QVariant> getProperties() const {
+    QMap<QString, QVariant> getProperties() const
+    {
         return properties;
     }
 

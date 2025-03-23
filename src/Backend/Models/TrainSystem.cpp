@@ -1,7 +1,9 @@
 #include "TrainSystem.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 // Locomotive Implementation
 Locomotive::Locomotive(QObject *parent)
     : QObject(parent)
@@ -13,7 +15,9 @@ Locomotive::Locomotive(QObject *parent)
     , m_grossWeight(0.0f)
     , m_noOfAxles(0)
     , m_locoType(0)
-    , m_count(0) {}
+    , m_count(0)
+{
+}
 
 Locomotive::Locomotive(float power, float transmissionEff,
                        float length, float airDragCoeff,
@@ -29,11 +33,14 @@ Locomotive::Locomotive(float power, float transmissionEff,
     , m_grossWeight(grossWeight)
     , m_noOfAxles(noOfAxles)
     , m_locoType(locoType)
-    , m_count(count) {}
+    , m_count(count)
+{
+}
 
 Locomotive::Locomotive(const QJsonObject &json,
                        QObject           *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     m_count           = json["Count"].toInt();
     m_power           = json["Power"].toDouble();
     m_transmissionEff = json["TransmissionEff"].toDouble();
@@ -45,7 +52,8 @@ Locomotive::Locomotive(const QJsonObject &json,
     m_locoType        = json["Type"].toInt();
 }
 
-QJsonObject Locomotive::toJson() const {
+QJsonObject Locomotive::toJson() const
+{
     QJsonObject json;
     json["Count"]           = m_count;
     json["Power"]           = m_power;
@@ -59,71 +67,90 @@ QJsonObject Locomotive::toJson() const {
     return json;
 }
 
-Locomotive *Locomotive::copy() const {
+Locomotive *Locomotive::copy() const
+{
     return new Locomotive(m_power, m_transmissionEff,
                           m_length, m_airDragCoeff,
                           m_frontalArea, m_grossWeight,
                           m_noOfAxles, m_locoType, m_count);
 }
 
-void Locomotive::setPower(float power) {
-    if (m_power != power) {
+void Locomotive::setPower(float power)
+{
+    if (m_power != power)
+    {
         m_power = power;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setTransmissionEff(float transmissionEff) {
-    if (m_transmissionEff != transmissionEff) {
+void Locomotive::setTransmissionEff(float transmissionEff)
+{
+    if (m_transmissionEff != transmissionEff)
+    {
         m_transmissionEff = transmissionEff;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setLength(float length) {
-    if (m_length != length) {
+void Locomotive::setLength(float length)
+{
+    if (m_length != length)
+    {
         m_length = length;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setAirDragCoeff(float airDragCoeff) {
-    if (m_airDragCoeff != airDragCoeff) {
+void Locomotive::setAirDragCoeff(float airDragCoeff)
+{
+    if (m_airDragCoeff != airDragCoeff)
+    {
         m_airDragCoeff = airDragCoeff;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setFrontalArea(float frontalArea) {
-    if (m_frontalArea != frontalArea) {
+void Locomotive::setFrontalArea(float frontalArea)
+{
+    if (m_frontalArea != frontalArea)
+    {
         m_frontalArea = frontalArea;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setGrossWeight(float grossWeight) {
-    if (m_grossWeight != grossWeight) {
+void Locomotive::setGrossWeight(float grossWeight)
+{
+    if (m_grossWeight != grossWeight)
+    {
         m_grossWeight = grossWeight;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setNoOfAxles(int noOfAxles) {
-    if (m_noOfAxles != noOfAxles) {
+void Locomotive::setNoOfAxles(int noOfAxles)
+{
+    if (m_noOfAxles != noOfAxles)
+    {
         m_noOfAxles = noOfAxles;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setLocoType(int locoType) {
-    if (m_locoType != locoType) {
+void Locomotive::setLocoType(int locoType)
+{
+    if (m_locoType != locoType)
+    {
         m_locoType = locoType;
         emit locomotiveChanged();
     }
 }
 
-void Locomotive::setCount(int count) {
-    if (m_count != count) {
+void Locomotive::setCount(int count)
+{
+    if (m_count != count)
+    {
         m_count = count;
         emit locomotiveChanged();
     }
@@ -139,7 +166,9 @@ Car::Car(QObject *parent)
     , m_grossWeight(0.0f)
     , m_noOfAxles(0)
     , m_carType(0)
-    , m_count(0) {}
+    , m_count(0)
+{
+}
 
 Car::Car(float length, float airDragCoeff,
          float frontalArea, float tareWeight,
@@ -153,10 +182,13 @@ Car::Car(float length, float airDragCoeff,
     , m_grossWeight(grossWeight)
     , m_noOfAxles(noOfAxles)
     , m_carType(carType)
-    , m_count(count) {}
+    , m_count(count)
+{
+}
 
 Car::Car(const QJsonObject &json, QObject *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     m_count        = json["Count"].toInt();
     m_length       = json["Length"].toDouble();
     m_airDragCoeff = json["AirDragCoeff"].toDouble();
@@ -167,7 +199,8 @@ Car::Car(const QJsonObject &json, QObject *parent)
     m_carType      = json["Type"].toInt();
 }
 
-QJsonObject Car::toJson() const {
+QJsonObject Car::toJson() const
+{
     QJsonObject json;
     json["Count"]        = m_count;
     json["Length"]       = m_length;
@@ -180,63 +213,80 @@ QJsonObject Car::toJson() const {
     return json;
 }
 
-Car *Car::copy() const {
+Car *Car::copy() const
+{
     return new Car(m_length, m_airDragCoeff, m_frontalArea,
                    m_tareWeight, m_grossWeight, m_noOfAxles,
                    m_carType, m_count);
 }
 
-void Car::setLength(float length) {
-    if (m_length != length) {
+void Car::setLength(float length)
+{
+    if (m_length != length)
+    {
         m_length = length;
         emit carChanged();
     }
 }
 
-void Car::setAirDragCoeff(float airDragCoeff) {
-    if (m_airDragCoeff != airDragCoeff) {
+void Car::setAirDragCoeff(float airDragCoeff)
+{
+    if (m_airDragCoeff != airDragCoeff)
+    {
         m_airDragCoeff = airDragCoeff;
         emit carChanged();
     }
 }
 
-void Car::setFrontalArea(float frontalArea) {
-    if (m_frontalArea != frontalArea) {
+void Car::setFrontalArea(float frontalArea)
+{
+    if (m_frontalArea != frontalArea)
+    {
         m_frontalArea = frontalArea;
         emit carChanged();
     }
 }
 
-void Car::setTareWeight(float tareWeight) {
-    if (m_tareWeight != tareWeight) {
+void Car::setTareWeight(float tareWeight)
+{
+    if (m_tareWeight != tareWeight)
+    {
         m_tareWeight = tareWeight;
         emit carChanged();
     }
 }
 
-void Car::setGrossWeight(float grossWeight) {
-    if (m_grossWeight != grossWeight) {
+void Car::setGrossWeight(float grossWeight)
+{
+    if (m_grossWeight != grossWeight)
+    {
         m_grossWeight = grossWeight;
         emit carChanged();
     }
 }
 
-void Car::setNoOfAxles(int noOfAxles) {
-    if (m_noOfAxles != noOfAxles) {
+void Car::setNoOfAxles(int noOfAxles)
+{
+    if (m_noOfAxles != noOfAxles)
+    {
         m_noOfAxles = noOfAxles;
         emit carChanged();
     }
 }
 
-void Car::setCarType(int carType) {
-    if (m_carType != carType) {
+void Car::setCarType(int carType)
+{
+    if (m_carType != carType)
+    {
         m_carType = carType;
         emit carChanged();
     }
 }
 
-void Car::setCount(int count) {
-    if (m_count != count) {
+void Car::setCount(int count)
+{
+    if (m_count != count)
+    {
         m_count = count;
         emit carChanged();
     }
@@ -247,7 +297,9 @@ Train::Train(QObject *parent)
     : QObject(parent)
     , m_loadTime(0.0f)
     , m_frictionCoef(0.0f)
-    , m_optimize(false) {}
+    , m_optimize(false)
+{
+}
 
 Train::Train(const QString      &userId,
              const QVector<int> &trainPathOnNodeIds,
@@ -262,15 +314,18 @@ Train::Train(const QString      &userId,
     , m_frictionCoef(frictionCoef)
     , m_locomotives(locomotives)
     , m_cars(cars)
-    , m_optimize(optimize) {
+    , m_optimize(optimize)
+{
     // Reparent the locomotives and cars
-    for (auto locomotive : m_locomotives) {
+    for (auto locomotive : m_locomotives)
+    {
         locomotive->setParent(this);
         connect(locomotive, &Locomotive::locomotiveChanged,
                 this, &Train::trainChanged);
     }
 
-    for (auto car : m_cars) {
+    for (auto car : m_cars)
+    {
         car->setParent(this);
         connect(car, &Car::carChanged, this,
                 &Train::trainChanged);
@@ -278,7 +333,8 @@ Train::Train(const QString      &userId,
 }
 
 Train::Train(const QJsonObject &json, QObject *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     m_userId       = json["UserID"].toString();
     m_loadTime     = json["LoadTime"].toDouble();
     m_frictionCoef = json["FrictionCoef"].toDouble();
@@ -288,14 +344,16 @@ Train::Train(const QJsonObject &json, QObject *parent)
     QJsonArray pathArray =
         json["TrainPathOnNodeIDs"].toArray();
     m_trainPathOnNodeIds.clear();
-    for (int i = 0; i < pathArray.size(); ++i) {
+    for (int i = 0; i < pathArray.size(); ++i)
+    {
         m_trainPathOnNodeIds.append(pathArray[i].toInt());
     }
 
     // Parse locomotives
     QJsonArray locoArray = json["Locomotives"].toArray();
     m_locomotives.clear();
-    for (int i = 0; i < locoArray.size(); ++i) {
+    for (int i = 0; i < locoArray.size(); ++i)
+    {
         Locomotive *locomotive =
             new Locomotive(locoArray[i].toObject(), this);
         m_locomotives.append(locomotive);
@@ -306,7 +364,8 @@ Train::Train(const QJsonObject &json, QObject *parent)
     // Parse cars
     QJsonArray carsArray = json["Cars"].toArray();
     m_cars.clear();
-    for (int i = 0; i < carsArray.size(); ++i) {
+    for (int i = 0; i < carsArray.size(); ++i)
+    {
         Car *car = new Car(carsArray[i].toObject(), this);
         m_cars.append(car);
         connect(car, &Car::carChanged, this,
@@ -314,11 +373,13 @@ Train::Train(const QJsonObject &json, QObject *parent)
     }
 }
 
-Train::~Train() {
+Train::~Train()
+{
     // Child QObjects will be automatically deleted
 }
 
-QJsonObject Train::toJson() const {
+QJsonObject Train::toJson() const
+{
     QJsonObject json;
     json["UserID"]       = m_userId;
     json["LoadTime"]     = m_loadTime;
@@ -327,21 +388,24 @@ QJsonObject Train::toJson() const {
 
     // Convert train path to JSON array
     QJsonArray pathArray;
-    for (int nodeId : m_trainPathOnNodeIds) {
+    for (int nodeId : m_trainPathOnNodeIds)
+    {
         pathArray.append(nodeId);
     }
     json["TrainPathOnNodeIDs"] = pathArray;
 
     // Convert locomotives to JSON array
     QJsonArray locoArray;
-    for (const Locomotive *locomotive : m_locomotives) {
+    for (const Locomotive *locomotive : m_locomotives)
+    {
         locoArray.append(locomotive->toJson());
     }
     json["Locomotives"] = locoArray;
 
     // Convert cars to JSON array
     QJsonArray carsArray;
-    for (const Car *car : m_cars) {
+    for (const Car *car : m_cars)
+    {
         carsArray.append(car->toJson());
     }
     json["Cars"] = carsArray;
@@ -349,14 +413,17 @@ QJsonObject Train::toJson() const {
     return json;
 }
 
-Train *Train::copy() const {
+Train *Train::copy() const
+{
     QVector<Locomotive *> copiedLocomotives;
-    for (const Locomotive *locomotive : m_locomotives) {
+    for (const Locomotive *locomotive : m_locomotives)
+    {
         copiedLocomotives.append(locomotive->copy());
     }
 
     QVector<Car *> copiedCars;
-    for (const Car *car : m_cars) {
+    for (const Car *car : m_cars)
+    {
         copiedCars.append(car->copy());
     }
 
@@ -366,39 +433,49 @@ Train *Train::copy() const {
                      m_optimize);
 }
 
-void Train::setUserId(const QString &userId) {
-    if (m_userId != userId) {
+void Train::setUserId(const QString &userId)
+{
+    if (m_userId != userId)
+    {
         m_userId = userId;
         emit trainChanged();
     }
 }
 
 void Train::setTrainPathOnNodeIds(
-    const QVector<int> &trainPathOnNodeIds) {
-    if (m_trainPathOnNodeIds != trainPathOnNodeIds) {
+    const QVector<int> &trainPathOnNodeIds)
+{
+    if (m_trainPathOnNodeIds != trainPathOnNodeIds)
+    {
         m_trainPathOnNodeIds = trainPathOnNodeIds;
         emit trainChanged();
     }
 }
 
-void Train::setLoadTime(float loadTime) {
-    if (m_loadTime != loadTime) {
+void Train::setLoadTime(float loadTime)
+{
+    if (m_loadTime != loadTime)
+    {
         m_loadTime = loadTime;
         emit trainChanged();
     }
 }
 
-void Train::setFrictionCoef(float frictionCoef) {
-    if (m_frictionCoef != frictionCoef) {
+void Train::setFrictionCoef(float frictionCoef)
+{
+    if (m_frictionCoef != frictionCoef)
+    {
         m_frictionCoef = frictionCoef;
         emit trainChanged();
     }
 }
 
 void Train::setLocomotives(
-    const QVector<Locomotive *> &locomotives) {
+    const QVector<Locomotive *> &locomotives)
+{
     // Disconnect old signals
-    for (auto locomotive : m_locomotives) {
+    for (auto locomotive : m_locomotives)
+    {
         disconnect(locomotive,
                    &Locomotive::locomotiveChanged, this,
                    &Train::trainChanged);
@@ -412,7 +489,8 @@ void Train::setLocomotives(
     m_locomotives = locomotives;
 
     // Reparent and connect new locomotives
-    for (auto locomotive : m_locomotives) {
+    for (auto locomotive : m_locomotives)
+    {
         locomotive->setParent(this);
         connect(locomotive, &Locomotive::locomotiveChanged,
                 this, &Train::trainChanged);
@@ -422,9 +500,11 @@ void Train::setLocomotives(
     emit trainChanged();
 }
 
-void Train::setCars(const QVector<Car *> &cars) {
+void Train::setCars(const QVector<Car *> &cars)
+{
     // Disconnect old signals
-    for (auto car : m_cars) {
+    for (auto car : m_cars)
+    {
         disconnect(car, &Car::carChanged, this,
                    &Train::trainChanged);
     }
@@ -437,7 +517,8 @@ void Train::setCars(const QVector<Car *> &cars) {
     m_cars = cars;
 
     // Reparent and connect new cars
-    for (auto car : m_cars) {
+    for (auto car : m_cars)
+    {
         car->setParent(this);
         connect(car, &Car::carChanged, this,
                 &Train::trainChanged);
@@ -447,8 +528,10 @@ void Train::setCars(const QVector<Car *> &cars) {
     emit trainChanged();
 }
 
-void Train::setOptimize(bool optimize) {
-    if (m_optimize != optimize) {
+void Train::setOptimize(bool optimize)
+{
+    if (m_optimize != optimize)
+    {
         m_optimize = optimize;
         emit trainChanged();
     }
@@ -457,11 +540,13 @@ void Train::setOptimize(bool optimize) {
 // TrainsReader Implementation
 QVector<Train *>
 TrainsReader::readTrainsFile(const QString &filePath,
-                             QObject       *parent) {
+                             QObject       *parent)
+{
     QVector<Train *> trains;
 
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
         qCritical() << "Error: Trains file" << filePath
                     << "does not exist.";
         return trains;
@@ -470,24 +555,28 @@ TrainsReader::readTrainsFile(const QString &filePath,
     QTextStream in(&file);
     QStringList lines;
 
-    while (!in.atEnd()) {
+    while (!in.atEnd())
+    {
         lines.append(in.readLine());
     }
 
     file.close();
 
     // Check if file is empty
-    if (lines.isEmpty()) {
+    if (lines.isEmpty())
+    {
         qCritical() << "Error: Trains file" << filePath
                     << "is empty!";
         return trains;
     }
 
     // Skip first two lines and start parsing trains
-    for (int i = 2; i < lines.size(); ++i) {
+    for (int i = 2; i < lines.size(); ++i)
+    {
         QString line = lines[i].trimmed();
 
-        if (line.isEmpty()) {
+        if (line.isEmpty())
+        {
             continue; // Skip empty lines
         }
 
@@ -495,7 +584,8 @@ TrainsReader::readTrainsFile(const QString &filePath,
         QStringList lv =
             line.split(QRegularExpression("\\t+"));
 
-        if (lv.size() != 6) {
+        if (lv.size() != 6)
+        {
             qCritical() << "Error: Trains file has a wrong "
                            "structure.";
             qDeleteAll(trains);
@@ -522,13 +612,16 @@ TrainsReader::readTrainsFile(const QString &filePath,
 }
 
 QVector<Locomotive *> TrainsReader::parseLocomotives(
-    const QString &locomotivesStr, QObject *parent) {
+    const QString &locomotivesStr, QObject *parent)
+{
     QVector<Locomotive *> locomotives;
     QStringList locList = locomotivesStr.split(";");
 
-    for (const QString &loc : locList) {
+    for (const QString &loc : locList)
+    {
         QStringList fields = loc.split(",");
-        if (fields.size() != 9) {
+        if (fields.size() != 9)
+        {
             qCritical() << "Wrong Locomotive structure!";
             qDeleteAll(locomotives);
             return QVector<Locomotive *>();
@@ -550,19 +643,23 @@ QVector<Locomotive *> TrainsReader::parseLocomotives(
 
 QVector<Car *>
 TrainsReader::parseCars(const QString &carsStr,
-                        QObject       *parent) {
+                        QObject       *parent)
+{
     QVector<Car *> cars;
     QStringList    carList = carsStr.split(";");
 
-    for (const QString &car : carList) {
+    for (const QString &car : carList)
+    {
         QStringList fields = car.split(",");
 
         // Add a default car type if missing
-        if (fields.size() < 8) {
+        if (fields.size() < 8)
+        {
             fields.append("0");
         }
 
-        if (fields.size() != 8) {
+        if (fields.size() != 8)
+        {
             qCritical() << "Wrong Car structure!";
             qDeleteAll(cars);
             return QVector<Car *>();
@@ -582,14 +679,17 @@ TrainsReader::parseCars(const QString &carsStr,
 }
 
 QVector<int>
-TrainsReader::splitStringToIntList(const QString &string) {
+TrainsReader::splitStringToIntList(const QString &string)
+{
     QVector<int> result;
     QStringList  parts = string.split(",");
 
-    for (const QString &part : parts) {
+    for (const QString &part : parts)
+    {
         bool ok;
         int  value = part.toInt(&ok);
-        if (ok) {
+        if (ok)
+        {
             result.append(value);
         }
     }

@@ -9,8 +9,10 @@
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 RegionCenterPoint::RegionCenterPoint(
     const QColor                  &color,
@@ -18,12 +20,14 @@ RegionCenterPoint::RegionCenterPoint(
     QGraphicsItem                 *parent)
     : QGraphicsObject(parent)
     , color(color)
-    , properties(properties) {
+    , properties(properties)
+{
     // Set high Z-value to ensure visibility
     setZValue(100);
 
     // Initialize properties if none were provided
-    if (this->properties.isEmpty()) {
+    if (this->properties.isEmpty())
+    {
         this->properties = {
             {"Type", QString("Region Center")},
             {"Latitude", "0.0000000"},
@@ -42,7 +46,8 @@ RegionCenterPoint::RegionCenterPoint(
 }
 
 void RegionCenterPoint::updateCoordinates(double lat,
-                                          double lon) {
+                                          double lon)
+{
     QString oldLat = properties["Latitude"].toString();
     QString oldLon = properties["Longitude"].toString();
 
@@ -52,7 +57,8 @@ void RegionCenterPoint::updateCoordinates(double lat,
 
     // Only emit signals if values actually changed
     if (properties["Latitude"].toString() != oldLat
-        || properties["Longitude"].toString() != oldLon) {
+        || properties["Longitude"].toString() != oldLon)
+    {
         emit coordinatesChanged(lat, lon);
         emit propertyChanged("Latitude",
                              properties["Latitude"]);
@@ -63,8 +69,9 @@ void RegionCenterPoint::updateCoordinates(double lat,
     update();
 }
 
-void RegionCenterPoint::updateSharedCoordinates(
-    double lat, double lon) {
+void RegionCenterPoint::updateSharedCoordinates(double lat,
+                                                double lon)
+{
     QString oldLat =
         properties["Shared Latitude"].toString();
     QString oldLon =
@@ -79,7 +86,8 @@ void RegionCenterPoint::updateSharedCoordinates(
     // Only emit signals if values actually changed
     if (properties["Shared Latitude"].toString() != oldLat
         || properties["Shared Longitude"].toString()
-               != oldLon) {
+               != oldLon)
+    {
         emit sharedCoordinatesChanged(lat, lon);
         emit propertyChanged("Shared Latitude",
                              properties["Shared Latitude"]);
@@ -91,8 +99,10 @@ void RegionCenterPoint::updateSharedCoordinates(
     update();
 }
 
-void RegionCenterPoint::setColor(const QColor &newColor) {
-    if (color != newColor) {
+void RegionCenterPoint::setColor(const QColor &newColor)
+{
+    if (color != newColor)
+    {
         color = newColor;
         emit colorChanged(color);
         update();
@@ -100,23 +110,27 @@ void RegionCenterPoint::setColor(const QColor &newColor) {
 }
 
 void RegionCenterPoint::updateProperties(
-    const QMap<QString, QVariant> &newProperties) {
+    const QMap<QString, QVariant> &newProperties)
+{
     for (auto it = newProperties.constBegin();
-         it != newProperties.constEnd(); ++it) {
+         it != newProperties.constEnd(); ++it)
+    {
         properties[it.key()] = it.value();
     }
     emit propertiesChanged();
 }
 
-void RegionCenterPoint::updateCoordinatesFromPosition() {
+void RegionCenterPoint::updateCoordinatesFromPosition()
+{
     QGraphicsScene *graphicsScene = scene();
-    if (!graphicsScene
-        || graphicsScene->views().isEmpty()) {
+    if (!graphicsScene || graphicsScene->views().isEmpty())
+    {
         return;
     }
 
     QGraphicsView *view = graphicsScene->views().first();
-    if (!view) {
+    if (!view)
+    {
         return;
     }
 
@@ -124,11 +138,13 @@ void RegionCenterPoint::updateCoordinatesFromPosition() {
     QObject *viewObj = view->parent();
     while (viewObj
            && !viewObj->inherits(
-               "CargoNetSim::GUI::GraphicsView")) {
+               "CargoNetSim::GUI::GraphicsView"))
+    {
         viewObj = viewObj->parent();
     }
 
-    if (!viewObj) {
+    if (!viewObj)
+    {
         return;
     }
 
@@ -148,21 +164,25 @@ void RegionCenterPoint::updateCoordinatesFromPosition() {
         Q_RETURN_ARG(Coordinates, result),
         Q_ARG(QPointF, pos()));
 
-    if (invoked) {
+    if (invoked)
+    {
         updateCoordinates(result.first, result.second);
-    } else {
+    }
+    else
+    {
         // Handle the case where invokeMethod fails
     }
 }
 
-QRectF RegionCenterPoint::boundingRect() const {
+QRectF RegionCenterPoint::boundingRect() const
+{
     return QRectF(-10, -10, 20, 20);
 }
 
 void RegionCenterPoint::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
     // Draw outer circle
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(color));
@@ -174,7 +194,8 @@ void RegionCenterPoint::paint(
     painter->drawLine(0, -4, 0, 4);
 
     // Draw selection indicator if selected
-    if (option->state & QStyle::State_Selected) {
+    if (option->state & QStyle::State_Selected)
+    {
         painter->setPen(QPen(Qt::red, 1, Qt::DashLine));
         painter->setBrush(Qt::NoBrush);
         painter->drawRect(boundingRect());
@@ -182,7 +203,8 @@ void RegionCenterPoint::paint(
 }
 
 void RegionCenterPoint::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
+    QGraphicsSceneMouseEvent *event)
+{
     dragOffset = event->pos();
     emit clicked(this);
     QGraphicsObject::mousePressEvent(event);
@@ -190,18 +212,22 @@ void RegionCenterPoint::mousePressEvent(
 
 QVariant
 RegionCenterPoint::itemChange(GraphicsItemChange change,
-                              const QVariant    &value) {
-    if (change == ItemPositionChange && scene()) {
+                              const QVariant    &value)
+{
+    if (change == ItemPositionChange && scene())
+    {
         // If drag offset is set, adjust position during
         // drag
-        if (dragOffset != QPointF()) {
+        if (dragOffset != QPointF())
+        {
             QGraphicsView *view = scene()->views().first();
             QPointF        mousePos = view->mapToScene(
                 view->mapFromGlobal(QCursor::pos()));
             return mousePos - dragOffset;
         }
-    } else if (change == ItemPositionHasChanged
-               && scene()) {
+    }
+    else if (change == ItemPositionHasChanged && scene())
+    {
         // Update coordinates when position changes
         updateCoordinatesFromPosition();
 
@@ -213,18 +239,21 @@ RegionCenterPoint::itemChange(GraphicsItemChange change,
 }
 
 void RegionCenterPoint::hoverEnterEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     setCursor(QCursor(Qt::PointingHandCursor));
     QGraphicsObject::hoverEnterEvent(event);
 }
 
 void RegionCenterPoint::hoverLeaveEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     unsetCursor();
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
-QMap<QString, QVariant> RegionCenterPoint::toDict() const {
+QMap<QString, QVariant> RegionCenterPoint::toDict() const
+{
     QMap<QString, QVariant> data;
 
     // Create position map
@@ -244,7 +273,8 @@ QMap<QString, QVariant> RegionCenterPoint::toDict() const {
 }
 
 RegionCenterPoint *RegionCenterPoint::fromDict(
-    const QMap<QString, QVariant> &data) {
+    const QMap<QString, QVariant> &data)
+{
     // Parse color from the hex string
     QColor color(data.value("color", "#000000").toString());
 
@@ -253,7 +283,8 @@ RegionCenterPoint *RegionCenterPoint::fromDict(
         color, data.value("properties").toMap());
 
     // Set position
-    if (data.contains("position")) {
+    if (data.contains("position"))
+    {
         QMap<QString, QVariant> posMap =
             data["position"].toMap();
         QPointF pos(posMap.value("x", 0).toDouble(),
