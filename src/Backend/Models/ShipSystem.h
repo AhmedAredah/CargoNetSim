@@ -29,28 +29,6 @@ namespace Backend
 {
 
 /**
- * @class ApplicationLogger
- * @brief Utility class for logging system messages.
- */
-class ApplicationLogger
-{
-public:
-    /**
-     * @brief Log an error message with client type.
-     * @param message The error message to log.
-     * @param clientType The type of client generating the
-     *        error.
-     */
-    static void log_error(const QString &message,
-                          ClientType     clientType)
-    {
-        qCritical() << "Error ["
-                    << static_cast<int>(clientType)
-                    << "]: " << message;
-    }
-};
-
-/**
  * @class Ship
  * @brief Represents a maritime vessel in the simulation.
  *

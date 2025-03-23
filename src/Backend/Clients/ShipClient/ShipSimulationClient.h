@@ -31,21 +31,6 @@
 #include "Backend/Commons/ClientType.h"
 #include "Backend/Models/ShipSystem.h"
 
-// Forward declarations
-namespace CargoNetSim
-{
-namespace Backend
-{
-namespace ShipClient
-{
-class TerminalGraphServer;
-class SimulatorTimeServer;
-class ProgressBarManager;
-class ApplicationLogger;
-} // namespace ShipClient
-} // namespace Backend
-} // namespace CargoNetSim
-
 /**
  * @namespace CargoNetSim::Backend::ShipClient
  * @brief Namespace for ship simulation client components

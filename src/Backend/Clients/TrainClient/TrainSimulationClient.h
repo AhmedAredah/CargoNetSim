@@ -27,21 +27,6 @@
 #include <QString>
 #include <containerLib/container.h>
 
-// Forward declarations for dependencies
-namespace CargoNetSim
-{
-namespace Backend
-{
-namespace TrainClient
-{
-class TerminalGraphServer;
-class SimulatorTimeServer;
-class ProgressBarManager;
-class ApplicationLogger;
-} // namespace TrainClient
-} // namespace Backend
-} // namespace CargoNetSim
-
 /**
  * @namespace CargoNetSim::Backend::TrainClient
  * @brief Namespace for train simulation client components
