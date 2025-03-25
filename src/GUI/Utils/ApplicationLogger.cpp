@@ -57,8 +57,7 @@ ApplicationLogger *ApplicationLogger::getInstance()
 }
 
 ApplicationLogger::ApplicationLogger()
-    : QObject(nullptr)
-    , m_isRunning(false)
+    : m_isRunning(false)
 {
     // Create client logs maps with default entries
     for (int i = 0; i < 5; ++i)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Backend/Commons/LoggerInterface.h"
 #include <QEvent>
 #include <QFile>
 #include <QMap>
@@ -50,7 +51,8 @@ public:
  * multiple clients, error levels, and signal-based
  * notification.
  */
-class ApplicationLogger : public QObject
+class ApplicationLogger
+    : public CargoNetSim::Backend::LoggerInterface
 {
     Q_OBJECT
 
@@ -68,8 +70,8 @@ public:
      * @param message Message text
      * @param clientType Client type/index
      */
-    static void log(const QString &message,
-                    int            clientType = 4);
+    void log(const QString &message,
+             int            clientType = 4) override;
 
     /**
      * @brief Log an error message
@@ -77,8 +79,8 @@ public:
      * @param message Error message text
      * @param clientType Client type/index
      */
-    static void logError(const QString &message,
-                         int            clientType = 4);
+    void logError(const QString &message,
+                  int            clientType = 4) override;
 
     /**
      * @brief Update progress for a client
@@ -86,8 +88,8 @@ public:
      * @param progressValue Progress value (0-100)
      * @param clientType Client type/index
      */
-    static void updateProgress(float progressValue,
-                               int   clientType = 4);
+    void updateProgress(float progressValue,
+                        int   clientType = 4) override;
 
     /**
      * @brief Signal that initialization is complete
