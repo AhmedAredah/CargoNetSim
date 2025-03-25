@@ -7,7 +7,7 @@
 #include "../Items/TerminalItem.h"
 #include "../MainWindow.h"
 #include "../Utils/IconCreator.h"
-#include "Backend/Controllers/RegionDataController.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 #include "ContainerManagerWidget.h"
 #include "GraphicsView.h"
 
@@ -646,8 +646,10 @@ void PropertiesPanel::displayGenericProperties(
         {
             QComboBox *combo = new QComboBox();
             combo->addItems(
-                Backend::RegionDataController::getInstance()
-                    .getAllRegionNames());
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getAllRegionNames());
             combo->setCurrentText(it.value().toString());
             editFields[it.key()] = combo;
             layout->addRow(it.key() + ":", combo);
@@ -1086,9 +1088,10 @@ void PropertiesPanel::saveProperties()
                 if (mainWindow)
                 {
                     const auto &centers =
-                        Backend::RegionDataController::
+                        CargoNetSim::CargoNetSimController::
                             getInstance()
-                                .getAllRegionVariableAs<
+                                .getRegionDataController()
+                                ->getAllRegionVariableAs<
                                     RegionCenterPoint *>(
                                     "regionCenterPoint");
                     newRegionCenter =
@@ -1146,7 +1149,7 @@ void PropertiesPanel::saveProperties()
                     if (view)
                     {
                         QPointF newPos = view->wgs84ToScene(
-                            newLat, newLon);
+                            QPointF(newLat, newLon));
                         regionCenter->setPos(newPos);
                     }
                 }
