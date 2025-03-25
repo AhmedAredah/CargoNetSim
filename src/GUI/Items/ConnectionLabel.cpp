@@ -13,7 +13,7 @@ namespace GUI
 {
 
 ConnectionLabel::ConnectionLabel(QGraphicsItem *parent)
-    : QGraphicsObject(parent)
+    : GraphicsObjectBase(parent)
     , m_text("")
     , m_color(Qt::black)
     , m_isHovered(false)

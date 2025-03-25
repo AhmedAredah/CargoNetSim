@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QColor>
 #include <QGraphicsObject>
 #include <QMap>
@@ -12,7 +14,7 @@ namespace CargoNetSim
 namespace GUI
 {
 
-class ConnectionLabel : public QGraphicsObject
+class ConnectionLabel : public GraphicsObjectBase
 {
     Q_OBJECT
 
