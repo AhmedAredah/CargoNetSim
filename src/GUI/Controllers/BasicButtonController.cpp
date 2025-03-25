@@ -24,6 +24,7 @@
 #include "../Widgets/ShipManagerDialog.h"
 #include "../Widgets/TrainManagerDialog.h"
 #include "Backend/Controllers/CargoNetSimController.h"
+#include "GUI/Controllers/ViewController.h"
 
 namespace CargoNetSim
 {
@@ -418,8 +419,7 @@ void BasicButtonController::changeRegion(
         CargoNetSim::CargoNetSimController::getInstance()
             .getRegionDataController()
             ->setCurrentRegion(currentRegion);
-        // ViewController::updateSceneVisibility(mainWindow);
-        // // TODO
+        ViewController::updateSceneVisibility(mainWindow);
         emit mainWindow->regionChanged(currentRegion);
     }
     catch (const std::exception &e)
@@ -506,53 +506,67 @@ void BasicButtonController::checkNetwork(
     MainWindow *mainWindow, GraphicsScene *scene)
 {
     // TODO
-    // try {
-    //     QList<TerminalItem*> allRegionTerminals =
-    //     UtilityFunctions::getTerminalItems(
-    //         scene,
-    //         mainWindow->currentRegion_,
-    //         "*",      // terminal_type
-    //         nullptr,  // connected_only
-    //         nullptr   // linked_only
-    //         );
+    try
+    {
+        QString currentRegion =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->getCurrentRegion();
+        QList<TerminalItem *> allRegionTerminals =
+            UtilitiesFunctions::getTerminalItems(
+                scene, currentRegion,
+                "*", // terminal_type
+                UtilitiesFunctions::ConnectionType::
+                    Any, // any type
+                UtilitiesFunctions::LinkType::Any // any
+                                                  // type
+            );
 
-    //     QList<TerminalItem*> notConnectedTerminals =
-    //     UtilityFunctions::getTerminalItems(
-    //         scene,
-    //         mainWindow->currentRegion_,
-    //         "*",     // terminal_type
-    //         false,   // connected_only
-    //         nullptr  // linked_only
-    //         );
+        QList<TerminalItem *> notConnectedTerminals =
+            UtilitiesFunctions::getTerminalItems(
+                scene, currentRegion,
+                "*", // terminal_type
+                UtilitiesFunctions::ConnectionType::
+                    NotConnected, // not connected only type
+                UtilitiesFunctions::LinkType::Any // any
+                                                  // type
+            );
 
-    //     ViewController::flashTerminalItems(notConnectedTerminals,
-    //     true);
+        ViewController::flashTerminalItems(
+            notConnectedTerminals, true);
 
-    //     if (!notConnectedTerminals.isEmpty()) {
-    //         mainWindow->statusBar()->showMessage(
-    //             "There are terminals that are not
-    //             connected to any map point.", 3000);
-    //     }
-    //     else {
-    //         if (allRegionTerminals.isEmpty()) {
-    //             mainWindow->statusBar()->showMessage(
-    //                 "There are no terminals in the
-    //                 current region.", 3000);
-    //         }
-    //         else {
-    //             mainWindow->statusBar()->showMessage("All
-    //             terminals are connected", 2000);
-    //         }
-    //     }
-    // }
-    // catch (const std::exception& e) {
-    //     qCritical() << "Error in checkNetwork:" <<
-    //     e.what(); QMessageBox::critical(mainWindow,
-    //     "Error",
-    //                           QString("Failed to check
-    //                           network:
-    //                           %1").arg(e.what()));
-    // }
+        if (!notConnectedTerminals.isEmpty())
+        {
+            mainWindow->showStatusBarMessage(
+                "There are terminals that are not"
+                "connected to any map point.",
+                3000);
+        }
+        else
+        {
+            if (allRegionTerminals.isEmpty())
+            {
+                mainWindow->showStatusBarMessage(
+                    "There are no terminals in the"
+                    "current region.",
+                    3000);
+            }
+            else
+            {
+                mainWindow->showStatusBarMessage(
+                    "All terminals are connected", 2000);
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        qCritical() << "Error in checkNetwork:" << e.what();
+        QMessageBox::critical(
+            mainWindow, "Error",
+            QString("Failed to check network: %1")
+                .arg(e.what()));
+    }
 }
 
 void BasicButtonController::disconnectAllTerminals(
@@ -721,10 +735,22 @@ void BasicButtonController::newProject(
                     ->setCurrentRegion("Default Region");
 
             // Reset network registries
-            // TrainNetworkManager::getInstance()->clear();
-            // TruckNetworkManager::getInstance()->clear();
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getNetworkController()
+                    ->clear();
 
-            // Clear region centers
+            // Clear region data
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->clear();
+
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->addRegion("Default Region");
+
             // TODO
             // mainWindow->regionCenters_.clear();
             // RegionDataController::getInstance().clear();
