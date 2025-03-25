@@ -198,15 +198,15 @@ QVariantMap ShipState::info() const
     info["fuelConsumption"] = fuelMap;
 
     info["carbonDioxideEmitted"] = m_carbonDioxideEmitted;
-    // info["energySources"] = QVariant(m_energySources); //
-    // TODO
+    info["energySources"] =
+        QVariant::fromValue(m_energySources);
 
     // Position information
     QVariantMap positionMap;
     positionMap["latitude"]  = m_latitude;
     positionMap["longitude"] = m_longitude;
-    // positionMap["position"] = QVariant(m_position);  //
-    // TODO
+    positionMap["position"] =
+        QVariant::fromValue(m_position);
     info["position"] = positionMap;
 
     // Environmental information
