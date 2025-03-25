@@ -15,10 +15,11 @@ namespace GUI
 {
 
 RegionCenterPoint::RegionCenterPoint(
-    const QColor                  &color,
+    const QString &region, const QColor &color,
     const QMap<QString, QVariant> &properties,
     QGraphicsItem                 *parent)
-    : QGraphicsObject(parent)
+    : GraphicsObjectBase(parent)
+    , region(region)
     , color(color)
     , properties(properties)
 {
@@ -97,6 +98,16 @@ void RegionCenterPoint::updateSharedCoordinates(double lat,
     }
 
     update();
+}
+
+void RegionCenterPoint::setRegion(const QString &newRegion)
+{
+    if (region != newRegion)
+    {
+        QString oldRegion = region;
+        region            = newRegion;
+        emit regionChanged(newRegion);
+    }
 }
 
 void RegionCenterPoint::setColor(const QColor &newColor)
@@ -263,6 +274,7 @@ QMap<QString, QVariant> RegionCenterPoint::toDict() const
 
     // Add all data to the map
     data["position"]   = posMap;
+    data["region"]     = region;
     data["color"]      = color.name();
     data["properties"] = properties;
     data["selected"]   = isSelected();
@@ -278,9 +290,11 @@ RegionCenterPoint *RegionCenterPoint::fromDict(
     // Parse color from the hex string
     QColor color(data.value("color", "#000000").toString());
 
+    QString region = data.value("region", "").toString();
+
     // Create new instance
     RegionCenterPoint *instance = new RegionCenterPoint(
-        color, data.value("properties").toMap());
+        region, color, data.value("properties").toMap());
 
     // Set position
     if (data.contains("position"))

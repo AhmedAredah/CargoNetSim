@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QColor>
 #include <QGraphicsObject>
 #include <QMap>
@@ -21,7 +23,7 @@ namespace GUI
  * including geographic coordinates and shared coordinates
  * that are used for global map positioning.
  */
-class RegionCenterPoint : public QGraphicsObject
+class RegionCenterPoint : public GraphicsObjectBase
 {
     Q_OBJECT
 
@@ -34,7 +36,7 @@ public:
      * @param parent Optional parent QGraphicsItem
      */
     RegionCenterPoint(
-        const QColor                  &color,
+        const QString &region, const QColor &color,
         const QMap<QString, QVariant> &properties =
             QMap<QString, QVariant>(),
         QGraphicsItem *parent = nullptr);
@@ -58,6 +60,23 @@ public:
      * @param lon New shared longitude
      */
     void updateSharedCoordinates(double lat, double lon);
+
+    /**
+     * @brief Set the point's newRegion
+     *
+     * @param newRegion New newRegion name
+     */
+    void setRegion(const QString &newRegion);
+
+    /**
+     * @brief Get the point's region
+     *
+     * @return Current region name
+     */
+    QString getRegion() const
+    {
+        return region;
+    }
 
     /**
      * @brief Sets the region's color.
@@ -112,6 +131,13 @@ signals:
      * @param newPos New position in scene coordinates
      */
     void positionChanged(const QPointF &newPos);
+
+    /**
+     * @brief Emitted when center point region changes
+     *
+     * @param newRegion New region name
+     */
+    void regionChanged(const QString &newRegion);
 
     /**
      * @brief Signal emitted when the coordinates change.
@@ -169,6 +195,7 @@ private:
      */
     void updateCoordinatesFromPosition();
 
+    QString                 region;
     QColor                  color;
     QMap<QString, QVariant> properties;
     QPointF                 dragOffset;
