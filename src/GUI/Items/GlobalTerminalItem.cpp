@@ -15,7 +15,7 @@ namespace GUI
 GlobalTerminalItem::GlobalTerminalItem(
     const QPixmap &pixmap, TerminalItem *terminalItem,
     QGraphicsItem *parent)
-    : QGraphicsObject(parent)
+    : GraphicsObjectBase(parent)
     , originalPixmap(pixmap)
     , linkedTerminalItem(terminalItem)
 {

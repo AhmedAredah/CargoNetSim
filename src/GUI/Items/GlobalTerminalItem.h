@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QPixmap>
 #include <QPointF>
@@ -19,7 +21,7 @@ class TerminalItem;
  * TerminalItem but scaled down. Links to the original
  * terminal item and represents it on the global map.
  */
-class GlobalTerminalItem : public QGraphicsObject
+class GlobalTerminalItem : public GraphicsObjectBase
 {
     Q_OBJECT
 
