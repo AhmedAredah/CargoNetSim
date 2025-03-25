@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QMap>
 #include <QPixmap>
@@ -20,7 +22,7 @@ namespace GUI
  * properties and can be serialized/deserialized for project
  * saving.
  */
-class BackgroundPhotoItem : public QGraphicsObject
+class BackgroundPhotoItem : public GraphicsObjectBase
 {
     Q_OBJECT
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity)
@@ -75,6 +77,15 @@ public:
     void setRegion(const QString &region);
 
     /**
+     * @brief Get the current region name
+     * @return The region name as a QString
+     */
+    QString getRegion() const
+    {
+        return m_region;
+    }
+
+    /**
      * @brief Update the properties of the background item
      * @param newProperties A map of property key-value
      * pairs to update
@@ -97,7 +108,7 @@ public:
      */
     QMap<QString, QVariant> getProperties() const
     {
-        return properties;
+        return m_properties;
     }
 
     /**
@@ -201,14 +212,15 @@ private:
      */
     void updateCoordinates();
 
-    QPixmap pixmap;     ///< The image to display
-    QString regionName; ///< The region this background
-                        ///< belongs to
-    QMap<QString, QVariant> properties; ///< Properties map
-    bool locked;        ///< Whether the item is locked from
-                        ///< movement
-    QPointF dragOffset; ///< Offset for dragging
-    qreal   currentOpacity; ///< Current opacity value
+    QPixmap m_pixmap; ///< The image to display
+    QString m_region; ///< The region this background
+                      ///< belongs to
+    QMap<QString, QVariant>
+         m_properties; ///< Properties map
+    bool m_locked;     ///< Whether the item is locked from
+                       ///< movement
+    QPointF m_dragOffset;     ///< Offset for dragging
+    qreal   m_currentOpacity; ///< Current opacity value
 };
 
 } // namespace GUI
