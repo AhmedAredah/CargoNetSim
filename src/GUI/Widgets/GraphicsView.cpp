@@ -15,6 +15,9 @@
 #include "../Controllers/ViewController.h"
 #include "../Items/DistanceMeasurementTool.h"
 #include "../Items/TerminalItem.h"
+#include "../MainWindow.h"
+#include "Backend/Controllers/CargoNetSimController.h"
+#include "GUI/Widgets/GraphicsScene.h"
 
 namespace CargoNetSim
 {
@@ -130,7 +133,7 @@ double GraphicsView::mercatorToLat(double mercatorY) const
     }
 }
 
-QPair<double, double>
+QPointF
 GraphicsView::sceneToWGS84(const QPointF &scenePos) const
 {
     try
@@ -162,7 +165,7 @@ GraphicsView::sceneToWGS84(const QPointF &scenePos) const
         // Safety checks for numerical stability
         if (!std::isfinite(xNorm) || !std::isfinite(yNorm))
         {
-            return {0.0, 0.0};
+            return QPointF(0.0, 0.0);
         }
 
         // Map normalized coordinates to lat/lon
@@ -189,33 +192,35 @@ GraphicsView::sceneToWGS84(const QPointF &scenePos) const
         // Ensure results are valid
         if (!std::isfinite(lat) || !std::isfinite(lon))
         {
-            return {0.0, 0.0};
+            return QPointF(0.0, 0.0);
         }
 
         // Constrain to valid ranges
         lat = std::max(-90.0, std::min(90.0, lat));
         lon = std::max(-180.0, std::min(180.0, lon));
 
-        return {lat, lon};
+        return QPointF(lat, lon);
     }
     catch (const std::exception &e)
     {
         qWarning() << "Exception in sceneToWGS84:"
                    << e.what();
-        return {0.0, 0.0};
+        return QPointF(0.0, 0.0);
     }
     catch (...)
     {
         qWarning() << "Unknown exception in sceneToWGS84";
-        return {0.0, 0.0};
+        return QPointF(0.0, 0.0);
     }
 }
 
-QPointF GraphicsView::wgs84ToScene(double lat,
-                                   double lon) const
+QPointF GraphicsView::wgs84ToScene(QPointF point) const
 {
     try
     {
+        double lat = point.x();
+        double lon = point.y();
+
         // Safety check for input values
         if (!std::isfinite(lat) || !std::isfinite(lon))
         {
@@ -372,7 +377,7 @@ QPointF GraphicsView::convertCoordinates(
                 return QPointF(0, 0);
             }
 
-            return wgs84ToScene(latDeg, lonDeg);
+            return wgs84ToScene(QPointF(latDeg, lonDeg));
         }
     }
     catch (const std::exception &e)
@@ -849,7 +854,15 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
             // measurement
             measurementTool =
                 new DistanceMeasurementTool(this);
-            scene()->addItem(measurementTool);
+            GraphicsScene *scene =
+                dynamic_cast<GraphicsScene *>(
+                    this->scene());
+            if (scene)
+            {
+                scene->addItemWithId(
+                    measurementTool,
+                    measurementTool->getID());
+            }
             measurementTool->setStartPoint(scenePos);
             measurementTool->setEndPoint(
                 scenePos); // Initialize end point
@@ -1263,13 +1276,18 @@ void GraphicsView::dropEvent(QDropEvent *event)
             scene() ? scene()->parent() : nullptr;
         if (sceneParent)
         {
-            // Use reflection to call the controller method
-            QMetaObject::invokeMethod(
-                sceneParent, "createTerminalAtPoint",
-                Qt::DirectConnection,
-                Q_ARG(QString, terminalType),
-                Q_ARG(QGraphicsScene *, scene()),
-                Q_ARG(QPointF, dropPos));
+            // Retreive the current region
+            QString currentRegion =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegion();
+
+            // Create terminal using ViewController
+            ViewController::createTerminalAtPoint(
+                qobject_cast<MainWindow *>(
+                    scene()->parent()),
+                currentRegion, terminalType, dropPos);
 
             // Show confirmation in status bar
             if (QWidget *mainWindow = window())
@@ -1370,6 +1388,12 @@ void GraphicsView::updateScrollBarRanges()
 void GraphicsView::setGridVisibility(bool visible)
 {
     _gridEnabled = visible;
+}
+
+GraphicsScene *GraphicsView::getScene() const
+{
+    QGraphicsScene *theScene = scene();
+    return dynamic_cast<GraphicsScene *>(theScene);
 }
 
 void GraphicsView::fitInView(
