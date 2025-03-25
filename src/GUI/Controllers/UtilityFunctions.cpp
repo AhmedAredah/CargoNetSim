@@ -1,8 +1,11 @@
 #include "UtilityFunctions.h"
+#include "../MainWindow.h"
+#include "GUI/Controllers/ViewController.h"
 #include "GUI/Items/ConnectionLine.h"
 #include "GUI/Items/MapPoint.h"
 
 #include "Backend/Controllers/CargoNetSimController.h"
+#include "GUI/Widgets/PropertiesPanel.h"
 
 QList<CargoNetSim::GUI::TerminalItem *>
 CargoNetSim::GUI::UtilitiesFunctions::getTerminalItems(
@@ -191,4 +194,100 @@ QList<CargoNetSim::GUI::MapPoint *> CargoNetSim::GUI::
     }
 
     return result;
+}
+
+CargoNetSim::GUI::TerminalItem *
+CargoNetSim::GUI::UtilitiesFunctions::getOriginTerminal(
+    GraphicsScene *scene)
+{
+
+    CargoNetSim::GUI::TerminalItem *result;
+
+    for (auto &terminal :
+         scene->getItemsByType<TerminalItem>())
+    {
+        if (terminal->getTerminalType() == "Origin")
+        {
+            result = terminal;
+            break;
+        }
+    }
+
+    return result;
+}
+
+CargoNetSim::GUI::TerminalItem *
+CargoNetSim::GUI::UtilitiesFunctions::
+    getDestinationTerminal(GraphicsScene *scene)
+{
+    CargoNetSim::GUI::TerminalItem *result;
+
+    for (auto &terminal :
+         scene->getItemsByType<TerminalItem>())
+    {
+        if (terminal->getTerminalType() == "Destination")
+        {
+            result = terminal;
+            break;
+        }
+    }
+
+    return result;
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    updatePropertiesPanel(MainWindow    *mainWindow,
+                          QGraphicsItem *item)
+{
+    if (!item)
+    {
+        // If no item is selected, hide the properties dock
+        CargoNetSim::GUI::UtilitiesFunctions::
+            hidePropertiesPanel(mainWindow);
+    }
+    else
+    {
+        // Show properties dock and update its contents
+        mainWindow->propertiesDock_->show();
+        mainWindow->propertiesPanel_->displayProperties(
+            item);
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    hidePropertiesPanel(MainWindow *mainWindow)
+{
+    // Show map properties only if on main view or global
+    // map tabs
+    int currentTab = mainWindow->tabWidget_->currentIndex();
+    if (currentTab
+        == mainWindow->tabWidget_->indexOf(
+            mainWindow->tabWidget_->widget(0)))
+    { // Main view tab
+        mainWindow->propertiesPanel_->displayProperties(
+            nullptr);
+        mainWindow->propertiesDock_->show();
+        mainWindow->propertiesPanel_
+            ->displayMapProperties();
+    }
+    else
+    {
+        mainWindow->propertiesDock_->hide();
+        mainWindow->propertiesPanel_->displayProperties(
+            nullptr);
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    updateGlobalMapForRegion(MainWindow    *mainWindow,
+                             const QString &regionName)
+{
+    auto regionTerminals = CargoNetSim::GUI::
+        UtilitiesFunctions::getTerminalItems(
+            mainWindow->regionScene_, regionName, "*");
+    for (TerminalItem *item : regionTerminals)
+    {
+        ViewController::updateGlobalMapItem(mainWindow,
+                                            item);
+    }
 }
