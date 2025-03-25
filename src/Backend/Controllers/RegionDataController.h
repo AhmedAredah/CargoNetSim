@@ -18,24 +18,16 @@
 
 #include "NetworkController.h"
 
+// Forward declarations
+namespace CargoNetSim
+{
+class CargoNetSimController;
+}
+
 namespace CargoNetSim
 {
 namespace Backend
 {
-
-/**
- * @class RegionDataControllerCleanup
- * @brief Utility class to handle singleton cleanup.
- */
-class RegionDataControllerCleanup
-{
-public:
-    /**
-     * @brief Cleanup the RegionDataController singleton
-     *        instance.
-     */
-    static void cleanup();
-};
 
 /**
  * @class RegionData
@@ -54,10 +46,22 @@ public:
     /**
      * @brief Constructor for RegionData.
      * @param regionName The name of the region.
+     * @param networkController Pointer to the network
+     * controller.
      * @param parent The parent QObject.
      */
-    RegionData(const QString &regionName,
-               QObject       *parent = nullptr);
+    RegionData(const QString     &regionName,
+               NetworkController *networkController,
+               QObject           *parent = nullptr);
+
+    /**
+     * @brief Destructor for RegionData.
+     */
+    ~RegionData();
+
+    // Delete copy constructor and assignment operator
+    RegionData(const RegionData &)            = delete;
+    RegionData &operator=(const RegionData &) = delete;
 
     /**
      * @brief Check if a network name exists in either train
@@ -273,7 +277,8 @@ public:
      */
     static RegionData *
     fromMap(const QMap<QString, QVariant> &data,
-            QObject *parent = nullptr);
+            NetworkController *networkController,
+            QObject           *parent = nullptr);
 
     /**
      * @brief Get the m_region name.
@@ -357,6 +362,9 @@ private:
 
     /** @brief List of truck network names in this region */
     QStringList m_truckNetworksList;
+
+    /** @brief Store the network controller pointer */
+    NetworkController *m_networkController;
 };
 
 /**
@@ -371,18 +379,19 @@ class RegionDataController : public QObject
 {
     Q_OBJECT
 
-    // Make the cleanup class a friend
-    friend class RegionDataControllerCleanup;
+    // Make the CargoNetSimController a friend
+    friend class CargoNetSim::CargoNetSimController;
 
 public:
     /**
-     * @brief Get the singleton instance of
-     *        RegionDataController.
+     * @brief Constructor for RegionDataController.
+     * @param networkController Pointer to the network
+     * controller.
      * @param parent Optional parent QObject.
-     * @return Reference to the singleton instance.
      */
-    static RegionDataController &
-    getInstance(QObject *parent = nullptr);
+    explicit RegionDataController(
+        NetworkController *networkController,
+        QObject           *parent = nullptr);
 
     /**
      * @brief Destructor for RegionDataController.
@@ -620,7 +629,8 @@ public:
      *        data.
      * @return True if deserialization was successful.
      */
-    bool fromMap(const QMap<QString, QVariant> &data);
+    bool fromMap(NetworkController *networkController,
+                 const QMap<QString, QVariant> &data);
 
 signals:
     /**
@@ -683,18 +693,7 @@ signals:
                                const QString  &key,
                                const QVariant &value);
 
-protected:
-    /** @brief Singleton instance */
-    static RegionDataController *m_instance;
-
 private:
-    /**
-     * @brief Private constructor for RegionDataController
-     *        (singleton pattern).
-     * @param parent Optional parent QObject.
-     */
-    explicit RegionDataController(
-        QObject *parent = nullptr);
 
     /** @brief Map of region name to RegionData */
     QMap<QString, RegionData *> m_regions;
@@ -705,6 +704,9 @@ private:
     /** @brief Map of global variables not tied to regions
      */
     QVariantMap m_globalVariables;
+
+    /** @brief Store the network controller pointer */
+    NetworkController *m_networkController;
 };
 
 } // namespace Backend
