@@ -206,6 +206,12 @@ CargoNetSimController::getTruckManager() const
     return m_truckManager;
 }
 
+Backend::NetworkController *
+CargoNetSimController::getNetworkController() const
+{
+    return m_networkController;
+}
+
 Backend::ShipClient::ShipSimulationClient *
 CargoNetSimController::getShipClient() const
 {
