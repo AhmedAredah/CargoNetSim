@@ -7,6 +7,8 @@
 #include <QTimer>
 #include <QUuid>
 
+#include "Backend/Controllers/CargoNetSimController.h"
+
 namespace CargoNetSim
 {
 namespace Backend
@@ -100,6 +102,12 @@ void SimulationClientBase::initializeClient(
                 + getClientTypeString(),
             static_cast<int>(m_clientType));
     }
+}
+
+void SimulationClientBase::setController(
+    CargoNetSimController *controller)
+{
+    m_controller = controller;
 }
 
 /**
@@ -284,7 +292,7 @@ bool SimulationClientBase::sendCommandAndWait(
  */
 bool SimulationClientBase::sendCommand(
     const QString &command, const QJsonObject &params,
-    const QString &routingKey)
+    const QString &routingKey, bool sendAsText)
 {
     QJsonObject commandObj =
         createCommandObject(command, params);
@@ -308,7 +316,7 @@ bool SimulationClientBase::sendCommand(
     else
     {
         QString errorMsg = "Failed to send command";
-        emit    errorOccurred(errorMsg);
+        emit errorOccurred(errorMsg);
     }
 
     return success;

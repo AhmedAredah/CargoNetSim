@@ -298,7 +298,7 @@ private:
     /**
      * @brief Internal method to unload containers
      *
-     * Executes the unloading process without waiting for a
+     * Executes the unloading process and wait for a
      * response.
      *
      * @param networkName Network name

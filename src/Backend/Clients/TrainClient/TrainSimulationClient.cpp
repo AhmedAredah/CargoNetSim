@@ -608,8 +608,6 @@ TrainSimulationClient::getAllTrainsStates() const
 void TrainSimulationClient::processMessage(
     const QJsonObject &message)
 {
-    // Call base class message processing
-    SimulationClientBase::processMessage(message);
 
     // Check if message contains an event
     if (!message.contains("event"))
@@ -694,6 +692,10 @@ void TrainSimulationClient::processMessage(
     {
         qWarning() << "Unrecognized event:" << event;
     }
+
+    // Delegate for the base class for the initial
+    // processing
+    SimulationClientBase::processMessage(message);
 }
 
 void TrainSimulationClient::onSimulationCreated(

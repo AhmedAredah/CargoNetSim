@@ -451,7 +451,7 @@ bool ShipSimulationClient::addContainersToShip(
 /**
  * @brief Internal method to unload containers
  *
- * Sends an unload command without waiting for a response.
+ * Sends an unload command and wait for a response.
  *
  * @param networkName Network name
  * @param shipId Ship identifier
@@ -472,13 +472,22 @@ bool ShipSimulationClient::
         terminalsArray.append(terminal);
     }
     params["terminalNames"] = terminalsArray;
-    bool success            = sendCommand(
-        "unloadContainersFromShipAtTerminal", params);
-    if (m_logger && !success)
+    bool success            = sendCommandAndWait(
+        "unloadContainersFromShipAtTerminal", params,
+        {"shipunloadedcontainers"});
+    if (m_logger)
     {
-        m_logger->logError("Private unload failed for "
-                               + shipId,
-                           static_cast<int>(m_clientType));
+        if (success)
+        {
+            m_logger->log("Ship " + shipId + " unloaded",
+                          static_cast<int>(m_clientType));
+        }
+        else
+        {
+            m_logger->logError(
+                "Failed to unload ship " + shipId,
+                static_cast<int>(m_clientType));
+        }
     }
     return success;
 }
@@ -500,34 +509,8 @@ bool ShipSimulationClient::
         const QStringList &terminalNames)
 {
     return executeSerializedCommand([&]() {
-        QJsonObject params;
-        params["networkName"] = networkName;
-        params["shipID"]      = shipId;
-        QJsonArray terminalsArray;
-        for (const QString &terminal : terminalNames)
-        {
-            terminalsArray.append(terminal);
-        }
-        params["terminalNames"] = terminalsArray;
-        bool success            = sendCommandAndWait(
-            "unloadContainersFromShipAtTerminal", params,
-            {"shipunloadedcontainers"});
-        if (m_logger)
-        {
-            if (success)
-            {
-                m_logger->log(
-                    "Ship " + shipId + " unloaded",
-                    static_cast<int>(m_clientType));
-            }
-            else
-            {
-                m_logger->logError(
-                    "Failed to unload ship " + shipId,
-                    static_cast<int>(m_clientType));
-            }
-        }
-        return success;
+        return unloadContainersFromShipAtTerminalsPrivate(
+            networkName, shipId, terminalNames);
     });
 }
 
@@ -702,7 +685,7 @@ ShipSimulationClient::getAllShipsStates() const
 void ShipSimulationClient::processMessage(
     const QJsonObject &message)
 {
-    SimulationClientBase::processMessage(message);
+
     if (!message.contains("event"))
     {
         if (m_logger)
@@ -806,6 +789,10 @@ void ShipSimulationClient::processMessage(
                 << "Unrecognized event:" << eventType;
         }
     }
+
+    // Delegate for the base class for the initial
+    // processing
+    SimulationClientBase::processMessage(message);
 }
 
 /**
