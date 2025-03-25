@@ -85,6 +85,21 @@ public:
     static void connectVisibleTerminalsByNetworks(
         MainWindow *mainWindow);
 
+    /**
+     * @brief Creates a new region center
+     * @param mainWindow The main window
+     * @param regionName The name of the region
+     * @param color The color of the region
+     * @param pos The position of the region center
+     * (optional)
+     * @return Pointer to the created RegionCenterPoint
+     */
+    static RegionCenterPoint *
+    createRegionCenter(MainWindow    *mainWindow,
+                       const QString &regionName,
+                       const QColor  &color,
+                       const QPointF  pos = QPointF(0, 0));
+
 private:
     static void drawTrainNetwork(
         MainWindow                              *mainWindow,

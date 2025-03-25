@@ -234,9 +234,12 @@ CargoNetSim::GUI::ViewController::createTerminalAtPoint(
             CargoNetSim::GUI::ViewController::
                 updateGlobalMapItem(mainWindow, terminal);
         });
-    QObject::connect(terminal, &TerminalItem::clicked,
-                     mainWindow,
-                     &MainWindow::updatePropertiesPanel);
+    QObject::connect(
+        terminal, &TerminalItem::clicked,
+        [mainWindow](TerminalItem *terminal) {
+            UtilitiesFunctions::updatePropertiesPanel(
+                mainWindow, terminal);
+        });
     QObject::connect(
         terminal, &TerminalItem::clicked, mainWindow,
         &MainWindow::handleTerminalNodeLinking);
@@ -437,8 +440,12 @@ CargoNetSim::GUI::ViewController::drawNode(
         nodeID, geodeticPoint.x(), geodeticPoint.y(),
         regionName, "circle", nullptr, properties);
 
-    QObject::connect(point, &MapPoint::clicked, mainWindow,
-                     &MainWindow::updatePropertiesPanel);
+    QObject::connect(
+        point, &MapPoint::clicked,
+        [mainWindow](MapPoint *point) {
+            UtilitiesFunctions::updatePropertiesPanel(
+                mainWindow, point);
+        });
 
     QObject::connect(
         point, &MapPoint::clicked, mainWindow,
@@ -481,8 +488,11 @@ CargoNetSim::GUI::ViewController::drawLink(
             regionName, properties);
 
         QObject::connect(
-            line, &MapLine::clicked, mainWindow,
-            &MainWindow::updatePropertiesPanel);
+            line, &MapLine::clicked,
+            [mainWindow](MapLine *line) {
+                UtilitiesFunctions::updatePropertiesPanel(
+                    mainWindow, line);
+            });
 
         line->setColor(color); // Set link color
 
@@ -620,8 +630,11 @@ void CargoNetSim::GUI::ViewController::addBackgroundPhoto(
                                         currentRegion);
             QObject::connect(
                 background, &BackgroundPhotoItem::clicked,
-                mainWindow,
-                &MainWindow::updatePropertiesPanel);
+                [mainWindow](BackgroundPhotoItem *item) {
+                    UtilitiesFunctions::
+                        updatePropertiesPanel(mainWindow,
+                                              item);
+                });
             QObject::connect(
                 background,
                 &BackgroundPhotoItem::positionChanged,
@@ -676,8 +689,11 @@ void CargoNetSim::GUI::ViewController::addBackgroundPhoto(
                                         "Global Map");
             QObject::connect(
                 background, &BackgroundPhotoItem::clicked,
-                mainWindow,
-                &MainWindow::updatePropertiesPanel);
+                [mainWindow](BackgroundPhotoItem *item) {
+                    UtilitiesFunctions::
+                        updatePropertiesPanel(mainWindow,
+                                              item);
+                });
             QObject::connect(
                 background,
                 &BackgroundPhotoItem::positionChanged,
@@ -942,4 +958,37 @@ void CargoNetSim::GUI::ViewController::
             commonModes.intersect(targetAllModes);
         }
     }
+}
+
+CargoNetSim::GUI::RegionCenterPoint *
+CargoNetSim::GUI::ViewController::createRegionCenter(
+    MainWindow *mainWindow, const QString &regionName,
+    const QColor &color, const QPointF pos)
+{
+    RegionCenterPoint *centerPoint =
+        new RegionCenterPoint(regionName, color);
+    QObject::connect(
+        centerPoint, &RegionCenterPoint::clicked,
+        [mainWindow](RegionCenterPoint *item) {
+            UtilitiesFunctions::updatePropertiesPanel(
+                mainWindow, item);
+        });
+
+    // Add position change connection
+    QObject::connect(
+        centerPoint, &RegionCenterPoint::positionChanged,
+        [regionName, mainWindow](const QPointF &) {
+            UtilitiesFunctions::updateGlobalMapForRegion(
+                mainWindow, regionName);
+        });
+
+    centerPoint->setPos(pos);
+    mainWindow->regionScene_->addItemWithId(
+        centerPoint, centerPoint->getID());
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getRegionDataController()
+        ->setRegionVariable(
+            regionName, "regionCenterPoint",
+            QVariant::fromValue(centerPoint));
+    return centerPoint;
 }
