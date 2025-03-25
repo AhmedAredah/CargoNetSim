@@ -15,6 +15,8 @@
 #include <QString>
 #include <QStringList>
 
+#include "Backend/Models/BaseObject.h"
+
 namespace CargoNetSim
 {
 namespace Backend
@@ -29,7 +31,7 @@ namespace TruckClient
  * Provides a centralized configuration management system
  * for simulation parameters, file paths, and options.
  */
-class SimulationConfig : public QObject
+class SimulationConfig : public BaseObject
 {
     Q_OBJECT
 

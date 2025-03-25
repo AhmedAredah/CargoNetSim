@@ -20,7 +20,7 @@ namespace TruckClient
 {
 
 SimulationConfig::SimulationConfig(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
 }
 
