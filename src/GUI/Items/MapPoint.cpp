@@ -1,4 +1,6 @@
 #include "MapPoint.h"
+#include "GUI/Controllers/ViewController.h"
+#include "GUI/MainWindow.h"
 #include "TerminalItem.h"
 
 #include <QAction>
@@ -25,23 +27,23 @@ MapPoint::MapPoint(
     const QString &shape, const QString &region,
     TerminalItem                  *terminal,
     const QMap<QString, QVariant> &properties)
-    : id(POINT_ID++)
-    , x(x)
-    , y(y)
-    , shape(shape)
-    , region(region)
-    , terminal(terminal)
-    , color(Qt::black)
-    , properties(properties)
+    : m_id(POINT_ID++)
+    , m_x(x)
+    , m_y(y)
+    , m_shape(shape)
+    , m_region(region)
+    , m_terminal(terminal)
+    , m_color(Qt::black)
+    , m_properties(properties)
 {
     // Initialize properties if none provided
-    if (this->properties.isEmpty())
+    if (this->m_properties.isEmpty())
     {
-        this->properties["x"] = x;
-        this->properties["y"] = y;
-        this->properties["Network_ID"] =
+        this->m_properties["x"] = x;
+        this->m_properties["y"] = y;
+        this->m_properties["Network_ID"] =
             referencedNetworkID;
-        this->properties["region"] = region;
+        this->m_properties["region"] = region;
     }
 
     // Set higher z-value to ensure points are drawn above
@@ -59,21 +61,21 @@ MapPoint::MapPoint(
 
 void MapPoint::setLinkedTerminal(TerminalItem *newTerminal)
 {
-    TerminalItem *oldTerminal = terminal;
-    terminal                  = newTerminal;
+    TerminalItem *oldTerminal = m_terminal;
+    m_terminal                  = newTerminal;
 
-    if (terminal)
+    if (m_terminal)
     {
-        properties["LinkedTerminal"] =
-            terminal->getProperties()["ID"];
+        m_properties["LinkedTerminal"] =
+            m_terminal->getProperties()["ID"];
     }
     else
     {
-        properties.remove("LinkedTerminal");
+        m_properties.remove("LinkedTerminal");
     }
 
     // Emit signal about the terminal change
-    emit terminalChanged(oldTerminal, terminal);
+    emit terminalChanged(oldTerminal, m_terminal);
 
     // Trigger a repaint
     update();
@@ -81,10 +83,10 @@ void MapPoint::setLinkedTerminal(TerminalItem *newTerminal)
 
 void MapPoint::setColor(const QColor &newColor)
 {
-    if (color != newColor)
+    if (m_color != newColor)
     {
-        color = newColor;
-        emit colorChanged(color);
+        m_color = newColor;
+        emit colorChanged(m_color);
         update();
     }
 }
@@ -95,16 +97,16 @@ void MapPoint::updateProperties(
     for (auto it = newProperties.constBegin();
          it != newProperties.constEnd(); ++it)
     {
-        properties[it.key()] = it.value();
+        m_properties[it.key()] = it.value();
     }
     emit propertiesChanged();
 }
 
 QRectF MapPoint::boundingRect() const
 {
-    if (terminal)
+    if (m_terminal)
     {
-        const QPixmap &pixmap = terminal->getPixmap();
+        const QPixmap &pixmap = m_terminal->getPixmap();
         if (!pixmap.isNull())
         {
             int pixmapWidth  = pixmap.width();
@@ -123,11 +125,11 @@ void MapPoint::paint(QPainter *painter,
                      const QStyleOptionGraphicsItem *option,
                      QWidget                        *widget)
 {
-    if (terminal)
+    if (m_terminal)
     {
-        // If linked to a terminal, draw terminal icon at
+        // If linked to a m_terminal, draw m_terminal icon at
         // reduced opacity
-        const QPixmap &pixmap = terminal->getPixmap();
+        const QPixmap &pixmap = m_terminal->getPixmap();
         if (!pixmap.isNull())
         {
             painter->setOpacity(
@@ -144,17 +146,17 @@ void MapPoint::paint(QPainter *painter,
     {
         // Draw a shape if no terminal
         painter->setPen(QPen(Qt::black, 2));
-        painter->setBrush(QBrush(color));
+        painter->setBrush(QBrush(m_color));
 
-        if (shape == "circle")
+        if (m_shape == "circle")
         {
             painter->drawEllipse(-7, -7, 14, 14);
         }
-        else if (shape == "rectangle")
+        else if (m_shape == "rectangle")
         {
             painter->drawRect(-7, -7, 14, 14);
         }
-        else if (shape == "triangle")
+        else if (m_shape == "triangle")
         {
             QPainterPath path;
             path.moveTo(0, -7);
@@ -227,7 +229,7 @@ void MapPoint::showContextMenu(
 
     QAction *unlinkAction =
         menu.addAction("Unlink Terminal");
-    unlinkAction->setEnabled(terminal != nullptr);
+    unlinkAction->setEnabled(m_terminal != nullptr);
 
     QAction *selectedAction = menu.exec(event->screenPos());
 
@@ -265,19 +267,10 @@ void MapPoint::showContextMenu(
 void MapPoint::createTerminalAtPosition(
     const QString &terminalType)
 {
-    // This will be implemented to call the ViewController's
-    // terminal creation method Since we need to avoid
-    // circular dependencies, this should be handled by
-    // connecting to the clicked signal and using that to
-    // create terminals
-
-    // For now, just emit clicked - the actual creation will
-    // be handled by MainWindow
-    emit clicked(this);
-
-    // Note: In a full implementation, this would call a
-    // controller method to create the terminal and then
-    // link it, but that requires access to MainWindow
+    // Create terminal using ViewController
+    ViewController::createTerminalAtPoint(
+        qobject_cast<MainWindow *>(scene()->parent()),
+        m_region, terminalType, pos());
 }
 
 QMap<QString, QVariant> MapPoint::toDict() const
@@ -285,21 +278,21 @@ QMap<QString, QVariant> MapPoint::toDict() const
     QMap<QString, QVariant> data;
 
     data["referenced_network_ID"] =
-        properties.value("Network_ID");
-    data["x"]          = x;
-    data["y"]          = y;
-    data["shape"]      = shape;
-    data["region"]     = region;
-    data["properties"] = properties;
-    data["color"]      = color.name();
+        m_properties.value("Network_ID");
+    data["x"]          = m_x;
+    data["y"]          = m_y;
+    data["shape"]      = m_shape;
+    data["region"]     = m_region;
+    data["properties"] = m_properties;
+    data["color"]      = m_color.name();
     data["selected"]   = isSelected();
     data["z_value"]    = zValue();
 
     // Add terminal ID if there's a linked terminal
-    if (terminal)
+    if (m_terminal)
     {
         data["terminal_id"] =
-            terminal->getProperties().value("ID");
+            m_terminal->getProperties().value("ID");
     }
 
     return data;
