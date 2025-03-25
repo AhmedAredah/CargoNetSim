@@ -6,40 +6,6 @@ namespace CargoNetSim
 namespace Backend
 {
 
-void NetworkControllerCleanup::cleanup()
-{
-    QWriteLocker writeLocker(
-        &NetworkController::m_instanceLock);
-    if (NetworkController::m_instance)
-    {
-        delete NetworkController::m_instance;
-        NetworkController::m_instance = nullptr;
-    }
-}
-
-// Initialize static members
-NetworkController *NetworkController::m_instance = nullptr;
-QReadWriteLock     NetworkController::m_instanceLock;
-
-NetworkController &
-NetworkController::getInstance(QObject *parent)
-{
-    QReadLocker locker(&m_instanceLock);
-    if (!m_instance)
-    {
-        locker.unlock();
-        QWriteLocker writeLocker(&m_instanceLock);
-        // Double-check pattern to ensure thread safety
-        if (!m_instance)
-        {
-            m_instance = new NetworkController(parent);
-        }
-        writeLocker.unlock();
-        locker.relock();
-    }
-    return *m_instance;
-}
-
 NetworkController::NetworkController(QObject *parent)
     : QObject(parent)
 {
@@ -92,6 +58,9 @@ bool NetworkController::addTrainNetwork(
     m_trainNetworks[region][name] = network;
     locker.unlock();
 
+    // Set the network name
+    network->setNetworkName(name);
+
     // Take ownership of the network
     network->setParent(this);
 
@@ -128,6 +97,12 @@ bool NetworkController::addTruckNetworkConfig(
     // Add the config
     m_truckNetworkConfigs[region][name] = config;
     locker.unlock();
+
+    // Set the network name in the underlying network
+    if (config->getNetwork())
+    {
+        config->getNetwork()->setNetworkName(name);
+    }
 
     // Take ownership of the config
     config->setParent(this);

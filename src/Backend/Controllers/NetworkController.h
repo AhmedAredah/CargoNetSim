@@ -25,20 +25,6 @@ namespace Backend
 {
 
 /**
- * @class NetworkControllerCleanup
- * @brief Utility class to handle singleton cleanup.
- */
-class NetworkControllerCleanup
-{
-public:
-    /**
-     * @brief Cleanup the NetworkController singleton
-     *        instance.
-     */
-    static void cleanup();
-};
-
-/**
  * @class NetworkController
  * @brief Singleton controller for managing train and truck
  *        networks by name and region.
@@ -52,18 +38,23 @@ class NetworkController : public QObject
 {
     Q_OBJECT
 
-    // Make the cleanup class a friend
-    friend class NetworkControllerCleanup;
+    // Make the RegionData a friend
+    friend class RegionData;
+
+    // Make the RegionDataController a friend
+    friend class RegionDataController;
 
 public:
     /**
-     * @brief Get the singleton instance of
-     *        NetworkController.
+     * @brief Constructor for NetworkController.
      * @param parent Optional parent QObject.
-     * @return Reference to the singleton instance.
      */
-    static NetworkController &
-    getInstance(QObject *parent = nullptr);
+    explicit NetworkController(QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
+    ~NetworkController();
 
     // Delete copy and move constructors and operators
     NetworkController(const NetworkController &) = delete;
@@ -222,26 +213,7 @@ signals:
     void truckNetworkConfigRemoved(const QString &name,
                                    const QString &region);
 
-protected:
-    /** @brief Singleton instance */
-    static NetworkController *m_instance;
-
 private:
-    /**
-     * @brief Private constructor for singleton pattern.
-     * @param parent Optional parent QObject.
-     */
-    explicit NetworkController(QObject *parent = nullptr);
-
-    /**
-     * @brief Destructor.
-     */
-    ~NetworkController();
-
-    /** @brief Lock for thread safety of singleton creation
-     */
-    static QReadWriteLock m_instanceLock;
-
     /** @brief Lock for thread safety of train networks */
     mutable QReadWriteLock m_trainNetworksLock;
 
