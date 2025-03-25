@@ -15,17 +15,15 @@
 #include "../Widgets/GraphicsScene.h"
 #include "../Widgets/GraphicsView.h"
 // #include "Controllers/ViewController.h"
-#include "Backend/Controllers/RegionDataController.h"
 // #include "Controllers/UtilityFunctions.h"
 // #include "Serializers/ProjectSerializer.h"
 #include "../Widgets/SetCoordinatesDialog.h"
-#include "Backend/Controllers/NetworkController.h"
 
 #include "../Controllers/NetworkController.h"
 #include "../Controllers/UtilityFunctions.h"
 #include "../Widgets/ShipManagerDialog.h"
 #include "../Widgets/TrainManagerDialog.h"
-#include "Backend/Controllers/VehicleController.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 
 namespace CargoNetSim
 {
@@ -52,11 +50,11 @@ void BasicButtonController::resetOtherButtons(
         }
 
         // Reset associated modes in the scene
-        mainWindow->scene_->connectMode        = false;
-        mainWindow->scene_->linkTerminalMode   = false;
-        mainWindow->scene_->unlinkTerminalMode = false;
-        mainWindow->scene_->measureMode        = false;
-        mainWindow->scene_->connectFirstItem   = QVariant();
+        mainWindow->regionScene_->connectMode        = false;
+        mainWindow->regionScene_->linkTerminalMode   = false;
+        mainWindow->regionScene_->unlinkTerminalMode = false;
+        mainWindow->regionScene_->measureMode        = false;
+        mainWindow->regionScene_->connectFirstItem   = QVariant();
         mainWindow->selectedTerminal_          = nullptr;
     }
     catch (const std::exception &e)
@@ -121,7 +119,7 @@ void BasicButtonController::toggleConnectMode(
 
             GraphicsScene *currentScene =
                 mainWindow->tabWidget_->currentIndex() == 0
-                    ? mainWindow->scene_
+                    ? mainWindow->regionScene_
                     : mainWindow->globalMapScene_;
 
             currentScene->connectMode      = true;
@@ -132,8 +130,8 @@ void BasicButtonController::toggleConnectMode(
         }
         else
         {
-            mainWindow->scene_->connectMode = false;
-            mainWindow->scene_->connectFirstItem =
+            mainWindow->regionScene_->connectMode = false;
+            mainWindow->regionScene_->connectFirstItem =
                 QVariant();
             mainWindow->globalMapScene_->connectMode =
                 false;
@@ -167,8 +165,8 @@ void BasicButtonController::toggleLinkTerminalMode(
                 mainWindow->linkTerminalButton_);
 
             // Disable other modes when entering link mode
-            mainWindow->scene_->connectMode      = false;
-            mainWindow->scene_->linkTerminalMode = true;
+            mainWindow->regionScene_->connectMode      = false;
+            mainWindow->regionScene_->linkTerminalMode = true;
             mainWindow->selectedTerminal_        = nullptr;
             mainWindow->statusBar()->showMessage(
                 "Select a terminal, then select a node to "
@@ -177,7 +175,7 @@ void BasicButtonController::toggleLinkTerminalMode(
         }
         else
         {
-            mainWindow->scene_->linkTerminalMode = false;
+            mainWindow->regionScene_->linkTerminalMode = false;
             mainWindow->selectedTerminal_        = nullptr;
             mainWindow->linkTerminalButton_->setChecked(
                 false);
@@ -209,9 +207,9 @@ void BasicButtonController::toggleUnlinkTerminalMode(
                 mainWindow->unlinkTerminalButton_);
 
             // Disable other modes when entering unlink mode
-            mainWindow->scene_->connectMode        = false;
-            mainWindow->scene_->linkTerminalMode   = false;
-            mainWindow->scene_->unlinkTerminalMode = true;
+            mainWindow->regionScene_->connectMode        = false;
+            mainWindow->regionScene_->linkTerminalMode   = false;
+            mainWindow->regionScene_->unlinkTerminalMode = true;
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->statusBar()->showMessage(
                 "Select a terminal, then select a node to "
@@ -220,7 +218,7 @@ void BasicButtonController::toggleUnlinkTerminalMode(
         }
         else
         {
-            mainWindow->scene_->unlinkTerminalMode = false;
+            mainWindow->regionScene_->unlinkTerminalMode = false;
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->unlinkTerminalButton_->setChecked(
                 false);
@@ -276,8 +274,15 @@ void BasicButtonController::toggleMeasureMode(
             {
                 if (currentView->measurementTool->scene())
                 {
-                    currentView->scene()->removeItem(
-                        currentView->measurementTool);
+                    GraphicsScene *scene =
+                        currentView->getScene();
+                    if (scene)
+                    {
+                        scene->removeItemWithId<
+                            DistanceMeasurementTool>(
+                            currentView->measurementTool
+                                ->getID());
+                    }
                 }
                 currentView->measurementTool = nullptr;
             }
@@ -333,8 +338,16 @@ void BasicButtonController::toggleMeasureMode(
             if (currentView->measurementTool
                 && currentView->measurementTool->scene())
             {
-                currentView->scene()->removeItem(
-                    currentView->measurementTool);
+                GraphicsScene *scene =
+                    currentView->getScene();
+                if (scene)
+                {
+                    scene->removeItemWithId<
+                        DistanceMeasurementTool>(
+                        currentView->measurementTool
+                            ->getID());
+                }
+
                 currentView->measurementTool = nullptr;
             }
 
@@ -356,25 +369,29 @@ void BasicButtonController::clearMeasurements(
         // Get current scene based on active tab
         GraphicsScene *currentScene =
             mainWindow->tabWidget_->currentIndex() == 0
-                ? mainWindow->scene_
+                ? mainWindow->regionScene_
                 : mainWindow->globalMapScene_;
 
         // Remove all measurement tools from the scene
-        QList<QGraphicsItem *> itemsToRemove;
+        QList<GraphicsObjectBase *> itemsToRemove;
         for (QGraphicsItem *item : currentScene->items())
         {
-            if (dynamic_cast<DistanceMeasurementTool *>(
-                    item))
+            DistanceMeasurementTool *convertedItem =
+                dynamic_cast<DistanceMeasurementTool *>(
+                    item);
+            if (convertedItem)
             {
-                itemsToRemove.append(item);
+                itemsToRemove.append(convertedItem);
             }
         }
 
         // Remove items separately to avoid modifying
         // collection during iteration
-        for (QGraphicsItem *item : itemsToRemove)
+        for (GraphicsObjectBase *item : itemsToRemove)
         {
-            currentScene->removeItem(item);
+            currentScene
+                ->removeItemWithId<DistanceMeasurementTool>(
+                    item->getID());
         }
 
         mainWindow->statusBar()->showMessage(
@@ -398,8 +415,9 @@ void BasicButtonController::changeRegion(
     {
         QString currentRegion =
             mainWindow->regionCombo_->currentText();
-        Backend::RegionDataController::getInstance()
-            .setCurrentRegion(currentRegion);
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->setCurrentRegion(currentRegion);
         // ViewController::updateSceneVisibility(mainWindow);
         // // TODO
         emit mainWindow->regionChanged(currentRegion);
@@ -543,7 +561,7 @@ void BasicButtonController::disconnectAllTerminals(
 {
     try
     {
-        QList<QGraphicsItem *> itemsToRemove;
+        QList<GraphicsObjectBase *> itemsToRemove;
         for (QGraphicsItem *item : scene->items())
         {
             ConnectionLine *connection =
@@ -558,9 +576,10 @@ void BasicButtonController::disconnectAllTerminals(
 
         // Remove items separately to avoid modifying
         // collection during iteration
-        for (QGraphicsItem *item : itemsToRemove)
+        for (GraphicsObjectBase *item : itemsToRemove)
         {
-            scene->removeItem(item);
+            scene->removeItemWithId<ConnectionLine>(
+                item->getID());
         }
 
         mainWindow->showStatusBarMessage(
@@ -594,15 +613,16 @@ void BasicButtonController::toggleConnectionLines(
 
         // Update visibility of connection lines
         for (QGraphicsItem *item :
-             mainWindow->scene_->items())
+             mainWindow->regionScene_->items())
         {
             ConnectionLine *connection =
                 dynamic_cast<ConnectionLine *>(item);
             if (connection
                 && connection->getRegion()
-                       == Backend::RegionDataController::
+                       == CargoNetSim::CargoNetSimController::
                               getInstance()
-                                  .getCurrentRegion())
+                                  .getRegionDataController()
+                                  ->getCurrentRegion())
             {
                 connection->setVisible(checked);
             }
@@ -641,15 +661,16 @@ void BasicButtonController::toggleTerminals(
 
         // Update visibility of terminals
         for (QGraphicsItem *item :
-             mainWindow->scene_->items())
+             mainWindow->regionScene_->items())
         {
             TerminalItem *terminal =
                 dynamic_cast<TerminalItem *>(item);
             if (terminal
                 && terminal->getRegion()
-                       == Backend::RegionDataController::
+                       == CargoNetSim::CargoNetSimController::
                               getInstance()
-                                  .getCurrentRegion())
+                                  .getRegionDataController()
+                                  ->getCurrentRegion())
             {
                 terminal->setVisible(checked);
             }
@@ -688,26 +709,20 @@ void BasicButtonController::newProject(
         if (reply == QMessageBox::Yes)
         {
             // Clear current scene
-            mainWindow->scene_->clear();
+            mainWindow->regionScene_->clear();
 
             // Reset Region Manager
             mainWindow->regionManager_->clearRegions();
 
             // Reset current region
-            Backend::RegionDataController::getInstance()
-                .setCurrentRegion("Default Region");
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->setCurrentRegion("Default Region");
 
             // Reset network registries
             // TrainNetworkManager::getInstance()->clear();
             // TruckNetworkManager::getInstance()->clear();
-
-            // Clear global scene
-            for (QGraphicsItem *item :
-                 mainWindow->globalMapScene_->items())
-            {
-                mainWindow->globalMapScene_->removeItem(
-                    item);
-            }
 
             // Clear region centers
             // TODO
@@ -964,8 +979,10 @@ void BasicButtonController::showTrainManager(
 {
     TrainManagerDialog dialog(mainWindow);
 
-    auto trains = Backend::VehicleController::getInstance()
-                      ->getAllTrains();
+    auto trains =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController()
+            ->getAllTrains();
     dialog.setTrains(trains);
     dialog.updateTable();
 
@@ -973,7 +990,8 @@ void BasicButtonController::showTrainManager(
     {
         // Store trains
         auto newTrains = dialog.getTrains();
-        Backend::VehicleController::getInstance()
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController()
             ->updateTrains(newTrains);
     }
 }
@@ -983,8 +1001,10 @@ void BasicButtonController::showShipManager(
 {
     ShipManagerDialog dialog(mainWindow);
 
-    auto ships = Backend::VehicleController::getInstance()
-                     ->getAllShips();
+    auto ships =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController()
+            ->getAllShips();
     dialog.setShips(ships);
     dialog.updateTable();
 
@@ -992,7 +1012,8 @@ void BasicButtonController::showShipManager(
     {
         // Store ships
         auto newShips = dialog.getShips();
-        Backend::VehicleController::getInstance()
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController()
             ->updateShips(newShips);
     }
 }
@@ -1009,8 +1030,9 @@ void BasicButtonController::updateRegionComboBox(
 
     // Get all region names from RegionDataController
     QStringList regionNames =
-        Backend::RegionDataController::getInstance()
-            .getAllRegionNames();
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getAllRegionNames();
     mainWindow->regionCombo_->addItems(regionNames);
 
     // Restore selection if it still exists, otherwise
@@ -1028,9 +1050,12 @@ void BasicButtonController::updateRegionComboBox(
         if (!mainWindow->regionCombo_->currentText()
                  .isEmpty())
         {
-            Backend::RegionDataController::getInstance()
-                .setCurrentRegion(mainWindow->regionCombo_
-                                      ->currentText());
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->setCurrentRegion(
+                        mainWindow->regionCombo_
+                            ->currentText());
         }
     }
 }
@@ -1039,7 +1064,8 @@ void BasicButtonController::setupSignals(
     MainWindow *mainWindow)
 {
     QObject::connect(
-        &Backend::RegionDataController::getInstance(),
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController(),
         &Backend::RegionDataController::regionAdded,
         mainWindow,
         [mainWindow](const QString &regionName) {
@@ -1047,7 +1073,8 @@ void BasicButtonController::setupSignals(
         });
 
     QObject::connect(
-        &Backend::RegionDataController::getInstance(),
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController(),
         &Backend::RegionDataController::regionRenamed,
         mainWindow,
         [mainWindow](const QString &oldName,
@@ -1056,7 +1083,8 @@ void BasicButtonController::setupSignals(
         });
 
     QObject::connect(
-        &Backend::RegionDataController::getInstance(),
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController(),
         &Backend::RegionDataController::regionRemoved,
         mainWindow,
         [mainWindow](const QString &regionName) {
