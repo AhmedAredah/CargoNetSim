@@ -5,33 +5,6 @@ namespace CargoNetSim
 namespace Backend
 {
 
-// Initialize static members
-VehicleController *VehicleController::m_instance = nullptr;
-QMutex             VehicleController::m_mutex;
-
-VehicleController *VehicleController::getInstance()
-{
-    if (m_instance == nullptr)
-    {
-        QMutexLocker locker(&m_mutex);
-        if (m_instance == nullptr)
-        {
-            m_instance = new VehicleController();
-        }
-    }
-    return m_instance;
-}
-
-void VehicleController::cleanup()
-{
-    QMutexLocker locker(&m_mutex);
-    if (m_instance != nullptr)
-    {
-        delete m_instance;
-        m_instance = nullptr;
-    }
-}
-
 VehicleController::VehicleController(QObject *parent)
     : QObject(parent)
 {
