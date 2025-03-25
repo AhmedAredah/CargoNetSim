@@ -9,11 +9,25 @@
 
 namespace CargoNetSim
 {
-namespace Backend
+
+void CargoNetSimControllerCleanup::cleanup()
 {
+    QWriteLocker writeLocker(
+        &CargoNetSimController::m_instanceLock);
+    if (CargoNetSimController::m_instance)
+    {
+        delete CargoNetSimController::m_instance;
+        CargoNetSimController::m_instance = nullptr;
+    }
+}
+
+// Initialize static members
+CargoNetSimController *CargoNetSimController::m_instance =
+    nullptr;
+QReadWriteLock CargoNetSimController::m_instanceLock;
 
 CargoNetSimController::CargoNetSimController(
-    LoggerInterface *logger, QObject *parent)
+    Backend::LoggerInterface *logger, QObject *parent)
     : QObject(parent)
     , m_truckThread(nullptr)
     , m_shipThread(nullptr)
@@ -27,11 +41,49 @@ CargoNetSimController::CargoNetSimController(
     , m_readyClientCount(0)
     , m_logger(logger)
 {
+    // Create the NetworkController first
+    m_networkController =
+        new Backend::NetworkController(this);
+
+    // Then create the RegionDataController with the
+    // NetworkController
+    m_regionDataController =
+        new Backend::RegionDataController(
+            m_networkController, this);
+
+    // Create other controllers as needed
+    m_vehicleController =
+        new Backend::VehicleController(this);
+
     // Initialize client status tracking
-    m_clientInitialized[ClientType::TruckClient]    = false;
-    m_clientInitialized[ClientType::ShipClient]     = false;
-    m_clientInitialized[ClientType::TrainClient]    = false;
-    m_clientInitialized[ClientType::TerminalClient] = false;
+    m_clientInitialized[Backend::ClientType::TruckClient] =
+        false;
+    m_clientInitialized[Backend::ClientType::ShipClient] =
+        false;
+    m_clientInitialized[Backend::ClientType::TrainClient] =
+        false;
+    m_clientInitialized
+        [Backend::ClientType::TerminalClient] = false;
+}
+
+CargoNetSimController &CargoNetSimController::getInstance(
+    Backend::LoggerInterface *logger, QObject *parent)
+{
+    QReadLocker locker(&m_instanceLock);
+    if (!m_instance)
+    {
+        locker.unlock();
+        QWriteLocker writeLocker(&m_instanceLock);
+        // Double-check pattern to ensure thread safety
+        if (!m_instance)
+        {
+            m_instance =
+                new CargoNetSimController(logger, parent);
+        }
+        writeLocker.unlock();
+        locker.relock();
+    }
+    return *m_instance;
 }
 
 CargoNetSimController::~CargoNetSimController()
@@ -66,6 +118,11 @@ CargoNetSimController::~CargoNetSimController()
         m_terminalThread->wait(3000);
         delete m_terminalThread;
     }
+
+    // Clean up controllers
+    // The Controllers will be deleted automatically
+    // as a child of this object No need for explicit
+    // deletion or cleanup classes
 }
 
 bool CargoNetSimController::initialize(
@@ -131,28 +188,67 @@ bool CargoNetSimController::stopAll()
     return true;
 }
 
-TruckClient::TruckSimulationManager *
+Backend::RegionDataController *
+CargoNetSimController::getRegionDataController()
+{
+    return m_regionDataController;
+}
+
+Backend::VehicleController *
+CargoNetSimController::getVehicleController()
+{
+    return m_vehicleController;
+}
+
+Backend::TruckClient::TruckSimulationManager *
 CargoNetSimController::getTruckManager() const
 {
     return m_truckManager;
 }
 
-ShipClient::ShipSimulationClient *
+Backend::ShipClient::ShipSimulationClient *
 CargoNetSimController::getShipClient() const
 {
     return m_shipClient;
 }
 
-TrainClient::TrainSimulationClient *
+Backend::TrainClient::TrainSimulationClient *
 CargoNetSimController::getTrainClient() const
 {
     return m_trainClient;
 }
 
-TerminalSimulationClient *
+Backend::TerminalSimulationClient *
 CargoNetSimController::getTerminalClient() const
 {
     return m_terminalClient;
+}
+
+// Implementation of service methods
+double CargoNetSimController::getTerminalCapacity(
+    const QString &terminalId)
+{
+    double result = -1.0;
+    emit requestTerminalCapacity(terminalId, result);
+    return result;
+}
+
+int CargoNetSimController::getTerminalContainerCount(
+    const QString &terminalId)
+{
+    int result = -1;
+    emit requestContainerCount(terminalId, result);
+    return result;
+}
+
+bool CargoNetSimController::addContainersToTerminal(
+    const QString &terminalId,
+    const QString &containersJson)
+{
+    bool result = false;
+    emit requestAddContainers(terminalId, containersJson,
+                              result);
+    return result;
 }
 
 void CargoNetSimController::onThreadStarted()
@@ -197,12 +293,13 @@ bool CargoNetSimController::initializeTruckClient(
 
     // Create truck client
     auto truckClient =
-        new TruckClient::TruckSimulationClient(exePath,
-                                               nullptr);
+        new Backend::TruckClient::TruckSimulationClient(
+            exePath, nullptr);
 
     // Create truck manager
     m_truckManager =
-        new TruckClient::TruckSimulationManager(nullptr);
+        new Backend::TruckClient::TruckSimulationManager(
+            nullptr);
 
     // Add client to manager
     // Ownership of the truckClient will be given to the
@@ -220,9 +317,11 @@ bool CargoNetSimController::initializeTruckClient(
             &CargoNetSimController::onThreadFinished);
 
     // Flag as initialized
-    m_clientInitialized[ClientType::TruckClient] = true;
+    m_clientInitialized[Backend::ClientType::TruckClient] =
+        true;
     m_initializedClientCount++;
-    emit clientInitialized(ClientType::TruckClient);
+    emit clientInitialized(
+        Backend::ClientType::TruckClient);
 
     if (m_initializedClientCount == 4)
     {
@@ -240,7 +339,8 @@ bool CargoNetSimController::initializeShipClient()
 
     // Create ship client
     m_shipClient =
-        new ShipClient::ShipSimulationClient(nullptr);
+        new Backend::ShipClient::ShipSimulationClient(
+            nullptr);
     m_shipClient->moveToThread(m_shipThread);
 
     // Connect thread signals
@@ -250,9 +350,10 @@ bool CargoNetSimController::initializeShipClient()
             &CargoNetSimController::onThreadFinished);
 
     // Flag as initialized
-    m_clientInitialized[ClientType::ShipClient] = true;
+    m_clientInitialized[Backend::ClientType::ShipClient] =
+        true;
     m_initializedClientCount++;
-    emit clientInitialized(ClientType::ShipClient);
+    emit clientInitialized(Backend::ClientType::ShipClient);
 
     if (m_initializedClientCount == 4)
     {
@@ -270,7 +371,8 @@ bool CargoNetSimController::initializeTrainClient()
 
     // Create train client
     m_trainClient =
-        new TrainClient::TrainSimulationClient(nullptr);
+        new Backend::TrainClient::TrainSimulationClient(
+            nullptr);
     m_trainClient->moveToThread(m_trainThread);
 
     // Connect thread signals
@@ -280,9 +382,11 @@ bool CargoNetSimController::initializeTrainClient()
             &CargoNetSimController::onThreadFinished);
 
     // Flag as initialized
-    m_clientInitialized[ClientType::TrainClient] = true;
+    m_clientInitialized[Backend::ClientType::TrainClient] =
+        true;
     m_initializedClientCount++;
-    emit clientInitialized(ClientType::TrainClient);
+    emit clientInitialized(
+        Backend::ClientType::TrainClient);
 
     if (m_initializedClientCount == 4)
     {
@@ -301,7 +405,7 @@ bool CargoNetSimController::initializeTerminalClient()
 
     // Create terminal client
     m_terminalClient =
-        new TerminalSimulationClient(nullptr);
+        new Backend::TerminalSimulationClient(nullptr);
     m_terminalClient->moveToThread(m_terminalThread);
 
     // Connect thread signals
@@ -310,10 +414,44 @@ bool CargoNetSimController::initializeTerminalClient()
     connect(m_terminalThread, &QThread::finished, this,
             &CargoNetSimController::onThreadFinished);
 
+    // Connect signals to terminal client
+    connect(
+        this,
+        &CargoNetSimController::requestTerminalCapacity,
+        m_terminalClient,
+        [this](const QString &terminalId, double &result) {
+            result = m_terminalClient->getAvailableCapacity(
+                terminalId);
+        },
+        Qt::BlockingQueuedConnection);
+
+    connect(
+        this, &CargoNetSimController::requestContainerCount,
+        m_terminalClient,
+        [this](const QString &terminalId, int &result) {
+            result = m_terminalClient->getContainerCount(
+                terminalId);
+        },
+        Qt::BlockingQueuedConnection);
+
+    connect(
+        this, &CargoNetSimController::requestAddContainers,
+        m_terminalClient,
+        [this](const QString &terminalId,
+               const QString &containersJson,
+               bool          &result) {
+            result =
+                m_terminalClient->addContainersFromJson(
+                    terminalId, containersJson);
+        },
+        Qt::BlockingQueuedConnection);
+
     // Flag as initialized
-    m_clientInitialized[ClientType::TerminalClient] = true;
+    m_clientInitialized
+        [Backend::ClientType::TerminalClient] = true;
     m_initializedClientCount++;
-    emit clientInitialized(ClientType::TerminalClient);
+    emit clientInitialized(
+        Backend::ClientType::TerminalClient);
 
     if (m_initializedClientCount == 4)
     {
@@ -322,6 +460,5 @@ bool CargoNetSimController::initializeTerminalClient()
 
     return true;
 }
-
-} // namespace Backend
+// namespace Backend
 } // namespace CargoNetSim

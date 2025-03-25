@@ -18,11 +18,26 @@
 #include "Backend/Clients/TrainClient/TrainSimulationClient.h"
 #include "Backend/Clients/TruckClient/TruckSimulationClient.h"
 #include "Backend/Clients/TruckClient/TruckSimulationManager.h"
+#include "Backend/Controllers/NetworkController.h"
+#include "Backend/Controllers/RegionDataController.h"
+#include "Backend/Controllers/VehicleController.h"
 
 namespace CargoNetSim
 {
-namespace Backend
+
+/**
+ * @class CargoNetSimControllerCleanup
+ * @brief Utility class to handle singleton cleanup.
+ */
+class CargoNetSimControllerCleanup
 {
+public:
+    /**
+     * @brief Cleanup the CargoNetSimController singleton
+     *        instance.
+     */
+    static void cleanup();
+};
 
 /**
  * @class CargoNetSimController
@@ -37,19 +52,34 @@ class CargoNetSimController : public QObject
 {
     Q_OBJECT
 
+    friend class CargoNetSimControllerCleanup;
+
 public:
     /**
-     * @brief Constructor
-     * @param parent The parent QObject
+     * @brief Get the singleton instance of
+     *        CargoNetSimController.
+     * @param logger Optional logger interface for logging
+     * @param parent Optional parent QObject.
+     * @return Reference to the singleton instance.
      */
-    explicit CargoNetSimController(
-        LoggerInterface *logger = nullptr,
-        QObject         *parent = nullptr);
+    static CargoNetSimController &
+    getInstance(Backend::LoggerInterface *logger = nullptr,
+                QObject                  *parent = nullptr);
 
     /**
      * @brief Destructor
      */
     ~CargoNetSimController();
+
+    // Delete copy and move constructors and operators
+    CargoNetSimController(const CargoNetSimController &) =
+        delete;
+    CargoNetSimController &
+    operator=(const CargoNetSimController &) = delete;
+    CargoNetSimController(CargoNetSimController &&) =
+        delete;
+    CargoNetSimController &
+    operator=(CargoNetSimController &&) = delete;
 
     /**
      * @brief Initializes the controller and clients
@@ -71,38 +101,89 @@ public:
      */
     bool stopAll();
 
+    // Controller access methods
+
+    /**
+     * @brief Gets RegionDataController
+     * @return
+     */
+    Backend::RegionDataController *
+    getRegionDataController();
+
+    /**
+     * @brief Gets the vehicle controller
+     * @return Pointer to vehicle controller
+     */
+    Backend::VehicleController *getVehicleController();
+
+    /**
+     * @brief Gets the network controller
+     * @return Pointer to network controller
+     */
+    Backend::NetworkController *
+    getNetworkController() const;
+
     /**
      * @brief Gets the truck simulation manager
      * @return Pointer to truck simulation manager
      */
-    TruckClient::TruckSimulationManager *
+    Backend::TruckClient::TruckSimulationManager *
     getTruckManager() const;
 
     /**
      * @brief Gets the ship simulation client
      * @return Pointer to ship simulation client
      */
-    ShipClient::ShipSimulationClient *getShipClient() const;
+    Backend::ShipClient::ShipSimulationClient *
+    getShipClient() const;
 
     /**
      * @brief Gets the train simulation client
      * @return Pointer to train simulation client
      */
-    TrainClient::TrainSimulationClient *
+    Backend::TrainClient::TrainSimulationClient *
     getTrainClient() const;
 
     /**
      * @brief Gets the terminal simulation client
      * @return Pointer to terminal simulation client
      */
-    TerminalSimulationClient *getTerminalClient() const;
+    Backend::TerminalSimulationClient *
+    getTerminalClient() const;
+
+public slots:
+    /**
+     * @brief Gets terminal capacity
+     * @param terminalId Terminal identifier
+     * @return Available capacity
+     */
+    double getTerminalCapacity(const QString &terminalId);
+
+    /**
+     * @brief Gets terminal container count
+     * @param terminalId Terminal identifier
+     * @return Container count
+     */
+    int
+    getTerminalContainerCount(const QString &terminalId);
+
+    /**
+     * @brief Adds containers to a terminal
+     * @param terminalId Terminal identifier
+     * @param containersJson Containers as JSON
+     * @return True if successful
+     */
+    bool
+    addContainersToTerminal(const QString &terminalId,
+                            const QString &containersJson);
 
 signals:
     /**
      * @brief Signal emitted when a client is initialized
      * @param clientType Type of client initialized
      */
-    void clientInitialized(ClientType clientType);
+    void clientInitialized(
+        CargoNetSim::Backend::ClientType clientType);
 
     /**
      * @brief Signal emitted when all clients are
@@ -114,12 +195,40 @@ signals:
      * @brief Signal emitted when a client is ready
      * @param clientType Type of client ready
      */
-    void clientReady(ClientType clientType);
+    void clientReady(
+        CargoNetSim::Backend::ClientType clientType);
 
     /**
      * @brief Signal emitted when all clients are ready
      */
     void allClientsReady();
+
+    ////////////// Terminal Client ////////////////////
+    /**
+     * @brief Signal to request terminal capacity
+     * @param terminalId Terminal identifier
+     * @param result Reference to store result
+     */
+    void requestTerminalCapacity(const QString &terminalId,
+                                 double        &result);
+
+    /**
+     * @brief Signal to request container count
+     * @param terminalId Terminal identifier
+     * @param result Reference to store result
+     */
+    void requestContainerCount(const QString &terminalId,
+                               int           &result);
+
+    /**
+     * @brief Signal to request container addition
+     * @param terminalId Terminal identifier
+     * @param containersJson Containers as JSON
+     * @param result Reference to store result
+     */
+    void requestAddContainers(const QString &terminalId,
+                              const QString &containersJson,
+                              bool          &result);
 
 private slots:
     /**
@@ -131,6 +240,17 @@ private slots:
      * @brief Slot called when a thread has finished
      */
     void onThreadFinished();
+
+protected:
+    /**
+     * @brief Constructor
+     * @param parent The parent QObject
+     */
+    explicit CargoNetSimController(
+        Backend::LoggerInterface *logger = nullptr,
+        QObject                  *parent = nullptr);
+
+    static CargoNetSimController *m_instance;
 
 private:
     /**
@@ -165,19 +285,29 @@ private:
     QThread *m_terminalThread;
 
     // Simulation clients
-    TruckClient::TruckSimulationManager *m_truckManager;
-    ShipClient::ShipSimulationClient    *m_shipClient;
-    TrainClient::TrainSimulationClient  *m_trainClient;
-    TerminalSimulationClient            *m_terminalClient;
+    Backend::TruckClient::TruckSimulationManager
+        *m_truckManager;
+    Backend::ShipClient::ShipSimulationClient *m_shipClient;
+    Backend::TrainClient::TrainSimulationClient
+                                      *m_trainClient;
+    Backend::TerminalSimulationClient *m_terminalClient;
+
+    // Controller instances
+    Backend::RegionDataController *m_regionDataController;
+    Backend::VehicleController    *m_vehicleController;
+    Backend::NetworkController    *m_networkController;
 
     // Logger
-    LoggerInterface *m_logger;
+    Backend::LoggerInterface *m_logger;
 
     // Track client initialization status
-    QMap<ClientType, bool> m_clientInitialized;
+    QMap<Backend::ClientType, bool> m_clientInitialized;
     int                    m_initializedClientCount;
     int                    m_readyClientCount;
+
+    /** @brief Lock for thread safety of singleton creation
+     */
+    static QReadWriteLock m_instanceLock;
 };
 
-} // namespace Backend
 } // namespace CargoNetSim
