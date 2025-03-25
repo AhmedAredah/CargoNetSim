@@ -434,117 +434,43 @@ bool RabbitMQHandler::isConnected() const
 }
 
 /**
- * Sends a command message to the RabbitMQ exchange.
- *
- * @param message The message to send
- * @param routingKey The routing key to use (optional)
- * @return True if the message was sent successfully
+ * @brief Sends a command message to RabbitMQ
+ * @param message JSON message to send
+ * @param routingKey Routing key to use (optional)
+ * @return True if message sent successfully
  */
 bool RabbitMQHandler::sendCommand(
     const QJsonObject &message, const QString &routingKey)
 {
-    QMutexLocker locker(&m_mutex);
-
-    if (!m_connected || !m_sendConnection)
-    {
-        qWarning() << "Cannot send command: not connected";
-        return false;
-    }
-
     // Convert message to JSON string
     QJsonDocument doc(message);
     QByteArray    data = doc.toJson(QJsonDocument::Compact);
 
-    QString useRoutingKey = routingKey.isEmpty()
-                                ? m_sendingRoutingKey
-                                : routingKey;
+    // Extract message ID if it exists
+    QString messageId =
+        message.contains("messageId")
+            ? message["messageId"].toString()
+            : QString();
 
-    int retryCount = 0;
-    while (retryCount < MAX_RETRIES)
-    {
-        try
-        {
-            // Create message properties
-            amqp_basic_properties_t props;
-            props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG
-                           | AMQP_BASIC_DELIVERY_MODE_FLAG
-                           | AMQP_BASIC_MESSAGE_ID_FLAG;
-            props.content_type =
-                amqp_cstring_bytes("application/json");
-            props.delivery_mode = 2; // persistent
+    return sendMessage(data, "application/json", messageId,
+                       routingKey);
+}
 
-            // Generate message ID
-            QString messageId =
-                message.contains("messageId")
-                    ? message["messageId"].toString()
-                    : QUuid::createUuid().toString();
-            QByteArray messageIdBytes = messageId.toUtf8();
-            props.message_id =
-                amqp_bytes_malloc_dup(amqp_cstring_bytes(
-                    messageIdBytes.constData()));
+/**
+ * @brief Sends a command message to RabbitMQ as a plain
+ * string
+ * @param messageStr String message to send (any format)
+ * @param routingKey Routing key to use (optional)
+ * @return True if message sent successfully
+ */
+bool RabbitMQHandler::sendCommand(const QString &messageStr,
+                                  const QString &routingKey)
+{
+    // Convert message to bytes
+    QByteArray data = messageStr.toUtf8();
 
-            // Publish message
-            int status = amqp_basic_publish(
-                m_sendConnection,
-                1, // channel
-                amqp_cstring_bytes(
-                    m_exchange.toUtf8().constData()),
-                amqp_cstring_bytes(
-                    useRoutingKey.toUtf8().constData()),
-                1, // mandatory
-                0, // immediate
-                &props,
-                amqp_bytes_malloc_dup(
-                    amqp_cstring_bytes(data.constData())));
-
-            // Free allocated memory
-            amqp_bytes_free(props.message_id);
-
-            if (status != AMQP_STATUS_OK)
-            {
-                qWarning() << "Failed to publish message: "
-                           << status;
-                retryCount++;
-
-                if (retryCount < MAX_RETRIES)
-                {
-                    QThread::msleep(500 * retryCount);
-                    reconnectSending();
-                    continue;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            qDebug() << "Sent message to" << useRoutingKey
-                     << "with size" << data.size()
-                     << "bytes";
-            return true;
-        }
-        catch (const std::exception &e)
-        {
-            qWarning()
-                << "Exception during message publish:"
-                << e.what();
-            retryCount++;
-
-            if (retryCount < MAX_RETRIES)
-            {
-                QThread::msleep(500 * retryCount);
-                reconnectSending();
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-
-    qWarning() << "Failed to send message after"
-               << MAX_RETRIES << "attempts";
-    return false;
+    return sendMessage(data, "text/plain", QString(),
+                       routingKey);
 }
 
 /**
@@ -912,47 +838,118 @@ void RabbitMQHandler::processMessages()
 }
 
 /**
- * Publishes a message to RabbitMQ.
- *
- * @param message The message bytes to publish
- * @param routingKey The routing key to use
- * @return True if the message was published successfully
+ * @brief Internal helper method to send messages to
+ * RabbitMQ
+ * @param data The raw message data to send
+ * @param contentType The MIME content type of the message
+ * @param messageId The message ID to use (or empty to
+ * generate one)
+ * @param routingKey The routing key to use (optional)
+ * @return True if message sent successfully
  */
-bool RabbitMQHandler::publishMessage(
-    const QByteArray &message, const QString &routingKey)
+bool RabbitMQHandler::sendMessage(
+    const QByteArray &data, const QString &contentType,
+    const QString &messageId, const QString &routingKey)
 {
-    try
-    {
-        // Create message properties
-        amqp_basic_properties_t props;
-        props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG
-                       | AMQP_BASIC_DELIVERY_MODE_FLAG;
-        props.content_type =
-            amqp_cstring_bytes("application/json");
-        props.delivery_mode = 2; // persistent
+    QMutexLocker locker(&m_mutex);
 
-        // Publish message
-        int status = amqp_basic_publish(
-            m_sendConnection,
-            1, // channel
-            amqp_cstring_bytes(
-                m_exchange.toUtf8().constData()),
-            amqp_cstring_bytes(
-                routingKey.toUtf8().constData()),
-            1, // mandatory
-            0, // immediate
-            &props,
-            amqp_bytes_malloc_dup(
-                amqp_cstring_bytes(message.constData())));
-
-        return (status == AMQP_STATUS_OK);
-    }
-    catch (const std::exception &e)
+    if (!m_connected || !m_sendConnection)
     {
-        qWarning() << "Exception during message publish:"
-                   << e.what();
+        qWarning() << "Cannot send message: not connected";
         return false;
     }
+
+    QString useRoutingKey = routingKey.isEmpty()
+                                ? m_sendingRoutingKey
+                                : routingKey;
+
+    int retryCount = 0;
+    while (retryCount < MAX_RETRIES)
+    {
+        try
+        {
+            // Create message properties
+            amqp_basic_properties_t props;
+            props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG
+                           | AMQP_BASIC_DELIVERY_MODE_FLAG
+                           | AMQP_BASIC_MESSAGE_ID_FLAG;
+            props.content_type = amqp_cstring_bytes(
+                contentType.toUtf8().constData());
+            props.delivery_mode = 2; // persistent
+
+            // Generate or use provided message ID
+            QString useMessageId =
+                messageId.isEmpty()
+                    ? QUuid::createUuid().toString()
+                    : messageId;
+            QByteArray messageIdBytes =
+                useMessageId.toUtf8();
+            props.message_id =
+                amqp_bytes_malloc_dup(amqp_cstring_bytes(
+                    messageIdBytes.constData()));
+
+            // Publish message
+            int status = amqp_basic_publish(
+                m_sendConnection,
+                1, // channel
+                amqp_cstring_bytes(
+                    m_exchange.toUtf8().constData()),
+                amqp_cstring_bytes(
+                    useRoutingKey.toUtf8().constData()),
+                1, // mandatory
+                0, // immediate
+                &props,
+                amqp_bytes_malloc_dup(
+                    amqp_cstring_bytes(data.constData())));
+
+            // Free allocated memory
+            amqp_bytes_free(props.message_id);
+
+            if (status != AMQP_STATUS_OK)
+            {
+                qWarning() << "Failed to publish message: "
+                           << status;
+                retryCount++;
+
+                if (retryCount < MAX_RETRIES)
+                {
+                    QThread::msleep(500 * retryCount);
+                    reconnectSending();
+                    continue;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            qDebug() << "Sent message to" << useRoutingKey
+                     << "with size" << data.size()
+                     << "bytes";
+            return true;
+        }
+        catch (const std::exception &e)
+        {
+            qWarning()
+                << "Exception during message publish:"
+                << e.what();
+            retryCount++;
+
+            if (retryCount < MAX_RETRIES)
+            {
+                QThread::msleep(500 * retryCount);
+                reconnectSending();
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    qWarning() << "Failed to send message after"
+               << MAX_RETRIES << "attempts";
+    return false;
 }
 
 /**
