@@ -15,12 +15,12 @@ namespace GUI
 
 DistanceMeasurementTool::DistanceMeasurementTool(
     GraphicsView *view, QGraphicsItem *parent)
-    : QGraphicsObject(parent)
-    , view(view)
-    , startPoint()
-    , endPoint()
-    , cachedDistance(0.0)
-    , distanceDirty(true)
+    : GraphicsObjectBase(parent)
+    , m_view(view)
+    , m_startPoint()
+    , m_endPoint()
+    , m_cachedDistance(0.0)
+    , m_distanceDirty(true)
 {
     // Ensure the tool is always drawn on top of other items
     setZValue(1000);
@@ -38,18 +38,18 @@ DistanceMeasurementTool::~DistanceMeasurementTool()
 void DistanceMeasurementTool::setStartPoint(
     const QPointF &point)
 {
-    if (startPoint != point)
+    if (m_startPoint != point)
     {
         prepareGeometryChange();
-        startPoint    = point;
-        distanceDirty = true;
+        m_startPoint    = point;
+        m_distanceDirty = true;
         update();
 
-        emit startPointChanged(startPoint);
+        emit startPointChanged(m_startPoint);
 
         // If both points are set, recalculate and emit
         // distance change
-        if (!startPoint.isNull() && !endPoint.isNull())
+        if (!m_startPoint.isNull() && !m_endPoint.isNull())
         {
             double distance = getDistance();
             emit   distanceChanged(distance,
@@ -61,18 +61,18 @@ void DistanceMeasurementTool::setStartPoint(
 void DistanceMeasurementTool::setEndPoint(
     const QPointF &point)
 {
-    if (endPoint != point)
+    if (m_endPoint != point)
     {
         prepareGeometryChange();
-        endPoint      = point;
-        distanceDirty = true;
+        m_endPoint      = point;
+        m_distanceDirty = true;
         update();
 
-        emit endPointChanged(endPoint);
+        emit endPointChanged(m_endPoint);
 
         // If both points are set, recalculate and emit
         // distance change
-        if (!startPoint.isNull() && !endPoint.isNull())
+        if (!m_startPoint.isNull() && !m_endPoint.isNull())
         {
             double distance = getDistance();
             emit   distanceChanged(distance,
@@ -80,7 +80,7 @@ void DistanceMeasurementTool::setEndPoint(
 
             // Emit measurement completed signal when both
             // points are set
-            emit measurementCompleted(startPoint, endPoint,
+            emit measurementCompleted(m_startPoint, m_endPoint,
                                       distance);
         }
     }
@@ -88,12 +88,12 @@ void DistanceMeasurementTool::setEndPoint(
 
 double DistanceMeasurementTool::getDistance() const
 {
-    if (distanceDirty)
+    if (m_distanceDirty)
     {
-        cachedDistance = calculateDistance();
-        distanceDirty  = false;
+        m_cachedDistance = calculateDistance();
+        m_distanceDirty  = false;
     }
-    return cachedDistance;
+    return m_cachedDistance;
 }
 
 QString DistanceMeasurementTool::getDistanceText() const
@@ -114,44 +114,44 @@ QString DistanceMeasurementTool::getDistanceText() const
 void DistanceMeasurementTool::reset()
 {
     prepareGeometryChange();
-    startPoint    = QPointF();
-    endPoint      = QPointF();
-    distanceDirty = true;
+    m_startPoint    = QPointF();
+    m_endPoint      = QPointF();
+    m_distanceDirty = true;
     update();
 
-    emit startPointChanged(startPoint);
-    emit endPointChanged(endPoint);
+    emit startPointChanged(m_startPoint);
+    emit endPointChanged(m_endPoint);
     emit distanceChanged(0.0, "0 m");
 }
 
 bool DistanceMeasurementTool::hasStartPoint() const
 {
-    return !std::isnan(startPoint.x())
-           && !std::isnan(startPoint.y());
+    return !std::isnan(m_startPoint.x())
+           && !std::isnan(m_startPoint.y());
 }
 
 bool DistanceMeasurementTool::hasEndPoint() const
 {
-    return !std::isnan(endPoint.x())
-           && !std::isnan(endPoint.y());
+    return !std::isnan(m_endPoint.x())
+           && !std::isnan(m_endPoint.y());
 }
 
 QRectF DistanceMeasurementTool::boundingRect() const
 {
-    if (startPoint.isNull() || endPoint.isNull())
+    if (m_startPoint.isNull() || m_endPoint.isNull())
     {
         return QRectF();
     }
 
     // Get the current view scale
     qreal scale = 1.0;
-    if (view)
+    if (m_view)
     {
-        scale = view->transform().m11();
+        scale = m_view->transform().m11();
     }
 
     // Calculate base rectangle
-    QRectF rect = QRectF(startPoint, endPoint).normalized();
+    QRectF rect = QRectF(m_startPoint, m_endPoint).normalized();
 
     // Scale padding inversely with zoom level
     const qreal basePadding = 1000.0;
@@ -170,7 +170,7 @@ void DistanceMeasurementTool::paint(
     QPainter                       *painter,
     const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if (startPoint.isNull() || endPoint.isNull())
+    if (m_startPoint.isNull() || m_endPoint.isNull())
     {
         return;
     }
@@ -180,7 +180,7 @@ void DistanceMeasurementTool::paint(
     pen.setCosmetic(
         true); // Line width is constant regardless of zoom
     painter->setPen(pen);
-    painter->drawLine(startPoint, endPoint);
+    painter->drawLine(m_startPoint, m_endPoint);
 
     // --- Calculate distance ---
     QString distanceText = getDistanceText();
@@ -196,8 +196,8 @@ void DistanceMeasurementTool::paint(
     int textHeight  = fm.height();
 
     // Calculate the midpoint in scene coordinates
-    QPointF midPoint((startPoint.x() + endPoint.x()) / 2.0,
-                     (startPoint.y() + endPoint.y()) / 2.0);
+    QPointF midPoint((m_startPoint.x() + m_endPoint.x()) / 2.0,
+                     (m_startPoint.y() + m_endPoint.y()) / 2.0);
 
     // Convert scene coordinates to view coordinates for
     // text placement
@@ -246,7 +246,7 @@ void DistanceMeasurementTool::paint(
 
 double DistanceMeasurementTool::calculateDistance() const
 {
-    if (startPoint.isNull() || endPoint.isNull())
+    if (m_startPoint.isNull() || m_endPoint.isNull())
     {
         return 0.0;
     }
@@ -255,21 +255,21 @@ double DistanceMeasurementTool::calculateDistance() const
     double startLat = 0.0, startLon = 0.0, endLat = 0.0,
            endLon = 0.0;
 
-    if (view)
+    if (m_view)
     {
-        auto startLatLon = view->sceneToWGS84(startPoint);
-        auto endLatLon   = view->sceneToWGS84(endPoint);
+        auto startLatLon = m_view->sceneToWGS84(m_startPoint);
+        auto endLatLon   = m_view->sceneToWGS84(m_endPoint);
 
         startLat =
-            startLatLon.second; // Latitude is y in WGS84
+            startLatLon.y(); // Latitude is y in WGS84
         startLon =
-            startLatLon.first; // Longitude is x in WGS84
-        endLat = endLatLon.second;
-        endLon = endLatLon.first;
+            startLatLon.x(); // Longitude is x in WGS84
+        endLat = endLatLon.y();
+        endLon = endLatLon.x();
     }
 
     // Calculate distance based on coordinate system
-    if (view && view->useProjectedCoords)
+    if (m_view && m_view->useProjectedCoords)
     {
         return calculateProjectedDistance(
             startLat, startLon, endLat, endLon);
@@ -289,11 +289,11 @@ double DistanceMeasurementTool::calculateProjectedDistance(
     // World Mercator projection
     QPointF point1, point2;
 
-    if (view)
+    if (m_view)
     {
-        point1 = view->convertCoordinates(
+        point1 = m_view->convertCoordinates(
             QPointF(lon1, lat1), "to_projected");
-        point2 = view->convertCoordinates(
+        point2 = m_view->convertCoordinates(
             QPointF(lon2, lat2), "to_projected");
 
         // Calculate Euclidean distance in the projected

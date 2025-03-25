@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QPointF>
 #include <QRectF>
@@ -21,7 +23,7 @@ class GraphicsView;
  * between two points with the calculated distance displayed
  * in the appropriate units (meters or kilometers).
  */
-class DistanceMeasurementTool : public QGraphicsObject
+class DistanceMeasurementTool : public GraphicsObjectBase
 {
     Q_OBJECT
 
@@ -59,7 +61,7 @@ public:
      */
     QPointF getStartPoint() const
     {
-        return startPoint;
+        return m_startPoint;
     }
 
     /**
@@ -68,7 +70,7 @@ public:
      */
     QPointF getEndPoint() const
     {
-        return endPoint;
+        return m_endPoint;
     }
 
     /**
@@ -190,21 +192,21 @@ private:
                                      double lat2,
                                      double lon2) const;
 
-    GraphicsView *view; ///< The graphics view this tool is
-                        ///< associated with
-    QPointF startPoint = QPointF(
+    GraphicsView *m_view; ///< The graphics view this tool
+                          ///< is associated with
+    QPointF m_startPoint = QPointF(
         std::nan(""),
         std::nan(
             "")); ///< The start point in scene coordinates
-    QPointF endPoint = QPointF(
+    QPointF m_endPoint = QPointF(
         std::nan(""),
         std::nan(
             "")); ///< The end point in scene coordinates
     mutable double
-        cachedDistance; ///< Cached distance value
-    mutable bool
-        distanceDirty; ///< Flag indicating if the distance
-                       ///< needs to be recalculated
+        m_cachedDistance;         ///< Cached distance value
+    mutable bool m_distanceDirty; ///< Flag indicating if
+                                  ///< the distance needs to
+                                  ///< be recalculated
 };
 
 } // namespace GUI
