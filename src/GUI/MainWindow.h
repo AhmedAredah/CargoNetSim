@@ -39,13 +39,14 @@ class NetworkManagerDialog;
 class ToolbarController;
 class BasicButtonController;
 class ViewController;
+class UtilitiesFunctions;
 
 /**
  * @brief Main application window for CargoNetSim
  *
- * The MainWindow class is implemented as a singleton and
- * manages the entire application UI, including views,
- * scenes, docks, and toolbars.
+ * The MainWindow class is implemented as a singleton
+ * and manages the entire application UI, including
+ * views, scenes, docks, and toolbars.
  */
 class MainWindow : public CustomMainWindow
 {
@@ -56,6 +57,7 @@ class MainWindow : public CustomMainWindow
     friend class ToolbarController;
     friend class BasicButtonController;
     friend class ViewController;
+    friend class UtilitiesFunctions;
 
 public:
     /**
@@ -68,18 +70,6 @@ public:
      * @brief Destructor
      */
     virtual ~MainWindow();
-
-    /**
-     * @brief Updates the properties panel with the selected
-     * item's properties
-     * @param item The selected graphics item
-     */
-    void updatePropertiesPanel(QGraphicsItem *item);
-
-    /**
-     * @brief Hides the properties panel
-     */
-    void hidePropertiesPanel();
 
     /**
      * @brief Gets the currently active view
@@ -257,26 +247,6 @@ private:
      * @brief Toggles between pan modes
      */
     void togglePanMode();
-
-    /**
-     * @brief Creates a new region center
-     * @param regionName The name of the region
-     * @param color The color of the region
-     * @param pos The position of the region center
-     * (optional)
-     * @return Pointer to the created RegionCenterPoint
-     */
-    RegionCenterPoint *
-    createRegionCenter(const QString &regionName,
-                       const QColor  &color,
-                       const QPointF *pos = nullptr);
-
-    /**
-     * @brief Updates global map items for a region
-     * @param regionName The name of the region to update
-     */
-    void
-    updateGlobalMapForRegion(const QString &regionName);
 
     /**
      * @brief Sets the current connection type

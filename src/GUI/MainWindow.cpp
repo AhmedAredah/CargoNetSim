@@ -95,7 +95,8 @@ MainWindow::MainWindow()
             ->getRegionVariableAs<QColor>("Default Region",
                                           "color");
 
-    createRegionCenter("Default Region", regionColor);
+    ViewController::createRegionCenter(
+        this, "Default Region", regionColor);
 
     // Initialize heartbeat controller
     // heartbeatController_ = new HeartbeatController(this);
@@ -656,60 +657,6 @@ void MainWindow::setupStatusBar()
         1); // Stretch factor 1 makes it fill the bar
 }
 
-RegionCenterPoint *
-MainWindow::createRegionCenter(const QString &regionName,
-                               const QColor  &color,
-                               const QPointF *pos)
-{
-    RegionCenterPoint *centerPoint =
-        new RegionCenterPoint(regionName, color);
-    connect(centerPoint, &RegionCenterPoint::clicked, this,
-            &MainWindow::updatePropertiesPanel);
-
-    // Add position change connection
-    connect(centerPoint,
-            &RegionCenterPoint::positionChanged,
-            [this, regionName](const QPointF &) {
-                this->updateGlobalMapForRegion(regionName);
-            });
-
-    QPointF position;
-    if (pos)
-    {
-        position = *pos;
-    }
-    else
-    {
-        // Place at origin (0,0) if no position specified
-        position = QPointF(0, 0);
-    }
-
-    centerPoint->setPos(position);
-    regionScene_->addItemWithId(centerPoint,
-                                centerPoint->getID());
-    CargoNetSim::CargoNetSimController::getInstance()
-        .getRegionDataController()
-        ->setRegionVariable(
-            regionName, "regionCenterPoint",
-            QVariant::fromValue(centerPoint));
-    return centerPoint;
-}
-
-void MainWindow::updateGlobalMapForRegion(
-    const QString &regionName)
-{
-    for (QGraphicsItem *item : regionScene_->items())
-    {
-        TerminalItem *terminalItem =
-            dynamic_cast<TerminalItem *>(item);
-        // if (terminalItem && terminalItem->region ==
-        // regionName) {
-        //     ViewController::updateGlobalMapItem(this,
-        //     terminalItem);
-        // }
-    }
-}
-
 void MainWindow::setConnectionType(
     const QString &connectionType)
 {
@@ -726,41 +673,6 @@ void MainWindow::setConnectionType(
         QString("Connection type set to: %1")
             .arg(connectionType),
         2000);
-}
-
-void MainWindow::updatePropertiesPanel(QGraphicsItem *item)
-{
-    if (!item)
-    {
-        // If no item is selected, hide the properties dock
-        hidePropertiesPanel();
-    }
-    else
-    {
-        // Show properties dock and update its contents
-        propertiesDock_->show();
-        // propertiesPanel_->displayProperties(item); //
-        // TODO
-    }
-}
-
-void MainWindow::hidePropertiesPanel()
-{
-    // Show map properties only if on main view or global
-    // map tabs
-    int currentTab = tabWidget_->currentIndex();
-    if (currentTab
-        == tabWidget_->indexOf(tabWidget_->widget(0)))
-    { // Main view tab
-        propertiesPanel_->displayProperties(nullptr);
-        propertiesDock_->show();
-        propertiesPanel_->displayMapProperties();
-    }
-    else
-    {
-        propertiesDock_->hide();
-        propertiesPanel_->displayProperties(nullptr);
-    }
 }
 
 GraphicsView *MainWindow::getCurrentView() const
