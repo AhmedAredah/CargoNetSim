@@ -1,4 +1,5 @@
 #pragma once
+#include "GraphicsObjectBase.h"
 
 #include <QGraphicsItem>
 #include <QGraphicsObject>
@@ -16,7 +17,7 @@ class TerminalItem;
 class GlobalTerminalItem;
 class ConnectionLabel;
 
-class ConnectionLine : public QGraphicsObject
+class ConnectionLine : public GraphicsObjectBase
 {
     Q_OBJECT
 

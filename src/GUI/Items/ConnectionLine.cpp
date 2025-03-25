@@ -45,7 +45,7 @@ ConnectionLine::ConnectionLine(
     const QString                 &connectionType,
     const QMap<QString, QVariant> &properties,
     const QString &region, QGraphicsItem *parent)
-    : QGraphicsObject(parent)
+    : GraphicsObjectBase(parent)
     , m_startItem(startItem)
     , m_endItem(endItem)
     , m_connectionType(connectionType)
