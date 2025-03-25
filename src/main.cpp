@@ -11,9 +11,7 @@
 #include "GUI/Utils/ErrorHandlers.h"
 #include "GUI/Widgets/SplashScreen.h"
 
-#include "Backend/Controllers/NetworkController.h"
-#include "Backend/Controllers/RegionDataController.h"
-#include "Backend/Controllers/VehicleController.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 
 using namespace CargoNetSim::GUI;
 
@@ -24,14 +22,9 @@ void signalHandler(int signal)
 
     // Perform cleanup
     {
-        // Clean up NetworkController before quitting
-        CargoNetSim::Backend::NetworkControllerCleanup::
+        // Clean up CargoNetSimController before quitting
+        CargoNetSim::CargoNetSimControllerCleanup::
             cleanup();
-        // Clean up RegionDataController before quitting
-        CargoNetSim::Backend::RegionDataControllerCleanup::
-            cleanup();
-        // Clean up VehicleManager before quitting
-        CargoNetSim::Backend::VehicleController::cleanup();
     }
 
     if (MainWindow::getInstance())
@@ -52,20 +45,18 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
 
+    // Initialize the logger first
+    CargoNetSim::Backend::LoggerInterface *logger =
+        ApplicationLogger::getInstance();
+    ApplicationLogger::getInstance()->start();
+
     // Set application info
     app.setApplicationName("CargoNetSim");
     app.setApplicationVersion("1.0.0");
     app.setOrganizationName("CargoNetSim Org");
 
     // Initialize backend metatypes
-    CargoNetSim::Backend::initializeBackend();
-
-    // only for debugging and testing
-    // auto client =
-    // CargoNetSim::Backend::ShipSimulationClient();
-    // client.initializeClient();
-    // client.connectToServer();
-    // client.resetServer();
+    CargoNetSim::Backend::initializeBackend(logger);
 
     // Set up signal handling
     signal(SIGINT, signalHandler);
