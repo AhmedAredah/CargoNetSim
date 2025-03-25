@@ -16,6 +16,7 @@
 #include "../Widgets/ShipManagerDialog.h"
 #include "../Widgets/TrainManagerDialog.h"
 #include "Backend/Controllers/VehicleController.h"
+#include "GUI/Controllers/ViewController.h"
 
 namespace CargoNetSim
 {
@@ -482,8 +483,10 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     bgPhotoButton->setIcon(QIcon(
         IconFactory::createSetBackgroundColorPixmap()));
     QObject::connect(bgPhotoButton, &QToolButton::clicked,
-                     mainWindow,
-                     &MainWindow::addBackgroundPhoto);
+                     mainWindow, [&mainWindow]() {
+                         ViewController::addBackgroundPhoto(
+                             mainWindow);
+                     });
     viewImportLayout->addWidget(bgPhotoButton);
 
     mainWindow->viewImportButtons_ = {bgPhotoButton};
