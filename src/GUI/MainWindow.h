@@ -38,6 +38,7 @@ class SplashScreen;
 class NetworkManagerDialog;
 class ToolbarController;
 class BasicButtonController;
+class ViewController;
 
 /**
  * @brief Main application window for CargoNetSim
@@ -54,6 +55,7 @@ class MainWindow : public CustomMainWindow
     // BasicButtonController classes as a friend
     friend class ToolbarController;
     friend class BasicButtonController;
+    friend class ViewController;
 
 public:
     /**
@@ -252,11 +254,6 @@ private:
     void handleTabChange(int index);
 
     /**
-     * @brief Adds a background photo to the current view
-     */
-    void addBackgroundPhoto();
-
-    /**
      * @brief Toggles between pan modes
      */
     void togglePanMode();
@@ -330,7 +327,7 @@ private:
 protected:
     // UI elements
     QTabWidget    *tabWidget_;
-    GraphicsScene *scene_;
+    GraphicsScene *regionScene_;
     GraphicsScene *globalMapScene_;
     GraphicsView  *regionView_;
     GraphicsView  *globalMapView_;

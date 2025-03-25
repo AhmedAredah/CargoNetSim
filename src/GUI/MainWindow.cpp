@@ -41,7 +41,7 @@
 
 #include "Utils/IconCreator.h"
 
-#include "Backend/Controllers/RegionDataController.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 #include "Controllers/BasicButtonController.h"
 #include "Controllers/NetworkController.h"
 #include "Controllers/ToolbarController.h"
@@ -70,13 +70,16 @@ MainWindow::MainWindow()
     : CustomMainWindow()
 {
     // Initialize region management
-    Backend::RegionDataController::getInstance().addRegion(
-        "Default Region");
-    Backend::RegionDataController::getInstance()
-        .setRegionVariable("Default Region", "color",
-                           QColor(Qt::green));
-    Backend::RegionDataController::getInstance()
-        .setCurrentRegion("DefaultRegion");
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getRegionDataController()
+        ->addRegion("Default Region");
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getRegionDataController()
+        ->setRegionVariable("Default Region", "color",
+                            QColor(Qt::green));
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getRegionDataController()
+        ->setCurrentRegion("DefaultRegion");
 
     selectedTerminal_ = nullptr;
     tableWasVisible_  = false;
@@ -87,9 +90,10 @@ MainWindow::MainWindow()
 
     // Create default region center
     QColor regionColor =
-        Backend::RegionDataController::getInstance()
-            .getRegionVariableAs<QColor>("Default Region",
-                                         "color");
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getRegionVariableAs<QColor>("Default Region",
+                                          "color");
 
     createRegionCenter("Default Region", regionColor);
 
@@ -236,13 +240,13 @@ void MainWindow::initializeUI()
 void MainWindow::setupRegionMapScene()
 {
     // Setup scene and view
-    scene_      = new GraphicsScene(this);
-    regionView_ = new GraphicsView(scene_);
-    regionView_->setScene(scene_);
+    regionScene_ = new GraphicsScene(this);
+    regionView_  = new GraphicsView(regionScene_);
+    regionView_->setScene(regionScene_);
 
     // Add connection methods
-    scene_->connectMode      = false;
-    scene_->connectFirstItem = QVariant();
+    regionScene_->connectMode      = false;
+    regionScene_->connectFirstItem = QVariant();
 }
 
 void MainWindow::setupGlobalMapScene()
@@ -658,7 +662,7 @@ MainWindow::createRegionCenter(const QString &regionName,
                                const QPointF *pos)
 {
     RegionCenterPoint *centerPoint =
-        new RegionCenterPoint(color);
+        new RegionCenterPoint(regionName, color);
     connect(centerPoint, &RegionCenterPoint::clicked, this,
             &MainWindow::updatePropertiesPanel);
 
@@ -681,9 +685,11 @@ MainWindow::createRegionCenter(const QString &regionName,
     }
 
     centerPoint->setPos(position);
-    scene_->addItem(centerPoint);
-    Backend::RegionDataController::getInstance()
-        .setRegionVariable(
+    regionScene_->addItemWithId(centerPoint,
+                                centerPoint->getID());
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getRegionDataController()
+        ->setRegionVariable(
             regionName, "regionCenterPoint",
             QVariant::fromValue(centerPoint));
     return centerPoint;
@@ -692,7 +698,7 @@ MainWindow::createRegionCenter(const QString &regionName,
 void MainWindow::updateGlobalMapForRegion(
     const QString &regionName)
 {
-    for (QGraphicsItem *item : scene_->items())
+    for (QGraphicsItem *item : regionScene_->items())
     {
         TerminalItem *terminalItem =
             dynamic_cast<TerminalItem *>(item);
@@ -774,7 +780,7 @@ GraphicsScene *MainWindow::getCurrentScene() const
 {
     if (tabWidget_->currentIndex() == 0)
     { // Main view tab
-        return scene_;
+        return regionScene_;
     }
     else if (tabWidget_->currentIndex() == 1)
     { // Global map tab
@@ -802,7 +808,7 @@ void MainWindow::handleTabChange(int index)
     bool isMainView = !(isGlobalMap || isLoggingTab);
 
     // Common state reset
-    scene_->connectMode          = false;
+    regionScene_->connectMode    = false;
     globalMapScene_->connectMode = false;
 
     // Reset measurement mode when changing tabs
@@ -918,134 +924,6 @@ void MainWindow::updateGroupVisibility(
     group->setVisible(anyShouldBeVisible);
 }
 
-void MainWindow::addBackgroundPhoto()
-{
-    try
-    {
-        // Open file dialog (using non-native dialog for
-        // consistency)
-        QString fileName = QFileDialog::getOpenFileName(
-            this, "Select Background Photo", "",
-            "Images (*.png *.jpg *.bmp)", nullptr,
-            QFileDialog::DontUseNativeDialog);
-
-        if (fileName.isEmpty())
-        {
-            return;
-        }
-
-        QPixmap pixmap(fileName);
-        if (pixmap.isNull())
-        {
-            QMessageBox::warning(this, "Error",
-                                 "Failed to load image.");
-            return;
-        }
-
-        // Check which tab is currently active
-        if (tabWidget_->currentWidget()
-            == tabWidget_->widget(0))
-        { // Main view tab
-            // Create a new BackgroundPhotoItem for the main
-            // view
-            QString currentRegion =
-                Backend::RegionDataController::getInstance()
-                    .getCurrentRegion();
-            BackgroundPhotoItem *background =
-                new BackgroundPhotoItem(pixmap,
-                                        currentRegion);
-            connect(background,
-                    &BackgroundPhotoItem::clicked, this,
-                    &MainWindow::updatePropertiesPanel);
-            connect(
-                background,
-                &BackgroundPhotoItem::positionChanged,
-                [this, background](const QPointF &pos) {
-                    if (propertiesPanel_->getCurrentItem()
-                        == background)
-                    {
-                        propertiesPanel_
-                            ->updatePositionFields(pos);
-                    }
-                });
-
-            // Place the photo at the center of the main
-            // view
-            QPointF viewCenter = regionView_->mapToScene(
-                regionView_->viewport()->rect().center());
-
-            double lat, lon;
-            std::tie(lat, lon) =
-                regionView_->sceneToWGS84(viewCenter);
-            background->getProperties()["Latitude"] =
-                QString::number(lat, 'f', 6);
-            background->getProperties()["Longitude"] =
-                QString::number(lon, 'f', 6);
-            background->setPos(viewCenter);
-
-            scene_->addItem(background);
-
-            Backend::RegionDataController::getInstance()
-                .setRegionVariable(
-                    currentRegion, "backgroundPhotoItem",
-                    QVariant::fromValue(background));
-        }
-        else
-        { // Global map tab
-            // Create a new BackgroundPhotoItem for the
-            // global map
-            BackgroundPhotoItem *background =
-                new BackgroundPhotoItem(pixmap,
-                                        "Global Map");
-            connect(background,
-                    &BackgroundPhotoItem::clicked, this,
-                    &MainWindow::updatePropertiesPanel);
-            connect(
-                background,
-                &BackgroundPhotoItem::positionChanged,
-                [this, background](const QPointF &pos) {
-                    if (propertiesPanel_->getCurrentItem()
-                        == background)
-                    {
-                        propertiesPanel_
-                            ->updatePositionFields(pos);
-                    }
-                });
-
-            // Place the photo at the center of the global
-            // map view
-            QPointF viewCenter = globalMapView_->mapToScene(
-                globalMapView_->viewport()
-                    ->rect()
-                    .center());
-
-            double lat, lon;
-            std::tie(lat, lon) =
-                regionView_->sceneToWGS84(viewCenter);
-            background->getProperties()["Latitude"] =
-                QString::number(lat, 'f', 6);
-            background->getProperties()["Longitude"] =
-                QString::number(lon, 'f', 6);
-            background->setPos(viewCenter);
-
-            globalMapScene_->addItem(background);
-            Backend::RegionDataController::getInstance()
-                .setGlobalVariable(
-                    "globalBackgroundPhotoItem",
-                    QVariant::fromValue(background));
-        }
-    }
-    catch (const std::exception &e)
-    {
-        qWarning() << "Error in addBackgroundPhoto:"
-                   << e.what();
-        QMessageBox::warning(
-            this, "Error",
-            QString("Failed to add background photo: %1")
-                .arg(e.what()));
-    }
-}
-
 void MainWindow::updateAllCoordinates()
 {
     // TODO
@@ -1119,7 +997,7 @@ void MainWindow::togglePanMode()
 void MainWindow::handleTerminalNodeLinking(
     QGraphicsItem *item)
 {
-    if (!scene_->linkTerminalMode)
+    if (!regionScene_->linkTerminalMode)
     {
         return;
     }
@@ -1153,7 +1031,7 @@ void MainWindow::handleTerminalNodeLinking(
 
         // Exit linking mode
         linkTerminalButton_->setChecked(false);
-        scene_->linkTerminalMode = false;
+        regionScene_->linkTerminalMode = false;
         selectedTerminal_        = nullptr;
         showStatusBarMessage(
             "Terminal linked to node successfully", 2000);
@@ -1172,7 +1050,7 @@ void MainWindow::handleTerminalNodeLinking(
 void MainWindow::handleTerminalNodeUnlinking(
     QGraphicsItem *item)
 {
-    if (!scene_->unlinkTerminalMode)
+    if (!regionScene_->unlinkTerminalMode)
     {
         return;
     }
@@ -1192,7 +1070,7 @@ void MainWindow::handleTerminalNodeUnlinking(
 
         // Exit unlinking mode
         unlinkTerminalButton_->setChecked(false);
-        scene_->unlinkTerminalMode = false;
+        regionScene_->unlinkTerminalMode = false;
         selectedTerminal_          = nullptr;
         showStatusBarMessage(
             "Terminal unlinked successfully", 2000);
@@ -1306,7 +1184,8 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::assignSelectedToCurrentRegion()
 {
-    for (QGraphicsItem *item : scene_->selectedItems())
+    for (QGraphicsItem *item :
+         regionScene_->selectedItems())
     {
         RegionCenterPoint *centerPoint =
             dynamic_cast<RegionCenterPoint *>(item);
@@ -1320,8 +1199,10 @@ void MainWindow::assignSelectedToCurrentRegion()
         }
 
         QString currentRegion =
-            Backend::RegionDataController::getInstance()
-                .getCurrentRegion();
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->getCurrentRegion();
 
         // Handle items with a 'region' property
         if (item->type() == QGraphicsItem::UserType + 1)
@@ -1571,11 +1452,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         measureButton_->setChecked(false);
 
         // Reset all scene modes
-        scene_->connectMode        = false;
-        scene_->linkTerminalMode   = false;
-        scene_->unlinkTerminalMode = false;
-        scene_->measureMode        = false;
-        scene_->connectFirstItem   = QVariant();
+        regionScene_->connectMode        = false;
+        regionScene_->linkTerminalMode   = false;
+        regionScene_->unlinkTerminalMode = false;
+        regionScene_->measureMode        = false;
+        regionScene_->connectFirstItem   = QVariant();
         selectedTerminal_          = nullptr;
 
         // Reset cursor
