@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QMap>
 #include <QPixmap>
@@ -13,6 +15,9 @@ namespace CargoNetSim
 namespace GUI
 {
 
+// Forward declarations
+class GlobalTerminalItem;
+
 /**
  * @brief Graphical representation of a terminal in the
  * freight network
@@ -22,7 +27,7 @@ namespace GUI
  * application. Terminals can be dragged, selected, and
  * connected to form a transportation network.
  */
-class TerminalItem : public QGraphicsObject
+class TerminalItem : public GraphicsObjectBase
 {
     Q_OBJECT
     Q_PROPERTY(QPointF pos READ pos WRITE setPos)
@@ -59,23 +64,40 @@ public:
     void setRegion(const QString &region);
 
     /**
-     * @brief Get the terminal's region
-     *
-     * @return Current region name
+     * @brief Set the global terminal item
+     * @param globalTerminalItem Pointer to the global
+     * terminal item
      */
-    QString getRegion() const
+    void setGlobalTerminalItem(
+        GlobalTerminalItem *globalTerminalItem);
+
+    /**
+     * @brief Get the global terminal item
+     * @return Pointer to the global terminal item
+     */
+    GlobalTerminalItem *getGlobalTerminalItem() const
     {
-        return region;
+        return m_globalTerminalItem;
     }
 
     /**
-     * @brief Get the terminal's pixmap
+     * @brief Get the terminal's m_region
      *
-     * @return Current pixmap
+     * @return Current m_region name
+     */
+    QString getRegion() const
+    {
+        return m_region;
+    }
+
+    /**
+     * @brief Get the terminal's m_pixmap
+     *
+     * @return Current m_pixmap
      */
     QPixmap getPixmap() const
     {
-        return pixmap;
+        return m_pixmap;
     }
 
     /**
@@ -85,17 +107,17 @@ public:
      */
     QString getTerminalType() const
     {
-        return terminalType;
+        return m_terminalType;
     }
 
     /**
-     * @brief Get terminal properties
+     * @brief Get terminal m_properties
      *
-     * @return Reference to properties map
+     * @return Reference to m_properties map
      */
     const QMap<QString, QVariant> &getProperties() const
     {
-        return properties;
+        return m_properties;
     }
 
     /**
@@ -149,8 +171,8 @@ public:
      * type-specific IDs
      * @return New unique ID
      */
-    static int getNewTerminalID(
-        const QString &terminalType = QString());
+    static QString
+    getNewTerminalID(const QString &terminalType);
 
     /**
      * @brief Serialize terminal to a dictionary
@@ -286,14 +308,17 @@ protected:
         QGraphicsSceneHoverEvent *event) override;
 
 private:
-    QPixmap pixmap; ///< Visual representation
-    QString region; ///< Region this terminal belongs to
-    QString terminalType; ///< Type of terminal
+    QPixmap m_pixmap; ///< Visual representation
+    QString m_region; ///< Region this terminal belongs to
+    QString m_terminalType; ///< Type of terminal
     QMap<QString, QVariant>
-           properties;        ///< Terminal properties
-    QRectF boundingRectValue; ///< Cached bounding rectangle
-    QPointF dragOffset;       ///< Offset for dragging
-    bool    wasSelected;      ///< Previous selection state
+        m_properties; ///< Terminal properties
+    QRectF
+        m_boundingRectValue; ///< Cached bounding rectangle
+    QPointF m_dragOffset;    ///< Offset for dragging
+    bool    m_wasSelected;   ///< Previous selection state
+    GlobalTerminalItem
+        *m_globalTerminalItem; ///< Linked global terminal
 
     // Animation-related members
     QObject *animObject; ///< Animation object
@@ -301,7 +326,6 @@ private:
         *animation; ///< Property animation for effects
 
     // Static ID management
-    static int TERMINAL_ID; ///< Next general terminal ID
     static QMap<QString, int>
         TERMINAL_TYPES_IDs; ///< Next ID by terminal type
 
