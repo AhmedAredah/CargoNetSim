@@ -6,7 +6,7 @@ namespace Backend
 {
 
 DirectedGraphBase::DirectedGraphBase(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
 }
 

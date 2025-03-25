@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include "Backend/Models/BaseObject.h"
 #include <QObject>
 #include <QVariant>
 
@@ -34,7 +35,7 @@ namespace Backend
  * identifiers that can be used. Implementing classes should
  * document the expected format of these identifiers.
  */
-class DirectedGraphBase : public QObject
+class DirectedGraphBase : public BaseObject
 {
     Q_OBJECT
 public:
