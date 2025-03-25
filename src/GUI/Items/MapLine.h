@@ -1,5 +1,8 @@
 #pragma once
 
+#include "GUI/Items/TerminalItem.h"
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QMap>
 #include <QPen>
@@ -20,7 +23,7 @@ namespace GUI
  * between two points in a network. It belongs to a specific
  * network region and can have various properties.
  */
-class MapLine : public QGraphicsObject
+class MapLine : public GraphicsObjectBase
 {
     Q_OBJECT
 
@@ -40,6 +43,26 @@ public:
                 QMap<QString, QVariant>());
 
     virtual ~MapLine() = default;
+
+    /**
+     * @brief Sets the reference network that this point is
+     * created from
+     * @param network The network pointer
+     */
+    void setReferenceNetwork(QObject *network)
+    {
+        m_referenceNetwork = network;
+    }
+
+    /**
+     * @brief Get the reference network that this point is
+     * created from
+     * @return QObject* The network pointer
+     */
+    QObject *getReferenceNetwork()
+    {
+        return m_referenceNetwork;
+    }
 
     /**
      * @brief Sets the color of the line
@@ -141,6 +164,7 @@ private:
     QMap<QString, QVariant> properties;
     int                     baseWidth;
     QPen                    pen;
+    QObject                *m_referenceNetwork;
 };
 
 } // namespace GUI
