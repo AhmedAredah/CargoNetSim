@@ -11,6 +11,7 @@
 #include "../Items/DistanceMeasurementTool.h"
 #include "../Items/GlobalTerminalItem.h"
 #include "../Items/TerminalItem.h"
+#include "../MainWindow.h"
 #include "GUI/Widgets/GraphicsView.h"
 
 namespace CargoNetSim
@@ -30,38 +31,28 @@ GraphicsScene::GraphicsScene(QObject *parent)
 {
 }
 
-bool GraphicsScene::checkExistingConnection(
-    TerminalItem *startItem, TerminalItem *endItem,
-    const QString &connectionType)
+void GraphicsScene::addItemWithId(GraphicsObjectBase *item,
+                                  const QString      &id)
 {
-    if (!startItem || !endItem)
+    // First add the item to the scene using the base class
+    // method
+    QGraphicsScene::addItem(item);
+
+    // Take ownership
+    item->setParent(this);
+
+    // Get the class key and store in type map
+    QString className = QString(typeid(*item).name());
+
+    // Initialize the inner map if needed
+    if (!itemsByType.contains(className))
     {
-        return false;
+        itemsByType[className] =
+            QMap<QString, QGraphicsItem *>();
     }
 
-    for (QGraphicsItem *item : items())
-    {
-        ConnectionLine *line =
-            dynamic_cast<ConnectionLine *>(item);
-        if (!line)
-        {
-            continue;
-        }
-
-        bool sameTerminals =
-            (line->startItem() == startItem
-             && line->endItem() == endItem)
-            || (line->startItem() == endItem
-                && line->endItem() == startItem);
-
-        if (sameTerminals
-            && line->connectionType() == connectionType)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    // Add to type-specific map
+    itemsByType[className][id] = item;
 }
 
 void GraphicsScene::mousePressEvent(
@@ -154,7 +145,8 @@ void GraphicsScene::mousePressEvent(
                         new DistanceMeasurementTool(
                             dynamic_cast<GraphicsView *>(
                                 views().first()));
-                    addItem(measurementTool);
+                    addItemWithId(measurementTool,
+                                  measurementTool->getID());
                     measurementTool->setStartPoint(
                         scenePos);
 
@@ -511,17 +503,22 @@ void GraphicsScene::mousePressEvent(
             if (clickedItems.isEmpty()
                 && !views().isEmpty())
             {
-                QObject *mainWindowObj =
-                    views().first()->parent();
+                CargoNetSim::GUI::MainWindow
+                    *mainWindowObj = dynamic_cast<
+                        CargoNetSim::GUI::MainWindow *>(
+                        parent());
                 if (mainWindowObj)
                 {
                     // Clear selection and hide properties
                     // panel
                     clearSelection();
-
-                    QMetaObject::invokeMethod(
-                        mainWindowObj,
-                        "hidePropertiesPanel");
+                    mainWindowObj->hidePropertiesPanel();
+                }
+                else
+                {
+                    qDebug() << "Could not extract "
+                                "MainWindow object from "
+                                "view parent";
                 }
             }
 
