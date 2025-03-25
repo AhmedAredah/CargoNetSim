@@ -178,6 +178,36 @@ public:
      */
     QStringList regions() const;
 
+    /**
+     * @brief Clear all networks from the controller.
+     *
+     * Removes and deletes all train networks and truck
+     * network configurations from all regions.
+     */
+    void clear();
+
+    /**
+     * @brief Clear all train networks from the controller.
+     *
+     * Removes and deletes all train networks from all
+     * regions. This operation is thread-safe.
+     *
+     * @return The number of train networks that were
+     * removed.
+     */
+    int clearTrainNetworks();
+
+    /**
+     * @brief Clear all truck networks from the controller.
+     *
+     * Removes and deletes all truck network configurations
+     * from all regions. This operation is thread-safe.
+     *
+     * @return The number of truck network configurations
+     * that were removed.
+     */
+    int clearTruckNetworks();
+
 signals:
     /**
      * @brief Emitted when a train network is added.

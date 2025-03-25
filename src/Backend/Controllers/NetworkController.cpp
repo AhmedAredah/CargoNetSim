@@ -286,5 +286,41 @@ QStringList NetworkController::regions() const
     return result;
 }
 
+void NetworkController::clear()
+{
+    clearTrainNetworks();
+    clearTruckNetworks();
+}
+
+int NetworkController::clearTrainNetworks()
+{
+    QWriteLocker locker(&m_trainNetworksLock);
+
+    int count = 0;
+    for (auto &regionNetworks : m_trainNetworks)
+    {
+        count += regionNetworks.size();
+        qDeleteAll(regionNetworks);
+    }
+    m_trainNetworks.clear();
+
+    return count;
+}
+
+int NetworkController::clearTruckNetworks()
+{
+    QWriteLocker locker(&m_truckNetworkConfigsLock);
+
+    int count = 0;
+    for (auto &regionConfigs : m_truckNetworkConfigs)
+    {
+        count += regionConfigs.size();
+        qDeleteAll(regionConfigs);
+    }
+    m_truckNetworkConfigs.clear();
+
+    return count;
+}
+
 } // namespace Backend
 } // namespace CargoNetSim
