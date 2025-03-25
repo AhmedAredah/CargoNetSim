@@ -149,6 +149,14 @@ public:
         const QString  &key,
         const QVariant &defaultValue = QVariant()) const;
 
+    template <typename T>
+    T getProperty(const QString &key,
+                  const T       &defaultValue) const
+    {
+        return getProperty(key, QVariant(defaultValue))
+            .value<T>();
+    }
+
     /**
      * @brief Reset class ID counter to 0
      */
