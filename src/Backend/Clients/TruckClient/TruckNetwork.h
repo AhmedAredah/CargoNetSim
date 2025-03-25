@@ -18,6 +18,8 @@
 #include <QString>
 #include <QVector>
 
+#include "Backend/Models/BaseObject.h"
+
 namespace CargoNetSim
 {
 namespace Backend
@@ -33,7 +35,7 @@ namespace TruckClient
  * providing path-finding and network operations with
  * specialized transportation attributes.
  */
-class IntegrationNetwork : public QObject
+class IntegrationNetwork : public BaseObject
 {
     Q_OBJECT
 
@@ -120,6 +122,10 @@ public:
      */
     IntegrationLink *getLink(int linkId) const;
 
+    void setNetworkName(QString networkName);
+
+    QString getNetworkName() const;
+
     /**
      * @brief Get multiple paths between nodes
      * @param startNodeId Starting node ID
@@ -154,6 +160,8 @@ signals:
     void linksChanged();
 
 private:
+    // Network name
+    QString m_networkName;
     // Transportation graph for path-finding
     TransportationGraph<int> *m_graph = nullptr;
 

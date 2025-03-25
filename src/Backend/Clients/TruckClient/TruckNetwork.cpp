@@ -27,7 +27,7 @@ class IntegrationLink;
 /**************** SharedIntegrationNetwork ****************/
 
 IntegrationNetwork::IntegrationNetwork(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
 }
 
@@ -76,10 +76,10 @@ void IntegrationNetwork::initializeNetwork(
 
         // Add node to graph with relevant attributes
         QMap<QString, QVariant> attributes;
-        attributes["x"]    = node->xCoordinate();
-        attributes["y"]    = node->yCoordinate();
-        attributes["type"] = node->nodeType();
-        m_graph->addNode(node->nodeId(), attributes);
+        attributes["x"]    = node->getXCoordinate();
+        attributes["y"]    = node->getYCoordinate();
+        attributes["type"] = node->getNodeType();
+        m_graph->addNode(node->getNodeId(), attributes);
     }
 
     // Process links
@@ -88,14 +88,14 @@ void IntegrationNetwork::initializeNetwork(
         link->setParent(this);
 
         // Add edge to graph
-        int   fromNode = link->upstreamNodeId();
-        int   toNode   = link->downstreamNodeId();
-        float weight   = link->length();
+        int   fromNode = link->getUpstreamNodeId();
+        int   toNode   = link->getDownstreamNodeId();
+        float weight   = link->getLength();
 
         QMap<QString, QVariant> attributes;
-        attributes["link_id"]    = link->linkId();
-        attributes["free_speed"] = link->freeSpeed();
-        attributes["lanes"]      = link->lanes();
+        attributes["link_id"]    = link->getLinkId();
+        attributes["free_speed"] = link->getFreeSpeed();
+        attributes["lanes"]      = link->getLanes();
 
         m_graph->addEdge(fromNode, toNode, weight,
                          attributes);
@@ -225,7 +225,7 @@ IntegrationNetwork::getNode(int nodeId) const
     // Find node by ID
     for (IntegrationNode *node : m_nodeObjects)
     {
-        if (node->nodeId() == nodeId)
+        if (node->getNodeId() == nodeId)
         {
             return node;
         }
@@ -242,13 +242,24 @@ IntegrationNetwork::getLink(int linkId) const
     // Find link by ID
     for (IntegrationLink *link : m_linkObjects)
     {
-        if (link->linkId() == linkId)
+        if (link->getLinkId() == linkId)
         {
             return link;
         }
     }
 
     return nullptr;
+}
+
+void IntegrationNetwork::setNetworkName(QString networkName)
+{
+    QMutexLocker locker(&m_mutex);
+    m_networkName = networkName;
+}
+
+QString IntegrationNetwork::getNetworkName() const
+{
+    return m_networkName;
 }
 
 QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
@@ -366,9 +377,9 @@ double IntegrationNetwork::getPathLengthByLinks(
         // Find link
         for (const IntegrationLink *link : m_linkObjects)
         {
-            if (link->linkId() == linkId)
+            if (link->getLinkId() == linkId)
             {
-                totalLength += link->length();
+                totalLength += link->getLength();
                 break;
             }
         }
