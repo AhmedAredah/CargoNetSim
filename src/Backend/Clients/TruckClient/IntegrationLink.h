@@ -11,6 +11,8 @@
 #include <QObject>
 #include <QString>
 
+#include "Backend/Models/BaseObject.h"
+
 namespace CargoNetSim
 {
 namespace Backend
@@ -25,75 +27,79 @@ namespace TruckClient
  * Models a connection between nodes with detailed traffic
  * properties such as speed, capacity, and signal phasing.
  */
-class IntegrationLink : public QObject
+class IntegrationLink : public BaseObject
 {
     Q_OBJECT
 
     // Link properties as Q_PROPERTY for meta-object access
-    Q_PROPERTY(int linkId READ linkId WRITE setLinkId NOTIFY
-                   linkChanged)
-    Q_PROPERTY(int upstreamNodeId READ upstreamNodeId WRITE
-                   setUpstreamNodeId NOTIFY linkChanged)
-    Q_PROPERTY(
-        int downstreamNodeId READ downstreamNodeId WRITE
-            setDownstreamNodeId NOTIFY linkChanged)
-    Q_PROPERTY(float length READ length WRITE setLength
+    Q_PROPERTY(int linkId READ getLinkId WRITE setLinkId
                    NOTIFY linkChanged)
-    Q_PROPERTY(float freeSpeed READ freeSpeed WRITE
+    Q_PROPERTY(
+        int upstreamNodeId READ getUpstreamNodeId WRITE
+            setUpstreamNodeId NOTIFY linkChanged)
+    Q_PROPERTY(
+        int downstreamNodeId READ getDownstreamNodeId WRITE
+            setDownstreamNodeId NOTIFY linkChanged)
+    Q_PROPERTY(float length READ getLength WRITE setLength
+                   NOTIFY linkChanged)
+    Q_PROPERTY(float freeSpeed READ getFreeSpeed WRITE
                    setFreeSpeed NOTIFY linkChanged)
     Q_PROPERTY(
-        float saturationFlow READ saturationFlow WRITE
+        float saturationFlow READ getSaturationFlow WRITE
             setSaturationFlow NOTIFY linkChanged)
-    Q_PROPERTY(float lanes READ lanes WRITE setLanes NOTIFY
-                   linkChanged)
+    Q_PROPERTY(float lanes READ getLanes WRITE setLanes
+                   NOTIFY linkChanged)
     Q_PROPERTY(
-        float speedCoeffVariation READ speedCoeffVariation
-            WRITE setSpeedCoeffVariation NOTIFY linkChanged)
+        float speedCoeffVariation READ
+            getSpeedCoeffVariation WRITE
+                setSpeedCoeffVariation NOTIFY linkChanged)
     Q_PROPERTY(
-        float speedAtCapacity READ speedAtCapacity WRITE
+        float speedAtCapacity READ getSpeedAtCapacity WRITE
             setSpeedAtCapacity NOTIFY linkChanged)
-    Q_PROPERTY(float jamDensity READ jamDensity WRITE
+    Q_PROPERTY(float jamDensity READ getJamDensity WRITE
                    setJamDensity NOTIFY linkChanged)
     Q_PROPERTY(
-        int turnProhibition READ turnProhibition WRITE
+        int turnProhibition READ getTurnProhibition WRITE
             setTurnProhibition NOTIFY linkChanged)
     Q_PROPERTY(
-        int prohibitionStart READ prohibitionStart WRITE
+        int prohibitionStart READ getProhibitionStart WRITE
             setProhibitionStart NOTIFY linkChanged)
-    Q_PROPERTY(int prohibitionEnd READ prohibitionEnd WRITE
-                   setProhibitionEnd NOTIFY linkChanged)
-    Q_PROPERTY(int opposingLink1 READ opposingLink1 WRITE
+    Q_PROPERTY(
+        int prohibitionEnd READ getProhibitionEnd WRITE
+            setProhibitionEnd NOTIFY linkChanged)
+    Q_PROPERTY(int opposingLink1 READ getOpposingLink1 WRITE
                    setOpposingLink1 NOTIFY linkChanged)
-    Q_PROPERTY(int opposingLink2 READ opposingLink2 WRITE
+    Q_PROPERTY(int opposingLink2 READ getOpposingLink2 WRITE
                    setOpposingLink2 NOTIFY linkChanged)
-    Q_PROPERTY(int trafficSignal READ trafficSignal WRITE
+    Q_PROPERTY(int trafficSignal READ getTrafficSignal WRITE
                    setTrafficSignal NOTIFY linkChanged)
-    Q_PROPERTY(int phase1 READ phase1 WRITE setPhase1 NOTIFY
-                   linkChanged)
-    Q_PROPERTY(int phase2 READ phase2 WRITE setPhase2 NOTIFY
-                   linkChanged)
+    Q_PROPERTY(int phase1 READ getPhase1 WRITE setPhase1
+                   NOTIFY linkChanged)
+    Q_PROPERTY(int phase2 READ getPhase2 WRITE setPhase2
+                   NOTIFY linkChanged)
     Q_PROPERTY(int vehicleClassProhibition READ
-                   vehicleClassProhibition WRITE
+                   getVehicleClassProhibition WRITE
                        setVehicleClassProhibition NOTIFY
                            linkChanged)
     Q_PROPERTY(
-        int surveillanceLevel READ surveillanceLevel WRITE
-            setSurveillanceLevel NOTIFY linkChanged)
-    Q_PROPERTY(QString description READ description WRITE
+        int surveillanceLevel READ getSurveillanceLevel
+            WRITE setSurveillanceLevel NOTIFY linkChanged)
+    Q_PROPERTY(QString description READ getDescription WRITE
                    setDescription NOTIFY linkChanged)
-    Q_PROPERTY(float lengthScale READ lengthScale WRITE
+    Q_PROPERTY(float lengthScale READ getLengthScale WRITE
                    setLengthScale NOTIFY linkChanged)
-    Q_PROPERTY(float speedScale READ speedScale WRITE
+    Q_PROPERTY(float speedScale READ getSpeedScale WRITE
                    setSpeedScale NOTIFY linkChanged)
     Q_PROPERTY(
-        float saturationFlowScale READ saturationFlowScale
-            WRITE setSaturationFlowScale NOTIFY linkChanged)
+        float saturationFlowScale READ
+            getSaturationFlowScale WRITE
+                setSaturationFlowScale NOTIFY linkChanged)
     Q_PROPERTY(
-        float speedAtCapacityScale READ speedAtCapacityScale
-            WRITE setSpeedAtCapacityScale NOTIFY
-                linkChanged)
+        float speedAtCapacityScale READ
+            getSpeedAtCapacityScale WRITE
+                setSpeedAtCapacityScale NOTIFY linkChanged)
     Q_PROPERTY(
-        float jamDensityScale READ jamDensityScale WRITE
+        float jamDensityScale READ getJamDensityScale WRITE
             setJamDensityScale NOTIFY linkChanged)
 
 public:
@@ -176,107 +182,107 @@ public:
              QObject           *parent = nullptr);
 
     // Getters
-    int linkId() const
+    int getLinkId() const
     {
         return m_linkId;
     }
-    int upstreamNodeId() const
+    int getUpstreamNodeId() const
     {
         return m_upstreamNodeId;
     }
-    int downstreamNodeId() const
+    int getDownstreamNodeId() const
     {
         return m_downstreamNodeId;
     }
-    float length() const
+    float getLength() const
     {
         return m_length;
     }
-    float freeSpeed() const
+    float getFreeSpeed() const
     {
         return m_freeSpeed;
     }
-    float saturationFlow() const
+    float getSaturationFlow() const
     {
         return m_saturationFlow;
     }
-    float lanes() const
+    float getLanes() const
     {
         return m_lanes;
     }
-    float speedCoeffVariation() const
+    float getSpeedCoeffVariation() const
     {
         return m_speedCoeffVariation;
     }
-    float speedAtCapacity() const
+    float getSpeedAtCapacity() const
     {
         return m_speedAtCapacity;
     }
-    float jamDensity() const
+    float getJamDensity() const
     {
         return m_jamDensity;
     }
-    int turnProhibition() const
+    int getTurnProhibition() const
     {
         return m_turnProhibition;
     }
-    int prohibitionStart() const
+    int getProhibitionStart() const
     {
         return m_prohibitionStart;
     }
-    int prohibitionEnd() const
+    int getProhibitionEnd() const
     {
         return m_prohibitionEnd;
     }
-    int opposingLink1() const
+    int getOpposingLink1() const
     {
         return m_opposingLink1;
     }
-    int opposingLink2() const
+    int getOpposingLink2() const
     {
         return m_opposingLink2;
     }
-    int trafficSignal() const
+    int getTrafficSignal() const
     {
         return m_trafficSignal;
     }
-    int phase1() const
+    int getPhase1() const
     {
         return m_phase1;
     }
-    int phase2() const
+    int getPhase2() const
     {
         return m_phase2;
     }
-    int vehicleClassProhibition() const
+    int getVehicleClassProhibition() const
     {
         return m_vehicleClassProhibition;
     }
-    int surveillanceLevel() const
+    int getSurveillanceLevel() const
     {
         return m_surveillanceLevel;
     }
-    QString description() const
+    QString getDescription() const
     {
         return m_description;
     }
-    float lengthScale() const
+    float getLengthScale() const
     {
         return m_lengthScale;
     }
-    float speedScale() const
+    float getSpeedScale() const
     {
         return m_speedScale;
     }
-    float saturationFlowScale() const
+    float getSaturationFlowScale() const
     {
         return m_saturationFlowScale;
     }
-    float speedAtCapacityScale() const
+    float getSpeedAtCapacityScale() const
     {
         return m_speedAtCapacityScale;
     }
-    float jamDensityScale() const
+    float getJamDensityScale() const
     {
         return m_jamDensityScale;
     }

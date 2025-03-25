@@ -15,7 +15,7 @@ namespace TruckClient
 {
 
 IntegrationLink::IntegrationLink(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_linkId(0)
     , m_upstreamNodeId(0)
     , m_downstreamNodeId(0)
@@ -58,7 +58,7 @@ IntegrationLink::IntegrationLink(
     float lengthScale, float speedScale,
     float saturationFlowScale, float speedAtCapacityScale,
     float jamDensityScale, QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_linkId(linkId)
     , m_upstreamNodeId(upstreamNodeId)
     , m_downstreamNodeId(downstreamNodeId)
@@ -90,7 +90,7 @@ IntegrationLink::IntegrationLink(
 
 IntegrationLink::IntegrationLink(const QJsonObject &json,
                                  QObject           *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
     m_linkId           = json["link_id"].toInt();
     m_upstreamNodeId   = json["upstream_node_id"].toInt();

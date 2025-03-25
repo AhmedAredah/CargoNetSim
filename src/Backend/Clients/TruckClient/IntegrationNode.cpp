@@ -15,7 +15,7 @@ namespace TruckClient
 {
 
 IntegrationNode::IntegrationNode(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_nodeId(0)
     , m_xCoordinate(0.0f)
     , m_yCoordinate(0.0f)
@@ -33,7 +33,7 @@ IntegrationNode::IntegrationNode(
     int nodeType, int macroZoneCluster,
     int informationAvailability, const QString &description,
     float xScale, float yScale, QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_nodeId(nodeId)
     , m_xCoordinate(xCoordinate)
     , m_yCoordinate(yCoordinate)
@@ -48,7 +48,7 @@ IntegrationNode::IntegrationNode(
 
 IntegrationNode::IntegrationNode(const QJsonObject &json,
                                  QObject           *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
     m_nodeId           = json["node_id"].toInt();
     m_xCoordinate      = json["x_coordinate"].toDouble();
