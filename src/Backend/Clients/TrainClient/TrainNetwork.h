@@ -23,6 +23,7 @@
 #include <QVector>
 
 #include "Backend/Commons/DirectedGraph.h"
+#include "Backend/Models/BaseObject.h"
 
 namespace CargoNetSim
 {
@@ -44,7 +45,7 @@ namespace TrainClient
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::NeTrainSimNode)
  * after class definition.
  */
-class NeTrainSimNode : public QObject
+class NeTrainSimNode : public BaseObject
 {
     Q_OBJECT
 
@@ -267,7 +268,7 @@ private:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::NeTrainSimLink)
  * after class definition.
  */
-class NeTrainSimLink : public QObject
+class NeTrainSimLink : public BaseObject
 {
     Q_OBJECT
 
@@ -659,14 +660,14 @@ public:
 };
 
 /**
- * @class NeTrainSimNetworkBase
+ * @class NeTrainSimNetwork
  * @brief Base class for train simulation network
  *
- * The NeTrainSimNetworkBase manages a network of nodes and
+ * The NeTrainSimNetwork manages a network of nodes and
  * links, providing path-finding capabilities and network
  * operations.
  */
-class NeTrainSimNetwork : public QObject
+class NeTrainSimNetwork : public BaseObject
 {
     Q_OBJECT
 
@@ -715,16 +716,40 @@ public:
                      const QString &linksFile);
 
     /**
-     * @brief Gets all nodes in the network
+     * @brief Gets all nodes in the network as JSON objects
      * @return Vector of node data as JSON objects
      */
-    QVector<QJsonObject> getNodes() const;
+    QVector<QJsonObject> getNodesAsJson() const;
+
+    /**
+     * @brief Gets all links in the network as JSON objects
+     * @return Vector of link data as JSON objects
+     */
+    QVector<QJsonObject> getLinksAsJson() const;
+
+    /**
+     * @brief Gets all nodes in the network
+     * @return Vector of node pointers
+     */
+    QVector<NeTrainSimNode *> getNodes() const;
 
     /**
      * @brief Gets all links in the network
-     * @return Vector of link data as JSON objects
+     * @return Vector of link pointers
      */
-    QVector<QJsonObject> getLinks() const;
+    QVector<NeTrainSimLink *> getLinks() const;
+
+    /**
+     * @brief Sets the network name
+     * @param networkName Network name
+     */
+    void setNetworkName(QString networkName);
+
+    /**
+     * @brief Gets the network name
+     * @return Network name
+     */
+    QString getNetworkName() const;
 
     /**
      * @brief Gets link information for a path
@@ -764,9 +789,9 @@ public:
      * @param nodes Vector of node data as JSON objects
      * @param links Vector of link data as JSON objects
      */
-    void
-    setNodesAndLinks(const QVector<QJsonObject> &nodes,
-                     const QVector<QJsonObject> &links);
+    void setNodesAndLinksFromJson(
+        const QVector<QJsonObject> &nodes,
+        const QVector<QJsonObject> &links);
 
     /**
      * @brief Initializes the directed graph from nodes and
@@ -819,20 +844,13 @@ private:
      */
     void buildGraph();
 
-    QVector<QJsonObject>
-        m_nodes; ///< Node data as JSON objects
-    QVector<QJsonObject>
-        m_links; ///< Link data as JSON objects
+    QString m_networkName;             ///< Network name
+    QVector<NeTrainSimNode *> m_nodes; ///< Node objects
+    QVector<NeTrainSimLink *> m_links; ///< Link objects
     DirectedGraph<int>
         *m_graph; ///< Directed graph of network
     QMap<QString, QString>
         m_variables; ///< Network variables
-
-    /// Node objects for internal use
-    QVector<NeTrainSimNode *> m_nodeObjects;
-
-    /// Link objects for internal use
-    QVector<NeTrainSimLink *> m_linkObjects;
 
     mutable QMutex
         m_mutex; ///< Thread synchronization mutex

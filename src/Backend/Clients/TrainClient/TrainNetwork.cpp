@@ -23,7 +23,7 @@ namespace TrainClient
 
 // NeTrainSimNode Implementation
 NeTrainSimNode::NeTrainSimNode(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_simulatorId(0)
     , m_userId(0)
     , m_x(0.0f)
@@ -39,7 +39,7 @@ NeTrainSimNode::NeTrainSimNode(
     int simulatorId, int userId, float x, float y,
     const QString &description, float xScale, float yScale,
     bool isTerminal, float dwellTime, QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_simulatorId(simulatorId)
     , m_userId(userId)
     , m_x(x)
@@ -54,7 +54,7 @@ NeTrainSimNode::NeTrainSimNode(
 
 NeTrainSimNode::NeTrainSimNode(const QJsonObject &json,
                                QObject           *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
     m_simulatorId = json["simulator_id"].toInt();
     m_userId      = json["user_id"].toInt();
@@ -181,7 +181,7 @@ void NeTrainSimNode::setDwellTime(float dwellTime)
 
 // NeTrainSimLink Implementation
 NeTrainSimLink::NeTrainSimLink(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_simulatorId(0)
     , m_userId(0)
     , m_fromNode(nullptr)
@@ -207,7 +207,7 @@ NeTrainSimLink::NeTrainSimLink(
     float speedVariationFactor, bool hasCatenary,
     const QString &region, float lengthScale,
     float speedScale, QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_simulatorId(simulatorId)
     , m_userId(userId)
     , m_fromNode(fromNode)
@@ -241,7 +241,7 @@ NeTrainSimLink::NeTrainSimLink(
 
 NeTrainSimLink::NeTrainSimLink(const QJsonObject &json,
                                QObject           *parent)
-    : QObject(parent)
+    : BaseObject(parent)
 {
     m_simulatorId = json["simulator_id"].toInt();
     m_userId      = json["user_id"].toInt();
@@ -673,9 +673,12 @@ NeTrainSimLinkDataReader::readLinksFile(
     return records;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 // NeTrainSimNetworkBase Implementation
+
 NeTrainSimNetwork::NeTrainSimNetwork(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_graph(new DirectedGraph<int>(this))
 {
     // Connect graph signals to network signals
@@ -685,12 +688,13 @@ NeTrainSimNetwork::NeTrainSimNetwork(QObject *parent)
 
 NeTrainSimNetwork::~NeTrainSimNetwork()
 {
-    // Clean up node and link objects
-    qDeleteAll(m_nodeObjects);
-    qDeleteAll(m_linkObjects);
+    // Clean up node and link objects (if not already
+    // parented properly)
+    qDeleteAll(m_nodes);
+    qDeleteAll(m_links);
 
-    m_nodeObjects.clear();
-    m_linkObjects.clear();
+    m_nodes.clear();
+    m_links.clear();
 }
 
 void NeTrainSimNetwork::addVariable(const QString &key,
@@ -714,18 +718,15 @@ NeTrainSimNetwork::getVariables() const
     return m_variables;
 }
 
-// NeTrainSimNetworkBase Implementation (continued)
 void NeTrainSimNetwork::loadNetwork(
     const QString &nodesFile, const QString &linksFile)
 {
     QMutexLocker locker(&m_mutex);
 
     // Clean up existing objects
-    qDeleteAll(m_nodeObjects);
-    qDeleteAll(m_linkObjects);
+    qDeleteAll(m_nodes);
+    qDeleteAll(m_links);
 
-    m_nodeObjects.clear();
-    m_linkObjects.clear();
     m_nodes.clear();
     m_links.clear();
 
@@ -738,33 +739,13 @@ void NeTrainSimNetwork::loadNetwork(
         QVector<QMap<QString, QString>> nodeRecords =
             NeTrainSimNodeDataReader::readNodesFile(
                 nodesFile);
-        QVector<NeTrainSimNode *> nodes =
-            generateNodes(nodeRecords);
-
-        // Store node objects and convert to JSON for
-        // storage
-        m_nodeObjects = nodes;
-        m_nodes.clear();
-        for (NeTrainSimNode *node : nodes)
-        {
-            m_nodes.append(node->toDict());
-        }
+        m_nodes = generateNodes(nodeRecords);
 
         // Read links
         QVector<QMap<QString, QString>> linkRecords =
             NeTrainSimLinkDataReader::readLinksFile(
                 linksFile);
-        QVector<NeTrainSimLink *> links =
-            generateLinks(linkRecords);
-
-        // Store link objects and convert to JSON for
-        // storage
-        m_linkObjects = links;
-        m_links.clear();
-        for (NeTrainSimLink *link : links)
-        {
-            m_links.append(link->toDict());
-        }
+        m_links = generateLinks(linkRecords);
 
         // Build graph representation
         buildGraph();
@@ -780,22 +761,64 @@ void NeTrainSimNetwork::loadNetwork(
     }
 }
 
-QVector<QJsonObject> NeTrainSimNetwork::getNodes() const
+QVector<QJsonObject>
+NeTrainSimNetwork::getNodesAsJson() const
+{
+    QMutexLocker         locker(&m_mutex);
+    QVector<QJsonObject> nodeJsons;
+
+    for (NeTrainSimNode *node : m_nodes)
+    {
+        nodeJsons.append(node->toDict());
+    }
+
+    return nodeJsons;
+}
+
+QVector<QJsonObject>
+NeTrainSimNetwork::getLinksAsJson() const
+{
+    QMutexLocker         locker(&m_mutex);
+    QVector<QJsonObject> linkJsons;
+
+    for (NeTrainSimLink *link : m_links)
+    {
+        linkJsons.append(link->toDict());
+    }
+
+    return linkJsons;
+}
+
+QVector<NeTrainSimNode *>
+NeTrainSimNetwork::getNodes() const
 {
     QMutexLocker locker(&m_mutex);
     return m_nodes;
 }
 
-QVector<QJsonObject> NeTrainSimNetwork::getLinks() const
+QVector<NeTrainSimLink *>
+NeTrainSimNetwork::getLinks() const
 {
     QMutexLocker locker(&m_mutex);
     return m_links;
 }
 
+void NeTrainSimNetwork::setNetworkName(QString networkName)
+{
+    QMutexLocker locker(&m_mutex);
+    m_networkName = networkName;
+}
+
+QString NeTrainSimNetwork::getNetworkName() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_networkName;
+}
+
 NeTrainSimNode *
 NeTrainSimNetwork::getNodeByUserId(int userId) const
 {
-    for (NeTrainSimNode *node : m_nodeObjects)
+    for (NeTrainSimNode *node : m_nodes)
     {
         if (node->getUserId() == userId)
         {
@@ -886,68 +909,49 @@ void NeTrainSimNetwork::buildGraph()
     m_graph->clear();
 
     // Add nodes to the graph
-    for (const QJsonObject &nodeJson : m_nodes)
+    for (NeTrainSimNode *node : m_nodes)
     {
-        int userId = nodeJson["user_id"].toInt();
+        int userId = node->getUserId();
 
         // Create attributes map for the node
         QMap<QString, QVariant> attributes;
-        attributes["simulator_id"] =
-            nodeJson["simulator_id"].toInt();
-        attributes["x"] = nodeJson["x"].toDouble();
-        attributes["y"] = nodeJson["y"].toDouble();
-        attributes["description"] =
-            nodeJson["description"].toString();
-        attributes["is_terminal"] =
-            nodeJson["is_terminal"].toBool();
-        attributes["dwell_time"] =
-            nodeJson["dwell_time"].toDouble();
-        attributes["x_scale"] =
-            nodeJson["x_scale"].toDouble();
-        attributes["y_scale"] =
-            nodeJson["y_scale"].toDouble();
+        attributes["simulator_id"] = node->getSimulatorId();
+        attributes["x"]            = node->getX();
+        attributes["y"]            = node->getY();
+        attributes["description"]  = node->getDescription();
+        attributes["is_terminal"]  = node->isTerminal();
+        attributes["dwell_time"]   = node->getDwellTime();
+        attributes["x_scale"]      = node->getXScale();
+        attributes["y_scale"]      = node->getYScale();
 
         // Add node to the graph
         m_graph->addNode(userId, attributes);
     }
 
     // Add edges to the graph
-    for (const QJsonObject &linkJson : m_links)
+    for (NeTrainSimLink *link : m_links)
     {
-        int fromNodeId = linkJson["from_node"]
-                             .toObject()["user_id"]
-                             .toInt();
-        int toNodeId = linkJson["to_node"]
-                           .toObject()["user_id"]
-                           .toInt();
-        float length = linkJson["length"].toDouble();
-        int   numDirections =
-            linkJson["num_directions"].toInt();
+        int   fromNodeId = link->getFromNode()->getUserId();
+        int   toNodeId   = link->getToNode()->getUserId();
+        float length     = link->getLength();
+        int   numDirections = link->getNumDirections();
 
         // Create attributes map for the edge
         QMap<QString, QVariant> attributes;
-        attributes["simulator_id"] =
-            linkJson["simulator_id"].toInt();
-        attributes["user_id"] = linkJson["user_id"].toInt();
-        attributes["max_speed"] =
-            linkJson["max_speed"].toDouble();
-        attributes["signal_id"] =
-            linkJson["signal_id"].toInt();
+        attributes["simulator_id"] = link->getSimulatorId();
+        attributes["user_id"]      = link->getUserId();
+        attributes["max_speed"]    = link->getMaxSpeed();
+        attributes["signal_id"]    = link->getSignalId();
         attributes["signals_at_nodes"] =
-            linkJson["signals_at_nodes"].toString();
-        attributes["grade"] = linkJson["grade"].toDouble();
-        attributes["curvature"] =
-            linkJson["curvature"].toDouble();
+            link->getSignalsAtNodes();
+        attributes["grade"]     = link->getGrade();
+        attributes["curvature"] = link->getCurvature();
         attributes["speed_variation_factor"] =
-            linkJson["speed_variation_factor"].toDouble();
-        attributes["has_catenary"] =
-            linkJson["has_catenary"].toBool();
-        attributes["region"] =
-            linkJson["region"].toString();
-        attributes["length_scale"] =
-            linkJson["length_scale"].toDouble();
-        attributes["speed_scale"] =
-            linkJson["speed_scale"].toDouble();
+            link->getSpeedVariationFactor();
+        attributes["has_catenary"] = link->hasCatenary();
+        attributes["region"]       = link->getRegion();
+        attributes["length_scale"] = link->getLengthScale();
+        attributes["speed_scale"]  = link->getSpeedScale();
 
         // Add forward direction edge
         m_graph->addEdge(fromNodeId, toNodeId, length,
@@ -977,36 +981,30 @@ NeTrainSimNetwork::getPathLinks(
         bool found      = false;
 
         // Find the link connecting these nodes
-        for (const QJsonObject &linkJson : m_links)
+        for (NeTrainSimLink *link : m_links)
         {
-            QJsonObject fromNodeJson =
-                linkJson["from_node"].toObject();
-            QJsonObject toNodeJson =
-                linkJson["to_node"].toObject();
+            int linkFromNodeId =
+                link->getFromNode()->getUserId();
+            int linkToNodeId =
+                link->getToNode()->getUserId();
 
-            if (fromNodeJson["user_id"].toInt()
-                    == fromNodeId
-                && toNodeJson["user_id"].toInt()
-                       == toNodeId)
+            if (linkFromNodeId == fromNodeId
+                && linkToNodeId == toNodeId)
             {
-                linkIds.append(linkJson["user_id"].toInt());
-                distances.append(
-                    linkJson["length"].toDouble());
+                linkIds.append(link->getUserId());
+                distances.append(link->getLength());
                 found = true;
                 break;
             }
 
             // Check reverse direction if link is
             // bidirectional
-            if (linkJson["num_directions"].toInt() == 2
-                && fromNodeJson["user_id"].toInt()
-                       == toNodeId
-                && toNodeJson["user_id"].toInt()
-                       == fromNodeId)
+            if (link->getNumDirections() == 2
+                && linkFromNodeId == toNodeId
+                && linkToNodeId == fromNodeId)
             {
-                linkIds.append(linkJson["user_id"].toInt());
-                distances.append(
-                    linkJson["length"].toDouble());
+                linkIds.append(link->getUserId());
+                distances.append(link->getLength());
                 found = true;
                 break;
             }
@@ -1071,12 +1069,11 @@ QJsonObject NeTrainSimNetwork::findShortestPath(
         totalDistance += distance;
 
         // Find the link to get its max_speed
-        for (const QJsonObject &linkJson : m_links)
+        for (NeTrainSimLink *link : m_links)
         {
-            if (linkJson["user_id"].toInt() == linkId)
+            if (link->getUserId() == linkId)
             {
-                float maxSpeed =
-                    linkJson["max_speed"].toDouble();
+                float maxSpeed = link->getMaxSpeed();
                 totalTravelTime += distance / maxSpeed;
                 break;
             }
@@ -1119,26 +1116,21 @@ QJsonObject NeTrainSimNetwork::nodesToJson() const
         return result;
     }
 
-    QJsonObject firstNode = m_nodes.first();
-    QJsonObject scales{
-        {"x",
-         QString::number(firstNode["x_scale"].toDouble())},
-        {"y",
-         QString::number(firstNode["y_scale"].toDouble())}};
+    NeTrainSimNode *firstNode = m_nodes.first();
+    QJsonObject     scales{
+            {"x", QString::number(firstNode->getXScale())},
+            {"y", QString::number(firstNode->getYScale())}};
 
     QJsonArray nodesArray;
-    for (const QJsonObject &nodeJson : m_nodes)
+    for (NeTrainSimNode *node : m_nodes)
     {
         QJsonObject nodeData{
-            {"userID", nodeJson["user_id"].toInt()},
-            {"x", nodeJson["x"].toDouble()},
-            {"y", nodeJson["y"].toDouble()},
-            {"description",
-             nodeJson["description"].toString()},
-            {"isTerminal",
-             nodeJson["is_terminal"].toBool()},
-            {"terminalDwellTime",
-             nodeJson["dwell_time"].toDouble()}};
+            {"userID", node->getUserId()},
+            {"x", node->getX()},
+            {"y", node->getY()},
+            {"description", node->getDescription()},
+            {"isTerminal", node->isTerminal()},
+            {"terminalDwellTime", node->getDwellTime()}};
         nodesArray.append(nodeData);
     }
 
@@ -1162,41 +1154,33 @@ QJsonObject NeTrainSimNetwork::linksToJson() const
         return result;
     }
 
-    QJsonObject firstLink = m_links.first();
-    QJsonObject scales{
-        {"length",
-         QString::number(
-             firstLink["length_scale"].toDouble())},
-        {"speed",
-         QString::number(
-             firstLink["speed_scale"].toDouble())}};
+    NeTrainSimLink *firstLink = m_links.first();
+    QJsonObject     scales{
+            {"length",
+             QString::number(firstLink->getLengthScale())},
+            {"speed",
+             QString::number(firstLink->getSpeedScale())}};
 
     QJsonArray linksArray;
-    for (const QJsonObject &linkJson : m_links)
+    for (NeTrainSimLink *link : m_links)
     {
         QJsonObject linkData{
-            {"userID", linkJson["user_id"].toInt()},
-            {"fromNodeID", linkJson["from_node"]
-                               .toObject()["user_id"]
-                               .toInt()},
-            {"toNodeID", linkJson["to_node"]
-                             .toObject()["user_id"]
-                             .toInt()},
-            {"length", linkJson["length"].toDouble()},
-            {"maxSpeed", linkJson["max_speed"].toDouble()},
-            {"trafficSignalID",
-             linkJson["signal_id"].toInt()},
-            {"grade", linkJson["grade"].toDouble()},
-            {"curvature", linkJson["curvature"].toDouble()},
+            {"userID", link->getUserId()},
+            {"fromNodeID",
+             link->getFromNode()->getUserId()},
+            {"toNodeID", link->getToNode()->getUserId()},
+            {"length", link->getLength()},
+            {"maxSpeed", link->getMaxSpeed()},
+            {"trafficSignalID", link->getSignalId()},
+            {"grade", link->getGrade()},
+            {"curvature", link->getCurvature()},
             {"numberOfDirections",
-             linkJson["num_directions"].toInt()},
+             link->getNumDirections()},
             {"speedVariationFactor",
-             linkJson["speed_variation_factor"].toDouble()},
-            {"isCatenaryAvailable",
-             linkJson["has_catenary"].toBool()},
-            {"signalsAtNodes",
-             linkJson["signals_at_nodes"].toString()},
-            {"region", linkJson["region"].toString()}};
+             link->getSpeedVariationFactor()},
+            {"isCatenaryAvailable", link->hasCatenary()},
+            {"signalsAtNodes", link->getSignalsAtNodes()},
+            {"region", link->getRegion()}};
         linksArray.append(linkData);
     }
 
@@ -1207,33 +1191,28 @@ QJsonObject NeTrainSimNetwork::linksToJson() const
     return result;
 }
 
-void NeTrainSimNetwork::setNodesAndLinks(
+void NeTrainSimNetwork::setNodesAndLinksFromJson(
     const QVector<QJsonObject> &nodes,
     const QVector<QJsonObject> &links)
 {
     QMutexLocker locker(&m_mutex);
 
     // Clean up existing objects
-    qDeleteAll(m_nodeObjects);
-    qDeleteAll(m_linkObjects);
+    qDeleteAll(m_nodes);
+    qDeleteAll(m_links);
 
-    m_nodeObjects.clear();
-    m_linkObjects.clear();
-
-    // Set new data
-    m_nodes = nodes;
-    m_links = links;
-
+    m_nodes.clear();
+    m_links.clear();
     // Create node objects
-    for (const QJsonObject &nodeJson : m_nodes)
+    for (const QJsonObject &nodeJson : nodes)
     {
         NeTrainSimNode *node =
             NeTrainSimNode::fromDict(nodeJson, this);
-        m_nodeObjects.append(node);
+        m_nodes.append(node);
     }
 
     // Create link objects
-    for (const QJsonObject &linkJson : m_links)
+    for (const QJsonObject &linkJson : links)
     {
         // We need to find the actual node objects for
         // fromNode and toNode
@@ -1267,7 +1246,7 @@ void NeTrainSimNetwork::setNodesAndLinks(
                 linkJson["length_scale"].toDouble(),
                 linkJson["speed_scale"].toDouble(), this);
 
-            m_linkObjects.append(link);
+            m_links.append(link);
         }
         else
         {
