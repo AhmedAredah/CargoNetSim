@@ -512,7 +512,8 @@ void GraphicsScene::mousePressEvent(
                     // Clear selection and hide properties
                     // panel
                     clearSelection();
-                    mainWindowObj->hidePropertiesPanel();
+                    UtilitiesFunctions::hidePropertiesPanel(
+                        mainWindowObj);
                 }
                 else
                 {
