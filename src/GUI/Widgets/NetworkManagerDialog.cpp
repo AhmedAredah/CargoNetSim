@@ -19,7 +19,7 @@
 #include "../MainWindow.h"
 #include "../Utils/ColorUtils.h"
 #include "../Widgets/ColorPickerDialog.h"
-#include "Backend/Controllers/RegionDataController.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 
 // External services - these would be properly included in
 // your project #include
@@ -187,28 +187,23 @@ void NetworkManagerDialog::addNetwork(
     if (!mainWindow)
         return;
 
-    QString currentRegion =
-        Backend::RegionDataController::getInstance()
-            .getCurrentRegion();
-    Backend::RegionData *
-        regionData; //=
-                    // RegionsData::getInstance()->getRegionData(currentRegion);
+    Backend::RegionData *regionData =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegionData();
 
     if (!regionData)
         return;
 
     // Map network types to their corresponding methods
-    QMap<QString, QList<QString>> networkConfig;
-
+    QStringList networkNames;
     if (networkType == "Train Network")
     {
-        networkConfig["networks"] =
-            regionData->getTrainNetworks();
+        networkNames = regionData->getTrainNetworks();
     }
     else if (networkType == "Truck Network")
     {
-        networkConfig["networks"] =
-            regionData->getTruckNetworks();
+        networkNames = regionData->getTruckNetworks();
     }
     else
     {
@@ -216,13 +211,13 @@ void NetworkManagerDialog::addNetwork(
     }
 
     // Check for existing network
-    if (!networkConfig["networks"].isEmpty())
+    if (!networkNames.isEmpty())
     {
         QMessageBox::warning(
             this, "Warning",
             QString("One %1 is allowed for region '%2'")
                 .arg(networkType.toLower())
-                .arg(currentRegion));
+                .arg(regionData->getRegion()));
         return;
     }
 
@@ -231,17 +226,16 @@ void NetworkManagerDialog::addNetwork(
     {
         QString networkName;
 
-        // if (networkType == "Train Network") {
-        //     networkName =
-        //     NetworkController::importTrainNetwork(
-        //         mainWindow, currentRegion,
-        //         ColorUtils::getRandomColor());
-        // } else {
-        //     networkName =
-        //     NetworkController::importTruckNetwork(
-        //         mainWindow, currentRegion,
-        //         ColorUtils::getRandomColor());
-        // }
+        if (networkType == "Train Network")
+        {
+            networkName = NetworkController::importNetwork(
+                mainWindow, NetworkType::Train, regionData);
+        }
+        else
+        {
+            networkName = NetworkController::importNetwork(
+                mainWindow, NetworkType::Truck, regionData);
+        }
 
         updateNetworkList(networkType);
     }
@@ -290,19 +284,18 @@ void NetworkManagerDialog::deleteNetwork(
     {
         try
         {
-            // if (networkType == "Train Network") {
-            //     NetworkController::removeTrainNetwork(
-            //         mainWindow,
-            //         mainWindow->getCurrentRegion(),
-            //         "train_" + currentItem->text()
-            //     );
-            // } else {
-            //     NetworkController::removeTruckNetwork(
-            //         mainWindow,
-            //         mainWindow->getCurrentRegion(),
-            //         "truck_" + currentItem->text()
-            //     );
-            // }
+            Backend::RegionData *regionData =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegionData();
+
+            NetworkType type =
+                (networkType == "Train Network")
+                    ? NetworkType::Train
+                    : NetworkType::Truck;
+            NetworkController::removeNetwork(
+                mainWindow, type, networkName, regionData);
 
             updateNetworkList(networkType);
         }
@@ -338,10 +331,13 @@ void NetworkManagerDialog::renameNetwork(
 
     QString              oldName = currentItem->text();
     Backend::RegionData *regionData =
-        Backend::RegionDataController::getInstance()
-            .getRegionData(
-                Backend::RegionDataController::getInstance()
-                    .getCurrentRegion());
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getRegionData(
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegion());
 
     while (true)
     {
@@ -561,9 +557,10 @@ void NetworkManagerDialog::updateNetworkList(
     QString currentRegion;
     if (mainWindow)
     {
-        currentRegion =
-            Backend::RegionDataController::getInstance()
-                .getCurrentRegion();
+        currentRegion = CargoNetSim::CargoNetSimController::
+                            getInstance()
+                                .getRegionDataController()
+                                ->getCurrentRegion();
     }
 
     // Add network items to list
