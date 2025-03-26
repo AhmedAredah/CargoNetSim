@@ -83,18 +83,16 @@ SetCoordinatesDialog::SetCoordinatesDialog(
     mainLayout->addWidget(buttonBox);
 }
 
-std::pair<double, double>
-SetCoordinatesDialog::getCoordinates() const
+QPointF SetCoordinatesDialog::getCoordinates() const
 {
-    return std::make_pair(latInput->value(),
-                          lonInput->value());
+    return QPointF(lonInput->value(), latInput->value());
 }
 
 void SetCoordinatesDialog::onCoordinatesChanged()
 {
     // Emit signal with new coordinate values
-    emit coordinatesChanged(latInput->value(),
-                            lonInput->value());
+    emit coordinatesChanged(
+        QPointF(lonInput->value(), latInput->value()));
 }
 
 } // namespace GUI

@@ -43,17 +43,16 @@ public:
 
     /**
      * @brief Get the coordinates entered by the user
-     * @return Pair of latitude and longitude values
+     * @return QPointF Geodetic coordinates (long, lat)
      */
-    std::pair<double, double> getCoordinates() const;
+    QPointF getCoordinates() const;
 
 signals:
     /**
      * @brief Signal emitted when coordinates are changed
-     * @param lat New latitude value
-     * @param lon New longitude value
+     * @param geoPoint New geodetic coordinates (long, lat)
      */
-    void coordinatesChanged(double lat, double lon);
+    void coordinatesChanged(QPointF geoPoint);
 
 private slots:
     /**
