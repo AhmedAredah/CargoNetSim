@@ -38,7 +38,7 @@ public:
      */
     MapLine(const QPointF &startPoint,
             const QPointF &endPoint,
-            const QString &region = "default",
+            const QString &region = "Default Region",
             const QMap<QString, QVariant> &properties =
                 QMap<QString, QVariant>());
 
@@ -83,7 +83,7 @@ public:
      */
     void setRegion(const QString region)
     {
-        this->region = region;
+        properties.value("region") = region;
     }
 
     /**
@@ -105,9 +105,9 @@ public:
     /**
      * @brief Get the region
      */
-    const QString &getRegion() const
+    const QString getRegion() const
     {
-        return region;
+        return properties.value("region").toString();
     }
 
     /**
@@ -160,7 +160,6 @@ private:
 
     QPointF                 startPoint;
     QPointF                 endPoint;
-    QString                 region;
     QMap<QString, QVariant> properties;
     int                     baseWidth;
     QPen                    pen;

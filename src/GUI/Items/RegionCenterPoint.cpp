@@ -19,7 +19,6 @@ RegionCenterPoint::RegionCenterPoint(
     const QMap<QString, QVariant> &properties,
     QGraphicsItem                 *parent)
     : GraphicsObjectBase(parent)
-    , region(region)
     , color(color)
     , properties(properties)
 {
@@ -34,7 +33,8 @@ RegionCenterPoint::RegionCenterPoint(
             {"Latitude", "0.0000000"},
             {"Longitude", "0.0000000"},
             {"Shared Latitude", "0.0000000"},
-            {"Shared Longitude", "0.0000000"}};
+            {"Shared Longitude", "0.0000000"},
+            {"Region", region}};
     }
 
     // Enable needed flags
@@ -102,10 +102,14 @@ void RegionCenterPoint::updateSharedCoordinates(double lat,
 
 void RegionCenterPoint::setRegion(const QString &newRegion)
 {
-    if (region != newRegion)
+    if (properties.value("Region", "Default Region")
+            .toString()
+        != newRegion)
     {
-        QString oldRegion = region;
-        region            = newRegion;
+        QString oldRegion =
+            properties.value("Region", "Default Region")
+                .toString();
+        properties["Region"] = newRegion;
         emit regionChanged(newRegion);
     }
 }
@@ -274,7 +278,6 @@ QMap<QString, QVariant> RegionCenterPoint::toDict() const
 
     // Add all data to the map
     data["position"]   = posMap;
-    data["region"]     = region;
     data["color"]      = color.name();
     data["properties"] = properties;
     data["selected"]   = isSelected();

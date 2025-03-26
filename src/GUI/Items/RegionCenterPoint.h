@@ -75,7 +75,8 @@ public:
      */
     QString getRegion() const
     {
-        return region;
+        return properties.value("Region", "Default Region")
+            .toString();
     }
 
     /**
@@ -195,7 +196,6 @@ private:
      */
     void updateCoordinatesFromPosition();
 
-    QString                 region;
     QColor                  color;
     QMap<QString, QVariant> properties;
     QPointF                 dragOffset;

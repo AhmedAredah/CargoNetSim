@@ -92,7 +92,7 @@ public:
      */
     void setRegion(const QString &region)
     {
-        this->m_region = region;
+        this->m_properties["region"] = region;
     }
 
     /**
@@ -135,7 +135,9 @@ public:
      */
     QString getRegion() const
     {
-        return m_region;
+        return m_properties
+            .value("region", "Default Region")
+            .toString();
     }
 
     /**
@@ -213,7 +215,6 @@ private:
     qreal                   m_x;
     qreal                   m_y;
     QString                 m_shape;
-    QString                 m_region;
     TerminalItem           *m_terminal;
     QColor                  m_color;
     QMap<QString, QVariant> m_properties;

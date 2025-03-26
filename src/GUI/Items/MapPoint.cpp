@@ -31,7 +31,6 @@ MapPoint::MapPoint(
     , m_x(x)
     , m_y(y)
     , m_shape(shape)
-    , m_region(region)
     , m_terminal(terminal)
     , m_color(Qt::black)
     , m_properties(properties)
@@ -270,7 +269,9 @@ void MapPoint::createTerminalAtPosition(
     // Create terminal using ViewController
     ViewController::createTerminalAtPoint(
         qobject_cast<MainWindow *>(scene()->parent()),
-        m_region, terminalType, pos());
+        m_properties.value("region", "Default Region")
+            .toString(),
+        terminalType, pos());
 }
 
 QMap<QString, QVariant> MapPoint::toDict() const
@@ -282,7 +283,6 @@ QMap<QString, QVariant> MapPoint::toDict() const
     data["x"]          = m_x;
     data["y"]          = m_y;
     data["shape"]      = m_shape;
-    data["region"]     = m_region;
     data["properties"] = m_properties;
     data["color"]      = m_color.name();
     data["selected"]   = isSelected();

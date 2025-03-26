@@ -17,7 +17,6 @@ MapLine::MapLine(const QPointF                 &startPoint,
                  const QMap<QString, QVariant> &properties)
     : startPoint(startPoint)
     , endPoint(endPoint)
-    , region(region)
     , properties(properties)
     , baseWidth(5)
     , pen(Qt::black, baseWidth)
@@ -127,7 +126,9 @@ void MapLine::selectNetworkLines()
     for (QGraphicsItem *item : scene()->items())
     {
         MapLine *line = dynamic_cast<MapLine *>(item);
-        if (line && line->getRegion() == region)
+        if (line
+            && line->getRegion()
+                   == properties.value("region").toString())
         {
             line->setSelected(true);
         }
@@ -149,7 +150,6 @@ QMap<QString, QVariant> MapLine::toDict() const
 
     data["start_point"] = startPointDict;
     data["end_point"]   = endPointDict;
-    data["region"]      = region;
     data["properties"]  = properties;
     data["color"]       = pen.color().name();
     data["selected"]    = isSelected();
