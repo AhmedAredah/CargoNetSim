@@ -14,9 +14,6 @@
 #include "../MainWindow.h"
 #include "../Widgets/GraphicsScene.h"
 #include "../Widgets/GraphicsView.h"
-// #include "Controllers/ViewController.h"
-// #include "Controllers/UtilityFunctions.h"
-// #include "Serializers/ProjectSerializer.h"
 #include "../Widgets/SetCoordinatesDialog.h"
 
 #include "../Controllers/NetworkController.h"
