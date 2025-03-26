@@ -158,20 +158,17 @@ void GraphicsScene::mousePressEvent(
                             views().first()->parent();
                         if (mainWindowObj)
                         {
-                            QObject *statusBar =
-                                mainWindowObj
-                                    ->findChild<QObject *>(
-                                        "statusBar");
-                            if (statusBar)
+                            MainWindow *mainWin =
+                                dynamic_cast<MainWindow *>(
+                                    mainWindowObj);
+                            if (mainWin)
                             {
-                                QMetaObject::invokeMethod(
-                                    statusBar,
-                                    "showMessage",
-                                    Q_ARG(QString,
-                                          "Click again to "
-                                          "complete "
-                                          "measurement"),
-                                    Q_ARG(int, 2000));
+                                mainWin
+                                    ->showStatusBarMessage(
+                                        "Click again to "
+                                        "complete "
+                                        "measurement",
+                                        2000);
                             }
                         }
                     }
@@ -203,9 +200,9 @@ void GraphicsScene::mousePressEvent(
                                                 false);
                         }
 
-                        QObject *view = views().first();
-                        QMetaObject::invokeMethod(
-                            view, "unsetCursor");
+                        QGraphicsView *view =
+                            views().first();
+                        view->unsetCursor();
 
                         QObject *statusBar =
                             mainWindowObj

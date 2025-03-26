@@ -94,17 +94,11 @@ GraphicsView::~GraphicsView()
 
 double GraphicsView::latToMercator(double lat) const
 {
+    // Standard Web Mercator formula
     // Convert latitude to Mercator Y coordinate, avoiding
-    // ±90° errors Avoid log domain error by slightly
-    // shifting extreme latitudes
-    if (lat >= 90)
-    {
-        lat = 89.999999;
-    }
-    else if (lat <= -90)
-    {
-        lat = -89.999999;
-    }
+    // ±90° errors Clamp latitude to valid range for Web
+    // Mercator
+    lat = std::max(std::min(lat, 85.051129), -85.051129);
 
     double latRad = lat * M_PI / 180.0;
     return std::log(std::tan(M_PI / 4 + latRad / 2));
@@ -112,25 +106,14 @@ double GraphicsView::latToMercator(double lat) const
 
 double GraphicsView::mercatorToLat(double mercatorY) const
 {
-    try
-    {
-        // Clamp mercator_y to avoid math domain errors
-        double maxY = std::log(
-            std::tan(M_PI / 4 + (89.9 * M_PI / 180.0) / 2));
-        double minY = std::log(std::tan(
-            M_PI / 4 + (-89.9 * M_PI / 180.0) / 2));
-        mercatorY =
-            std::max(minY, std::min(maxY, mercatorY));
+    // Standard inverse Web Mercator formula
+    // Clamp mercator_y to avoid math domain errors
+    double maxY = latToMercator(85.051129);
+    double minY = latToMercator(-85.051129);
+    mercatorY   = std::max(minY, std::min(maxY, mercatorY));
 
-        return (2 * std::atan(std::exp(mercatorY))
-                - M_PI / 2)
-               * 180.0 / M_PI;
-    }
-    catch (const std::overflow_error &)
-    {
-        // Return maximum valid latitude if overflow occurs
-        return mercatorY > 0 ? 89.9 : -89.9;
-    }
+    return (2 * std::atan(std::exp(mercatorY)) - M_PI / 2)
+           * 180.0 / M_PI;
 }
 
 QPointF
@@ -138,29 +121,16 @@ GraphicsView::sceneToWGS84(const QPointF &scenePos) const
 {
     try
     {
-        // Apply zoom scaling to coordinates
+        // Fixed scaling factor - not dependent on zoom
+        constexpr double VIEW_SCALE_FACTOR = 1000.0;
+
+        // Apply fixed scale to coordinates
         QPointF scaledPos(scenePos.x() / SCALE_FACTOR,
                           scenePos.y() / SCALE_FACTOR);
 
-        // Define a scaling factor based on current view
-        // scale This helps maintain reasonable coordinate
-        // ranges when zooming
-        double viewScaleFactor =
-            1000.0 * (1.0 + std::abs(_zoom) / 20.0);
-
-        // Apply safety check for extremely large scale
-        // factors
-        if (viewScaleFactor <= 0
-            || !std::isfinite(viewScaleFactor))
-        {
-            viewScaleFactor = 1000.0;
-        }
-
-        // Convert to normalized coordinates in a more
-        // direct way Center of view is considered origin
-        // (0,0) by default
-        double xNorm = scaledPos.x() / viewScaleFactor;
-        double yNorm = scaledPos.y() / viewScaleFactor;
+        // Convert to normalized coordinates (-1 to 1)
+        double xNorm = scaledPos.x() / VIEW_SCALE_FACTOR;
+        double yNorm = scaledPos.y() / VIEW_SCALE_FACTOR;
 
         // Safety checks for numerical stability
         if (!std::isfinite(xNorm) || !std::isfinite(yNorm))
@@ -168,25 +138,29 @@ GraphicsView::sceneToWGS84(const QPointF &scenePos) const
             return QPointF(0.0, 0.0);
         }
 
-        // Map normalized coordinates to lat/lon
-        double lon =
-            xNorm * 180.0; // Scale to longitude range
+        // Map normalized coordinates to lon/lat
+        double lon = xNorm * 180.0; // Scale to longitude
+                                    // range (-180 to 180)
 
-        // Use a non-linear transformation for latitude to
-        // maintain aspect ratio
+        // Convert y to latitude using inverse Mercator
+        // function
         double yMercator = -yNorm; // Flip y axis (negative
                                    // y is north in scene)
         double lat;
 
+        // Use the standard inverse Mercator calculation
         if (std::abs(yMercator) > 0.99)
         {
             lat = std::copysign(
-                89.9, yMercator); // Avoid exact poles
+                85.051129,
+                yMercator); // Limit to valid Mercator range
         }
         else
         {
-            // Apply a Mercator-like transformation
-            lat = 90.0 * std::tanh(yMercator * M_PI / 2);
+            lat = mercatorToLat(
+                yMercator
+                * M_PI); // Scale and convert using proper
+                         // inverse Mercator
         }
 
         // Ensure results are valid
@@ -199,7 +173,8 @@ GraphicsView::sceneToWGS84(const QPointF &scenePos) const
         lat = std::max(-90.0, std::min(90.0, lat));
         lon = std::max(-180.0, std::min(180.0, lon));
 
-        return QPointF(lat, lon);
+        // Return in longitude (x), latitude (y) order
+        return QPointF(lon, lat);
     }
     catch (const std::exception &e)
     {
@@ -218,8 +193,9 @@ QPointF GraphicsView::wgs84ToScene(QPointF point) const
 {
     try
     {
-        double lat = point.x();
-        double lon = point.y();
+        // Extract longitude and latitude
+        double lon = point.x();
+        double lat = point.y();
 
         // Safety check for input values
         if (!std::isfinite(lat) || !std::isfinite(lon))
@@ -231,35 +207,18 @@ QPointF GraphicsView::wgs84ToScene(QPointF point) const
         lat = std::max(-90.0, std::min(90.0, lat));
         lon = std::max(-180.0, std::min(180.0, lon));
 
-        // Define scaling factor (same as in sceneToWGS84)
-        double viewScaleFactor =
-            1000.0 * (1.0 + std::abs(_zoom) / 20.0);
+        // Fixed scaling factor - not dependent on zoom
+        constexpr double VIEW_SCALE_FACTOR = 1000.0;
 
-        // Apply safety check for extremely large scale
-        // factors
-        if (viewScaleFactor <= 0
-            || !std::isfinite(viewScaleFactor))
-        {
-            viewScaleFactor = 1000.0;
-        }
+        // Convert longitude to X coordinate (normalized)
+        double xNorm = lon / 180.0; // Normalize to -1 to 1
 
-        // Convert longitude directly
-        double xNorm = lon / 180.0;
-
-        // Convert latitude using inverse of our
-        // Mercator-like transform
-        double yMercator;
-        if (std::abs(lat) > 89.9)
-        {
-            yMercator = std::copysign(0.99, lat);
-        }
-        else
-        {
-            yMercator = std::atanh(lat / 90.0) * 2 / M_PI;
-        }
-
+        // Convert latitude to Y using Mercator
+        double mercatorY =
+            latToMercator(lat) / M_PI; // Normalize by PI
         double yNorm =
-            -yMercator; // Flip back to scene coordinates
+            -mercatorY; // Flip to scene coordinates where Y
+                        // increases downward
 
         // Safety checks for numerical stability
         if (!std::isfinite(xNorm) || !std::isfinite(yNorm))
@@ -268,8 +227,8 @@ QPointF GraphicsView::wgs84ToScene(QPointF point) const
         }
 
         // Scale to scene coordinates
-        double x = xNorm * viewScaleFactor * SCALE_FACTOR;
-        double y = yNorm * viewScaleFactor * SCALE_FACTOR;
+        double x = xNorm * VIEW_SCALE_FACTOR * SCALE_FACTOR;
+        double y = yNorm * VIEW_SCALE_FACTOR * SCALE_FACTOR;
 
         // Final safety check for output values
         if (!std::isfinite(x) || !std::isfinite(y))
@@ -377,7 +336,9 @@ QPointF GraphicsView::convertCoordinates(
                 return QPointF(0, 0);
             }
 
-            return wgs84ToScene(QPointF(latDeg, lonDeg));
+            // Return geodetic coordinates (not scene
+            // coordinates!)
+            return QPointF(lonDeg, latDeg);
         }
     }
     catch (const std::exception &e)
@@ -881,14 +842,6 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
             measurementTool = nullptr;
             measureMode     = false;
 
-            // Emit signal or call function to uncheck
-            // measure action in parent window
-            if (QWidget *mainWindow = window())
-            {
-                QMetaObject::invokeMethod(
-                    mainWindow, "onMeasurementCompleted");
-            }
-
             unsetCursor();
 
             // Show status message
@@ -943,9 +896,11 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         {
             if (useProjectedCoords)
             {
-                auto [lat, lon]   = sceneToWGS84(scenePos);
+                // Get lon/lat coordinates first
+                QPointF geoCoord = sceneToWGS84(scenePos);
+                // Then convert to projected Web Mercator
                 QPointF projected = convertCoordinates(
-                    QPointF(lon, lat), "to_projected");
+                    geoCoord, "to_projected");
                 coordText =
                     QString("X: %1m, Y: %2m")
                         .arg(projected.x(), 0, 'f', 2)
@@ -953,14 +908,18 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
             }
             else
             {
-                auto [lat, lon] = sceneToWGS84(scenePos);
+                QPointF geoCoord = sceneToWGS84(scenePos);
+                double  lon      = geoCoord.x();
+                double  lat      = geoCoord.y();
+
                 // Constrain display values to valid ranges
                 lat = std::max(-90.0, std::min(90.0, lat));
                 lon =
                     std::max(-180.0, std::min(180.0, lon));
-                coordText = QString("Lat: %1°, Lon: %2°")
-                                .arg(lat, 0, 'f', 6)
-                                .arg(lon, 0, 'f', 6);
+
+                coordText = QString("Lon: %1°, Lat: %2°")
+                                .arg(lon, 0, 'f', 6)
+                                .arg(lat, 0, 'f', 6);
             }
         }
         catch (...)
@@ -1113,14 +1072,11 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
             // Get current region
             if (QWidget *mainWindow = window())
             {
-                QVariant regionVariant;
-                QMetaObject::invokeMethod(
-                    mainWindow, "getCurrentRegion",
-                    Qt::DirectConnection,
-                    Q_RETURN_ARG(QVariant, regionVariant));
-
                 QString currentRegion =
-                    regionVariant.toString();
+                    CargoNetSim::CargoNetSimController::
+                        getInstance()
+                            .getRegionDataController()
+                            ->getCurrentRegion();
 
                 // Find the region center point
                 QGraphicsItem *centerPoint = nullptr;
