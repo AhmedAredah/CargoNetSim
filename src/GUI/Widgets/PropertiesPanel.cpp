@@ -431,6 +431,8 @@ void PropertiesPanel::addNestedPropertiesSection(
 
     QGroupBox   *group = new QGroupBox(sectionName);
     QFormLayout *propertyLayout = new QFormLayout();
+    propertyLayout->setFieldGrowthPolicy(
+        QFormLayout::AllNonFixedFieldsGrow);
 
     // Define units and validators for different property
     // types
@@ -473,6 +475,7 @@ void PropertiesPanel::addNestedPropertiesSection(
     {
         QLineEdit *lineEdit =
             new QLineEdit(it.value().toString());
+        setExpandingWidgetPolicy(lineEdit);
 
         QString           label     = it.key();
         QDoubleValidator *validator = nullptr;
@@ -529,50 +532,154 @@ void PropertiesPanel::addDwellTimeSection(
     QMap<QString, QVariant> dwellTime =
         properties["dwell_time"].toMap();
 
+    // Create a group box for all dwell time controls
     QGroupBox *dwellGroup = new QGroupBox(tr("Dwell Time"));
-    QVBoxLayout *dwellLayout = new QVBoxLayout();
+    QVBoxLayout *dwellLayout = new QVBoxLayout(dwellGroup);
 
-    // Method selection
+    // Method selection in a horizontal layout
     QHBoxLayout *methodLayout = new QHBoxLayout();
     QLabel      *methodLabel  = new QLabel(tr("Method:"));
     QComboBox   *methodCombo  = new QComboBox();
     methodCombo->addItems(
         {"normal", "gamma", "exponential", "lognormal"});
 
+    // Get the current method
     QString currentMethod = dwellTime["method"].toString();
     if (currentMethod.isEmpty())
     {
         currentMethod = "normal";
     }
     methodCombo->setCurrentText(currentMethod);
+    setExpandingWidgetPolicy(methodCombo);
     editFields["dwell_time.method"] = methodCombo;
 
     methodLayout->addWidget(methodLabel);
     methodLayout->addWidget(methodCombo);
     dwellLayout->addLayout(methodLayout);
 
-    // Parameters
+    // Create parameters container that will hold parameter
+    // fields
+    QWidget *parametersContainer = new QWidget(dwellGroup);
+    QFormLayout *parametersLayout =
+        new QFormLayout(parametersContainer);
+    parametersLayout->setFieldGrowthPolicy(
+        QFormLayout::AllNonFixedFieldsGrow);
+    dwellLayout->addWidget(parametersContainer);
+
+    // Add the parameters for the current method
     QMap<QString, QVariant> currentParams =
         dwellTime["parameters"].toMap();
-    auto [paramLayout, paramFields] =
-        createDwellTimeParameters(currentMethod,
-                                  currentParams);
-    dwellLayout->addLayout(paramLayout);
+    addDwellTimeParameterFields(
+        parametersLayout, currentMethod, currentParams);
 
-    for (auto it = paramFields.constBegin();
-         it != paramFields.constEnd(); ++it)
-    {
-        editFields[QString("dwell_time.parameters.%1")
-                       .arg(it.key())] = it.value();
-    }
-
+    // Connect method change signal
     connect(methodCombo, &QComboBox::currentTextChanged,
-            [this, dwellGroup](const QString &text) {
-                onDwellMethodChanged(text, dwellGroup);
+            [this, parametersContainer,
+             parametersLayout](const QString &method) {
+                // Clear the existing parameter fields
+                while (QLayoutItem *item =
+                           parametersLayout->takeAt(0))
+                {
+                    if (QWidget *widget = item->widget())
+                    {
+                        // Remove from editFields
+                        for (auto it = editFields.begin();
+                             it != editFields.end();)
+                        {
+                            if (it.value() == widget)
+                            {
+                                it = editFields.erase(it);
+                            }
+                            else
+                            {
+                                ++it;
+                            }
+                        }
+                        widget->deleteLater();
+                    }
+                    delete item;
+                }
+
+                // Add new parameter fields for the selected
+                // method
+                addDwellTimeParameterFields(
+                    parametersLayout, method);
+
+                // Force layout update
+                parametersContainer->updateGeometry();
+                parametersContainer->update();
             });
 
-    dwellGroup->setLayout(dwellLayout);
+    // Add the group box to the main layout
     layout->addRow(dwellGroup);
+}
+
+void PropertiesPanel::addDwellTimeParameterFields(
+    QFormLayout *layout, const QString &method,
+    const QMap<QString, QVariant> &currentParams)
+{
+    if (method == "gamma")
+    {
+        // Shape parameter
+        QLineEdit *shape = new QLineEdit(
+            currentParams.value("shape", "2.0").toString());
+        setExpandingWidgetPolicy(shape);
+        editFields["dwell_time.parameters.shape"] = shape;
+        layout->addRow(tr("Shape (k):"), shape);
+
+        // Scale parameter
+        QLineEdit *scale = new QLineEdit(
+            currentParams.value("scale", "1440")
+                .toString());
+        setExpandingWidgetPolicy(scale);
+        editFields["dwell_time.parameters.scale"] = scale;
+        layout->addRow(tr("Scale (θ) minutes:"), scale);
+    }
+    else if (method == "exponential")
+    {
+        // Scale parameter
+        QLineEdit *scale = new QLineEdit(
+            currentParams.value("scale", "2880")
+                .toString());
+        setExpandingWidgetPolicy(scale);
+        editFields["dwell_time.parameters.scale"] = scale;
+        layout->addRow(tr("Scale (λ) minutes:"), scale);
+    }
+    else if (method == "normal")
+    {
+        // Mean parameter
+        QLineEdit *mean = new QLineEdit(
+            currentParams.value("mean", "2880").toString());
+        setExpandingWidgetPolicy(mean);
+        editFields["dwell_time.parameters.mean"] = mean;
+        layout->addRow(tr("Mean (minutes):"), mean);
+
+        // Standard deviation parameter
+        QLineEdit *stdDev = new QLineEdit(
+            currentParams.value("std_dev", "720")
+                .toString());
+        setExpandingWidgetPolicy(stdDev);
+        editFields["dwell_time.parameters.std_dev"] =
+            stdDev;
+        layout->addRow(tr("Std Dev (minutes):"), stdDev);
+    }
+    else if (method == "lognormal")
+    {
+        // Mean parameter (log-scale)
+        QLineEdit *mean = new QLineEdit(
+            currentParams.value("mean", "3.45").toString());
+        setExpandingWidgetPolicy(mean);
+        editFields["dwell_time.parameters.mean"] = mean;
+        layout->addRow(tr("Mean (log-scale):"), mean);
+
+        // Sigma parameter
+        QLineEdit *sigma = new QLineEdit(
+            currentParams.value("sigma", "0.25")
+                .toString());
+        setExpandingWidgetPolicy(sigma);
+        editFields["dwell_time.parameters.sigma"] = sigma;
+        layout->addRow(tr("Sigma:"), sigma);
+    }
 }
 
 void PropertiesPanel::addContainerManagement(
@@ -662,6 +769,11 @@ void PropertiesPanel::displayGenericProperties(
             addGenericField(it.key(), it.value());
         }
     }
+
+    // Add spacer
+    QWidget *spacer = new QWidget();
+    spacer->setMinimumHeight(20);
+    layout->addRow("", spacer);
 }
 
 void PropertiesPanel::addGenericField(const QString  &key,
@@ -685,6 +797,7 @@ PropertiesPanel::createDwellTimeParameters(
         // Shape parameter
         QLineEdit *shape = new QLineEdit(
             currentParams.value("shape", "2.0").toString());
+        setExpandingWidgetPolicy(shape);
         paramFields["shape"] = shape;
         paramLayout->addRow(tr("Shape (k):"), shape);
 
@@ -692,6 +805,7 @@ PropertiesPanel::createDwellTimeParameters(
         QLineEdit *scale = new QLineEdit(
             currentParams.value("scale", "1440")
                 .toString());
+        setExpandingWidgetPolicy(scale);
         paramFields["scale"] = scale;
         paramLayout->addRow(tr("Scale (θ) minutes:"),
                             scale);
@@ -702,6 +816,7 @@ PropertiesPanel::createDwellTimeParameters(
         QLineEdit *scale = new QLineEdit(
             currentParams.value("scale", "2880")
                 .toString());
+        setExpandingWidgetPolicy(scale);
         paramFields["scale"] = scale;
         paramLayout->addRow(tr("Scale (λ) minutes:"),
                             scale);
@@ -711,6 +826,7 @@ PropertiesPanel::createDwellTimeParameters(
         // Mean parameter
         QLineEdit *mean = new QLineEdit(
             currentParams.value("mean", "2880").toString());
+        setExpandingWidgetPolicy(mean);
         paramFields["mean"] = mean;
         paramLayout->addRow(tr("Mean (minutes):"), mean);
 
@@ -718,6 +834,7 @@ PropertiesPanel::createDwellTimeParameters(
         QLineEdit *stdDev = new QLineEdit(
             currentParams.value("std_dev", "720")
                 .toString());
+        setExpandingWidgetPolicy(stdDev);
         paramFields["std_dev"] = stdDev;
         paramLayout->addRow(tr("Std Dev (minutes):"),
                             stdDev);
@@ -727,6 +844,7 @@ PropertiesPanel::createDwellTimeParameters(
         // Mean parameter (log-scale)
         QLineEdit *mean = new QLineEdit(
             currentParams.value("mean", "3.45").toString());
+        setExpandingWidgetPolicy(mean);
         paramFields["mean"] = mean;
         paramLayout->addRow(tr("Mean (log-scale):"), mean);
 
@@ -734,9 +852,14 @@ PropertiesPanel::createDwellTimeParameters(
         QLineEdit *sigma = new QLineEdit(
             currentParams.value("sigma", "0.25")
                 .toString());
+        setExpandingWidgetPolicy(sigma);
         paramFields["sigma"] = sigma;
         paramLayout->addRow(tr("Sigma:"), sigma);
     }
+
+    // Make the layout use all available width
+    paramLayout->setFieldGrowthPolicy(
+        QFormLayout::AllNonFixedFieldsGrow);
 
     return {paramLayout, paramFields};
 }
@@ -820,6 +943,20 @@ void PropertiesPanel::onDwellMethodChanged(
     {
         editFields[QString("dwell_time.parameters.%1")
                        .arg(it.key())] = it.value();
+    }
+
+    // Force layout update to show the new parameters
+    // immediately
+    dwellGroup->layout()->invalidate();
+    dwellGroup->layout()->activate();
+    dwellGroup->update();
+
+    // Also make sure the parameters get applied when saved
+    if (QComboBox *methodCombo = qobject_cast<QComboBox *>(
+            editFields["dwell_time.method"]))
+    {
+        methodCombo->setCurrentText(
+            method); // Ensure method is set
     }
 }
 

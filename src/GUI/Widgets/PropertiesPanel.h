@@ -124,6 +124,10 @@ private:
     void     handleRegionChange(TerminalItem  *terminal,
                                 const QString &newRegionName);
     void     setExpandingWidgetPolicy(QWidget *widget);
+    void     addDwellTimeParameterFields(
+            QFormLayout *layout, const QString &method,
+            const QMap<QString, QVariant> &currentParams =
+                QMap<QString, QVariant>());
 
     // Member variables
     MainWindow              *mainWindow;
