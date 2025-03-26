@@ -47,10 +47,10 @@ public:
     /**
      * @brief Set the position using WGS84 (geographic)
      * coordinates
-     * @param lat Latitude in degrees
      * @param lon Longitude in degrees
+     * @param lat Latitude in degrees
      */
-    void setFromWGS84(double lat, double lon);
+    void setFromWGS84(QPointF GeoPoint);
 
     /**
      * @brief Update the scale based on the "Scale" property

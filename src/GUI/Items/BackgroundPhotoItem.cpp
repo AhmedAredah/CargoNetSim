@@ -57,13 +57,12 @@ void BackgroundPhotoItem::updateCoordinates()
 
     // Update properties
     updateProperty("Latitude",
-                   QString::number(newPos.x(), 'f', 6));
-    updateProperty("Longitude",
                    QString::number(newPos.y(), 'f', 6));
+    updateProperty("Longitude",
+                   QString::number(newPos.x(), 'f', 6));
 }
 
-void BackgroundPhotoItem::setFromWGS84(double lat,
-                                       double lon)
+void BackgroundPhotoItem::setFromWGS84(QPointF GeoPoint)
 {
     // Get scene and view
     QGraphicsScene *graphicsScene = scene();
@@ -73,33 +72,32 @@ void BackgroundPhotoItem::setFromWGS84(double lat,
     }
 
     QGraphicsView *view = graphicsScene->views().first();
+    if (!view)
+    {
+        return;
+    }
 
-    // Get parent class to access wgs84_to_scene method
-    QObject *parentObj = view->parent();
-    if (!parentObj)
+    GraphicsView *gView =
+        dynamic_cast<GraphicsView *>(view);
+    if (!gView)
     {
         return;
     }
 
     // Convert from coordinates - call a method on the main
     // window
-    QPointF scenePos;
-
-    // Using Qt's meta-object system to call the method
-    // dynamically
-    QMetaObject::invokeMethod(
-        parentObj, "wgs84ToScene",
-        Q_RETURN_ARG(QPointF, scenePos), Q_ARG(double, lat),
-        Q_ARG(double, lon));
+    QPointF scenePos = gView->wgs84ToScene(GeoPoint);
 
     // Set position
     setPos(scenePos);
 
     // Update properties
-    updateProperty("Latitude",
-                   QString::number(lat, 'f', 6).toDouble());
-    updateProperty("Longitude",
-                   QString::number(lon, 'f', 6).toDouble());
+    updateProperty(
+        "Latitude",
+        QString::number(GeoPoint.y(), 'f', 6).toDouble());
+    updateProperty(
+        "Longitude",
+        QString::number(GeoPoint.x(), 'f', 6).toDouble());
 }
 
 QRectF BackgroundPhotoItem::boundingRect() const
