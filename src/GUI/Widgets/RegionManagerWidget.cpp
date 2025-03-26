@@ -219,10 +219,9 @@ void RegionManagerWidget::addRegion()
             ->setRegionVariable(newRegionName, "color",
                                 color);
 
-        // TODO
         // Create region center point
-        // mainWindow->createRegionCenter(newRegionName,
-        // color);
+        ViewController::createRegionCenter(
+            mainWindow, newRegionName, color);
 
         // // Update UI
         updateRegionList();
