@@ -45,19 +45,6 @@ public:
     virtual ~BackgroundPhotoItem() = default;
 
     /**
-     * @brief Lock or unlock the background from being moved
-     * @param locked True to prevent movement, false to
-     * allow movement
-     */
-    void setLocked(bool locked);
-
-    /**
-     * @brief Check if the background is locked
-     * @return True if locked, false otherwise
-     */
-    bool isLocked() const;
-
-    /**
      * @brief Set the position using WGS84 (geographic)
      * coordinates
      * @param lat Latitude in degrees
@@ -82,7 +69,7 @@ public:
      */
     QString getRegion() const
     {
-        return m_region;
+        return m_properties["Region"].toString();
     }
 
     /**
@@ -180,13 +167,6 @@ signals:
     void regionChanged(QString region);
 
     /**
-     * @brief Signal emitted when the locked state changes
-     * @param locked True if the item is now locked, false
-     * otherwise
-     */
-    void lockStateChanged(bool locked);
-
-    /**
      * @brief Signal emitted when properties change
      */
     void propertiesChanged();
@@ -213,14 +193,9 @@ private:
     void updateCoordinates();
 
     QPixmap m_pixmap; ///< The image to display
-    QString m_region; ///< The region this background
-                      ///< belongs to
     QMap<QString, QVariant>
          m_properties; ///< Properties map
-    bool m_locked;     ///< Whether the item is locked from
-                       ///< movement
     QPointF m_dragOffset;     ///< Offset for dragging
-    qreal   m_currentOpacity; ///< Current opacity value
 };
 
 } // namespace GUI
