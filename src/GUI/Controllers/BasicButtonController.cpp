@@ -410,17 +410,15 @@ void BasicButtonController::clearMeasurements(
 }
 
 void BasicButtonController::changeRegion(
-    MainWindow *mainWindow, int index)
+    MainWindow *mainWindow, const QString &region)
 {
     try
     {
-        QString currentRegion =
-            mainWindow->regionCombo_->currentText();
         CargoNetSim::CargoNetSimController::getInstance()
             .getRegionDataController()
-            ->setCurrentRegion(currentRegion);
+            ->setCurrentRegion(region);
         ViewController::updateSceneVisibility(mainWindow);
-        emit mainWindow->regionChanged(currentRegion);
+        emit mainWindow->regionChanged(region);
     }
     catch (const std::exception &e)
     {
@@ -505,7 +503,6 @@ void BasicButtonController::exportLog(
 void BasicButtonController::checkNetwork(
     MainWindow *mainWindow, GraphicsScene *scene)
 {
-    // TODO
     try
     {
         QString currentRegion =
@@ -1115,6 +1112,14 @@ void BasicButtonController::setupSignals(
         mainWindow,
         [mainWindow](const QString &regionName) {
             updateRegionComboBox(mainWindow);
+        });
+
+    QObject::connect(
+        mainWindow->regionCombo_,
+        &QComboBox::currentTextChanged,
+        [mainWindow](const QString &region) {
+            BasicButtonController::changeRegion(mainWindow,
+                                                region);
         });
 }
 

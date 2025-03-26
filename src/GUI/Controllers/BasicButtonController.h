@@ -99,11 +99,9 @@ public:
      * @brief Changes the current region based on the combo
      * box selection
      * @param mainWindow Pointer to the main window
-     * @param index The index of the selected region in the
-     * combo box
      */
-    static void changeRegion(MainWindow *mainWindow,
-                             int         index);
+    static void changeRegion(MainWindow    *mainWindow,
+                             const QString &region);
 
     /**
      * @brief Exports the log data to a file
