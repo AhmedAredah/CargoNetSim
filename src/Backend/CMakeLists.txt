@@ -24,6 +24,8 @@ set(Backend_SOURCES
     Models/PathSegment.cpp
     Models/Path.h
     Models/Path.cpp
+    Models/BaseObject.h
+    Models/BaseObject.cpp
 
     # Controllers
     Controllers/VehicleController.h
@@ -32,6 +34,8 @@ set(Backend_SOURCES
     Controllers/NetworkController.cpp
     Controllers/RegionDataController.h
     Controllers/RegionDataController.cpp
+    Controllers/CargoNetSimController.h
+    Controllers/CargoNetSimController.cpp
 
     # Clients
 

@@ -1,12 +1,16 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QPointF>
 #include <QRectF>
 #include <memory>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class GraphicsView;
 
@@ -19,7 +23,8 @@ class GraphicsView;
  * between two points with the calculated distance displayed
  * in the appropriate units (meters or kilometers).
  */
-class DistanceMeasurementTool : public QGraphicsObject {
+class DistanceMeasurementTool : public GraphicsObjectBase
+{
     Q_OBJECT
 
 public:
@@ -54,16 +59,18 @@ public:
      * @brief Get the start point of the measurement
      * @return The start point in scene coordinates
      */
-    QPointF getStartPoint() const {
-        return startPoint;
+    QPointF getStartPoint() const
+    {
+        return m_startPoint;
     }
 
     /**
      * @brief Get the end point of the measurement
      * @return The end point in scene coordinates
      */
-    QPointF getEndPoint() const {
-        return endPoint;
+    QPointF getEndPoint() const
+    {
+        return m_endPoint;
     }
 
     /**
@@ -185,21 +192,21 @@ private:
                                      double lat2,
                                      double lon2) const;
 
-    GraphicsView *view; ///< The graphics view this tool is
-                        ///< associated with
-    QPointF startPoint = QPointF(
+    GraphicsView *m_view; ///< The graphics view this tool
+                          ///< is associated with
+    QPointF m_startPoint = QPointF(
         std::nan(""),
         std::nan(
             "")); ///< The start point in scene coordinates
-    QPointF endPoint = QPointF(
+    QPointF m_endPoint = QPointF(
         std::nan(""),
         std::nan(
             "")); ///< The end point in scene coordinates
     mutable double
-        cachedDistance; ///< Cached distance value
-    mutable bool
-        distanceDirty; ///< Flag indicating if the distance
-                       ///< needs to be recalculated
+        m_cachedDistance;         ///< Cached distance value
+    mutable bool m_distanceDirty; ///< Flag indicating if
+                                  ///< the distance needs to
+                                  ///< be recalculated
 };
 
 } // namespace GUI

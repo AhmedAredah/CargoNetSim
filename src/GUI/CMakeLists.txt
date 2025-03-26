@@ -2,6 +2,9 @@
 set(GUI_SOURCES
     MainWindow.cpp
     MainWindow.h
+
+    # Commons
+    Commons/NetworkType.h
     
     # Controllers
     Controllers/BasicButtonController.cpp
@@ -38,6 +41,8 @@ set(GUI_SOURCES
     Items/ShapeIcon.h
     Items/TerminalItem.cpp
     Items/TerminalItem.h
+    Items/GraphicsObjectBase.h
+    Items/GraphicsObjectBase.cpp
     
     # Serializers
     Serializers/ProjectSerializer.cpp
@@ -87,7 +92,8 @@ set(GUI_SOURCES
 )
 
 # Create the GUI library
-add_library(CargoNetSimGUI STATIC ${GUI_SOURCES})
+add_library(CargoNetSimGUI STATIC ${GUI_SOURCES}
+    )
 
 # Link against dependencies
 target_link_libraries(CargoNetSimGUI

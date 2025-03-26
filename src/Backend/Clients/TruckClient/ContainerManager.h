@@ -13,9 +13,12 @@
 #include <QVector>
 #include <containerLib/container.h>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class ContainerManager
@@ -25,7 +28,8 @@ namespace TruckClient {
  * tracking and facilitates container transfers between
  * vehicles.
  */
-class ContainerManager : public QObject {
+class ContainerManager : public QObject
+{
     Q_OBJECT
 
 public:

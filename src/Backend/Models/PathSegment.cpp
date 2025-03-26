@@ -1,8 +1,10 @@
 #include "PathSegment.h"
 #include <stdexcept>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 // PathSegment constructor
 PathSegment::PathSegment(const QString &pathSegmentId,
@@ -15,10 +17,12 @@ PathSegment::PathSegment(const QString &pathSegmentId,
     , m_start(start)
     , m_end(end)
     , m_mode(mode)
-    , m_attributes(attributes) {
+    , m_attributes(attributes)
+{
     // Validate input parameters for construction
     if (pathSegmentId.isEmpty() || start.isEmpty()
-        || end.isEmpty()) {
+        || end.isEmpty())
+    {
         // Throw exception if any required field is missing
         throw std::invalid_argument(
             "Path segment parameters cannot be empty");
@@ -28,7 +32,8 @@ PathSegment::PathSegment(const QString &pathSegmentId,
 }
 
 // Convert PathSegment to JSON
-QJsonObject PathSegment::toJson() const {
+QJsonObject PathSegment::toJson() const
+{
     // Initialize JSON object for serialization
     QJsonObject json;
 
@@ -39,7 +44,8 @@ QJsonObject PathSegment::toJson() const {
     json["mode"]           = m_mode;
 
     // Include attributes only if not empty
-    if (!m_attributes.isEmpty()) {
+    if (!m_attributes.isEmpty())
+    {
         json["attributes"] = m_attributes;
     }
 

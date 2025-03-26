@@ -10,18 +10,23 @@
 
 Q_DECLARE_METATYPE(QWidget *)
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Terminal Path Delegate Implementation
 void TerminalPathDelegate::paint(
     QPainter *painter, const QStyleOptionViewItem &option,
-    const QModelIndex &index) const {
+    const QModelIndex &index) const
+{
     // Check if we're in the terminals column
-    if (index.column() == 2) {
+    if (index.column() == 2)
+    {
         QWidget *widget = qvariant_cast<QWidget *>(
             index.data(Qt::UserRole));
-        if (widget) {
+        if (widget)
+        {
             // Just render the widget in the cell
             QPixmap pixmap(widget->size());
             widget->render(&pixmap);
@@ -37,11 +42,14 @@ void TerminalPathDelegate::paint(
 
 QSize TerminalPathDelegate::sizeHint(
     const QStyleOptionViewItem &option,
-    const QModelIndex          &index) const {
-    if (index.column() == 2) {
+    const QModelIndex          &index) const
+{
+    if (index.column() == 2)
+    {
         QWidget *widget = qvariant_cast<QWidget *>(
             index.data(Qt::UserRole));
-        if (widget) {
+        if (widget)
+        {
             return widget->size();
         }
     }
@@ -50,11 +58,13 @@ QSize TerminalPathDelegate::sizeHint(
 
 ShortestPathsTable::ShortestPathsTable(QWidget *parent)
     : QWidget(parent)
-    , m_updatingUI(false) {
+    , m_updatingUI(false)
+{
     initUI();
 }
 
-void ShortestPathsTable::initUI() {
+void ShortestPathsTable::initUI()
+{
     auto layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(2);
@@ -74,7 +84,8 @@ void ShortestPathsTable::initUI() {
     layout->addLayout(buttonPanel);
 }
 
-void ShortestPathsTable::createTableWidget() {
+void ShortestPathsTable::createTableWidget()
+{
     m_table = new QTableWidget(this);
     m_table->setColumnCount(5);
     m_table->setHorizontalHeaderLabels(
@@ -109,7 +120,8 @@ void ShortestPathsTable::createTableWidget() {
             this, &ShortestPathsTable::onSelectionChanged);
 }
 
-void ShortestPathsTable::createPathButtonPanel() {
+void ShortestPathsTable::createPathButtonPanel()
+{
     m_compareButton =
         new QPushButton(tr("Compare Paths"), this);
     m_compareButton->setToolTip(
@@ -119,7 +131,8 @@ void ShortestPathsTable::createPathButtonPanel() {
             &ShortestPathsTable::onCompareButtonClicked);
 }
 
-void ShortestPathsTable::createExportPanel() {
+void ShortestPathsTable::createExportPanel()
+{
     m_exportButton =
         new QPushButton(tr("Export Path"), this);
     m_exportButton->setToolTip(
@@ -142,7 +155,8 @@ void ShortestPathsTable::addPath(
     const QVector<QString> &terminalNames,
     const QVector<QString> &transportationModes,
     const QVector<QString> &edgeIds, double predictedCost,
-    double actualCost) {
+    double actualCost)
+{
     // Store path data
     PathData pathData = {
         pathId,        terminalIds,
@@ -160,8 +174,10 @@ void ShortestPathsTable::addPath(
     m_exportAllButton->setEnabled(!m_pathData.isEmpty());
 }
 
-QWidget *ShortestPathsTable::createPathRow(
-    int pathId, const PathData &pathData) {
+QWidget *
+ShortestPathsTable::createPathRow(int             pathId,
+                                  const PathData &pathData)
+{
     auto widget = new QWidget();
     auto layout = new QHBoxLayout(widget);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -178,8 +194,8 @@ QWidget *ShortestPathsTable::createPathRow(
     layout->addWidget(showButton);
 
     // Add terminal names and transportation mode arrows
-    for (int i = 0; i < pathData.terminalNames.size();
-         ++i) {
+    for (int i = 0; i < pathData.terminalNames.size(); ++i)
+    {
         // Add terminal name
         auto nameLabel =
             new QLabel(pathData.terminalNames[i]);
@@ -188,7 +204,8 @@ QWidget *ShortestPathsTable::createPathRow(
 
         // Add arrow + transportation mode for all but the
         // last terminal
-        if (i < pathData.terminalNames.size() - 1) {
+        if (i < pathData.terminalNames.size() - 1)
+        {
             auto modeLabel = new QLabel();
             modeLabel->setAlignment(Qt::AlignCenter);
 
@@ -210,7 +227,8 @@ QWidget *ShortestPathsTable::createPathRow(
 }
 
 QPixmap ShortestPathsTable::createArrowPixmap(
-    const QString &mode) const {
+    const QString &mode) const
+{
     // Create a pixmap for the arrow with the mode text
     QPixmap pixmap(64, 40);
     pixmap.fill(Qt::transparent);
@@ -220,15 +238,19 @@ QPixmap ShortestPathsTable::createArrowPixmap(
 
     // Set color based on transportation mode
     QColor arrowColor = Qt::black;
-    if (mode.contains("Truck", Qt::CaseInsensitive)) {
+    if (mode.contains("Truck", Qt::CaseInsensitive))
+    {
         arrowColor =
             QColor(255, 0, 255); // Magenta for truck
-    } else if (mode.contains("Rail", Qt::CaseInsensitive)
-               || mode.contains("Train",
-                                Qt::CaseInsensitive)) {
+    }
+    else if (mode.contains("Rail", Qt::CaseInsensitive)
+             || mode.contains("Train", Qt::CaseInsensitive))
+    {
         arrowColor =
             QColor(80, 80, 80); // Dark gray for rail
-    } else if (mode.contains("Ship", Qt::CaseInsensitive)) {
+    }
+    else if (mode.contains("Ship", Qt::CaseInsensitive))
+    {
         arrowColor = QColor(0, 0, 255); // Blue for ship
     }
 
@@ -257,7 +279,8 @@ QPixmap ShortestPathsTable::createArrowPixmap(
     return pixmap;
 }
 
-void ShortestPathsTable::refreshTable() {
+void ShortestPathsTable::refreshTable()
+{
     m_updatingUI = true;
 
     // Clear the table but preserve the headers
@@ -265,11 +288,13 @@ void ShortestPathsTable::refreshTable() {
 
     // Add rows for each path
     for (auto it = m_pathData.begin();
-         it != m_pathData.end(); ++it) {
+         it != m_pathData.end(); ++it)
+    {
         int             pathId   = it.key();
         const PathData &pathData = it.value();
 
-        if (!pathData.isVisible) {
+        if (!pathData.isVisible)
+        {
             continue;
         }
 
@@ -346,30 +371,38 @@ void ShortestPathsTable::refreshTable() {
 
 void ShortestPathsTable::updateCosts(int    pathId,
                                      double predictedCost,
-                                     double actualCost) {
-    if (!m_pathData.contains(pathId)) {
+                                     double actualCost)
+{
+    if (!m_pathData.contains(pathId))
+    {
         return;
     }
 
     // Update the stored data
-    if (predictedCost >= 0) {
+    if (predictedCost >= 0)
+    {
         m_pathData[pathId].predictedCost = predictedCost;
     }
 
-    if (actualCost >= 0) {
+    if (actualCost >= 0)
+    {
         m_pathData[pathId].actualCost = actualCost;
     }
 
     // Update table display
-    for (int row = 0; row < m_table->rowCount(); ++row) {
+    for (int row = 0; row < m_table->rowCount(); ++row)
+    {
         auto idItem = m_table->item(row, 1);
-        if (idItem && idItem->text().toInt() == pathId) {
-            if (predictedCost >= 0) {
+        if (idItem && idItem->text().toInt() == pathId)
+        {
+            if (predictedCost >= 0)
+            {
                 m_table->item(row, 3)->setText(
                     QString::number(predictedCost, 'f', 2));
             }
 
-            if (actualCost >= 0) {
+            if (actualCost >= 0)
+            {
                 m_table->item(row, 4)->setText(
                     QString::number(actualCost, 'f', 2));
             }
@@ -379,18 +412,22 @@ void ShortestPathsTable::updateCosts(int    pathId,
 }
 
 const ShortestPathsTable::PathData *
-ShortestPathsTable::getDataByPathId(int pathId) const {
+ShortestPathsTable::getDataByPathId(int pathId) const
+{
     auto it = m_pathData.find(pathId);
-    if (it == m_pathData.end()) {
+    if (it == m_pathData.end())
+    {
         return nullptr;
     }
     return &(it.value());
 }
 
-int ShortestPathsTable::getSelectedPathId() const {
+int ShortestPathsTable::getSelectedPathId() const
+{
     QList<QTableWidgetItem *> selectedItems =
         m_table->selectedItems();
-    if (selectedItems.isEmpty()) {
+    if (selectedItems.isEmpty())
+    {
         return -1;
     }
 
@@ -399,10 +436,12 @@ int ShortestPathsTable::getSelectedPathId() const {
     return idItem ? idItem->text().toInt() : -1;
 }
 
-QVector<int> ShortestPathsTable::getCheckedPathIds() const {
+QVector<int> ShortestPathsTable::getCheckedPathIds() const
+{
     QVector<int> checkedPaths;
 
-    for (int row = 0; row < m_table->rowCount(); ++row) {
+    for (int row = 0; row < m_table->rowCount(); ++row)
+    {
         auto checkboxWidget = m_table->cellWidget(row, 0);
         if (!checkboxWidget)
             continue;
@@ -413,9 +452,11 @@ QVector<int> ShortestPathsTable::getCheckedPathIds() const {
 
         auto checkBox = qobject_cast<QCheckBox *>(
             layout->itemAt(0)->widget());
-        if (checkBox && checkBox->isChecked()) {
+        if (checkBox && checkBox->isChecked())
+        {
             auto idItem = m_table->item(row, 1);
-            if (idItem) {
+            if (idItem)
+            {
                 checkedPaths.append(idItem->text().toInt());
             }
         }
@@ -424,7 +465,8 @@ QVector<int> ShortestPathsTable::getCheckedPathIds() const {
     return checkedPaths;
 }
 
-void ShortestPathsTable::clear() {
+void ShortestPathsTable::clear()
+{
     m_pathData.clear();
     m_table->setRowCount(0);
 
@@ -433,31 +475,41 @@ void ShortestPathsTable::clear() {
     m_exportAllButton->setEnabled(false);
 }
 
-void ShortestPathsTable::onSelectionChanged() {
-    if (m_updatingUI) {
+void ShortestPathsTable::onSelectionChanged()
+{
+    if (m_updatingUI)
+    {
         return;
     }
 
     int pathId = getSelectedPathId();
-    if (pathId >= 0) {
+    if (pathId >= 0)
+    {
         emit pathSelected(pathId);
         m_exportButton->setEnabled(true);
-    } else {
+    }
+    else
+    {
         m_exportButton->setEnabled(false);
     }
 }
 
 void ShortestPathsTable::onItemCheckedChanged(int row,
-                                              int column) {
+                                              int column)
+{
     // This is handled by the checkbox state change
     // connections
 }
 
-void ShortestPathsTable::onCompareButtonClicked() {
+void ShortestPathsTable::onCompareButtonClicked()
+{
     QVector<int> checkedPaths = getCheckedPathIds();
-    if (checkedPaths.size() >= 2) {
+    if (checkedPaths.size() >= 2)
+    {
         emit pathComparisonRequested(checkedPaths);
-    } else {
+    }
+    else
+    {
         QMessageBox::information(
             this, tr("Path Comparison"),
             tr("Please select at least "
@@ -465,15 +517,19 @@ void ShortestPathsTable::onCompareButtonClicked() {
     }
 }
 
-void ShortestPathsTable::onExportButtonClicked() {
+void ShortestPathsTable::onExportButtonClicked()
+{
     int pathId = getSelectedPathId();
-    if (pathId >= 0) {
+    if (pathId >= 0)
+    {
         emit pathExportRequested(pathId);
     }
 }
 
-void ShortestPathsTable::onExportAllButtonClicked() {
-    if (!m_pathData.isEmpty()) {
+void ShortestPathsTable::onExportAllButtonClicked()
+{
+    if (!m_pathData.isEmpty())
+    {
         emit allPathsExportRequested();
     }
 }

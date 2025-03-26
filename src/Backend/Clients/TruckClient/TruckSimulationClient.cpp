@@ -13,9 +13,12 @@
 #include <QFuture>
 #include <QJsonDocument>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 TruckSimulationClient::TruckSimulationClient(
     const QString &exePath, QObject *parent,
@@ -31,7 +34,42 @@ TruckSimulationClient::TruckSimulationClient(
     , m_tripIdCounter(10000)
     , m_lastRequestId(-1)
     , m_sentMsgCounter(0)
-    , m_networkGraph(nullptr) {
+    , m_networkGraph(nullptr)
+{
+}
+
+TruckSimulationClient::~TruckSimulationClient()
+{
+    QMutexLocker locker(&m_dataMutex);
+
+    // Terminate and clean up all processes
+    for (auto *process : m_processes.values())
+    {
+        if (process->state() != QProcess::NotRunning)
+        {
+            process->terminate();
+            process->waitForFinished(3000);
+            if (process->state() != QProcess::NotRunning)
+            {
+                process->kill();
+            }
+        }
+        delete process;
+    }
+
+    // Clean up truck states
+    for (auto &stateList : m_truckStates)
+    {
+        qDeleteAll(stateList);
+    }
+
+    m_processes.clear();
+    m_truckStates.clear();
+}
+
+void TruckSimulationClient::initializeClient(
+    LoggerInterface *logger)
+{
     // Create managers as children of this client
     m_tripEndCallbackManager =
         new TripEndCallbackManager(this);
@@ -51,41 +89,19 @@ TruckSimulationClient::TruckSimulationClient(
                     data.rawData);
             });
 
-    if (m_logger) {
+    if (m_logger)
+    {
         m_logger->log("TruckSimulationClient initialized",
                       static_cast<int>(m_clientType));
     }
-}
-
-TruckSimulationClient::~TruckSimulationClient() {
-    QMutexLocker locker(&m_dataMutex);
-
-    // Terminate and clean up all processes
-    for (auto *process : m_processes.values()) {
-        if (process->state() != QProcess::NotRunning) {
-            process->terminate();
-            process->waitForFinished(3000);
-            if (process->state() != QProcess::NotRunning) {
-                process->kill();
-            }
-        }
-        delete process;
-    }
-
-    // Clean up truck states
-    for (auto &stateList : m_truckStates) {
-        qDeleteAll(stateList);
-    }
-
-    m_processes.clear();
-    m_truckStates.clear();
 }
 
 bool TruckSimulationClient::defineSimulator(
     const QString &networkName,
     const QString &masterFilePath, double simTime,
     const QMap<QString, QVariant> &configUpdates,
-    const QStringList             &argsUpdates) {
+    const QStringList             &argsUpdates)
+{
     // Prepare standard command-line arguments
     QStringList args = {
         "--mode",     "controlled",
@@ -98,7 +114,8 @@ bool TruckSimulationClient::defineSimulator(
     // Extract and add configuration updates if provided
     QJsonObject config =
         QJsonObject::fromVariantMap(configUpdates);
-    if (!config.isEmpty()) {
+    if (!config.isEmpty())
+    {
         QString host =
             config.value("MQ_HOST").toString("localhost");
         QString port =
@@ -111,7 +128,8 @@ bool TruckSimulationClient::defineSimulator(
     bool success = launchSimulator(
         networkName, masterFilePath, simTime, args);
 
-    if (success) {
+    if (success)
+    {
         QMutexLocker locker(&m_dataMutex);
         m_totalSimTimes[networkName] = simTime;
     }
@@ -120,14 +138,17 @@ bool TruckSimulationClient::defineSimulator(
 }
 
 bool TruckSimulationClient::runSimulator(
-    const QStringList &networkNames) {
+    const QStringList &networkNames)
+{
     QMutexLocker locker(&m_dataMutex);
     bool         allSucceeded = true;
 
-    for (const QString &name : networkNames) {
+    for (const QString &name : networkNames)
+    {
         if (m_processes.contains(name)
             && m_simulationTimes[name]
-                   < m_simulationHorizons[name]) {
+                   < m_simulationHorizons[name])
+        {
 
             // Format sync message using the new formatter
             QString msg = MessageFormatter::formatSyncGo(
@@ -139,7 +160,8 @@ bool TruckSimulationClient::runSimulator(
                 sendCommand(msg.toUtf8(), QJsonObject(),
                             m_sendingRoutingKey);
 
-            if (!sent) {
+            if (!sent)
+            {
                 allSucceeded = false;
             }
         }
@@ -149,12 +171,15 @@ bool TruckSimulationClient::runSimulator(
 }
 
 bool TruckSimulationClient::endSimulator(
-    const QStringList &networkNames) {
+    const QStringList &networkNames)
+{
     QMutexLocker locker(&m_dataMutex);
     bool         allSucceeded = true;
 
-    for (const QString &name : networkNames) {
-        if (m_processes.contains(name)) {
+    for (const QString &name : networkNames)
+    {
+        if (m_processes.contains(name))
+        {
             // Format end message using the new formatter
             QString msg = MessageFormatter::formatSyncEnd(
                 m_lastRequestId, m_simulationTimes[name]);
@@ -164,7 +189,8 @@ bool TruckSimulationClient::endSimulator(
                 sendCommand(msg.toUtf8(), QJsonObject(),
                             m_sendingRoutingKey);
 
-            if (!sent) {
+            if (!sent)
+            {
                 allSucceeded = false;
             }
 
@@ -179,14 +205,16 @@ bool TruckSimulationClient::endSimulator(
 QString TruckSimulationClient::addTrip(
     const QString &networkName, const QString &originId,
     const QString                           &destinationId,
-    const QList<ContainerCore::Container *> &containers) {
+    const QList<ContainerCore::Container *> &containers)
+{
     // Generate a trip ID
     int     tripId    = m_tripIdCounter++;
     QString tripIdStr = QString::number(tripId);
 
     // Find route links
     QList<int> linkIds;
-    if (m_networkGraph) {
+    if (m_networkGraph)
+    {
         QVector<QString> nodes =
             m_networkGraph->findShortestPath(originId,
                                              destinationId);
@@ -194,7 +222,9 @@ QString TruckSimulationClient::addTrip(
         linkIds =
             m_networkGraph->convertNodePathToLinkPath(nodes)
                 .toList();
-    } else {
+    }
+    else
+    {
         // Fallback to default link IDs if no graph is
         // available
         linkIds = {1, 2, 3};
@@ -213,7 +243,8 @@ QString TruckSimulationClient::addTrip(
     bool sent = sendCommand(msg.toUtf8(), QJsonObject(),
                             m_sendingRoutingKey);
 
-    if (!sent) {
+    if (!sent)
+    {
         return QString();
     }
 
@@ -227,7 +258,8 @@ QString TruckSimulationClient::addTrip(
     m_truckStates[networkName].append(state);
 
     // Assign containers to the trip
-    if (!containers.isEmpty()) {
+    if (!containers.isEmpty())
+    {
         m_containerManager->assignContainersToVehicle(
             QString("Truck_%1").arg(tripIdStr), containers);
     }
@@ -238,7 +270,8 @@ QString TruckSimulationClient::addTrip(
 QFuture<TripResult> TruckSimulationClient::addTripAsync(
     const QString &networkName, const QString &originId,
     const QString                           &destinationId,
-    const QList<ContainerCore::Container *> &containers) {
+    const QList<ContainerCore::Container *> &containers)
+{
     // Create trip request
     TripRequest request;
     request.networkName   = networkName;
@@ -255,7 +288,8 @@ QFuture<TripResult> TruckSimulationClient::addTripAsync(
                              destinationId, containers);
 
     // Register the trip with the async manager
-    if (!tripId.isEmpty()) {
+    if (!tripId.isEmpty())
+    {
         m_asyncTripManager->registerTrip(tripId, request);
     }
 
@@ -263,14 +297,16 @@ QFuture<TripResult> TruckSimulationClient::addTripAsync(
 }
 
 const TruckState *TruckSimulationClient::getTruckState(
-    const QString &networkName,
-    const QString &tripId) const {
+    const QString &networkName, const QString &tripId) const
+{
     QMutexLocker locker(&m_dataMutex);
 
     // Look up truck state
     for (const auto *state :
-         m_truckStates.value(networkName)) {
-        if (state->tripId() == tripId) {
+         m_truckStates.value(networkName))
+    {
+        if (state->tripId() == tripId)
+        {
             return state;
         }
     }
@@ -280,12 +316,14 @@ const TruckState *TruckSimulationClient::getTruckState(
 
 QList<const TruckState *>
 TruckSimulationClient::getAllNetworkTrucksStates(
-    const QString &networkName) const {
+    const QString &networkName) const
+{
     QMutexLocker              locker(&m_dataMutex);
     QList<const TruckState *> constStates;
 
     // Convert non-const states to const states
-    for (auto *state : m_truckStates.value(networkName)) {
+    for (auto *state : m_truckStates.value(networkName))
+    {
         constStates.append(state);
     }
 
@@ -293,7 +331,8 @@ TruckSimulationClient::getAllNetworkTrucksStates(
 }
 
 double TruckSimulationClient::getProgressPercentage(
-    const QString &networkName) const {
+    const QString &networkName) const
+{
     QMutexLocker locker(&m_dataMutex);
 
     // Calculate current progress
@@ -304,51 +343,60 @@ double TruckSimulationClient::getProgressPercentage(
 }
 
 double TruckSimulationClient::getSimulationTime(
-    const QString &networkName) const {
+    const QString &networkName) const
+{
     return m_simulationTimes.value(networkName, 0.0);
 }
 
 void TruckSimulationClient::setNetworkGraph(
-    const TransportationGraph<QString> *graph) {
+    const TransportationGraph<QString> *graph)
+{
     m_networkGraph = graph;
 }
 
 void TruckSimulationClient::registerTripEndCallback(
     const QString                           &callbackId,
-    std::function<void(const TripEndData &)> callback) {
+    std::function<void(const TripEndData &)> callback)
+{
     m_tripEndCallbackManager->registerGlobalCallback(
         callbackId, callback);
 }
 
 void TruckSimulationClient::registerTripSpecificCallback(
     const QString &tripId, const QString &callbackId,
-    std::function<void(const TripEndData &)> callback) {
+    std::function<void(const TripEndData &)> callback)
+{
     m_tripEndCallbackManager->registerTripCallback(
         tripId, callbackId, callback);
 }
 
 void TruckSimulationClient::unregisterTripEndCallback(
-    const QString &callbackId) {
+    const QString &callbackId)
+{
     m_tripEndCallbackManager->unregisterGlobalCallback(
         callbackId);
 }
 
 ContainerManager *
-TruckSimulationClient::getContainerManager() const {
+TruckSimulationClient::getContainerManager() const
+{
     return m_containerManager;
 }
 
 void TruckSimulationClient::processMessage(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Basic validation
-    if (!message.contains("body")) {
+    if (!message.contains("body"))
+    {
         return;
     }
 
     QString     body  = message["body"].toString();
     QStringList parts = body.split('/');
 
-    if (parts.size() < 9) {
+    if (parts.size() < 9)
+    {
         return;
     }
 
@@ -365,8 +413,8 @@ void TruckSimulationClient::processMessage(
                 MessageFormatter::MessageType::SYNC)
         && msgCode
                == static_cast<int>(
-                   MessageFormatter::MessageCode::
-                       SYNC_REQ)) {
+                   MessageFormatter::MessageCode::SYNC_REQ))
+    {
         // Handle sync request
         m_simulationTimes[networkName] =
             parts[8].toDouble();
@@ -377,17 +425,18 @@ void TruckSimulationClient::processMessage(
         // Progress the simulation
         locker.unlock();
         runSimulator({networkName});
-
-    } else if (msgType
-               == static_cast<int>(
-                   MessageFormatter::MessageType::
-                       TRIPS_INFO)) {
+    }
+    else if (msgType
+             == static_cast<int>(
+                 MessageFormatter::MessageType::TRIPS_INFO))
+    {
         // Parse payload as JSON
         QJsonObject payload =
             QJsonDocument::fromJson(parts[8].toUtf8())
                 .object();
 
-        if (payload.isEmpty()) {
+        if (payload.isEmpty())
+        {
             return;
         }
 
@@ -395,12 +444,14 @@ void TruckSimulationClient::processMessage(
 
         if (msgCode
             == static_cast<int>(
-                MessageFormatter::MessageCode::TRIP_END)) {
+                MessageFormatter::MessageCode::TRIP_END))
+        {
             // Handle trip end
             auto *state = const_cast<TruckState *>(
                 getTruckState(networkName, tripId));
 
-            if (state) {
+            if (state)
+            {
                 // Update state
                 state->updateFromJson(payload);
 
@@ -425,16 +476,18 @@ void TruckSimulationClient::processMessage(
                 emit tripEnded(networkName, tripId);
                 emit tripEndedWithData(tripData);
             }
-
-        } else if (msgCode
-                   == static_cast<int>(
-                       MessageFormatter::MessageCode::
-                           TRIP_INFO)) {
+        }
+        else if (msgCode
+                 == static_cast<int>(
+                     MessageFormatter::MessageCode::
+                         TRIP_INFO))
+        {
             // Handle trip info update
             auto *state = const_cast<TruckState *>(
                 getTruckState(networkName, tripId));
 
-            if (state) {
+            if (state)
+            {
                 // Update state with info
                 state->updateInfoFromJson(payload);
             }
@@ -445,16 +498,20 @@ void TruckSimulationClient::processMessage(
 bool TruckSimulationClient::launchSimulator(
     const QString &networkName,
     const QString &masterFilePath, double simTime,
-    const QStringList &args) {
+    const QStringList &args)
+{
     // Get directory and file information
     QDir    dir(QFileInfo(masterFilePath).absolutePath());
     QString newExePath =
         dir.filePath(QFileInfo(m_exePath).fileName());
 
     // Copy executable to working directory if needed
-    if (!QFile::exists(newExePath)) {
-        if (!QFile::copy(m_exePath, newExePath)) {
-            if (m_logger) {
+    if (!QFile::exists(newExePath))
+    {
+        if (!QFile::copy(m_exePath, newExePath))
+        {
+            if (m_logger)
+            {
                 m_logger->logError(
                     "Failed to copy executable to working "
                     "directory",
@@ -475,8 +532,10 @@ bool TruckSimulationClient::launchSimulator(
 
     // Start the process
     process->start(newExePath, args);
-    if (!process->waitForStarted(5000)) {
-        if (m_logger) {
+    if (!process->waitForStarted(5000))
+    {
+        if (m_logger)
+        {
             m_logger->logError(
                 "Failed to start simulator process",
                 static_cast<int>(m_clientType));

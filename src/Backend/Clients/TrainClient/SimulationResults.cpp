@@ -12,9 +12,12 @@
  * and review.
  */
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 SimulationResults::SimulationResults(
     const QVector<QPair<QString, QString>> &summaryData,
@@ -35,7 +38,8 @@ SimulationResults::SimulationResults(
 }
 
 SimulationResults
-SimulationResults::fromJson(const QJsonObject &jsonObj) {
+SimulationResults::fromJson(const QJsonObject &jsonObj)
+{
     // Vector to store summary data as text-value pairs
     QVector<QPair<QString, QString>> summaryData;
 
@@ -44,19 +48,22 @@ SimulationResults::fromJson(const QJsonObject &jsonObj) {
         jsonObj["summaryData"].toArray();
 
     // Iterate over each element in the summary array
-    for (const QJsonValue &pairVal : summaryArray) {
+    for (const QJsonValue &pairVal : summaryArray)
+    {
         // Convert value to object (expected format:
         // key-value pairs)
         QJsonObject pairObj = pairVal.toObject();
 
         // Process each key-value pair in the object
         for (auto it = pairObj.begin(); it != pairObj.end();
-             ++it) {
+             ++it)
+        {
             // Clean the key by removing whitespace
             QString key = it.key().trimmed();
 
             // Skip if key is empty to avoid invalid entries
-            if (!key.isEmpty()) {
+            if (!key.isEmpty())
+            {
                 // Get value, trim if it exists, empty
                 // string if not
                 QString value =
@@ -73,7 +80,8 @@ SimulationResults::fromJson(const QJsonObject &jsonObj) {
     QByteArray trajectoryFileData;
 
     // Check if trajectory data is included in JSON
-    if (jsonObj["trajectoryFileDataIncluded"].toBool()) {
+    if (jsonObj["trajectoryFileDataIncluded"].toBool())
+    {
         // Get base64-encoded string from JSON
         QString base64Data =
             jsonObj["trajectoryFileData"].toString();
@@ -100,28 +108,32 @@ SimulationResults::fromJson(const QJsonObject &jsonObj) {
         summaryFileName);   // Summary file name
 }
 
-SimulationSummaryData
-SimulationResults::summaryData() const {
+SimulationSummaryData SimulationResults::summaryData() const
+{
     // Return a copy of the stored summary data
     return m_summaryData;
 }
 
-QByteArray SimulationResults::trajectoryFileData() const {
+QByteArray SimulationResults::trajectoryFileData() const
+{
     // Return a copy of the stored trajectory file data
     return m_trajectoryFileData;
 }
 
-QString SimulationResults::trajectoryFileName() const {
+QString SimulationResults::trajectoryFileName() const
+{
     // Return the full trajectory file name with path
     return m_trajectoryFileName;
 }
 
-QString SimulationResults::summaryFileName() const {
+QString SimulationResults::summaryFileName() const
+{
     // Return the full summary file name with path
     return m_summaryFileName;
 }
 
-QString SimulationResults::getTrajectoryFileName() const {
+QString SimulationResults::getTrajectoryFileName() const
+{
     // Split the file name by '/' to separate path
     // components
     QStringList parts = m_trajectoryFileName.split("/");
@@ -130,7 +142,8 @@ QString SimulationResults::getTrajectoryFileName() const {
     return parts.isEmpty() ? "" : parts.last();
 }
 
-QString SimulationResults::getSummaryFileName() const {
+QString SimulationResults::getSummaryFileName() const
+{
     // Split the file name by '/' to separate path
     // components
     QStringList parts = m_summaryFileName.split("/");

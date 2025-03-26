@@ -11,8 +11,10 @@
 #include <atomic>
 #include <rabbitmq-c/amqp.h>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Handles RabbitMQ communication for the simulation
@@ -20,7 +22,8 @@ namespace Backend {
  * Manages connections to RabbitMQ, message sending and
  * receiving, and connection maintenance through heartbeats.
  */
-class RabbitMQHandler : public QObject {
+class RabbitMQHandler : public QObject
+{
     Q_OBJECT
 
 public:
@@ -75,6 +78,16 @@ public:
      * @return True if message sent successfully
      */
     bool sendCommand(const QJsonObject &message,
+                     const QString &routingKey = QString());
+
+    /**
+     * @brief Sends a command message to RabbitMQ as a plain
+     * string
+     * @param messageStr String message to send (any format)
+     * @param routingKey Routing key to use (optional)
+     * @return True if message sent successfully
+     */
+    bool sendCommand(const QString &messageStr,
                      const QString &routingKey = QString());
 
     /**
@@ -155,13 +168,20 @@ private:
     void processMessages();
 
     /**
-     * @brief Publishes a raw message to RabbitMQ
-     * @param message Raw message bytes
-     * @param routingKey Routing key
-     * @return True if published successfully
+     * @brief Internal helper method to send messages to
+     * RabbitMQ
+     * @param data The raw message data to send
+     * @param contentType The MIME content type of the
+     * message
+     * @param messageId The message ID to use (or empty to
+     * generate one)
+     * @param routingKey The routing key to use (optional)
+     * @return True if message sent successfully
      */
-    bool publishMessage(const QByteArray &message,
-                        const QString    &routingKey);
+    bool sendMessage(const QByteArray &data,
+                     const QString    &contentType,
+                     const QString    &messageId,
+                     const QString    &routingKey);
 
     /**
      * @brief Reconnects the sending connection

@@ -16,8 +16,19 @@
 #include <QWaitCondition>
 #include <atomic>
 
-namespace CargoNetSim {
-namespace Backend {
+// Forward declaration
+namespace CargoNetSim
+{
+namespace Backend
+{
+class CargoNetSimController;
+} // namespace Backend
+} // namespace CargoNetSim
+
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Base class for simulation clients
@@ -26,7 +37,8 @@ namespace Backend {
  * processing responses. Ensures commands are processed one
  * at a time with proper waiting for server responses.
  */
-class SimulationClientBase : public QObject {
+class SimulationClientBase : public QObject
+{
     Q_OBJECT
 
 public:
@@ -107,6 +119,13 @@ public:
      */
     virtual void
     initializeClient(LoggerInterface *logger = nullptr);
+
+    /**
+     * @brief Sets the controller reference
+     * @param controller Pointer to controller
+     */
+    virtual void
+    setController(CargoNetSimController *controller);
 
     /**
      * @brief Checks if client is connected to server
@@ -205,12 +224,16 @@ protected:
      * @param command Command name
      * @param params Command parameters (optional)
      * @param routingKey Custom routing key (optional)
+     * @param sendAsText Whether to send the command as text
+     * or json (optional). If this is set to true, no params
+     * will be considered.
      * @return True if command was sent successfully
      */
     virtual bool
     sendCommand(const QString     &command,
                 const QJsonObject &params = QJsonObject(),
-                const QString     &routingKey = QString());
+                const QString     &routingKey = QString(),
+                bool               sendAsText = false);
 
     /**
      * @brief Creates a command object with parameters
@@ -301,11 +324,12 @@ protected:
      */
     template <typename Func>
     auto executeSerializedCommand(Func func)
-        -> decltype(func()) {
+        -> decltype(func())
+    {
         // Check if m_rabbitMQHandler exists and is
         // connected
-        if (m_rabbitMQHandler == nullptr
-            || !isConnected()) {
+        if (m_rabbitMQHandler == nullptr || !isConnected())
+        {
             qWarning()
                 << "Cannot execute command: RabbitMQ "
                    "handler"
@@ -340,6 +364,9 @@ protected:
 
     // Logging interface
     LoggerInterface *m_logger;
+
+    // Controller
+    CargoNetSimController *m_controller = nullptr;
 
     // Command timeout constant
     static const int COMMAND_TIMEOUT_MS =

@@ -20,8 +20,10 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class Path
@@ -34,7 +36,8 @@ namespace Backend {
  * @note Owns PathSegment pointers and deletes them on
  * destruction.
  */
-class Path : public QObject {
+class Path : public QObject
+{
     Q_OBJECT
 public:
     /**
@@ -69,7 +72,8 @@ public:
      *
      * Returns the ID assigned to this path.
      */
-    int getPathId() const {
+    int getPathId() const
+    {
         return m_pathId;
     }
 
@@ -79,7 +83,8 @@ public:
      *
      * Returns the sum of edge and terminal costs.
      */
-    double getTotalPathCost() const {
+    double getTotalPathCost() const
+    {
         return m_totalPathCost;
     }
 
@@ -89,7 +94,8 @@ public:
      *
      * Returns the cumulative cost of path segments.
      */
-    double getTotalEdgeCosts() const {
+    double getTotalEdgeCosts() const
+    {
         return m_totalEdgeCosts;
     }
 
@@ -99,7 +105,8 @@ public:
      *
      * Returns the cumulative cost at terminals.
      */
-    double getTotalTerminalCosts() const {
+    double getTotalTerminalCosts() const
+    {
         return m_totalTerminalCosts;
     }
 
@@ -109,7 +116,8 @@ public:
      *
      * Returns information about terminals in the path.
      */
-    QList<QJsonObject> getTerminalsInPath() const {
+    QList<QJsonObject> getTerminalsInPath() const
+    {
         return m_terminalsInPath;
     }
 
@@ -119,7 +127,8 @@ public:
      *
      * Returns the segments composing this path.
      */
-    QList<PathSegment *> getSegments() const {
+    QList<PathSegment *> getSegments() const
+    {
         return m_segments;
     }
 

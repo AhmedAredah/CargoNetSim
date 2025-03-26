@@ -19,7 +19,7 @@
 #include "../MainWindow.h"
 #include "../Utils/ColorUtils.h"
 #include "../Widgets/ColorPickerDialog.h"
-#include "Backend/Controllers/RegionDataController.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 
 // External services - these would be properly included in
 // your project #include
@@ -27,13 +27,17 @@
 // #include
 // "service_clients/network_handlers/truck_network/truck_network_manager.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
-    : QDockWidget("Network Manager", parent) {
+    : QDockWidget("Network Manager", parent)
+{
     mainWindow = qobject_cast<MainWindow *>(parent);
-    if (!mainWindow) {
+    if (!mainWindow)
+    {
         // Fallback if not directly parented to MainWindow
         mainWindow =
             qobject_cast<MainWindow *>(parent->window());
@@ -67,7 +71,8 @@ NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
 
     // Connect to region change signals if MainWindow
     // provides them
-    if (mainWindow) {
+    if (mainWindow)
+    {
         connect(mainWindow, &MainWindow::regionChanged,
                 this, [this](const QString &region) {
                     // updateNetworkListForChangedRegion("Train
@@ -77,7 +82,8 @@ NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
 }
 
 QWidget *NetworkManagerDialog::createNetworkTab(
-    const QString &networkType) {
+    const QString &networkType)
+{
     QWidget     *tab    = new QWidget();
     QVBoxLayout *layout = new QVBoxLayout(tab);
 
@@ -152,7 +158,8 @@ QWidget *NetworkManagerDialog::createNetworkTab(
 }
 
 void NetworkManagerDialog::onSelectionChanged(
-    const QString &networkType) {
+    const QString &networkType)
+{
     QListWidget *listWidget = findChild<QListWidget *>(
         networkType.toLower().replace(" ", "_") + "_list");
 
@@ -168,67 +175,72 @@ void NetworkManagerDialog::onSelectionChanged(
 
     // Enable/disable buttons based on selection
     for (auto it = buttons.begin(); it != buttons.end();
-         ++it) {
+         ++it)
+    {
         it.value()->setEnabled(hasSelection);
     }
 }
 
 void NetworkManagerDialog::addNetwork(
-    const QString &networkType) {
+    const QString &networkType)
+{
     if (!mainWindow)
         return;
 
-    QString currentRegion =
-        Backend::RegionDataController::getInstance()
-            .getCurrentRegion();
-    Backend::RegionData *
-        regionData; //=
-                    // RegionsData::getInstance()->getRegionData(currentRegion);
+    Backend::RegionData *regionData =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegionData();
 
     if (!regionData)
         return;
 
     // Map network types to their corresponding methods
-    QMap<QString, QList<QString>> networkConfig;
-
-    if (networkType == "Train Network") {
-        networkConfig["networks"] =
-            regionData->getTrainNetworks();
-    } else if (networkType == "Truck Network") {
-        networkConfig["networks"] =
-            regionData->getTruckNetworks();
-    } else {
+    QStringList networkNames;
+    if (networkType == "Train Network")
+    {
+        networkNames = regionData->getTrainNetworks();
+    }
+    else if (networkType == "Truck Network")
+    {
+        networkNames = regionData->getTruckNetworks();
+    }
+    else
+    {
         return;
     }
 
     // Check for existing network
-    if (!networkConfig["networks"].isEmpty()) {
+    if (!networkNames.isEmpty())
+    {
         QMessageBox::warning(
             this, "Warning",
             QString("One %1 is allowed for region '%2'")
                 .arg(networkType.toLower())
-                .arg(currentRegion));
+                .arg(regionData->getRegion()));
         return;
     }
 
     // Import the new network
-    try {
+    try
+    {
         QString networkName;
 
-        // if (networkType == "Train Network") {
-        //     networkName =
-        //     NetworkController::importTrainNetwork(
-        //         mainWindow, currentRegion,
-        //         ColorUtils::getRandomColor());
-        // } else {
-        //     networkName =
-        //     NetworkController::importTruckNetwork(
-        //         mainWindow, currentRegion,
-        //         ColorUtils::getRandomColor());
-        // }
+        if (networkType == "Train Network")
+        {
+            networkName = NetworkController::importNetwork(
+                mainWindow, NetworkType::Train, regionData);
+        }
+        else
+        {
+            networkName = NetworkController::importNetwork(
+                mainWindow, NetworkType::Truck, regionData);
+        }
 
         updateNetworkList(networkType);
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         QMessageBox::critical(
             this, "Error",
             QString("Failed to import %1: %2")
@@ -238,7 +250,8 @@ void NetworkManagerDialog::addNetwork(
 }
 
 void NetworkManagerDialog::deleteNetwork(
-    const QString &networkType) {
+    const QString &networkType)
+{
     QListWidget *listWidget = findChild<QListWidget *>(
         networkType.toLower().replace(" ", "_") + "_list");
 
@@ -248,7 +261,8 @@ void NetworkManagerDialog::deleteNetwork(
     QListWidgetItem *currentItem =
         listWidget->currentItem();
 
-    if (!currentItem) {
+    if (!currentItem)
+    {
         QMessageBox::warning(
             this, "Warning",
             "Please select a network to delete.");
@@ -266,24 +280,27 @@ void NetworkManagerDialog::deleteNetwork(
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::No);
 
-    if (reply == QMessageBox::Yes) {
-        try {
-            // if (networkType == "Train Network") {
-            //     NetworkController::removeTrainNetwork(
-            //         mainWindow,
-            //         mainWindow->getCurrentRegion(),
-            //         "train_" + currentItem->text()
-            //     );
-            // } else {
-            //     NetworkController::removeTruckNetwork(
-            //         mainWindow,
-            //         mainWindow->getCurrentRegion(),
-            //         "truck_" + currentItem->text()
-            //     );
-            // }
+    if (reply == QMessageBox::Yes)
+    {
+        try
+        {
+            Backend::RegionData *regionData =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegionData();
+
+            NetworkType type =
+                (networkType == "Train Network")
+                    ? NetworkType::Train
+                    : NetworkType::Truck;
+            NetworkController::removeNetwork(
+                mainWindow, type, networkName, regionData);
 
             updateNetworkList(networkType);
-        } catch (const std::exception &e) {
+        }
+        catch (const std::exception &e)
+        {
             QMessageBox::critical(
                 this, "Error",
                 QString("Failed to delete network: %1")
@@ -293,7 +310,8 @@ void NetworkManagerDialog::deleteNetwork(
 }
 
 void NetworkManagerDialog::renameNetwork(
-    const QString &networkType) {
+    const QString &networkType)
+{
     QListWidget *listWidget = findChild<QListWidget *>(
         networkType.toLower().replace(" ", "_") + "_list");
 
@@ -303,7 +321,8 @@ void NetworkManagerDialog::renameNetwork(
     QListWidgetItem *currentItem =
         listWidget->currentItem();
 
-    if (!currentItem) {
+    if (!currentItem)
+    {
         QMessageBox::warning(
             this, "Warning",
             "Please select a network to rename.");
@@ -312,19 +331,24 @@ void NetworkManagerDialog::renameNetwork(
 
     QString              oldName = currentItem->text();
     Backend::RegionData *regionData =
-        Backend::RegionDataController::getInstance()
-            .getRegionData(
-                Backend::RegionDataController::getInstance()
-                    .getCurrentRegion());
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getRegionData(
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegion());
 
-    while (true) {
+    while (true)
+    {
         bool    ok;
         QString newName = QInputDialog::getText(
             this, "Rename Network",
             "Enter new network name:", QLineEdit::Normal,
             oldName, &ok);
 
-        if (!ok || newName.isEmpty()) {
+        if (!ok || newName.isEmpty())
+        {
             return;
         }
 
@@ -336,15 +360,19 @@ void NetworkManagerDialog::renameNetwork(
 
         // Check if network exists using appropriate method
         bool networkExists = false;
-        if (networkType == "Train Network") {
+        if (networkType == "Train Network")
+        {
             networkExists = regionData->trainNetworkExists(
                 newNameStore);
-        } else {
+        }
+        else
+        {
             networkExists = regionData->truckNetworkExists(
                 newNameStore);
         }
 
-        if (networkExists && newNameStore != oldNameStore) {
+        if (networkExists && newNameStore != oldNameStore)
+        {
             QMessageBox::warning(
                 this, "Name Already Exists",
                 QString(
@@ -354,12 +382,16 @@ void NetworkManagerDialog::renameNetwork(
             continue;
         }
 
-        try {
+        try
+        {
             // Call appropriate rename method
-            if (networkType == "Train Network") {
+            if (networkType == "Train Network")
+            {
                 regionData->renameTrainNetwork(
                     oldNameStore, newNameStore);
-            } else {
+            }
+            else
+            {
                 regionData->renameTruckNetwork(
                     oldNameStore, newNameStore);
             }
@@ -393,7 +425,9 @@ void NetworkManagerDialog::renameNetwork(
             //     }
             // }
             break;
-        } catch (const std::exception &e) {
+        }
+        catch (const std::exception &e)
+        {
             QMessageBox::critical(
                 this, "Error",
                 QString("Failed to rename network: %1")
@@ -404,7 +438,8 @@ void NetworkManagerDialog::renameNetwork(
 }
 
 void NetworkManagerDialog::changeNetworkColor(
-    const QString &networkType) {
+    const QString &networkType)
+{
     QListWidget *listWidget = findChild<QListWidget *>(
         networkType.toLower().replace(" ", "_") + "_list");
 
@@ -414,7 +449,8 @@ void NetworkManagerDialog::changeNetworkColor(
     QListWidgetItem *currentItem =
         listWidget->currentItem();
 
-    if (!currentItem) {
+    if (!currentItem)
+    {
         QMessageBox::warning(
             this, "Warning",
             "Please select a network to change color.");
@@ -422,12 +458,14 @@ void NetworkManagerDialog::changeNetworkColor(
     }
 
     ColorPickerDialog colorDialog(nullptr, this);
-    if (!colorDialog.exec()) {
+    if (!colorDialog.exec())
+    {
         return;
     }
 
     QColor newColor = colorDialog.getSelectedColor();
-    if (!newColor.isValid()) {
+    if (!newColor.isValid())
+    {
         return;
     }
 
@@ -485,7 +523,8 @@ void NetworkManagerDialog::changeNetworkColor(
 }
 
 void NetworkManagerDialog::updateNetworkList(
-    const QString &networkType) {
+    const QString &networkType)
+{
     QListWidget *listWidget = findChild<QListWidget *>(
         networkType.toLower().replace(" ", "_") + "_list");
 
@@ -494,7 +533,8 @@ void NetworkManagerDialog::updateNetworkList(
 
     // Store current checkbox states before clearing
     QMap<QString, Qt::CheckState> checkboxStates;
-    for (int i = 0; i < listWidget->count(); ++i) {
+    for (int i = 0; i < listWidget->count(); ++i)
+    {
         QListWidgetItem *item        = listWidget->item(i);
         checkboxStates[item->text()] = item->checkState();
     }
@@ -515,14 +555,17 @@ void NetworkManagerDialog::updateNetworkList(
 
     // Get the current region
     QString currentRegion;
-    if (mainWindow) {
-        currentRegion =
-            Backend::RegionDataController::getInstance()
-                .getCurrentRegion();
+    if (mainWindow)
+    {
+        currentRegion = CargoNetSim::CargoNetSimController::
+                            getInstance()
+                                .getRegionDataController()
+                                ->getCurrentRegion();
     }
 
     // Add network items to list
-    for (const QString &networkName : networkNames) {
+    for (const QString &networkName : networkNames)
+    {
         QColor  color;
         QString region;
 
@@ -546,13 +589,15 @@ void NetworkManagerDialog::updateNetworkList(
         // }
 
         // Only show networks for the current region
-        if (region != currentRegion) {
+        if (region != currentRegion)
+        {
             continue;
         }
 
         // Create list item
         QString displayName = networkName;
-        if (displayName.startsWith(prefix)) {
+        if (displayName.startsWith(prefix))
+        {
             displayName = displayName.mid(prefix.length());
         }
 
@@ -568,7 +613,8 @@ void NetworkManagerDialog::updateNetworkList(
         item->setCheckState(checkState);
 
         // Set color icon
-        if (color.isValid()) {
+        if (color.isValid())
+        {
             item->setIcon(QIcon(createColorPixmap(color)));
         }
 
@@ -586,13 +632,15 @@ void NetworkManagerDialog::updateNetworkList(
 
 void NetworkManagerDialog::
     updateNetworkListForChangedRegion(
-        const QString &regionName) {
+        const QString &regionName)
+{
     updateNetworkList("Train Network");
     updateNetworkList("Truck Network");
 }
 
 void NetworkManagerDialog::onItemCheckedChanged(
-    QListWidgetItem *item, const QString &networkType) {
+    QListWidgetItem *item, const QString &networkType)
+{
     if (!item || !mainWindow)
         return;
 
@@ -600,12 +648,17 @@ void NetworkManagerDialog::onItemCheckedChanged(
     bool    isVisible   = item->checkState() == Qt::Checked;
 
     // Add prefix based on network type
-    if (networkType == "Train Network") {
-        if (!networkName.startsWith("train_")) {
+    if (networkType == "Train Network")
+    {
+        if (!networkName.startsWith("train_"))
+        {
             networkName = "train_" + networkName;
         }
-    } else if (networkType == "Truck Network") {
-        if (!networkName.startsWith("truck_")) {
+    }
+    else if (networkType == "Truck Network")
+    {
+        if (!networkName.startsWith("truck_"))
+        {
             networkName = "truck_" + networkName;
         }
     }
@@ -633,7 +686,8 @@ void NetworkManagerDialog::onItemCheckedChanged(
 
 QPixmap
 NetworkManagerDialog::createColorPixmap(const QColor &color,
-                                        int size) {
+                                        int           size)
+{
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
 
@@ -646,21 +700,24 @@ NetworkManagerDialog::createColorPixmap(const QColor &color,
     return pixmap;
 }
 
-void NetworkManagerDialog::clear() {
+void NetworkManagerDialog::clear()
+{
     // Clear both list widgets
     QListWidget *trainList =
         findChild<QListWidget *>("train_network_list");
     QListWidget *truckList =
         findChild<QListWidget *>("truck_network_list");
 
-    if (trainList) {
+    if (trainList)
+    {
         trainList->clear();
         // Disconnect any existing signals
         trainList->disconnect(
             SIGNAL(itemChanged(QListWidgetItem *)));
     }
 
-    if (truckList) {
+    if (truckList)
+    {
         truckList->clear();
         truckList->disconnect(
             SIGNAL(itemChanged(QListWidgetItem *)));

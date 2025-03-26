@@ -7,8 +7,12 @@
 #include <QTimer>
 #include <QUuid>
 
-namespace CargoNetSim {
-namespace Backend {
+#include "Backend/Controllers/CargoNetSimController.h"
+
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * Constructor initializes the client with connection
@@ -35,20 +39,25 @@ SimulationClientBase::SimulationClientBase(
           receivingRoutingKeys.isEmpty()
               ? QStringList{"default_key"}
               : receivingRoutingKeys)
-    , m_processingCommand(false) {}
+    , m_processingCommand(false)
+{
+}
 
 /**
  * Destructor ensures clean shutdown.
  */
-SimulationClientBase::~SimulationClientBase() {
+SimulationClientBase::~SimulationClientBase()
+{
     disconnectFromServer();
 
     // Delete the rabbitMQHandler
-    if (m_rabbitMQHandler) {
+    if (m_rabbitMQHandler)
+    {
         delete m_rabbitMQHandler;
     }
 
-    if (m_logger) {
+    if (m_logger)
+    {
         delete m_logger;
     }
     qDebug() << "SimulationClientBase destroyed for"
@@ -56,7 +65,8 @@ SimulationClientBase::~SimulationClientBase() {
 }
 
 void SimulationClientBase::initializeClient(
-    LoggerInterface *logger) {
+    LoggerInterface *logger)
+{
 
     // Set the logger interface
     m_logger = logger;
@@ -85,7 +95,8 @@ void SimulationClientBase::initializeClient(
 
     qDebug() << "SimulationClientBase initialized for"
              << getClientTypeString();
-    if (m_logger) {
+    if (m_logger)
+    {
         m_logger->log(
             "SimulationClientBase initialized for "
                 + getClientTypeString(),
@@ -93,10 +104,17 @@ void SimulationClientBase::initializeClient(
     }
 }
 
+void SimulationClientBase::setController(
+    CargoNetSimController *controller)
+{
+    m_controller = controller;
+}
+
 /**
  * Checks if the client is connected to the server.
  */
-bool SimulationClientBase::isConnected() const {
+bool SimulationClientBase::isConnected() const
+{
     return m_rabbitMQHandler
            && m_rabbitMQHandler->isConnected();
 }
@@ -104,12 +122,15 @@ bool SimulationClientBase::isConnected() const {
 /**
  * Connects to the simulation server.
  */
-bool SimulationClientBase::connectToServer() {
+bool SimulationClientBase::connectToServer()
+{
     // Check if m_rabbitMQHandler exists
-    if (m_rabbitMQHandler == nullptr) {
+    if (m_rabbitMQHandler == nullptr)
+    {
         qWarning() << "Cannot execute command: RabbitMQ "
                       "handler not initialized";
-        if (m_logger) {
+        if (m_logger)
+        {
             m_logger->logError(
                 "Cannot execute command: RabbitMQ "
                 "handler not initialized",
@@ -121,13 +142,17 @@ bool SimulationClientBase::connectToServer() {
 
     bool success = m_rabbitMQHandler->establishConnection();
 
-    if (success) {
+    if (success)
+    {
         qDebug() << getClientTypeString()
                  << "connected to server";
-    } else {
+    }
+    else
+    {
         qWarning() << getClientTypeString()
                    << "failed to connect to server";
-        if (m_logger) {
+        if (m_logger)
+        {
             m_logger->logError(
                 getClientTypeString()
                     + " failed to connect to server",
@@ -141,12 +166,15 @@ bool SimulationClientBase::connectToServer() {
 /**
  * Disconnects from the simulation server.
  */
-void SimulationClientBase::disconnectFromServer() {
+void SimulationClientBase::disconnectFromServer()
+{
     // Check if m_rabbitMQHandler exists
-    if (m_rabbitMQHandler == nullptr) {
+    if (m_rabbitMQHandler == nullptr)
+    {
         qWarning() << "Cannot execute command: RabbitMQ "
                       "handler not initialized";
-        if (m_logger) {
+        if (m_logger)
+        {
             m_logger->logError(
                 "Cannot execute command: RabbitMQ "
                 "handler not initialized",
@@ -165,15 +193,18 @@ void SimulationClientBase::disconnectFromServer() {
 /**
  * Get client type enumeration
  */
-ClientType SimulationClientBase::getClientType() const {
+ClientType SimulationClientBase::getClientType() const
+{
     return m_clientType;
 }
 
 /**
  * Get client type as string
  */
-QString SimulationClientBase::getClientTypeString() const {
-    switch (m_clientType) {
+QString SimulationClientBase::getClientTypeString() const
+{
+    switch (m_clientType)
+    {
     case ClientType::ShipClient:
         return "ShipClient";
     case ClientType::TrainClient:
@@ -193,12 +224,15 @@ QString SimulationClientBase::getClientTypeString() const {
 bool SimulationClientBase::sendCommandAndWait(
     const QString &command, const QJsonObject &params,
     const QStringList &expectedEvents, int timeoutMs,
-    const QString &routingKey) {
+    const QString &routingKey)
+{
     // Early check to avoid unnecessary work
-    if (expectedEvents.isEmpty()) {
+    if (expectedEvents.isEmpty())
+    {
         qWarning()
             << "Cannot wait for empty expected events list";
-        if (m_logger) {
+        if (m_logger)
+        {
             m_logger->logError(
                 "Cannot wait for empty expected events "
                 "list",
@@ -211,7 +245,8 @@ bool SimulationClientBase::sendCommandAndWait(
     // names
     {
         QMutexLocker locker(&m_eventMutex);
-        for (const QString &event : expectedEvents) {
+        for (const QString &event : expectedEvents)
+        {
             QString normalized = normalizeEventName(event);
             m_receivedEvents.remove(normalized);
         }
@@ -219,9 +254,11 @@ bool SimulationClientBase::sendCommandAndWait(
 
     // Send the command
     bool sent = sendCommand(command, params, routingKey);
-    if (!sent) {
+    if (!sent)
+    {
         qWarning() << "Failed to send command:" << command;
-        if (m_logger) {
+        if (m_logger)
+        {
             m_logger->logError(
                 "Failed to send command: " + command,
                 static_cast<int>(m_clientType));
@@ -232,11 +269,13 @@ bool SimulationClientBase::sendCommandAndWait(
 
     // Wait for the expected event
     bool received = waitForEvent(expectedEvents, timeoutMs);
-    if (!received) {
+    if (!received)
+    {
         qWarning()
             << "Timeout waiting for response to command:"
             << command;
-        if (m_logger) {
+        if (m_logger)
+        {
             m_logger->logError(
                 "Timeout waiting for response to command: "
                     + command,
@@ -253,7 +292,8 @@ bool SimulationClientBase::sendCommandAndWait(
  */
 bool SimulationClientBase::sendCommand(
     const QString &command, const QJsonObject &params,
-    const QString &routingKey) {
+    const QString &routingKey, bool sendAsText)
+{
     QJsonObject commandObj =
         createCommandObject(command, params);
 
@@ -269,9 +309,12 @@ bool SimulationClientBase::sendCommand(
     bool success = m_rabbitMQHandler->sendCommand(
         commandObj, routingKey);
 
-    if (success) {
+    if (success)
+    {
         emit commandSent(commandId, command);
-    } else {
+    }
+    else
+    {
         QString errorMsg = "Failed to send command";
         emit errorOccurred(errorMsg);
     }
@@ -283,7 +326,8 @@ bool SimulationClientBase::sendCommand(
  * Creates a command object with parameters.
  */
 QJsonObject SimulationClientBase::createCommandObject(
-    const QString &command, const QJsonObject &params) {
+    const QString &command, const QJsonObject &params)
+{
     QJsonObject commandObj;
     commandObj["command"] = command;
     commandObj["timestamp"] =
@@ -292,7 +336,8 @@ QJsonObject SimulationClientBase::createCommandObject(
         static_cast<int>(m_clientType);
 
     // Add parameters if they exist
-    if (!params.isEmpty()) {
+    if (!params.isEmpty())
+    {
         commandObj["params"] = params;
     }
 
@@ -303,18 +348,22 @@ QJsonObject SimulationClientBase::createCommandObject(
  * Waits for any of the specified events to be received.
  */
 bool SimulationClientBase::waitForEvent(
-    const QStringList &expectedEvents, int timeoutMs) {
+    const QStringList &expectedEvents, int timeoutMs)
+{
     QMutexLocker locker(&m_eventMutex);
 
     // Normalize expected event names
     QStringList normalizedEvents;
-    for (const QString &event : expectedEvents) {
+    for (const QString &event : expectedEvents)
+    {
         normalizedEvents.append(normalizeEventName(event));
     }
 
     // Check if any expected event is already received
-    for (const QString &eventName : normalizedEvents) {
-        if (m_receivedEvents.contains(eventName)) {
+    for (const QString &eventName : normalizedEvents)
+    {
+        if (m_receivedEvents.contains(eventName))
+        {
             // Found an expected event, remove it from
             // registry
             m_receivedEvents.remove(eventName);
@@ -332,13 +381,15 @@ bool SimulationClientBase::waitForEvent(
         &eventLoop,
         [&](const QString &eventName, const QJsonObject &) {
             if (normalizedEvents.contains(
-                    normalizeEventName(eventName))) {
+                    normalizeEventName(eventName)))
+            {
                 eventLoop.quit();
             }
         });
 
     // Setup timeout if requested
-    if (timeoutMs > 0) {
+    if (timeoutMs > 0)
+    {
         timeoutTimer.setSingleShot(true);
         connect(&timeoutTimer, &QTimer::timeout, &eventLoop,
                 &QEventLoop::quit);
@@ -353,14 +404,17 @@ bool SimulationClientBase::waitForEvent(
 
     // Disconnect and stop timer
     disconnect(eventConnection);
-    if (timeoutTimer.isActive()) {
+    if (timeoutTimer.isActive())
+    {
         timeoutTimer.stop();
     }
 
     // Re-acquire mutex and check if event was received
     locker.relock();
-    for (const QString &eventName : normalizedEvents) {
-        if (m_receivedEvents.contains(eventName)) {
+    for (const QString &eventName : normalizedEvents)
+    {
+        if (m_receivedEvents.contains(eventName))
+        {
             m_receivedEvents.remove(eventName);
             return true;
         }
@@ -374,7 +428,8 @@ bool SimulationClientBase::waitForEvent(
  * Checks if a specific event has been received.
  */
 bool SimulationClientBase::hasReceivedEvent(
-    const QString &eventName) const {
+    const QString &eventName) const
+{
     QMutexLocker locker(&m_eventMutex);
     return m_receivedEvents.contains(
         normalizeEventName(eventName));
@@ -384,11 +439,13 @@ bool SimulationClientBase::hasReceivedEvent(
  * Gets data for a received event.
  */
 QJsonObject SimulationClientBase::getEventData(
-    const QString &eventName) const {
+    const QString &eventName) const
+{
     QMutexLocker locker(&m_eventMutex);
     QString      normalized = normalizeEventName(eventName);
 
-    if (m_receivedEvents.contains(normalized)) {
+    if (m_receivedEvents.contains(normalized))
+    {
         return m_receivedEvents.value(normalized);
     }
 
@@ -399,10 +456,12 @@ QJsonObject SimulationClientBase::getEventData(
  * Processes a message from the server.
  */
 void SimulationClientBase::processMessage(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Extract event name if present
     QString eventName;
-    if (message.contains("event")) {
+    if (message.contains("event"))
+    {
         eventName = message.value("event").toString();
         QString normalizedEvent =
             normalizeEventName(eventName);
@@ -415,7 +474,8 @@ void SimulationClientBase::processMessage(
     }
 
     // Check if this is a command response
-    if (message.contains("commandId")) {
+    if (message.contains("commandId"))
+    {
         QString commandId =
             message.value("commandId").toString();
         bool success =
@@ -426,7 +486,8 @@ void SimulationClientBase::processMessage(
                                    message);
 
         // Check for errors
-        if (!success && message.contains("error")) {
+        if (!success && message.contains("error"))
+        {
             QString errorMsg =
                 message.value("error").toString();
             emit errorOccurred(errorMsg);
@@ -438,7 +499,8 @@ void SimulationClientBase::processMessage(
  * Normalizes an event name for consistent lookup.
  */
 QString SimulationClientBase::normalizeEventName(
-    const QString &eventName) {
+    const QString &eventName)
+{
     return eventName.trimmed().toLower().remove(' ');
 }
 
@@ -446,8 +508,8 @@ QString SimulationClientBase::normalizeEventName(
  * Registers an event with the event system.
  */
 void SimulationClientBase::registerEvent(
-    const QString     &eventName,
-    const QJsonObject &eventData) {
+    const QString &eventName, const QJsonObject &eventData)
+{
     QMutexLocker locker(&m_eventMutex);
     m_receivedEvents[eventName] = eventData;
     m_eventCondition.wakeAll();
@@ -458,7 +520,8 @@ void SimulationClientBase::registerEvent(
 /**
  * Clears all registered events.
  */
-void SimulationClientBase::clearEvents() {
+void SimulationClientBase::clearEvents()
+{
     QMutexLocker locker(&m_eventMutex);
     m_receivedEvents.clear();
 }
@@ -467,7 +530,8 @@ void SimulationClientBase::clearEvents() {
  * Handles incoming messages from RabbitMQ.
  */
 void SimulationClientBase::handleMessage(
-    const QJsonObject &message) {
+    const QJsonObject &message)
+{
     // Print the received message to inspect its content
     qDebug() << "Received message:"
              << QJsonDocument(message).toJson(

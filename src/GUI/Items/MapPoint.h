@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QColor>
 #include <QGraphicsObject>
 #include <QMap>
@@ -7,8 +9,10 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class TerminalItem;
 
@@ -19,7 +23,8 @@ class TerminalItem;
  * that can be linked to a terminal. It can have different
  * shapes and belongs to a specific network region.
  */
-class MapPoint : public QGraphicsObject {
+class MapPoint : public GraphicsObjectBase
+{
     Q_OBJECT
 
 public:
@@ -30,17 +35,17 @@ public:
      * references
      * @param x The x coordinate
      * @param y The y coordinate
-     * @param shape The shape to draw ("circle",
-     * "rectangle", "triangle")
      * @param region The network region this point belongs
      * to
+     * @param shape The shape to draw ("circle",
+     * "rectangle", "triangle")
      * @param terminal Optional terminal linked to this
      * point
      * @param properties Optional additional properties
      */
     MapPoint(const QString &referencedNetworkID, qreal x,
-             qreal y, const QString &shape = "circle",
-             const QString &region   = "default",
+             qreal y, const QString &region,
+             const QString &shape    = "circle",
              TerminalItem  *terminal = nullptr,
              const QMap<QString, QVariant> &properties =
                  QMap<QString, QVariant>());
@@ -56,6 +61,26 @@ public:
     void setLinkedTerminal(TerminalItem *terminal);
 
     /**
+     * @brief Sets the reference network that this point is
+     * created from
+     * @param network The network pointer
+     */
+    void setReferenceNetwork(QObject *network)
+    {
+        m_referenceNetwork = network;
+    }
+
+    /**
+     * @brief Get the reference network that this point is
+     * created from
+     * @return QObject* The network pointer
+     */
+    QObject *getReferenceNetwork()
+    {
+        return m_referenceNetwork;
+    }
+
+    /**
      * @brief Sets the color of the point
      *
      * @param color The new color
@@ -63,10 +88,11 @@ public:
     void setColor(const QColor &color);
 
     /**
-     * @brief Sets the region of the point
+     * @brief Sets the m_region of the point
      */
-    void setRegion(const QString &region) {
-        this->region = region;
+    void setRegion(const QString &region)
+    {
+        this->m_properties["region"] = region;
     }
 
     /**
@@ -77,40 +103,49 @@ public:
         const QMap<QString, QVariant> &newProperties);
 
     /**
-     * @brief Get the current terminal linked to this point
+     * @brief Get the current m_terminal linked to this
+     * point
      *
-     * @return TerminalItem* The linked terminal or nullptr
+     * @return TerminalItem* The linked m_terminal or
+     * nullptr
      */
-    TerminalItem *getLinkedTerminal() const {
-        return terminal;
+    TerminalItem *getLinkedTerminal() const
+    {
+        return m_terminal;
     }
 
     /**
-     * @brief Get the x coordinate
+     * @brief Get the m_x coordinate
      */
-    qreal getX() const {
-        return x;
+    qreal getX() const
+    {
+        return m_x;
     }
 
     /**
-     * @brief Get the y coordinate
+     * @brief Get the m_y coordinate
      */
-    qreal getY() const {
-        return y;
+    qreal getY() const
+    {
+        return m_y;
     }
 
     /**
-     * @brief Get the network region
+     * @brief Get the network m_region
      */
-    QString getRegion() const {
-        return region;
+    QString getRegion() const
+    {
+        return m_properties
+            .value("region", "Default Region")
+            .toString();
     }
 
     /**
-     * @brief Get the properties map
+     * @brief Get the m_properties map
      */
-    const QMap<QString, QVariant> &getProperties() const {
-        return properties;
+    const QMap<QString, QVariant> &getProperties() const
+    {
+        return m_properties;
     }
 
     /**
@@ -176,14 +211,14 @@ private:
 
     static int POINT_ID;
 
-    int                     id;
-    qreal                   x;
-    qreal                   y;
-    QString                 shape;
-    QString                 region;
-    TerminalItem           *terminal;
-    QColor                  color;
-    QMap<QString, QVariant> properties;
+    int                     m_id;
+    qreal                   m_x;
+    qreal                   m_y;
+    QString                 m_shape;
+    TerminalItem           *m_terminal;
+    QColor                  m_color;
+    QMap<QString, QVariant> m_properties;
+    QObject                *m_referenceNetwork;
 };
 
 } // namespace GUI

@@ -9,14 +9,13 @@
 
 // Placeholder includes (you would have these implemented)
 #include "Backend/Models/ShipSystem.h"
-// #include "TerminalGraphServer.h"
-// #include "SimulatorTimeServer.h"
-// #include "ProgressBarManager.h"
-// #include "ApplicationLogger.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 
 ShipState::ShipState(const QJsonObject &shipData)
     : m_shipId(shipData.value("shipID").toString("Unknown"))
@@ -55,7 +54,8 @@ ShipState::ShipState(const QJsonObject &shipData)
     , m_energyConsumption(0.0)
     , m_carbonDioxideEmitted(
           shipData.value("carbonDioxideEmitted")
-              .toDouble(0.0)) {
+              .toDouble(0.0))
+{
     // Parse consumption data
     QJsonObject consumption =
         shipData.value("consumption").toObject();
@@ -66,7 +66,8 @@ ShipState::ShipState(const QJsonObject &shipData)
     // Parse fuel consumption
     QJsonArray fuelConsumption =
         consumption.value("fuelConsumption").toArray();
-    for (const QJsonValue &fuelEntry : fuelConsumption) {
+    for (const QJsonValue &fuelEntry : fuelConsumption)
+    {
         QJsonObject fuelObj = fuelEntry.toObject();
         QString     fuelType =
             fuelObj.value("fuelType").toString("Unknown");
@@ -79,7 +80,8 @@ ShipState::ShipState(const QJsonObject &shipData)
     // Parse energy sources
     QJsonArray energySources =
         shipData.value("energySources").toArray();
-    for (const QJsonValue &sourceValue : energySources) {
+    for (const QJsonValue &sourceValue : energySources)
+    {
         QJsonObject source = sourceValue.toObject();
         QVariantMap sourceMap;
         sourceMap["capacity"] =
@@ -101,7 +103,8 @@ ShipState::ShipState(const QJsonObject &shipData)
 
     QJsonArray posArray =
         position.value("position").toArray();
-    for (const QJsonValue &pos : posArray) {
+    for (const QJsonValue &pos : posArray)
+    {
         m_position.append(pos.toDouble(0.0));
     }
 
@@ -118,7 +121,8 @@ ShipState::ShipState(const QJsonObject &shipData)
 }
 
 QVariant
-ShipState::getMetric(const QString &metricName) const {
+ShipState::getMetric(const QString &metricName) const
+{
     if (metricName == "shipId")
         return m_shipId;
     if (metricName == "travelledDistance")
@@ -162,7 +166,8 @@ ShipState::getMetric(const QString &metricName) const {
     return QVariant();
 }
 
-QVariantMap ShipState::info() const {
+QVariantMap ShipState::info() const
+{
     QVariantMap info;
     info["shipId"]               = m_shipId;
     info["travelledDistance"]    = m_travelledDistance;
@@ -186,21 +191,22 @@ QVariantMap ShipState::info() const {
     // Add fuel consumption
     QVariantMap fuelMap;
     for (auto it = m_fuelConsumption.constBegin();
-         it != m_fuelConsumption.constEnd(); ++it) {
+         it != m_fuelConsumption.constEnd(); ++it)
+    {
         fuelMap[it.key()] = it.value();
     }
     info["fuelConsumption"] = fuelMap;
 
     info["carbonDioxideEmitted"] = m_carbonDioxideEmitted;
-    // info["energySources"] = QVariant(m_energySources); //
-    // TODO
+    info["energySources"] =
+        QVariant::fromValue(m_energySources);
 
     // Position information
     QVariantMap positionMap;
     positionMap["latitude"]  = m_latitude;
     positionMap["longitude"] = m_longitude;
-    // positionMap["position"] = QVariant(m_position);  //
-    // TODO
+    positionMap["position"] =
+        QVariant::fromValue(m_position);
     info["position"] = positionMap;
 
     // Environmental information
@@ -216,7 +222,8 @@ QVariantMap ShipState::info() const {
     return info;
 }
 
-QJsonObject ShipState::toJson() const {
+QJsonObject ShipState::toJson() const
+{
     QJsonObject json;
     json["shipID"]               = m_shipId;
     json["travelledDistance"]    = m_travelledDistance;
@@ -242,7 +249,8 @@ QJsonObject ShipState::toJson() const {
 
     QJsonArray fuelConsumption;
     for (auto it = m_fuelConsumption.constBegin();
-         it != m_fuelConsumption.constEnd(); ++it) {
+         it != m_fuelConsumption.constEnd(); ++it)
+    {
         QJsonObject fuelObj;
         fuelObj["fuelType"]             = it.key();
         fuelObj["consumedVolumeLiters"] = it.value();
@@ -255,7 +263,8 @@ QJsonObject ShipState::toJson() const {
 
     // Energy sources
     QJsonArray energySources;
-    for (const QVariantMap &source : m_energySources) {
+    for (const QVariantMap &source : m_energySources)
+    {
         QJsonObject sourceObj;
         sourceObj["capacity"] =
             source["capacity"].toDouble();
@@ -274,7 +283,8 @@ QJsonObject ShipState::toJson() const {
     position["longitude"] = m_longitude;
 
     QJsonArray positionArray;
-    for (double pos : m_position) {
+    for (double pos : m_position)
+    {
         positionArray.append(pos);
     }
     position["position"] = positionArray;
@@ -294,39 +304,48 @@ QJsonObject ShipState::toJson() const {
     return json;
 }
 
-QString ShipState::shipId() const {
+QString ShipState::shipId() const
+{
     return m_shipId;
 }
 
-double ShipState::travelledDistance() const {
+double ShipState::travelledDistance() const
+{
     return m_travelledDistance;
 }
 
-double ShipState::currentSpeed() const {
+double ShipState::currentSpeed() const
+{
     return m_currentSpeed;
 }
 
-double ShipState::currentAcceleration() const {
+double ShipState::currentAcceleration() const
+{
     return m_currentAcceleration;
 }
 
-bool ShipState::isLoaded() const {
+bool ShipState::isLoaded() const
+{
     return m_loaded;
 }
 
-bool ShipState::reachedDestination() const {
+bool ShipState::reachedDestination() const
+{
     return m_reachedDestination;
 }
 
-double ShipState::tripTime() const {
+double ShipState::tripTime() const
+{
     return m_tripTime;
 }
 
-int ShipState::containersCount() const {
+int ShipState::containersCount() const
+{
     return m_containersCount;
 }
 
-QString ShipState::closestPort() const {
+QString ShipState::closestPort() const
+{
     return m_closestPort;
 }
 

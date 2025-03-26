@@ -9,8 +9,10 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class TerminalTypes
@@ -24,7 +26,8 @@ namespace Backend {
  * particularly for the Q_ENUM macro to register the enum
  * with Qt's meta-object system.
  */
-class TerminalTypes : public QObject {
+class TerminalTypes : public QObject
+{
     Q_OBJECT
 public:
     /**
@@ -36,7 +39,8 @@ public:
      * cargo terminal might have, which affects how cargo is
      * loaded/unloaded and what transport modes can connect.
      */
-    enum class TerminalInterface {
+    enum class TerminalInterface
+    {
         LAND_SIDE, /**< Interface for land-based
                       transportation (e.g., trucks, trains)
                     */

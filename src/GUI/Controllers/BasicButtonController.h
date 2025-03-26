@@ -6,8 +6,10 @@
 #include <QString>
 #include <QToolButton>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Forward declarations
 class MainWindow;
@@ -24,7 +26,8 @@ class TerminalItem;
  * application window. It manages button state toggling,
  * grid settings, connection modes, and other UI operations.
  */
-class BasicButtonController {
+class BasicButtonController
+{
 public:
     /**
      * @brief Resets all toggle buttons except the active
@@ -96,11 +99,9 @@ public:
      * @brief Changes the current region based on the combo
      * box selection
      * @param mainWindow Pointer to the main window
-     * @param index The index of the selected region in the
-     * combo box
      */
-    static void changeRegion(MainWindow *mainWindow,
-                             int         index);
+    static void changeRegion(MainWindow    *mainWindow,
+                             const QString &region);
 
     /**
      * @brief Exports the log data to a file

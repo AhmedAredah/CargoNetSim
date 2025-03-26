@@ -17,19 +17,23 @@
 #include "../../Backend/Models/TrainSystem.h"
 #include "../Utils/IconCreator.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 TrainManagerDialog::TrainManagerDialog(QWidget *parent)
     : QDialog(parent)
     , m_table(nullptr)
     , m_detailsText(nullptr)
     , m_loadButton(nullptr)
-    , m_deleteButton(nullptr) {
+    , m_deleteButton(nullptr)
+{
     initUI();
 }
 
-void TrainManagerDialog::initUI() {
+void TrainManagerDialog::initUI()
+{
     setWindowTitle(tr("Train Manager"));
     setMinimumSize(800, 600);
 
@@ -108,9 +112,12 @@ void TrainManagerDialog::initUI() {
                 bool hasSelection =
                     !m_table->selectedItems().isEmpty();
                 m_deleteButton->setEnabled(hasSelection);
-                if (hasSelection) {
+                if (hasSelection)
+                {
                     updateTrainDetails();
-                } else {
+                }
+                else
+                {
                     m_detailsText->clear();
                 }
             });
@@ -140,31 +147,37 @@ void TrainManagerDialog::initUI() {
 }
 
 void TrainManagerDialog::setTrains(
-    const QVector<Backend::Train *> trains) {
+    const QVector<Backend::Train *> trains)
+{
     m_trains = trains;
     updateTable();
     emit trainListChanged();
 }
 
 QVector<Backend::Train *>
-TrainManagerDialog::getTrains() const {
+TrainManagerDialog::getTrains() const
+{
     return m_trains;
 }
 
-void TrainManagerDialog::loadTrains() {
+void TrainManagerDialog::loadTrains()
+{
     QString fileName = QFileDialog::getOpenFileName(
         this, tr("Load Trains File"), QString(),
         tr("DAT Files (*.dat);;All Files (*)"));
 
-    if (fileName.isEmpty()) {
+    if (fileName.isEmpty())
+    {
         return;
     }
 
-    try {
+    try
+    {
         QVector<Backend::Train *> newTrains =
             Backend::TrainsReader::readTrainsFile(fileName);
 
-        if (newTrains.isEmpty()) {
+        if (newTrains.isEmpty())
+        {
             QMessageBox::warning(
                 this, tr("Warning"),
                 tr("No trains were found in the selected "
@@ -183,7 +196,9 @@ void TrainManagerDialog::loadTrains() {
 
         emit trainsLoaded(newTrains.size(), true);
         emit trainListChanged();
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         QMessageBox::critical(
             this, tr("Error"),
             tr("Failed to load trains: %1").arg(e.what()));
@@ -191,9 +206,11 @@ void TrainManagerDialog::loadTrains() {
     }
 }
 
-void TrainManagerDialog::deleteTrain() {
+void TrainManagerDialog::deleteTrain()
+{
     int currentRow = m_table->currentRow();
-    if (currentRow < 0 || currentRow >= m_trains.size()) {
+    if (currentRow < 0 || currentRow >= m_trains.size())
+    {
         return;
     }
 
@@ -208,7 +225,8 @@ void TrainManagerDialog::deleteTrain() {
                               QMessageBox::Yes
                                   | QMessageBox::No);
 
-    if (reply != QMessageBox::Yes) {
+    if (reply != QMessageBox::Yes)
+    {
         return;
     }
 
@@ -221,10 +239,12 @@ void TrainManagerDialog::deleteTrain() {
     emit trainListChanged();
 }
 
-void TrainManagerDialog::updateTable() {
+void TrainManagerDialog::updateTable()
+{
     m_table->setRowCount(0);
 
-    for (const auto &train : m_trains) {
+    for (const auto &train : m_trains)
+    {
         int row = m_table->rowCount();
         m_table->insertRow(row);
 
@@ -236,7 +256,8 @@ void TrainManagerDialog::updateTable() {
         // Locomotives summary
         QString     locoStr;
         const auto &locomotives = train->getLocomotives();
-        for (int i = 0; i < locomotives.size(); ++i) {
+        for (int i = 0; i < locomotives.size(); ++i)
+        {
             const auto &loco = locomotives[i];
             locoStr +=
                 QString("%1x Type %2 (%3kW)")
@@ -244,7 +265,8 @@ void TrainManagerDialog::updateTable() {
                     .arg(loco->getLocoType())
                     .arg(loco->getPower(), 0, 'f', 0);
 
-            if (i < locomotives.size() - 1) {
+            if (i < locomotives.size() - 1)
+            {
                 locoStr += "; ";
             }
         }
@@ -255,13 +277,15 @@ void TrainManagerDialog::updateTable() {
         // Cars summary
         QString     carsStr;
         const auto &cars = train->getCars();
-        for (int i = 0; i < cars.size(); ++i) {
+        for (int i = 0; i < cars.size(); ++i)
+        {
             const auto &car = cars[i];
             carsStr += QString("%1x Type %2")
                            .arg(car->getCount())
                            .arg(car->getCarType());
 
-            if (i < cars.size() - 1) {
+            if (i < cars.size() - 1)
+            {
                 carsStr += "; ";
             }
         }
@@ -271,9 +295,11 @@ void TrainManagerDialog::updateTable() {
     }
 }
 
-void TrainManagerDialog::updateTrainDetails() {
+void TrainManagerDialog::updateTrainDetails()
+{
     int currentRow = m_table->currentRow();
-    if (currentRow < 0 || currentRow >= m_trains.size()) {
+    if (currentRow < 0 || currentRow >= m_trains.size())
+    {
         m_detailsText->clear();
         return;
     }
@@ -283,7 +309,8 @@ void TrainManagerDialog::updateTrainDetails() {
 }
 
 QString TrainManagerDialog::formatTrainDetails(
-    const Backend::Train *train) const {
+    const Backend::Train *train) const
+{
     QString details =
         QString("<h2>Train Details for train ID: %1</h2>"
                 "<h3>Locomotives:</h3>"
@@ -291,7 +318,8 @@ QString TrainManagerDialog::formatTrainDetails(
             .arg(train->getUserId());
 
     // Locomotive details
-    for (const auto &loco : train->getLocomotives()) {
+    for (const auto &loco : train->getLocomotives())
+    {
         details +=
             QString("<li><b>Type %1:</b> %2 units<ul>"
                     "    <li>Power: %3 kW</li>"
@@ -308,7 +336,8 @@ QString TrainManagerDialog::formatTrainDetails(
     details += "</ul><h3>Cars:</h3><ul>";
 
     // Car details
-    for (const auto &car : train->getCars()) {
+    for (const auto &car : train->getCars())
+    {
         details +=
             QString("<li><b>Type %1:</b> %2 units<ul>"
                     "    <li>Count: %3 tons</li>"
@@ -327,11 +356,15 @@ QString TrainManagerDialog::formatTrainDetails(
     // Train path
     details += "<h3>Train Path:</h3>";
     const auto &pathNodes = train->getTrainPathOnNodeIds();
-    if (pathNodes.isEmpty()) {
+    if (pathNodes.isEmpty())
+    {
         details += "<p>No path assigned</p>";
-    } else {
+    }
+    else
+    {
         details += "<ul>";
-        for (const auto &nodeId : pathNodes) {
+        for (const auto &nodeId : pathNodes)
+        {
             details +=
                 QString("<li>Node %1</li>").arg(nodeId);
         }

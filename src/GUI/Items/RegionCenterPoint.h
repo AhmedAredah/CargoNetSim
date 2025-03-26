@@ -1,13 +1,17 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QColor>
 #include <QGraphicsObject>
 #include <QMap>
 #include <QPointF>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @class RegionCenterPoint
@@ -19,7 +23,8 @@ namespace GUI {
  * including geographic coordinates and shared coordinates
  * that are used for global map positioning.
  */
-class RegionCenterPoint : public QGraphicsObject {
+class RegionCenterPoint : public GraphicsObjectBase
+{
     Q_OBJECT
 
 public:
@@ -31,7 +36,7 @@ public:
      * @param parent Optional parent QGraphicsItem
      */
     RegionCenterPoint(
-        const QColor                  &color,
+        const QString &region, const QColor &color,
         const QMap<QString, QVariant> &properties =
             QMap<QString, QVariant>(),
         QGraphicsItem *parent = nullptr);
@@ -43,18 +48,35 @@ public:
 
     /**
      * @brief Updates the region's center coordinates.
-     * @param lat New latitude
-     * @param lon New longitude
+     * @param geoPoint New geodetic coordinates (long, lat)
      */
-    void updateCoordinates(double lat, double lon);
+    void updateCoordinates(QPointF geoPoint);
 
     /**
      * @brief Updates the region's shared coordinates for
      * global mapping.
-     * @param lat New shared latitude
-     * @param lon New shared longitude
+     * @param geoPoint New shared geodetic coordinates
+     * (long, lat)
      */
-    void updateSharedCoordinates(double lat, double lon);
+    void updateSharedCoordinates(QPointF geoPoint);
+
+    /**
+     * @brief Set the point's newRegion
+     *
+     * @param newRegion New newRegion name
+     */
+    void setRegion(const QString &newRegion);
+
+    /**
+     * @brief Get the point's region
+     *
+     * @return Current region name
+     */
+    QString getRegion() const
+    {
+        return properties.value("Region", "Default Region")
+            .toString();
+    }
 
     /**
      * @brief Sets the region's color.
@@ -75,7 +97,8 @@ public:
      * @return QMap<QString, QVariant> of the item
      * properties
      */
-    QMap<QString, QVariant> getProperties() const {
+    QMap<QString, QVariant> getProperties() const
+    {
         return properties;
     }
 
@@ -110,19 +133,24 @@ signals:
     void positionChanged(const QPointF &newPos);
 
     /**
-     * @brief Signal emitted when the coordinates change.
-     * @param lat New latitude
-     * @param lon New longitude
+     * @brief Emitted when center point region changes
+     *
+     * @param newRegion New region name
      */
-    void coordinatesChanged(double lat, double lon);
+    void regionChanged(const QString &newRegion);
+
+    /**
+     * @brief Signal emitted when the coordinates change.
+     * @param GeoPoint Geodetic point (long, lat)
+     */
+    void coordinatesChanged(QPointF GeoPoint);
 
     /**
      * @brief Signal emitted when the shared coordinates
      * change.
-     * @param lat New shared latitude
-     * @param lon New shared longitude
+     * @param GeoPoint Geodetic point (long, lat)
      */
-    void sharedCoordinatesChanged(double lat, double lon);
+    void sharedCoordinatesChanged(QPointF GeoPoint);
 
     /**
      * @brief Signal emitted when the region color changes.

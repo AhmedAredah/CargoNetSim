@@ -7,9 +7,12 @@
 
 #include "TruckState.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 TruckState::TruckState(const QString &networkName,
                        int tripId, const QString &originId,
@@ -19,16 +22,20 @@ TruckState::TruckState(const QString &networkName,
     , m_networkName(networkName)
     , m_tripId(tripId)
     , m_originId(originId)
-    , m_destinationId(destinationId) {}
+    , m_destinationId(destinationId)
+{
+}
 
 TruckState::TruckState(const QJsonObject &jsonData,
                        QObject           *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     updateFromJson(jsonData);
 }
 
 QVariant
-TruckState::getMetric(const QString &metricName) const {
+TruckState::getMetric(const QString &metricName) const
+{
     if (metricName == "networkName")
         return m_networkName;
     if (metricName == "tripId")
@@ -52,7 +59,8 @@ TruckState::getMetric(const QString &metricName) const {
     return QVariant();
 }
 
-QVariantMap TruckState::info() const {
+QVariantMap TruckState::info() const
+{
     QVariantMap map;
     map["networkName"]     = m_networkName;
     map["tripId"]          = QString::number(m_tripId);
@@ -67,7 +75,8 @@ QVariantMap TruckState::info() const {
     return map;
 }
 
-QJsonObject TruckState::toJson() const {
+QJsonObject TruckState::toJson() const
+{
     QJsonObject json;
     json["networkName"]     = m_networkName;
     json["tripId"]          = QString::number(m_tripId);
@@ -82,8 +91,8 @@ QJsonObject TruckState::toJson() const {
     return json;
 }
 
-void TruckState::updateFromJson(
-    const QJsonObject &jsonData) {
+void TruckState::updateFromJson(const QJsonObject &jsonData)
+{
     m_networkName =
         jsonData["networkName"].toString(m_networkName);
     m_tripId   = jsonData["tripId"].toString().toInt();
@@ -101,7 +110,8 @@ void TruckState::updateFromJson(
 }
 
 void TruckState::updateInfoFromJson(
-    const QJsonObject &jsonData) {
+    const QJsonObject &jsonData)
+{
     m_networkName =
         jsonData["networkName"].toString(m_networkName);
     m_tripId   = jsonData["tripId"].toString().toInt();

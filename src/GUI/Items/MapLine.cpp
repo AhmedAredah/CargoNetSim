@@ -6,8 +6,10 @@
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 MapLine::MapLine(const QPointF                 &startPoint,
                  const QPointF                 &endPoint,
@@ -15,12 +17,13 @@ MapLine::MapLine(const QPointF                 &startPoint,
                  const QMap<QString, QVariant> &properties)
     : startPoint(startPoint)
     , endPoint(endPoint)
-    , region(region)
     , properties(properties)
     , baseWidth(5)
-    , pen(Qt::black, baseWidth) {
+    , pen(Qt::black, baseWidth)
+{
     // Initialize properties if none provided
-    if (this->properties.isEmpty()) {
+    if (this->properties.isEmpty())
+    {
         this->properties["region"] = region;
     }
 
@@ -32,20 +35,25 @@ MapLine::MapLine(const QPointF                 &startPoint,
     setFlags(QGraphicsItem::ItemIsSelectable);
 }
 
-void MapLine::setColor(const QColor &color) {
-    if (pen.color() != color) {
+void MapLine::setColor(const QColor &color)
+{
+    if (pen.color() != color)
+    {
         pen.setColor(color);
         emit colorChanged(color);
         update();
     }
 }
 
-void MapLine::setPen(const QPen &newPen) {
-    if (pen != newPen) {
+void MapLine::setPen(const QPen &newPen)
+{
+    if (pen != newPen)
+    {
         QColor oldColor = pen.color();
         pen             = newPen;
 
-        if (pen.color() != oldColor) {
+        if (pen.color() != oldColor)
+        {
             emit colorChanged(pen.color());
         }
 
@@ -53,7 +61,8 @@ void MapLine::setPen(const QPen &newPen) {
     }
 }
 
-QRectF MapLine::boundingRect() const {
+QRectF MapLine::boundingRect() const
+{
     // Calculate bounding rect with padding
     return QRectF(qMin(startPoint.x(), endPoint.x()),
                   qMin(startPoint.y(), endPoint.y()),
@@ -64,10 +73,12 @@ QRectF MapLine::boundingRect() const {
 
 void MapLine::paint(QPainter                       *painter,
                     const QStyleOptionGraphicsItem *option,
-                    QWidget *widget) {
+                    QWidget                        *widget)
+{
     // Get the current view scale
     QGraphicsScene *itemScene = scene();
-    if (!itemScene || itemScene->views().isEmpty()) {
+    if (!itemScene || itemScene->views().isEmpty())
+    {
         return;
     }
 
@@ -81,7 +92,8 @@ void MapLine::paint(QPainter                       *painter,
         qMax(1, qRound(baseWidth / viewScale)));
 
     // Change pen style if selected
-    if (option->state & QStyle::State_Selected) {
+    if (option->state & QStyle::State_Selected)
+    {
         scaledPen.setColor(Qt::blue);
         scaledPen.setStyle(Qt::DashLine);
     }
@@ -91,7 +103,8 @@ void MapLine::paint(QPainter                       *painter,
 }
 
 void MapLine::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
+    QGraphicsSceneMouseEvent *event)
+{
     emit clicked(this);
 
     // Select all lines in the same region when this line is
@@ -101,22 +114,29 @@ void MapLine::mousePressEvent(
     QGraphicsObject::mousePressEvent(event);
 }
 
-void MapLine::selectNetworkLines() {
-    if (!scene()) {
+void MapLine::selectNetworkLines()
+{
+    if (!scene())
+    {
         return;
     }
 
     // Loop through all items and select those in the same
     // region
-    for (QGraphicsItem *item : scene()->items()) {
+    for (QGraphicsItem *item : scene()->items())
+    {
         MapLine *line = dynamic_cast<MapLine *>(item);
-        if (line && line->getRegion() == region) {
+        if (line
+            && line->getRegion()
+                   == properties.value("region").toString())
+        {
             line->setSelected(true);
         }
     }
 }
 
-QMap<QString, QVariant> MapLine::toDict() const {
+QMap<QString, QVariant> MapLine::toDict() const
+{
     QMap<QString, QVariant> data;
 
     // Convert points to dictionaries
@@ -130,7 +150,6 @@ QMap<QString, QVariant> MapLine::toDict() const {
 
     data["start_point"] = startPointDict;
     data["end_point"]   = endPointDict;
-    data["region"]      = region;
     data["properties"]  = properties;
     data["color"]       = pen.color().name();
     data["selected"]    = isSelected();
@@ -141,7 +160,8 @@ QMap<QString, QVariant> MapLine::toDict() const {
 }
 
 MapLine *
-MapLine::fromDict(const QMap<QString, QVariant> &data) {
+MapLine::fromDict(const QMap<QString, QVariant> &data)
+{
     // Extract start and end points
     QMap<QString, QVariant> startPointDict =
         data["start_point"].toMap();

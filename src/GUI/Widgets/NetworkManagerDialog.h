@@ -9,8 +9,10 @@
 class QGridLayout;
 class QToolButton;
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class MainWindow;
 
@@ -23,7 +25,8 @@ class MainWindow;
  * change the color of networks for different transportation
  * modes.
  */
-class NetworkManagerDialog : public QDockWidget {
+class NetworkManagerDialog : public QDockWidget
+{
     Q_OBJECT
 
 public:

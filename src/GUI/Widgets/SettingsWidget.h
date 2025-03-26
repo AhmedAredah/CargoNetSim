@@ -13,8 +13,10 @@
 #include <QVariant>
 #include <QWidget>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Settings widget for configuring simulation
@@ -25,7 +27,8 @@ namespace GUI {
  * types, carbon emissions, and transportation mode
  * settings.
  */
-class SettingsWidget : public QWidget {
+class SettingsWidget : public QWidget
+{
     Q_OBJECT
 
 public:

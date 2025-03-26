@@ -15,14 +15,18 @@
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
 #include "Backend/Commons/ClientType.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 
 /**
  * @brief Represents the state of a ship in the simulation
  */
-class ShipState {
+class ShipState
+{
 public:
     /**
      * @brief Constructor from JSON data

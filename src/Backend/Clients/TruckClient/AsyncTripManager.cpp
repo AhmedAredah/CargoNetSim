@@ -7,15 +7,21 @@
 
 #include "AsyncTripManager.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 AsyncTripManager::AsyncTripManager(QObject *parent)
-    : QObject(parent) {}
+    : QObject(parent)
+{
+}
 
 QFuture<TripResult>
-AsyncTripManager::addTripAsync(const TripRequest &request) {
+AsyncTripManager::addTripAsync(const TripRequest &request)
+{
     // Create a placeholder trip ID
     // (the actual ID will be assigned by the simulator)
     QString tempTripId =
@@ -31,7 +37,8 @@ AsyncTripManager::addTripAsync(const TripRequest &request) {
 
 QFuture<TripResult>
 AsyncTripManager::registerTrip(const QString     &tripId,
-                               const TripRequest &request) {
+                               const TripRequest &request)
+{
     // Create a promise for this trip
     QPromise<TripResult> promise;
     QFuture<TripResult>  future = promise.future();
@@ -47,8 +54,10 @@ AsyncTripManager::registerTrip(const QString     &tripId,
     return future;
 }
 
-bool AsyncTripManager::cancelTrip(const QString &tripId) {
-    if (!m_pendingTrips.contains(tripId)) {
+bool AsyncTripManager::cancelTrip(const QString &tripId)
+{
+    if (!m_pendingTrips.contains(tripId))
+    {
         return false;
     }
 
@@ -79,8 +88,10 @@ bool AsyncTripManager::cancelTrip(const QString &tripId) {
 
 void AsyncTripManager::onTripEnded(
     const QString &networkName, const QString &tripId,
-    const QJsonObject &resultData) {
-    if (!m_pendingTrips.contains(tripId)) {
+    const QJsonObject &resultData)
+{
+    if (!m_pendingTrips.contains(tripId))
+    {
         // Unknown trip - might be handled elsewhere
         return;
     }
@@ -113,8 +124,10 @@ void AsyncTripManager::onTripEnded(
 }
 
 void AsyncTripManager::onTripError(
-    const QString &tripId, const QString &errorMessage) {
-    if (!m_pendingTrips.contains(tripId)) {
+    const QString &tripId, const QString &errorMessage)
+{
+    if (!m_pendingTrips.contains(tripId))
+    {
         // Unknown trip - might be handled elsewhere
         return;
     }

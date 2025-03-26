@@ -11,11 +11,15 @@
 #include <QMap>
 #include <QObject>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
-class TruckSimulationManager : public QObject {
+class TruckSimulationManager : public QObject
+{
     Q_OBJECT
 
 public:
@@ -24,7 +28,8 @@ public:
     ~TruckSimulationManager() override;
 
     void addClient(const QString         &networkName,
-                   TruckSimulationClient *client);
+                   TruckSimulationClient *client,
+                   LoggerInterface       *logger = nullptr);
     void removeClient(const QString &networkName);
 
     bool runSimulationSync(const QStringList &networkNames);

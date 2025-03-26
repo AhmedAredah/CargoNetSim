@@ -8,17 +8,20 @@
 #include <QStyleOptionGraphicsItem>
 #include <QtMath>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 DistanceMeasurementTool::DistanceMeasurementTool(
     GraphicsView *view, QGraphicsItem *parent)
-    : QGraphicsObject(parent)
-    , view(view)
-    , startPoint()
-    , endPoint()
-    , cachedDistance(0.0)
-    , distanceDirty(true) {
+    : GraphicsObjectBase(parent)
+    , m_view(view)
+    , m_startPoint()
+    , m_endPoint()
+    , m_cachedDistance(0.0)
+    , m_distanceDirty(true)
+{
     // Ensure the tool is always drawn on top of other items
     setZValue(1000);
 
@@ -27,109 +30,128 @@ DistanceMeasurementTool::DistanceMeasurementTool(
     setFlag(QGraphicsItem::ItemIsMovable, false);
 }
 
-DistanceMeasurementTool::~DistanceMeasurementTool() {
+DistanceMeasurementTool::~DistanceMeasurementTool()
+{
     // Clean up any resources if needed
 }
 
 void DistanceMeasurementTool::setStartPoint(
-    const QPointF &point) {
-    if (startPoint != point) {
+    const QPointF &point)
+{
+    if (m_startPoint != point)
+    {
         prepareGeometryChange();
-        startPoint    = point;
-        distanceDirty = true;
+        m_startPoint    = point;
+        m_distanceDirty = true;
         update();
 
-        emit startPointChanged(startPoint);
+        emit startPointChanged(m_startPoint);
 
         // If both points are set, recalculate and emit
         // distance change
-        if (!startPoint.isNull() && !endPoint.isNull()) {
+        if (!m_startPoint.isNull() && !m_endPoint.isNull())
+        {
             double distance = getDistance();
-            emit distanceChanged(distance,
-                                 getDistanceText());
+            emit   distanceChanged(distance,
+                                   getDistanceText());
         }
     }
 }
 
 void DistanceMeasurementTool::setEndPoint(
-    const QPointF &point) {
-    if (endPoint != point) {
+    const QPointF &point)
+{
+    if (m_endPoint != point)
+    {
         prepareGeometryChange();
-        endPoint      = point;
-        distanceDirty = true;
+        m_endPoint      = point;
+        m_distanceDirty = true;
         update();
 
-        emit endPointChanged(endPoint);
+        emit endPointChanged(m_endPoint);
 
         // If both points are set, recalculate and emit
         // distance change
-        if (!startPoint.isNull() && !endPoint.isNull()) {
+        if (!m_startPoint.isNull() && !m_endPoint.isNull())
+        {
             double distance = getDistance();
-            emit distanceChanged(distance,
-                                 getDistanceText());
+            emit   distanceChanged(distance,
+                                   getDistanceText());
 
             // Emit measurement completed signal when both
             // points are set
-            emit measurementCompleted(startPoint, endPoint,
+            emit measurementCompleted(m_startPoint, m_endPoint,
                                       distance);
         }
     }
 }
 
-double DistanceMeasurementTool::getDistance() const {
-    if (distanceDirty) {
-        cachedDistance = calculateDistance();
-        distanceDirty  = false;
+double DistanceMeasurementTool::getDistance() const
+{
+    if (m_distanceDirty)
+    {
+        m_cachedDistance = calculateDistance();
+        m_distanceDirty  = false;
     }
-    return cachedDistance;
+    return m_cachedDistance;
 }
 
-QString DistanceMeasurementTool::getDistanceText() const {
+QString DistanceMeasurementTool::getDistanceText() const
+{
     double distance = getDistance();
 
-    if (distance >= 1000.0) {
+    if (distance >= 1000.0)
+    {
         return QString("%1 km").arg(distance / 1000.0, 0,
                                     'f', 1);
-    } else {
+    }
+    else
+    {
         return QString("%1 m").arg(qRound(distance));
     }
 }
 
-void DistanceMeasurementTool::reset() {
+void DistanceMeasurementTool::reset()
+{
     prepareGeometryChange();
-    startPoint    = QPointF();
-    endPoint      = QPointF();
-    distanceDirty = true;
+    m_startPoint    = QPointF();
+    m_endPoint      = QPointF();
+    m_distanceDirty = true;
     update();
 
-    emit startPointChanged(startPoint);
-    emit endPointChanged(endPoint);
+    emit startPointChanged(m_startPoint);
+    emit endPointChanged(m_endPoint);
     emit distanceChanged(0.0, "0 m");
 }
 
-bool DistanceMeasurementTool::hasStartPoint() const {
-    return !std::isnan(startPoint.x())
-           && !std::isnan(startPoint.y());
+bool DistanceMeasurementTool::hasStartPoint() const
+{
+    return !std::isnan(m_startPoint.x())
+           && !std::isnan(m_startPoint.y());
 }
 
-bool DistanceMeasurementTool::hasEndPoint() const {
-    return !std::isnan(endPoint.x())
-           && !std::isnan(endPoint.y());
+bool DistanceMeasurementTool::hasEndPoint() const
+{
+    return !std::isnan(m_endPoint.x())
+           && !std::isnan(m_endPoint.y());
 }
 
-QRectF DistanceMeasurementTool::boundingRect() const {
-    if (startPoint.isNull() || endPoint.isNull()) {
+QRectF DistanceMeasurementTool::boundingRect() const
+{
+    if (m_startPoint.isNull() || m_endPoint.isNull())
+    {
         return QRectF();
     }
 
     // Get the current view scale
     qreal scale = 1.0;
-    if (view) {
-        scale = view->transform().m11();
+    if (m_view)
+    {
+        scale = m_view->transform().m11();
     }
 
     // Calculate base rectangle
-    QRectF rect = QRectF(startPoint, endPoint).normalized();
+    QRectF rect = QRectF(m_startPoint, m_endPoint).normalized();
 
     // Scale padding inversely with zoom level
     const qreal basePadding = 1000.0;
@@ -146,9 +168,10 @@ QRectF DistanceMeasurementTool::boundingRect() const {
 
 void DistanceMeasurementTool::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
-    if (startPoint.isNull() || endPoint.isNull()) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    if (m_startPoint.isNull() || m_endPoint.isNull())
+    {
         return;
     }
 
@@ -157,7 +180,7 @@ void DistanceMeasurementTool::paint(
     pen.setCosmetic(
         true); // Line width is constant regardless of zoom
     painter->setPen(pen);
-    painter->drawLine(startPoint, endPoint);
+    painter->drawLine(m_startPoint, m_endPoint);
 
     // --- Calculate distance ---
     QString distanceText = getDistanceText();
@@ -173,8 +196,8 @@ void DistanceMeasurementTool::paint(
     int textHeight  = fm.height();
 
     // Calculate the midpoint in scene coordinates
-    QPointF midPoint((startPoint.x() + endPoint.x()) / 2.0,
-                     (startPoint.y() + endPoint.y()) / 2.0);
+    QPointF midPoint((m_startPoint.x() + m_endPoint.x()) / 2.0,
+                     (m_startPoint.y() + m_endPoint.y()) / 2.0);
 
     // Convert scene coordinates to view coordinates for
     // text placement
@@ -183,7 +206,8 @@ void DistanceMeasurementTool::paint(
                       ? nullptr
                       : scene()->views().first()
                 : nullptr;
-    if (!graphicsView) {
+    if (!graphicsView)
+    {
         return;
     }
 
@@ -220,8 +244,10 @@ void DistanceMeasurementTool::paint(
     painter->restore();
 }
 
-double DistanceMeasurementTool::calculateDistance() const {
-    if (startPoint.isNull() || endPoint.isNull()) {
+double DistanceMeasurementTool::calculateDistance() const
+{
+    if (m_startPoint.isNull() || m_endPoint.isNull())
+    {
         return 0.0;
     }
 
@@ -229,23 +255,28 @@ double DistanceMeasurementTool::calculateDistance() const {
     double startLat = 0.0, startLon = 0.0, endLat = 0.0,
            endLon = 0.0;
 
-    if (view) {
-        auto startLatLon = view->sceneToWGS84(startPoint);
-        auto endLatLon   = view->sceneToWGS84(endPoint);
+    if (m_view)
+    {
+        auto startLonLat =
+            m_view->sceneToWGS84(m_startPoint);
+        auto endLonLat = m_view->sceneToWGS84(m_endPoint);
 
         startLat =
-            startLatLon.second; // Latitude is y in WGS84
+            startLonLat.y(); // Latitude is y in WGS84
         startLon =
-            startLatLon.first; // Longitude is x in WGS84
-        endLat = endLatLon.second;
-        endLon = endLatLon.first;
+            startLonLat.x(); // Longitude is x in WGS84
+        endLat = endLonLat.y();
+        endLon = endLonLat.x();
     }
 
     // Calculate distance based on coordinate system
-    if (view && view->useProjectedCoords) {
+    if (m_view && m_view->useProjectedCoords)
+    {
         return calculateProjectedDistance(
             startLat, startLon, endLat, endLon);
-    } else {
+    }
+    else
+    {
         return calculateGeodesicDistance(startLat, startLon,
                                          endLat, endLon);
     }
@@ -253,15 +284,17 @@ double DistanceMeasurementTool::calculateDistance() const {
 
 double DistanceMeasurementTool::calculateProjectedDistance(
     double lat1, double lon1, double lat2,
-    double lon2) const {
+    double lon2) const
+{
     // In projected mode, convert both points using WGS84
     // World Mercator projection
     QPointF point1, point2;
 
-    if (view) {
-        point1 = view->convertCoordinates(
+    if (m_view)
+    {
+        point1 = m_view->convertCoordinates(
             QPointF(lon1, lat1), "to_projected");
-        point2 = view->convertCoordinates(
+        point2 = m_view->convertCoordinates(
             QPointF(lon2, lat2), "to_projected");
 
         // Calculate Euclidean distance in the projected
@@ -276,10 +309,12 @@ double DistanceMeasurementTool::calculateProjectedDistance(
 
 double DistanceMeasurementTool::calculateGeodesicDistance(
     double lat1, double lon1, double lat2,
-    double lon2) const {
+    double lon2) const
+{
     // Handle edge cases
     if (qAbs(lat1 - lat2) < 1e-8
-        && qAbs(lon1 - lon2) < 1e-8) {
+        && qAbs(lon1 - lon2) < 1e-8)
+    {
         return 0.0;
     }
 
@@ -318,7 +353,8 @@ double DistanceMeasurementTool::calculateGeodesicDistance(
     double    sinLambda     = 0.0;
     double    cosLambda     = 0.0;
 
-    for (int i = 0; i < maxIterations; ++i) {
+    for (int i = 0; i < maxIterations; ++i)
+    {
         sinLambda = qSin(lambda);
         cosLambda = qCos(lambda);
 
@@ -330,7 +366,8 @@ double DistanceMeasurementTool::calculateGeodesicDistance(
                          2));
 
         // Handle points close to antipodal
-        if (sinSigma == 0.0) {
+        if (sinSigma == 0.0)
+        {
             return 0.0;
         }
 
@@ -365,7 +402,8 @@ double DistanceMeasurementTool::calculateGeodesicDistance(
                                                  2))));
 
         // Check for convergence
-        if (qAbs(lambda - lambdaPrev) < 1e-12) {
+        if (qAbs(lambda - lambdaPrev) < 1e-12)
+        {
             break;
         }
     }

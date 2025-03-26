@@ -5,8 +5,10 @@
 #include <QProgressBar>
 #include <QSplashScreen>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Enhanced splash screen with loading progress
@@ -15,7 +17,8 @@ namespace GUI {
  * and status updates for providing loading feedback to
  * users during application startup.
  */
-class SplashScreen : public QSplashScreen {
+class SplashScreen : public QSplashScreen
+{
     Q_OBJECT
     Q_PROPERTY(int progress READ progress WRITE setProgress
                    NOTIFY progressChanged)
@@ -42,7 +45,8 @@ public:
      *
      * @return Current progress percentage (0-100)
      */
-    int progress() const {
+    int progress() const
+    {
         return m_progress;
     }
 
@@ -51,7 +55,8 @@ public:
      *
      * @return Current status message text
      */
-    QString statusMessage() const {
+    QString statusMessage() const
+    {
         return m_statusMessage;
     }
 

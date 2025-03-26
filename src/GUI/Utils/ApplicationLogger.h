@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Backend/Commons/LoggerInterface.h"
 #include <QEvent>
 #include <QFile>
 #include <QMap>
@@ -10,15 +11,18 @@
 #include <QTextStream>
 #include <QWaitCondition>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Log message entry class
  *
  * Contains a single log message with its metadata
  */
-class LogEntry {
+class LogEntry
+{
 public:
     /**
      * @brief Create a new log entry
@@ -47,7 +51,9 @@ public:
  * multiple clients, error levels, and signal-based
  * notification.
  */
-class ApplicationLogger : public QObject {
+class ApplicationLogger
+    : public CargoNetSim::Backend::LoggerInterface
+{
     Q_OBJECT
 
 public:
@@ -64,8 +70,8 @@ public:
      * @param message Message text
      * @param clientType Client type/index
      */
-    static void log(const QString &message,
-                    int            clientType = 4);
+    void log(const QString &message,
+             int            clientType = 4) override;
 
     /**
      * @brief Log an error message
@@ -73,8 +79,8 @@ public:
      * @param message Error message text
      * @param clientType Client type/index
      */
-    static void logError(const QString &message,
-                         int            clientType = 4);
+    void logError(const QString &message,
+                  int            clientType = 4) override;
 
     /**
      * @brief Update progress for a client
@@ -82,8 +88,8 @@ public:
      * @param progressValue Progress value (0-100)
      * @param clientType Client type/index
      */
-    static void updateProgress(float progressValue,
-                               int   clientType = 4);
+    void updateProgress(float progressValue,
+                        int   clientType = 4) override;
 
     /**
      * @brief Signal that initialization is complete
@@ -219,7 +225,8 @@ private:
 /**
  * @brief Custom event for log messages
  */
-class LogEvent : public QEvent {
+class LogEvent : public QEvent
+{
 public:
     static const QEvent::Type LogEventType =
         static_cast<QEvent::Type>(QEvent::User + 1);
@@ -231,7 +238,8 @@ public:
 /**
  * @brief Custom event for progress updates
  */
-class ProgressEvent : public QEvent {
+class ProgressEvent : public QEvent
+{
 public:
     static const QEvent::Type ProgressEventType =
         static_cast<QEvent::Type>(QEvent::User + 2);

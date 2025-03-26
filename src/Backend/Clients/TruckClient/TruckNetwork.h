@@ -18,9 +18,14 @@
 #include <QString>
 #include <QVector>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+#include "Backend/Models/BaseObject.h"
+
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class SharedIntegrationNetwork
@@ -30,7 +35,8 @@ namespace TruckClient {
  * providing path-finding and network operations with
  * specialized transportation attributes.
  */
-class IntegrationNetwork : public QObject {
+class IntegrationNetwork : public BaseObject
+{
     Q_OBJECT
 
 public:
@@ -116,6 +122,10 @@ public:
      */
     IntegrationLink *getLink(int linkId) const;
 
+    void setNetworkName(QString networkName);
+
+    QString getNetworkName() const;
+
     /**
      * @brief Get multiple paths between nodes
      * @param startNodeId Starting node ID
@@ -150,6 +160,8 @@ signals:
     void linksChanged();
 
 private:
+    // Network name
+    QString m_networkName;
     // Transportation graph for path-finding
     TransportationGraph<int> *m_graph = nullptr;
 
@@ -186,7 +198,8 @@ private:
  * Manages simulation parameters, input/output paths,
  * and network configuration.
  */
-class IntegrationSimulationConfig : public QObject {
+class IntegrationSimulationConfig : public QObject
+{
     Q_OBJECT
 
 public:
@@ -227,7 +240,8 @@ public:
      * @brief Get simulation time
      * @return Simulation duration in seconds
      */
-    double getSimTime() const {
+    double getSimTime() const
+    {
         return m_simTime;
     }
 
@@ -235,7 +249,8 @@ public:
      * @brief Get configuration directory
      * @return Path to configuration directory
      */
-    QString getConfigDir() const {
+    QString getConfigDir() const
+    {
         return m_configDir;
     }
 
@@ -301,7 +316,8 @@ private:
  * @class IntegrationSimulationConfigReader
  * @brief Reads simulation configuration files
  */
-class IntegrationSimulationConfigReader : public QObject {
+class IntegrationSimulationConfigReader : public QObject
+{
     Q_OBJECT
 
 public:
@@ -323,7 +339,8 @@ public:
      * @brief Get parsed configuration
      * @return Shared configuration object
      */
-    IntegrationSimulationConfig *getConfig() const {
+    IntegrationSimulationConfig *getConfig() const
+    {
         return m_config;
     }
 

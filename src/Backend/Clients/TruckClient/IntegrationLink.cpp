@@ -7,12 +7,15 @@
 
 #include "IntegrationLink.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 IntegrationLink::IntegrationLink(QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_linkId(0)
     , m_upstreamNodeId(0)
     , m_downstreamNodeId(0)
@@ -38,7 +41,9 @@ IntegrationLink::IntegrationLink(QObject *parent)
     , m_speedScale(1.0f)
     , m_saturationFlowScale(1.0f)
     , m_speedAtCapacityScale(1.0f)
-    , m_jamDensityScale(1.0f) {}
+    , m_jamDensityScale(1.0f)
+{
+}
 
 IntegrationLink::IntegrationLink(
     int linkId, int upstreamNodeId, int downstreamNodeId,
@@ -53,7 +58,7 @@ IntegrationLink::IntegrationLink(
     float lengthScale, float speedScale,
     float saturationFlowScale, float speedAtCapacityScale,
     float jamDensityScale, QObject *parent)
-    : QObject(parent)
+    : BaseObject(parent)
     , m_linkId(linkId)
     , m_upstreamNodeId(upstreamNodeId)
     , m_downstreamNodeId(downstreamNodeId)
@@ -79,11 +84,14 @@ IntegrationLink::IntegrationLink(
     , m_speedScale(speedScale)
     , m_saturationFlowScale(saturationFlowScale)
     , m_speedAtCapacityScale(speedAtCapacityScale)
-    , m_jamDensityScale(jamDensityScale) {}
+    , m_jamDensityScale(jamDensityScale)
+{
+}
 
 IntegrationLink::IntegrationLink(const QJsonObject &json,
                                  QObject           *parent)
-    : QObject(parent) {
+    : BaseObject(parent)
+{
     m_linkId           = json["link_id"].toInt();
     m_upstreamNodeId   = json["upstream_node_id"].toInt();
     m_downstreamNodeId = json["downstream_node_id"].toInt();
@@ -119,7 +127,8 @@ IntegrationLink::IntegrationLink(const QJsonObject &json,
         json["jam_density_scale"].toDouble(1.0);
 }
 
-QJsonObject IntegrationLink::toDict() const {
+QJsonObject IntegrationLink::toDict() const
+{
     QJsonObject dict;
     dict["link_id"]               = m_linkId;
     dict["upstream_node_id"]      = m_upstreamNodeId;
@@ -154,7 +163,8 @@ QJsonObject IntegrationLink::toDict() const {
 
 IntegrationLink *
 IntegrationLink::fromDict(const QJsonObject &data,
-                          QObject           *parent) {
+                          QObject           *parent)
+{
     return new IntegrationLink(
         data["link_id"].toInt(),
         data["upstream_node_id"].toInt(),
@@ -183,198 +193,248 @@ IntegrationLink::fromDict(const QJsonObject &data,
         data["jam_density_scale"].toDouble(1.0), parent);
 }
 
-void IntegrationLink::setLinkId(int linkId) {
-    if (m_linkId != linkId) {
+void IntegrationLink::setLinkId(int linkId)
+{
+    if (m_linkId != linkId)
+    {
         m_linkId = linkId;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setUpstreamNodeId(
-    int upstreamNodeId) {
-    if (m_upstreamNodeId != upstreamNodeId) {
+void IntegrationLink::setUpstreamNodeId(int upstreamNodeId)
+{
+    if (m_upstreamNodeId != upstreamNodeId)
+    {
         m_upstreamNodeId = upstreamNodeId;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setDownstreamNodeId(
-    int downstreamNodeId) {
-    if (m_downstreamNodeId != downstreamNodeId) {
+    int downstreamNodeId)
+{
+    if (m_downstreamNodeId != downstreamNodeId)
+    {
         m_downstreamNodeId = downstreamNodeId;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setLength(float length) {
-    if (m_length != length) {
+void IntegrationLink::setLength(float length)
+{
+    if (m_length != length)
+    {
         m_length = length;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setFreeSpeed(float freeSpeed) {
-    if (m_freeSpeed != freeSpeed) {
+void IntegrationLink::setFreeSpeed(float freeSpeed)
+{
+    if (m_freeSpeed != freeSpeed)
+    {
         m_freeSpeed = freeSpeed;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setSaturationFlow(
-    float saturationFlow) {
-    if (m_saturationFlow != saturationFlow) {
+    float saturationFlow)
+{
+    if (m_saturationFlow != saturationFlow)
+    {
         m_saturationFlow = saturationFlow;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setLanes(float lanes) {
-    if (m_lanes != lanes) {
+void IntegrationLink::setLanes(float lanes)
+{
+    if (m_lanes != lanes)
+    {
         m_lanes = lanes;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setSpeedCoeffVariation(
-    float speedCoeffVariation) {
-    if (m_speedCoeffVariation != speedCoeffVariation) {
+    float speedCoeffVariation)
+{
+    if (m_speedCoeffVariation != speedCoeffVariation)
+    {
         m_speedCoeffVariation = speedCoeffVariation;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setSpeedAtCapacity(
-    float speedAtCapacity) {
-    if (m_speedAtCapacity != speedAtCapacity) {
+    float speedAtCapacity)
+{
+    if (m_speedAtCapacity != speedAtCapacity)
+    {
         m_speedAtCapacity = speedAtCapacity;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setJamDensity(float jamDensity) {
-    if (m_jamDensity != jamDensity) {
+void IntegrationLink::setJamDensity(float jamDensity)
+{
+    if (m_jamDensity != jamDensity)
+    {
         m_jamDensity = jamDensity;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setTurnProhibition(
-    int turnProhibition) {
-    if (m_turnProhibition != turnProhibition) {
+    int turnProhibition)
+{
+    if (m_turnProhibition != turnProhibition)
+    {
         m_turnProhibition = turnProhibition;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setProhibitionStart(
-    int prohibitionStart) {
-    if (m_prohibitionStart != prohibitionStart) {
+    int prohibitionStart)
+{
+    if (m_prohibitionStart != prohibitionStart)
+    {
         m_prohibitionStart = prohibitionStart;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setProhibitionEnd(
-    int prohibitionEnd) {
-    if (m_prohibitionEnd != prohibitionEnd) {
+void IntegrationLink::setProhibitionEnd(int prohibitionEnd)
+{
+    if (m_prohibitionEnd != prohibitionEnd)
+    {
         m_prohibitionEnd = prohibitionEnd;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setOpposingLink1(int opposingLink1) {
-    if (m_opposingLink1 != opposingLink1) {
+void IntegrationLink::setOpposingLink1(int opposingLink1)
+{
+    if (m_opposingLink1 != opposingLink1)
+    {
         m_opposingLink1 = opposingLink1;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setOpposingLink2(int opposingLink2) {
-    if (m_opposingLink2 != opposingLink2) {
+void IntegrationLink::setOpposingLink2(int opposingLink2)
+{
+    if (m_opposingLink2 != opposingLink2)
+    {
         m_opposingLink2 = opposingLink2;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setTrafficSignal(int trafficSignal) {
-    if (m_trafficSignal != trafficSignal) {
+void IntegrationLink::setTrafficSignal(int trafficSignal)
+{
+    if (m_trafficSignal != trafficSignal)
+    {
         m_trafficSignal = trafficSignal;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setPhase1(int phase1) {
-    if (m_phase1 != phase1) {
+void IntegrationLink::setPhase1(int phase1)
+{
+    if (m_phase1 != phase1)
+    {
         m_phase1 = phase1;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setPhase2(int phase2) {
-    if (m_phase2 != phase2) {
+void IntegrationLink::setPhase2(int phase2)
+{
+    if (m_phase2 != phase2)
+    {
         m_phase2 = phase2;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setVehicleClassProhibition(
-    int vehicleClassProhibition) {
+    int vehicleClassProhibition)
+{
     if (m_vehicleClassProhibition
-        != vehicleClassProhibition) {
+        != vehicleClassProhibition)
+    {
         m_vehicleClassProhibition = vehicleClassProhibition;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setSurveillanceLevel(
-    int surveillanceLevel) {
-    if (m_surveillanceLevel != surveillanceLevel) {
+    int surveillanceLevel)
+{
+    if (m_surveillanceLevel != surveillanceLevel)
+    {
         m_surveillanceLevel = surveillanceLevel;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setDescription(
-    const QString &description) {
-    if (m_description != description) {
+    const QString &description)
+{
+    if (m_description != description)
+    {
         m_description = description;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setLengthScale(float lengthScale) {
-    if (m_lengthScale != lengthScale) {
+void IntegrationLink::setLengthScale(float lengthScale)
+{
+    if (m_lengthScale != lengthScale)
+    {
         m_lengthScale = lengthScale;
         emit linkChanged();
     }
 }
 
-void IntegrationLink::setSpeedScale(float speedScale) {
-    if (m_speedScale != speedScale) {
+void IntegrationLink::setSpeedScale(float speedScale)
+{
+    if (m_speedScale != speedScale)
+    {
         m_speedScale = speedScale;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setSaturationFlowScale(
-    float saturationFlowScale) {
-    if (m_saturationFlowScale != saturationFlowScale) {
+    float saturationFlowScale)
+{
+    if (m_saturationFlowScale != saturationFlowScale)
+    {
         m_saturationFlowScale = saturationFlowScale;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setSpeedAtCapacityScale(
-    float speedAtCapacityScale) {
-    if (m_speedAtCapacityScale != speedAtCapacityScale) {
+    float speedAtCapacityScale)
+{
+    if (m_speedAtCapacityScale != speedAtCapacityScale)
+    {
         m_speedAtCapacityScale = speedAtCapacityScale;
         emit linkChanged();
     }
 }
 
 void IntegrationLink::setJamDensityScale(
-    float jamDensityScale) {
-    if (m_jamDensityScale != jamDensityScale) {
+    float jamDensityScale)
+{
+    if (m_jamDensityScale != jamDensityScale)
+    {
         m_jamDensityScale = jamDensityScale;
         emit linkChanged();
     }

@@ -10,8 +10,10 @@
 #include <QString>
 #include <QVBoxLayout>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Dialog for setting geographic coordinates for a
@@ -22,7 +24,8 @@ namespace GUI {
  * validates the input and provides a clean interface for
  * coordinate editing.
  */
-class SetCoordinatesDialog : public QDialog {
+class SetCoordinatesDialog : public QDialog
+{
     Q_OBJECT
 
 public:
@@ -40,17 +43,16 @@ public:
 
     /**
      * @brief Get the coordinates entered by the user
-     * @return Pair of latitude and longitude values
+     * @return QPointF Geodetic coordinates (long, lat)
      */
-    std::pair<double, double> getCoordinates() const;
+    QPointF getCoordinates() const;
 
 signals:
     /**
      * @brief Signal emitted when coordinates are changed
-     * @param lat New latitude value
-     * @param lon New longitude value
+     * @param geoPoint New geodetic coordinates (long, lat)
      */
-    void coordinatesChanged(double lat, double lon);
+    void coordinatesChanged(QPointF geoPoint);
 
 private slots:
     /**

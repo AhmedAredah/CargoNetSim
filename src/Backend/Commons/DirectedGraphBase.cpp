@@ -1,10 +1,14 @@
 #include "DirectedGraphBase.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 DirectedGraphBase::DirectedGraphBase(QObject *parent)
-    : QObject(parent) {}
+    : BaseObject(parent)
+{
+}
 
 DirectedGraphBase::~DirectedGraphBase() {}
 

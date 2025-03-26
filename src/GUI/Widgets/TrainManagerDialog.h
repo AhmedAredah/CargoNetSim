@@ -10,8 +10,10 @@
 
 #include "../../Backend/Models/TrainSystem.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class ToolbarController;
 class BasicButtonController;
@@ -24,7 +26,8 @@ class BasicButtonController;
  * handles importing train data from files and maintaining a
  * list of available trains.
  */
-class TrainManagerDialog : public QDialog {
+class TrainManagerDialog : public QDialog
+{
     Q_OBJECT
 
     friend class ToolbarController;

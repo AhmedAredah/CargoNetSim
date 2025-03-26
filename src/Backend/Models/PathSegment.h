@@ -18,8 +18,10 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class PathSegment
@@ -33,7 +35,8 @@ namespace Backend {
  *
  * @note Inherits QObject for signal-slot functionality.
  */
-class PathSegment : public QObject {
+class PathSegment : public QObject
+{
     Q_OBJECT
 
 public:
@@ -63,7 +66,8 @@ public:
      *
      * Returns the unique ID assigned to this segment.
      */
-    QString getPathSegmentId() const {
+    QString getPathSegmentId() const
+    {
         return m_pathSegmentId;
     }
 
@@ -73,7 +77,8 @@ public:
      *
      * Returns the ID of the segment's starting terminal.
      */
-    QString getStart() const {
+    QString getStart() const
+    {
         return m_start;
     }
 
@@ -83,7 +88,8 @@ public:
      *
      * Returns the ID of the segment's ending terminal.
      */
-    QString getEnd() const {
+    QString getEnd() const
+    {
         return m_end;
     }
 
@@ -93,7 +99,8 @@ public:
      *
      * Returns the transportation mode used in this segment.
      */
-    int getMode() const {
+    int getMode() const
+    {
         return m_mode;
     }
 
@@ -103,7 +110,8 @@ public:
      *
      * Returns additional properties of the segment.
      */
-    QJsonObject getAttributes() const {
+    QJsonObject getAttributes() const
+    {
         return m_attributes;
     }
 

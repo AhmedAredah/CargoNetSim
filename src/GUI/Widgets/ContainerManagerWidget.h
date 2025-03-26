@@ -8,13 +8,16 @@
 #include <QVariant>
 #include <memory>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Enum representing standard container sizes
  */
-enum class ContainerSize {
+enum class ContainerSize
+{
     TwentyFT,
     TwentyFT_HighCube,
     FourtyFT,
@@ -35,7 +38,8 @@ enum class ContainerSize {
  * adding, editing, and deleting containers associated with
  * a terminal.
  */
-class ContainerManagerWidget : public QDialog {
+class ContainerManagerWidget : public QDialog
+{
     Q_OBJECT
 
 public:
@@ -133,7 +137,8 @@ private:
 /**
  * @brief Dialog for editing container properties
  */
-class ContainerEditDialog : public QDialog {
+class ContainerEditDialog : public QDialog
+{
     Q_OBJECT
 
 public:
@@ -179,7 +184,8 @@ private:
 /**
  * @brief Dialog for generating multiple containers
  */
-class GenerateContainersDialog : public QDialog {
+class GenerateContainersDialog : public QDialog
+{
     Q_OBJECT
 
 public:

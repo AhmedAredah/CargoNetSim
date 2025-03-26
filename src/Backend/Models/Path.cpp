@@ -1,7 +1,9 @@
 #include "Path.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 // Path constructor
 Path::Path(int id, double totalCost, double edgeCost,
@@ -15,19 +17,23 @@ Path::Path(int id, double totalCost, double edgeCost,
     , m_totalEdgeCosts(edgeCost)
     , m_totalTerminalCosts(termCost)
     , m_terminalsInPath(terminals)
-    , m_segments(segments) {
+    , m_segments(segments)
+{
     // Validate input parameters
-    if (id <= 0) {
+    if (id <= 0)
+    {
         // Ensure path ID is positive
         throw std::invalid_argument(
             "Path ID must be positive");
     }
-    if (totalCost < 0 || edgeCost < 0 || termCost < 0) {
+    if (totalCost < 0 || edgeCost < 0 || termCost < 0)
+    {
         // Ensure costs are non-negative
         throw std::invalid_argument(
             "Costs must be non-negative");
     }
-    if (segments.isEmpty()) {
+    if (segments.isEmpty())
+    {
         // Ensure at least one segment exists
         throw std::invalid_argument(
             "Path must have segments");
@@ -35,7 +41,8 @@ Path::Path(int id, double totalCost, double edgeCost,
 
     // Verify terminal list consistency with segments
     int expectedTerminals = segments.size() + 1;
-    if (terminals.size() != expectedTerminals) {
+    if (terminals.size() != expectedTerminals)
+    {
         qWarning() << "Terminal count" << terminals.size()
                    << "does not match expected"
                    << expectedTerminals;
@@ -46,9 +53,11 @@ Path::Path(int id, double totalCost, double edgeCost,
 }
 
 // Path destructor
-Path::~Path() {
+Path::~Path()
+{
     // Iterate over all segments in the path
-    for (PathSegment *segment : m_segments) {
+    for (PathSegment *segment : m_segments)
+    {
         // Delete each segment to free memory
         delete segment;
         // Nullify pointer for safety (not required but

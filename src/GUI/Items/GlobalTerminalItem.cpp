@@ -7,15 +7,18 @@
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 GlobalTerminalItem::GlobalTerminalItem(
     const QPixmap &pixmap, TerminalItem *terminalItem,
     QGraphicsItem *parent)
-    : QGraphicsObject(parent)
+    : GraphicsObjectBase(parent)
     , originalPixmap(pixmap)
-    , linkedTerminalItem(terminalItem) {
+    , linkedTerminalItem(terminalItem)
+{
     // Enable hover events
     setAcceptHoverEvents(true);
 
@@ -34,8 +37,10 @@ GlobalTerminalItem::GlobalTerminalItem(
 }
 
 void GlobalTerminalItem::setLinkedTerminalItem(
-    TerminalItem *terminalItem) {
-    if (linkedTerminalItem != terminalItem) {
+    TerminalItem *terminalItem)
+{
+    if (linkedTerminalItem != terminalItem)
+    {
         TerminalItem *oldTerminal = linkedTerminalItem;
         linkedTerminalItem        = terminalItem;
 
@@ -47,12 +52,15 @@ void GlobalTerminalItem::setLinkedTerminalItem(
     }
 }
 
-void GlobalTerminalItem::updateFromLinkedTerminal() {
-    if (linkedTerminalItem) {
+void GlobalTerminalItem::updateFromLinkedTerminal()
+{
+    if (linkedTerminalItem)
+    {
         // Get terminal name for tooltip
         QString terminalName =
             linkedTerminalItem->property("Name").toString();
-        if (terminalName.isEmpty()) {
+        if (terminalName.isEmpty())
+        {
             // Try to get name from properties if not
             // available as property
             QMap<QString, QVariant> props =
@@ -71,32 +79,37 @@ void GlobalTerminalItem::updateFromLinkedTerminal() {
                 .value<QPixmap>();
         if (!terminalPixmap.isNull()
             && terminalPixmap.cacheKey()
-                   != originalPixmap.cacheKey()) {
+                   != originalPixmap.cacheKey())
+        {
             originalPixmap = terminalPixmap;
             scaledPixmap   = originalPixmap.scaled(
                 24, 24, Qt::KeepAspectRatio,
                 Qt::SmoothTransformation);
             update(); // Trigger repaint
         }
-    } else {
+    }
+    else
+    {
         setToolTip("Terminal");
     }
 }
 
-QRectF GlobalTerminalItem::boundingRect() const {
+QRectF GlobalTerminalItem::boundingRect() const
+{
     return QRectF(0, 0, scaledPixmap.width(),
                   scaledPixmap.height());
 }
 
 void GlobalTerminalItem::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
     // Draw the scaled pixmap
     painter->drawPixmap(0, 0, scaledPixmap);
 
     // Draw selection outline if selected
-    if (option->state & QStyle::State_Selected) {
+    if (option->state & QStyle::State_Selected)
+    {
         QPen pen(Qt::red, 1, Qt::DashLine);
         painter->setPen(pen);
         painter->drawRect(boundingRect());
@@ -105,10 +118,12 @@ void GlobalTerminalItem::paint(
 
 QVariant
 GlobalTerminalItem::itemChange(GraphicsItemChange change,
-                               const QVariant    &value) {
+                               const QVariant    &value)
+{
     // Emit position changed signal when position has
     // changed
-    if (change == ItemPositionHasChanged) {
+    if (change == ItemPositionHasChanged)
+    {
         emit positionChanged(pos());
     }
 
@@ -116,21 +131,24 @@ GlobalTerminalItem::itemChange(GraphicsItemChange change,
 }
 
 void GlobalTerminalItem::hoverEnterEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     // Change cursor to hand pointer on hover
     setCursor(QCursor(Qt::PointingHandCursor));
     QGraphicsObject::hoverEnterEvent(event);
 }
 
 void GlobalTerminalItem::hoverLeaveEvent(
-    QGraphicsSceneHoverEvent *event) {
+    QGraphicsSceneHoverEvent *event)
+{
     // Reset cursor when leaving
     unsetCursor();
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
 void GlobalTerminalItem::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
+    QGraphicsSceneMouseEvent *event)
+{
     // Emit clicked signal
     emit itemClicked(this);
 
@@ -139,7 +157,8 @@ void GlobalTerminalItem::mousePressEvent(
     QGraphicsObject::mousePressEvent(event);
 }
 
-QMap<QString, QVariant> GlobalTerminalItem::toDict() const {
+QMap<QString, QVariant> GlobalTerminalItem::toDict() const
+{
     QMap<QString, QVariant> data;
 
     // Store position
@@ -155,7 +174,8 @@ QMap<QString, QVariant> GlobalTerminalItem::toDict() const {
     data["tooltip"]  = toolTip();
 
     // Store linked terminal ID if available
-    if (linkedTerminalItem) {
+    if (linkedTerminalItem)
+    {
         QMap<QString, QVariant> props =
             linkedTerminalItem->property("properties")
                 .toMap();
@@ -168,13 +188,15 @@ QMap<QString, QVariant> GlobalTerminalItem::toDict() const {
 
 GlobalTerminalItem *GlobalTerminalItem::fromDict(
     const QMap<QString, QVariant> &data,
-    const QPixmap &pixmap, QGraphicsItem *parent) {
+    const QPixmap &pixmap, QGraphicsItem *parent)
+{
     // Create new instance with pixmap
     GlobalTerminalItem *instance =
         new GlobalTerminalItem(pixmap, nullptr, parent);
 
     // Set position if available
-    if (data.contains("position")) {
+    if (data.contains("position"))
+    {
         QMap<QString, QVariant> posMap =
             data["position"].toMap();
         QPointF pos(posMap.value("x", 0).toDouble(),

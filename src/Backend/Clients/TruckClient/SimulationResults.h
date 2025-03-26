@@ -12,11 +12,15 @@
 #include <QJsonObject>
 #include <QObject>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
-class SimulationResults : public QObject {
+class SimulationResults : public QObject
+{
     Q_OBJECT
 
 public:

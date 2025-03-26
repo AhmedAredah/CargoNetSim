@@ -6,8 +6,10 @@
 #include <QString>
 #include <QStringList>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /*!
  * \brief The ColorPalette class provides a professional
@@ -17,7 +19,8 @@ namespace GUI {
  * It offers static methods to get a QColor by its name and
  * to obtain a list of all available color names.
  */
-class ColorPalette {
+class ColorPalette
+{
 public:
     /*!
      * \brief Returns the QColor corresponding to the given

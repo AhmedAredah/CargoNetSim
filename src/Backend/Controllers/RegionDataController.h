@@ -18,21 +18,16 @@
 
 #include "NetworkController.h"
 
-namespace CargoNetSim {
-namespace Backend {
+// Forward declarations
+namespace CargoNetSim
+{
+class CargoNetSimController;
+}
 
-/**
- * @class RegionDataControllerCleanup
- * @brief Utility class to handle singleton cleanup.
- */
-class RegionDataControllerCleanup {
-public:
-    /**
-     * @brief Cleanup the RegionDataController singleton
-     *        instance.
-     */
-    static void cleanup();
-};
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class RegionData
@@ -43,17 +38,30 @@ public:
  * associated networks, and provides methods to manage
  * the region's resources.
  */
-class RegionData : public QObject {
+class RegionData : public QObject
+{
     Q_OBJECT
 
 public:
     /**
      * @brief Constructor for RegionData.
      * @param regionName The name of the region.
+     * @param networkController Pointer to the network
+     * controller.
      * @param parent The parent QObject.
      */
-    RegionData(const QString &regionName,
-               QObject       *parent = nullptr);
+    RegionData(const QString     &regionName,
+               NetworkController *networkController,
+               QObject           *parent = nullptr);
+
+    /**
+     * @brief Destructor for RegionData.
+     */
+    ~RegionData();
+
+    // Delete copy constructor and assignment operator
+    RegionData(const RegionData &)            = delete;
+    RegionData &operator=(const RegionData &) = delete;
 
     /**
      * @brief Check if a network name exists in either train
@@ -177,7 +185,8 @@ public:
      * @param value The value to store.
      */
     void setVariable(const QString  &key,
-                     const QVariant &value) {
+                     const QVariant &value)
+    {
         m_variables[key] = value;
     }
 
@@ -192,7 +201,8 @@ public:
      */
     QVariant getVariable(
         const QString  &key,
-        const QVariant &defaultValue = QVariant()) const {
+        const QVariant &defaultValue = QVariant()) const
+    {
         return m_variables.value(key, defaultValue);
     }
 
@@ -208,9 +218,11 @@ public:
      */
     template <typename T>
     T getVariableAs(const QString &key,
-                    const T &defaultValue = T()) const {
+                    const T       &defaultValue = T()) const
+    {
         QVariant var = m_variables.value(key, QVariant());
-        if (var.isValid() && var.canConvert<T>()) {
+        if (var.isValid() && var.canConvert<T>())
+        {
             return var.value<T>();
         }
         return defaultValue;
@@ -222,7 +234,8 @@ public:
      * @param key The name/key of the variable to check.
      * @return True if the variable exists.
      */
-    bool hasVariable(const QString &key) const {
+    bool hasVariable(const QString &key) const
+    {
         return m_variables.contains(key);
     }
 
@@ -233,7 +246,8 @@ public:
      * @return True if the variable was removed, false if
      *         it didn't exist.
      */
-    bool removeVariable(const QString &key) {
+    bool removeVariable(const QString &key)
+    {
         return m_variables.remove(key) > 0;
     }
 
@@ -241,7 +255,8 @@ public:
      * @brief Get all m_variables for this region.
      * @return A copy of the m_variables map.
      */
-    QVariantMap getAllVariables() const {
+    QVariantMap getAllVariables() const
+    {
         return m_variables;
     }
 
@@ -262,13 +277,15 @@ public:
      */
     static RegionData *
     fromMap(const QMap<QString, QVariant> &data,
-            QObject *parent = nullptr);
+            NetworkController *networkController,
+            QObject           *parent = nullptr);
 
     /**
      * @brief Get the m_region name.
      * @return The name of the m_region.
      */
-    const QString &getRegion() const {
+    const QString &getRegion() const
+    {
         return m_region;
     }
 
@@ -345,6 +362,9 @@ private:
 
     /** @brief List of truck network names in this region */
     QStringList m_truckNetworksList;
+
+    /** @brief Store the network controller pointer */
+    NetworkController *m_networkController;
 };
 
 /**
@@ -355,21 +375,23 @@ private:
  * provides methods to add, remove, and query regions and
  * their associated data.
  */
-class RegionDataController : public QObject {
+class RegionDataController : public QObject
+{
     Q_OBJECT
 
-    // Make the cleanup class a friend
-    friend class RegionDataControllerCleanup;
+    // Make the CargoNetSimController a friend
+    friend class CargoNetSim::CargoNetSimController;
 
 public:
     /**
-     * @brief Get the singleton instance of
-     *        RegionDataController.
+     * @brief Constructor for RegionDataController.
+     * @param networkController Pointer to the network
+     * controller.
      * @param parent Optional parent QObject.
-     * @return Reference to the singleton instance.
      */
-    static RegionDataController &
-    getInstance(QObject *parent = nullptr);
+    explicit RegionDataController(
+        NetworkController *networkController,
+        QObject           *parent = nullptr);
 
     /**
      * @brief Destructor for RegionDataController.
@@ -424,7 +446,8 @@ public:
      * @return Current region name, or empty string if none
      *         selected.
      */
-    QString getCurrentRegion() const {
+    QString getCurrentRegion() const
+    {
         return m_currentRegion;
     }
 
@@ -450,7 +473,8 @@ public:
      * @param value The value to store.
      */
     void setGlobalVariable(const QString  &key,
-                           const QVariant &value) {
+                           const QVariant &value)
+    {
         m_globalVariables[key] = value;
         emit globalVariableChanged(key, value);
     }
@@ -460,7 +484,8 @@ public:
      * @param key The name/key of the variable to check.
      * @return True if the variable exists.
      */
-    bool hasGlobalVariable(const QString &key) const {
+    bool hasGlobalVariable(const QString &key) const
+    {
         return m_globalVariables.contains(key);
     }
 
@@ -470,8 +495,10 @@ public:
      * @return True if the variable was removed, false if
      *         it didn't exist.
      */
-    bool removeGlobalVariable(const QString &key) {
-        if (m_globalVariables.contains(key)) {
+    bool removeGlobalVariable(const QString &key)
+    {
+        if (m_globalVariables.contains(key))
+        {
             m_globalVariables.remove(key);
             emit globalVariableRemoved(key);
             return true;
@@ -483,7 +510,8 @@ public:
      * @brief Get all global variables.
      * @return A copy of the global variables map.
      */
-    QVariantMap getAllGlobalVariables() const {
+    QVariantMap getAllGlobalVariables() const
+    {
         return m_globalVariables;
     }
 
@@ -497,9 +525,11 @@ public:
      */
     bool setRegionVariable(const QString  &regionName,
                            const QString  &key,
-                           const QVariant &value) {
+                           const QVariant &value)
+    {
         RegionData *region = getRegionData(regionName);
-        if (region) {
+        if (region)
+        {
             region->setVariable(key, value);
             emit regionVariableChanged(regionName, key,
                                        value);
@@ -519,12 +549,13 @@ public:
      *         defaultValue if not found.
      */
     template <typename T>
-    T getGlobalVariableAs(
-        const QString &key,
-        const T       &defaultValue = T()) const {
+    T getGlobalVariableAs(const QString &key,
+                          const T &defaultValue = T()) const
+    {
         QVariant var =
             m_globalVariables.value(key, QVariant());
-        if (var.isValid() && var.canConvert<T>()) {
+        if (var.isValid() && var.canConvert<T>())
+        {
             return var.value<T>();
         }
         return defaultValue;
@@ -540,12 +571,15 @@ public:
      */
     template <typename T>
     QMap<QString, T>
-    getAllRegionVariableAs(const QString &key) const {
+    getAllRegionVariableAs(const QString &key) const
+    {
         QMap<QString, T> result;
         for (auto it = m_regions.cbegin();
-             it != m_regions.cend(); ++it) {
+             it != m_regions.cend(); ++it)
+        {
             QVariant var = it.value()->getVariable(key);
-            if (var.isValid() && var.canConvert<T>()) {
+            if (var.isValid() && var.canConvert<T>())
+            {
                 result.insert(it.key(), var.value<T>());
             }
         }
@@ -565,11 +599,13 @@ public:
      *         constructed T if region not found.
      */
     template <typename T>
-    T getRegionVariableAs(
-        const QString &regionName, const QString &key,
-        const T &defaultValue = T()) const {
+    T getRegionVariableAs(const QString &regionName,
+                          const QString &key,
+                          const T &defaultValue = T()) const
+    {
         auto it = m_regions.find(regionName);
-        if (it != m_regions.end()) {
+        if (it != m_regions.end())
+        {
             return it.value()->getVariableAs<T>(
                 key, defaultValue);
         }
@@ -593,7 +629,8 @@ public:
      *        data.
      * @return True if deserialization was successful.
      */
-    bool fromMap(const QMap<QString, QVariant> &data);
+    bool fromMap(NetworkController *networkController,
+                 const QMap<QString, QVariant> &data);
 
 signals:
     /**
@@ -656,18 +693,7 @@ signals:
                                const QString  &key,
                                const QVariant &value);
 
-protected:
-    /** @brief Singleton instance */
-    static RegionDataController *m_instance;
-
 private:
-    /**
-     * @brief Private constructor for RegionDataController
-     *        (singleton pattern).
-     * @param parent Optional parent QObject.
-     */
-    explicit RegionDataController(
-        QObject *parent = nullptr);
 
     /** @brief Map of region name to RegionData */
     QMap<QString, RegionData *> m_regions;
@@ -678,6 +704,9 @@ private:
     /** @brief Map of global variables not tied to regions
      */
     QVariantMap m_globalVariables;
+
+    /** @brief Store the network controller pointer */
+    NetworkController *m_networkController;
 };
 
 } // namespace Backend

@@ -15,19 +15,23 @@
 #include "../../Backend/Models/ShipSystem.h"
 #include "../Utils/IconCreator.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 ShipManagerDialog::ShipManagerDialog(QWidget *parent)
     : QDialog(parent)
-    , m_ships() {
+    , m_ships()
+{
     setWindowTitle(tr("Ship Manager"));
     setMinimumSize(1000, 700);
 
     initUI();
 }
 
-void ShipManagerDialog::initUI() {
+void ShipManagerDialog::initUI()
+{
     QVBoxLayout *layout = new QVBoxLayout(this);
 
     // Create toolbar
@@ -93,7 +97,8 @@ void ShipManagerDialog::initUI() {
     QHeaderView *header = m_table->horizontalHeader();
     header->setSectionResizeMode(
         0, QHeaderView::ResizeToContents);
-    for (int i = 1; i < 8; ++i) {
+    for (int i = 1; i < 8; ++i)
+    {
         header->setSectionResizeMode(i,
                                      QHeaderView::Stretch);
     }
@@ -127,20 +132,24 @@ void ShipManagerDialog::initUI() {
     layout->addWidget(buttonBox);
 }
 
-void ShipManagerDialog::loadShips() {
+void ShipManagerDialog::loadShips()
+{
     QString fileName = QFileDialog::getOpenFileName(
         this, tr("Load Ships File"), QString(),
         tr("DAT Files (*.dat);;All Files (*)"));
 
-    if (fileName.isEmpty()) {
+    if (fileName.isEmpty())
+    {
         return;
     }
 
-    try {
+    try
+    {
         QList<CargoNetSim::Backend::Ship *> loadedShips =
             Backend::ShipsReader::readShipsFile(fileName);
 
-        if (loadedShips.isEmpty()) {
+        if (loadedShips.isEmpty())
+        {
             QMessageBox::warning(
                 this, tr("Warning"),
                 tr("No valid ships found in the file."));
@@ -158,16 +167,20 @@ void ShipManagerDialog::loadShips() {
             this, tr("Ships Loaded"),
             tr("Successfully loaded %1 ships.")
                 .arg(loadedShips.size()));
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         QMessageBox::critical(
             this, tr("Error"),
             tr("Failed to load ships: %1").arg(e.what()));
     }
 }
 
-void ShipManagerDialog::deleteShip() {
+void ShipManagerDialog::deleteShip()
+{
     int currentRow = m_table->currentRow();
-    if (currentRow < 0) {
+    if (currentRow < 0)
+    {
         QMessageBox::warning(
             this, tr("Warning"),
             tr("Please select a ship to delete."));
@@ -184,7 +197,8 @@ void ShipManagerDialog::deleteShip() {
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::No);
 
-    if (reply == QMessageBox::Yes) {
+    if (reply == QMessageBox::Yes)
+    {
         // Store the ship ID before removal
         emit shipDeleted(shipId);
 
@@ -195,12 +209,14 @@ void ShipManagerDialog::deleteShip() {
     }
 }
 
-void ShipManagerDialog::updateTable() {
+void ShipManagerDialog::updateTable()
+{
     // Clear the table
     m_table->setRowCount(0);
 
     // Populate with ships
-    for (const auto &ship : m_ships) {
+    for (const auto &ship : m_ships)
+    {
         int row = m_table->rowCount();
         m_table->insertRow(row);
 
@@ -261,9 +277,11 @@ void ShipManagerDialog::updateTable() {
     }
 }
 
-void ShipManagerDialog::updateDetails() {
+void ShipManagerDialog::updateDetails()
+{
     int currentRow = m_table->currentRow();
-    if (currentRow < 0 || currentRow >= m_ships.size()) {
+    if (currentRow < 0 || currentRow >= m_ships.size())
+    {
         m_detailsText->clear();
         return;
     }
@@ -278,7 +296,8 @@ void ShipManagerDialog::updateDetails() {
 }
 
 QString ShipManagerDialog::formatShipDetails(
-    const Backend::Ship &ship) const {
+    const Backend::Ship &ship) const
+{
     QString details =
         QString(
             "<h2>Ship Details for ship ID: %1</h2>"
@@ -420,12 +439,14 @@ QString ShipManagerDialog::formatShipDetails(
     return details;
 }
 
-QList<Backend::Ship *> ShipManagerDialog::getShips() const {
+QList<Backend::Ship *> ShipManagerDialog::getShips() const
+{
     return m_ships;
 }
 
 void ShipManagerDialog::setShips(
-    const QList<Backend::Ship *> &ships) {
+    const QList<Backend::Ship *> &ships)
+{
     m_ships = ships;
     updateTable();
 }

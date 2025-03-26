@@ -11,8 +11,10 @@
 #include <QString>
 #include <containerLib/container.h>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class TransportationTypes
@@ -24,7 +26,8 @@ namespace Backend {
  * between various representations including ContainerCore
  * hauler types, integer values, and string representations.
  */
-class TransportationTypes : public QObject {
+class TransportationTypes : public QObject
+{
     Q_OBJECT
 public:
     /**
@@ -36,7 +39,8 @@ public:
      * can be used for moving cargo within the simulation
      * system.
      */
-    enum class TransportationMode {
+    enum class TransportationMode
+    {
         Ship  = 0, /**< Maritime vessel transportation */
         Truck = 1, /**< Road-based truck transportation */
         Train = 2  /**< Rail-based train transportation */

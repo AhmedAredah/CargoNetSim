@@ -31,18 +31,6 @@
 #include "Backend/Commons/ClientType.h"
 #include "Backend/Models/ShipSystem.h"
 
-// Forward declarations
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
-class TerminalGraphServer;
-class SimulatorTimeServer;
-class ProgressBarManager;
-class ApplicationLogger;
-} // namespace ShipClient
-} // namespace Backend
-} // namespace CargoNetSim
-
 /**
  * @namespace CargoNetSim::Backend::ShipClient
  * @brief Namespace for ship simulation client components
@@ -50,9 +38,12 @@ class ApplicationLogger;
  * Contains classes and utilities for managing ship
  * simulation operations within the CargoNetSim backend.
  */
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 
 /**
  * @class ShipSimulationClient
@@ -67,7 +58,8 @@ namespace ShipClient {
  *
  * @ingroup ShipSimulation
  */
-class ShipSimulationClient : public SimulationClientBase {
+class ShipSimulationClient : public SimulationClientBase
+{
     Q_OBJECT
 
 public:
@@ -306,7 +298,7 @@ private:
     /**
      * @brief Internal method to unload containers
      *
-     * Executes the unloading process without waiting for a
+     * Executes the unloading process and wait for a
      * response.
      *
      * @param networkName Network name

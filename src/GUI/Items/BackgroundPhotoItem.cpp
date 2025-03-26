@@ -1,4 +1,7 @@
 #include "BackgroundPhotoItem.h"
+#include "GUI/MainWindow.h"
+#include "GUI/Widgets/GraphicsScene.h"
+#include "GUI/Widgets/GraphicsView.h"
 
 #include <QBuffer>
 #include <QByteArray>
@@ -9,29 +12,29 @@
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 BackgroundPhotoItem::BackgroundPhotoItem(
     const QPixmap &pixmap, const QString &regionName,
     QGraphicsItem *parent)
-    : QGraphicsObject(parent)
-    , pixmap(pixmap)
-    , regionName(regionName)
-    , locked(false)
-    , currentOpacity(1.0) {
+    : GraphicsObjectBase(parent)
+    , m_pixmap(pixmap)
+{
     // Set a low Z-value to stay below other items
     setZValue(-1);
 
     // Initialize properties
-    properties["Type"] =
+    m_properties["Type"] =
         QString("Background - %1").arg(regionName);
-    properties["Region"]    = regionName;
-    properties["Scale"]     = "1.0";
-    properties["Latitude"]  = "0.0";
-    properties["Longitude"] = "0.0";
-    properties["Locked"]    = "False";
-    properties["Opacity"]   = "1.0";
+    m_properties["Region"]    = regionName;
+    m_properties["Scale"]     = 1.0;
+    m_properties["Latitude"]  = 0.0;
+    m_properties["Longitude"] = 0.0;
+    m_properties["Locked"]    = false;
+    m_properties["Opacity"]   = 1.0;
 
     // Configure flags for interaction
     setFlags(QGraphicsItem::ItemIsSelectable
@@ -39,113 +42,73 @@ BackgroundPhotoItem::BackgroundPhotoItem(
              | QGraphicsItem::ItemSendsGeometryChanges);
 }
 
-void BackgroundPhotoItem::setLocked(bool newLocked) {
-    if (locked != newLocked) {
-        locked = newLocked;
-
-        // Update the locked property
-        updateProperty("Locked", locked ? "True" : "False");
-
-        // Set appropriate flags based on locked state
-        if (locked) {
-            setFlags(QGraphicsItem::ItemIsSelectable);
-        } else {
-            setFlags(
-                QGraphicsItem::ItemIsSelectable
-                | QGraphicsItem::ItemIsMovable
-                | QGraphicsItem::ItemSendsGeometryChanges);
-        }
-
-        // Notify about lock state change
-        emit lockStateChanged(locked);
-    }
-}
-
-bool BackgroundPhotoItem::isLocked() const {
-    return locked;
-}
-
-void BackgroundPhotoItem::updateCoordinates() {
+void BackgroundPhotoItem::updateCoordinates()
+{
     // Get scene and view
-    QGraphicsScene *graphicsScene = scene();
-    if (!graphicsScene
-        || graphicsScene->views().isEmpty()) {
+    QGraphicsView *graphicsScene = scene()->views().first();
+    GraphicsView  *graphicsView =
+        dynamic_cast<GraphicsView *>(graphicsScene);
+    if (!graphicsView)
+    {
         return;
     }
 
-    QGraphicsView *view = graphicsScene->views().first();
-
-    // Get parent class to access scene_to_wgs84 method
-    QObject *parentObj = view->parent();
-    if (!parentObj) {
-        return;
-    }
-
-    // Convert to coordinates - we need to call a method on
-    // the main window This would typically be implemented
-    // by calling a controller or utility method
-    // TODO: we're using a placeholder implementation
-    double lat = 0.0, lon = 0.0;
-
-    // Using Qt's meta-object system to call the method
-    // dynamically
-    QMetaObject::invokeMethod(parentObj, "sceneToWgs84",
-                              Q_RETURN_ARG(double, lat),
-                              Q_ARG(QPointF, pos()),
-                              Q_ARG(double, lon));
+    auto newPos = graphicsView->sceneToWGS84(pos());
 
     // Update properties
     updateProperty("Latitude",
-                   QString::number(lat, 'f', 6));
+                   QString::number(newPos.y(), 'f', 6));
     updateProperty("Longitude",
-                   QString::number(lon, 'f', 6));
+                   QString::number(newPos.x(), 'f', 6));
 }
 
-void BackgroundPhotoItem::setFromWGS84(double lat,
-                                       double lon) {
+void BackgroundPhotoItem::setFromWGS84(QPointF GeoPoint)
+{
     // Get scene and view
     QGraphicsScene *graphicsScene = scene();
-    if (!graphicsScene
-        || graphicsScene->views().isEmpty()) {
+    if (!graphicsScene || graphicsScene->views().isEmpty())
+    {
         return;
     }
 
     QGraphicsView *view = graphicsScene->views().first();
+    if (!view)
+    {
+        return;
+    }
 
-    // Get parent class to access wgs84_to_scene method
-    QObject *parentObj = view->parent();
-    if (!parentObj) {
+    GraphicsView *gView =
+        dynamic_cast<GraphicsView *>(view);
+    if (!gView)
+    {
         return;
     }
 
     // Convert from coordinates - call a method on the main
     // window
-    QPointF scenePos;
-
-    // Using Qt's meta-object system to call the method
-    // dynamically
-    QMetaObject::invokeMethod(
-        parentObj, "wgs84ToScene",
-        Q_RETURN_ARG(QPointF, scenePos), Q_ARG(double, lat),
-        Q_ARG(double, lon));
+    QPointF scenePos = gView->wgs84ToScene(GeoPoint);
 
     // Set position
     setPos(scenePos);
 
     // Update properties
-    updateProperty("Latitude",
-                   QString::number(lat, 'f', 6));
-    updateProperty("Longitude",
-                   QString::number(lon, 'f', 6));
+    updateProperty(
+        "Latitude",
+        QString::number(GeoPoint.y(), 'f', 6).toDouble());
+    updateProperty(
+        "Longitude",
+        QString::number(GeoPoint.x(), 'f', 6).toDouble());
 }
 
-QRectF BackgroundPhotoItem::boundingRect() const {
+QRectF BackgroundPhotoItem::boundingRect() const
+{
     float scale = getScale();
-    return QRectF(0, 0, pixmap.width() * scale,
-                  pixmap.height() * scale);
+    return QRectF(0, 0, m_pixmap.width() * scale,
+                  m_pixmap.height() * scale);
 }
 
-void BackgroundPhotoItem::updateScale() {
+void BackgroundPhotoItem::updateScale()
+{
     prepareGeometryChange();
     update();
 
@@ -153,44 +116,56 @@ void BackgroundPhotoItem::updateScale() {
     emit scaleChanged(getScale());
 }
 
-void BackgroundPhotoItem::setRegion(const QString &region) {
-    if (regionName != region) {
-        regionName = region;
+void BackgroundPhotoItem::setRegion(const QString &region)
+{
+    if (m_properties["Region"] != region)
+    {
+        m_properties["Region"] = region;
         emit regionChanged(region);
     }
 }
 
-float BackgroundPhotoItem::getScale() const {
+float BackgroundPhotoItem::getScale() const
+{
     bool  ok    = false;
-    float scale = properties.value("Scale", "1.0")
-                      .toString()
-                      .toFloat(&ok);
+    float scale =
+        m_properties.value("Scale", 1.0).toFloat(&ok);
     return ok ? scale : 1.0f;
 }
 
-void BackgroundPhotoItem::setScale(float scale) {
-    if (scale <= 0.0f) {
+void BackgroundPhotoItem::setScale(float scale)
+{
+    if (scale <= 0.0f)
+    {
         scale = 0.1f; // Minimum scale
     }
 
-    if (qAbs(scale - getScale()) > 0.001f) {
-        updateProperty("Scale",
-                       QString::number(scale, 'f', 2));
+    if (qAbs(scale - getScale()) > 0.001f)
+    {
+        updateProperty(
+            "Scale",
+            QString::number(scale, 'f', 2).toDouble());
         updateScale();
     }
 }
 
-qreal BackgroundPhotoItem::opacity() const {
-    return currentOpacity;
+qreal BackgroundPhotoItem::opacity() const
+{
+    return m_properties.value("Opacity", 1.0).toReal();
 }
 
-void BackgroundPhotoItem::setOpacity(qreal opacity) {
+void BackgroundPhotoItem::setOpacity(qreal opacity)
+{
     opacity = qBound(0.0, opacity, 1.0);
 
-    if (qAbs(opacity - currentOpacity) > 0.01) {
-        currentOpacity = opacity;
-        updateProperty("Opacity",
-                       QString::number(opacity, 'f', 2));
+    if (qAbs(opacity
+             - m_properties.value("Opacity", 1.0).toReal())
+        > 0.01)
+    {
+        m_properties["Opacity"] = opacity;
+        updateProperty(
+            "Opacity",
+            QString::number(opacity, 'f', 2).toDouble());
 
         // Must call QGraphicsItem's setOpacity which will
         // trigger a redraw
@@ -203,22 +178,23 @@ void BackgroundPhotoItem::setOpacity(qreal opacity) {
 
 void BackgroundPhotoItem::paint(
     QPainter                       *painter,
-    const QStyleOptionGraphicsItem *option,
-    QWidget                        *widget) {
+    const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
     // Get current scale from properties
     float scale = getScale();
 
     // Calculate scaled dimensions
-    float scaledWidth  = pixmap.width() * scale;
-    float scaledHeight = pixmap.height() * scale;
+    float scaledWidth  = m_pixmap.width() * scale;
+    float scaledHeight = m_pixmap.height() * scale;
 
     // Draw the scaled pixmap
     painter->drawPixmap(
-        QRectF(0, 0, scaledWidth, scaledHeight), pixmap,
-        QRectF(pixmap.rect()));
+        QRectF(0, 0, scaledWidth, scaledHeight), m_pixmap,
+        QRectF(m_pixmap.rect()));
 
     // Draw selection rectangle if selected
-    if (option->state & QStyle::State_Selected) {
+    if (option->state & QStyle::State_Selected)
+    {
         QPen pen(Qt::red, 2, Qt::DashLine);
         painter->setPen(pen);
         painter->drawRect(
@@ -227,17 +203,21 @@ void BackgroundPhotoItem::paint(
 }
 
 void BackgroundPhotoItem::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
-    if (!locked) {
+    QGraphicsSceneMouseEvent *event)
+{
+    if (!m_properties["Locked"].toBool())
+    {
         // Store drag offset for position adjustment
-        dragOffset = event->pos();
+        m_dragOffset = event->pos();
 
         // Emit clicked signal
         emit clicked(this);
 
         // Call parent implementation to handle selection
         QGraphicsObject::mousePressEvent(event);
-    } else {
+    }
+    else
+    {
         // Still emit clicked signal when locked, but don't
         // allow movement
         emit clicked(this);
@@ -247,31 +227,37 @@ void BackgroundPhotoItem::mousePressEvent(
 
 QVariant
 BackgroundPhotoItem::itemChange(GraphicsItemChange change,
-                                const QVariant    &value) {
-    if (change == ItemPositionChange && scene()) {
+                                const QVariant    &value)
+{
+    if (change == ItemPositionChange && scene())
+    {
         // If locked, prevent movement
-        if (locked) {
+        if (m_properties["Locked"].toBool())
+        {
             return pos();
         }
 
         // If dragging, adjust position based on drag offset
-        if (dragOffset != QPointF()) {
+        if (m_dragOffset != QPointF())
+        {
             QPointF newPos = value.toPointF();
 
             // If mouse grabber is this item, adjust by
             // cursor position
-            if (scene()->mouseGrabberItem() == this) {
+            if (scene()->mouseGrabberItem() == this)
+            {
                 QGraphicsView *view =
                     scene()->views().first();
                 QPointF mousePos = view->mapToScene(
                     view->mapFromGlobal(QCursor::pos()));
-                return mousePos - dragOffset;
+                return mousePos - m_dragOffset;
             }
         }
 
         return value;
-    } else if (change == ItemPositionHasChanged
-               && scene()) {
+    }
+    else if (change == ItemPositionHasChanged && scene())
+    {
         // Update coordinates and notify about position
         // change
         updateCoordinates();
@@ -282,25 +268,29 @@ BackgroundPhotoItem::itemChange(GraphicsItemChange change,
 }
 
 void BackgroundPhotoItem::updateProperties(
-    const QMap<QString, QVariant> &newProperties) {
+    const QMap<QString, QVariant> &newProperties)
+{
     for (auto it = newProperties.constBegin();
-         it != newProperties.constEnd(); ++it) {
-        properties[it.key()] = it.value();
+         it != newProperties.constEnd(); ++it)
+    {
+        m_properties[it.key()] = it.value();
     }
     emit propertiesChanged();
 }
 
 void BackgroundPhotoItem::updateProperty(
-    const QString &key, const QVariant &value) {
+    const QString &key, const QVariant &value)
+{
     // Only update if value actually changes
-    if (properties.value(key) != value) {
-        properties[key] = value;
+    if (m_properties.value(key) != value)
+    {
+        m_properties[key] = value;
         emit propertyChanged(key, value);
     }
 }
 
-QMap<QString, QVariant>
-BackgroundPhotoItem::toDict() const {
+QMap<QString, QVariant> BackgroundPhotoItem::toDict() const
+{
     QMap<QString, QVariant> data;
 
     // Store position
@@ -310,19 +300,16 @@ BackgroundPhotoItem::toDict() const {
     data["position"] = posMap;
 
     // Store basic properties
-    data["region_name"] = regionName;
-    data["properties"]  = properties;
-    data["locked"]      = locked;
+    data["properties"]  = m_properties;
     data["selected"]    = isSelected();
     data["z_value"]     = zValue();
     data["visible"]     = isVisible();
-    data["opacity"]     = currentOpacity;
 
     // Convert pixmap to base64 for serialization
     QByteArray byteArray;
     QBuffer    buffer(&byteArray);
     buffer.open(QIODevice::WriteOnly);
-    pixmap.save(&buffer, "PNG");
+    m_pixmap.save(&buffer, "PNG");
     data["image_data"] = QString(byteArray.toBase64());
 
     return data;
@@ -330,16 +317,20 @@ BackgroundPhotoItem::toDict() const {
 
 BackgroundPhotoItem *BackgroundPhotoItem::fromDict(
     const QMap<QString, QVariant> &data,
-    QGraphicsItem                 *parent) {
+    QGraphicsItem                 *parent)
+{
     // Convert base64 back to pixmap
     QPixmap    pixmap;
     QByteArray imageData = QByteArray::fromBase64(
         data["image_data"].toString().toLatin1());
     pixmap.loadFromData(imageData);
 
+    QMap<QString, QVariant> prop =
+        data["properties"].toMap();
+
     // Create new instance
     BackgroundPhotoItem *instance = new BackgroundPhotoItem(
-        pixmap, data["region_name"].toString(), parent);
+        pixmap, prop["Region"].toString(), parent);
 
     // Set position
     QMap<QString, QVariant> posMap =
@@ -349,19 +340,15 @@ BackgroundPhotoItem *BackgroundPhotoItem::fromDict(
     instance->setPos(pos);
 
     // Set properties
-    instance->properties = data["properties"].toMap();
-
-    // Set other attributes
-    instance->locked = data["locked"].toBool();
-    instance->setLocked(
-        instance->locked); // Will update flags accordingly
+    instance->m_properties = prop;
 
     instance->setSelected(data["selected"].toBool());
     instance->setZValue(data["z_value"].toDouble());
     instance->setVisible(data["visible"].toBool());
 
     // Set opacity if present
-    if (data.contains("opacity")) {
+    if (data.contains("opacity"))
+    {
         instance->setOpacity(data["opacity"].toDouble());
     }
 

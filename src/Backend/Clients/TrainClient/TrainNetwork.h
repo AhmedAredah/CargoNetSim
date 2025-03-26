@@ -23,10 +23,14 @@
 #include <QVector>
 
 #include "Backend/Commons/DirectedGraph.h"
+#include "Backend/Models/BaseObject.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TrainClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TrainClient
+{
 
 /**
  * @class NeTrainSimNode
@@ -41,7 +45,8 @@ namespace TrainClient {
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::NeTrainSimNode)
  * after class definition.
  */
-class NeTrainSimNode : public QObject {
+class NeTrainSimNode : public BaseObject
+{
     Q_OBJECT
 
 public:
@@ -100,7 +105,8 @@ public:
      * @brief Gets the simulator ID
      * @return Simulator identifier
      */
-    int getSimulatorId() const {
+    int getSimulatorId() const
+    {
         return m_simulatorId;
     }
 
@@ -108,7 +114,8 @@ public:
      * @brief Gets the user ID
      * @return User-defined identifier
      */
-    int getUserId() const {
+    int getUserId() const
+    {
         return m_userId;
     }
 
@@ -116,7 +123,8 @@ public:
      * @brief Gets the X coordinate
      * @return X coordinate value
      */
-    float getX() const {
+    float getX() const
+    {
         return m_x;
     }
 
@@ -124,7 +132,8 @@ public:
      * @brief Gets the Y coordinate
      * @return Y coordinate value
      */
-    float getY() const {
+    float getY() const
+    {
         return m_y;
     }
 
@@ -132,7 +141,8 @@ public:
      * @brief Gets the node getDescription
      * @return Description text
      */
-    QString getDescription() const {
+    QString getDescription() const
+    {
         return m_description;
     }
 
@@ -140,7 +150,8 @@ public:
      * @brief Gets the X scaling factor
      * @return X scale value
      */
-    float getXScale() const {
+    float getXScale() const
+    {
         return m_xScale;
     }
 
@@ -148,7 +159,8 @@ public:
      * @brief Gets the Y scaling factor
      * @return Y scale value
      */
-    float getYScale() const {
+    float getYScale() const
+    {
         return m_yScale;
     }
 
@@ -156,7 +168,8 @@ public:
      * @brief Gets the terminal status
      * @return True if node is a terminal
      */
-    bool isTerminal() const {
+    bool isTerminal() const
+    {
         return m_isTerminal;
     }
 
@@ -164,7 +177,8 @@ public:
      * @brief Gets the dwell time
      * @return Dwell time in hours
      */
-    float getDwellTime() const {
+    float getDwellTime() const
+    {
         return m_dwellTime;
     }
 
@@ -254,7 +268,8 @@ private:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::NeTrainSimLink)
  * after class definition.
  */
-class NeTrainSimLink : public QObject {
+class NeTrainSimLink : public BaseObject
+{
     Q_OBJECT
 
 public:
@@ -327,7 +342,8 @@ public:
      * @brief Gets the simulator ID
      * @return Simulator identifier
      */
-    int getSimulatorId() const {
+    int getSimulatorId() const
+    {
         return m_simulatorId;
     }
 
@@ -335,7 +351,8 @@ public:
      * @brief Gets the user ID
      * @return User-defined identifier
      */
-    int getUserId() const {
+    int getUserId() const
+    {
         return m_userId;
     }
 
@@ -343,7 +360,8 @@ public:
      * @brief Gets the source node
      * @return Pointer to the source node
      */
-    NeTrainSimNode *getFromNode() const {
+    NeTrainSimNode *getFromNode() const
+    {
         return m_fromNode;
     }
 
@@ -351,7 +369,8 @@ public:
      * @brief Gets the destination node
      * @return Pointer to the destination node
      */
-    NeTrainSimNode *getToNode() const {
+    NeTrainSimNode *getToNode() const
+    {
         return m_toNode;
     }
 
@@ -359,7 +378,8 @@ public:
      * @brief Gets the link getLength
      * @return Length in km
      */
-    float getLength() const {
+    float getLength() const
+    {
         return m_length;
     }
 
@@ -367,7 +387,8 @@ public:
      * @brief Gets the maximum speed
      * @return Speed in km/h
      */
-    float getMaxSpeed() const {
+    float getMaxSpeed() const
+    {
         return m_maxSpeed;
     }
 
@@ -375,7 +396,8 @@ public:
      * @brief Gets the signal ID
      * @return Signal system identifier
      */
-    int getSignalId() const {
+    int getSignalId() const
+    {
         return m_signalId;
     }
 
@@ -383,7 +405,8 @@ public:
      * @brief Gets the signals at nodes configuration
      * @return Signal configuration string
      */
-    QString getSignalsAtNodes() const {
+    QString getSignalsAtNodes() const
+    {
         return m_signalsAtNodes;
     }
 
@@ -391,7 +414,8 @@ public:
      * @brief Gets the getGrade percentage
      * @return Grade value (positive = uphill)
      */
-    float getGrade() const {
+    float getGrade() const
+    {
         return m_grade;
     }
 
@@ -399,7 +423,8 @@ public:
      * @brief Gets the getCurvature
      * @return Curvature in degrees
      */
-    float getCurvature() const {
+    float getCurvature() const
+    {
         return m_curvature;
     }
 
@@ -407,7 +432,8 @@ public:
      * @brief Gets the number of directions
      * @return Number of travel directions
      */
-    int getNumDirections() const {
+    int getNumDirections() const
+    {
         return m_numDirections;
     }
 
@@ -415,7 +441,8 @@ public:
      * @brief Gets the speed variation factor
      * @return Speed variation factor
      */
-    float getSpeedVariationFactor() const {
+    float getSpeedVariationFactor() const
+    {
         return m_speedVariationFactor;
     }
 
@@ -423,7 +450,8 @@ public:
      * @brief Gets the catenary status
      * @return True if link has overhead power
      */
-    bool hasCatenary() const {
+    bool hasCatenary() const
+    {
         return m_hasCatenary;
     }
 
@@ -431,7 +459,8 @@ public:
      * @brief Gets the getRegion
      * @return Region identifier string
      */
-    QString getRegion() const {
+    QString getRegion() const
+    {
         return m_region;
     }
 
@@ -439,7 +468,8 @@ public:
      * @brief Gets the length scale
      * @return Length scaling factor
      */
-    float getLengthScale() const {
+    float getLengthScale() const
+    {
         return m_lengthScale;
     }
 
@@ -447,7 +477,8 @@ public:
      * @brief Gets the speed scale
      * @return Speed scaling factor
      */
-    float getSpeedScale() const {
+    float getSpeedScale() const
+    {
         return m_speedScale;
     }
 
@@ -588,7 +619,8 @@ private:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::NeTrainSimNodeDataReader)
  * after class definition.
  */
-class NeTrainSimNodeDataReader : public QObject {
+class NeTrainSimNodeDataReader : public QObject
+{
     Q_OBJECT
 
 public:
@@ -613,7 +645,8 @@ public:
  * Q_DECLARE_METATYPE(CargoNetSim::Backend::NeTrainSimLinkDataReader)
  * after class definition.
  */
-class NeTrainSimLinkDataReader : public QObject {
+class NeTrainSimLinkDataReader : public QObject
+{
     Q_OBJECT
 
 public:
@@ -627,14 +660,15 @@ public:
 };
 
 /**
- * @class NeTrainSimNetworkBase
+ * @class NeTrainSimNetwork
  * @brief Base class for train simulation network
  *
- * The NeTrainSimNetworkBase manages a network of nodes and
+ * The NeTrainSimNetwork manages a network of nodes and
  * links, providing path-finding capabilities and network
  * operations.
  */
-class NeTrainSimNetwork : public QObject {
+class NeTrainSimNetwork : public BaseObject
+{
     Q_OBJECT
 
 public:
@@ -682,16 +716,40 @@ public:
                      const QString &linksFile);
 
     /**
-     * @brief Gets all nodes in the network
+     * @brief Gets all nodes in the network as JSON objects
      * @return Vector of node data as JSON objects
      */
-    QVector<QJsonObject> getNodes() const;
+    QVector<QJsonObject> getNodesAsJson() const;
+
+    /**
+     * @brief Gets all links in the network as JSON objects
+     * @return Vector of link data as JSON objects
+     */
+    QVector<QJsonObject> getLinksAsJson() const;
+
+    /**
+     * @brief Gets all nodes in the network
+     * @return Vector of node pointers
+     */
+    QVector<NeTrainSimNode *> getNodes() const;
 
     /**
      * @brief Gets all links in the network
-     * @return Vector of link data as JSON objects
+     * @return Vector of link pointers
      */
-    QVector<QJsonObject> getLinks() const;
+    QVector<NeTrainSimLink *> getLinks() const;
+
+    /**
+     * @brief Sets the network name
+     * @param networkName Network name
+     */
+    void setNetworkName(QString networkName);
+
+    /**
+     * @brief Gets the network name
+     * @return Network name
+     */
+    QString getNetworkName() const;
 
     /**
      * @brief Gets link information for a path
@@ -731,9 +789,9 @@ public:
      * @param nodes Vector of node data as JSON objects
      * @param links Vector of link data as JSON objects
      */
-    void
-    setNodesAndLinks(const QVector<QJsonObject> &nodes,
-                     const QVector<QJsonObject> &links);
+    void setNodesAndLinksFromJson(
+        const QVector<QJsonObject> &nodes,
+        const QVector<QJsonObject> &links);
 
     /**
      * @brief Initializes the directed graph from nodes and
@@ -786,20 +844,13 @@ private:
      */
     void buildGraph();
 
-    QVector<QJsonObject>
-        m_nodes; ///< Node data as JSON objects
-    QVector<QJsonObject>
-        m_links; ///< Link data as JSON objects
+    QString m_networkName;             ///< Network name
+    QVector<NeTrainSimNode *> m_nodes; ///< Node objects
+    QVector<NeTrainSimLink *> m_links; ///< Link objects
     DirectedGraph<int>
         *m_graph; ///< Directed graph of network
     QMap<QString, QString>
         m_variables; ///< Network variables
-
-    /// Node objects for internal use
-    QVector<NeTrainSimNode *> m_nodeObjects;
-
-    /// Link objects for internal use
-    QVector<NeTrainSimLink *> m_linkObjects;
 
     mutable QMutex
         m_mutex; ///< Thread synchronization mutex

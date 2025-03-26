@@ -6,9 +6,12 @@
 #include <QTimer>
 #include <cmath>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
+class GraphicsScene;
 class DistanceMeasurementTool;
 
 /**
@@ -19,7 +22,8 @@ class DistanceMeasurementTool;
  * like zooming, panning, coordinate transformations between
  * different coordinate systems, and measurement tools.
  */
-class GraphicsView : public QGraphicsView {
+class GraphicsView : public QGraphicsView
+{
     Q_OBJECT
 
 public:
@@ -57,20 +61,19 @@ public:
      * latitude/longitude
      *
      * @param scenePos Position in scene coordinates
-     * @return std::pair<double, double> Pair of (latitude,
-     * longitude) in degrees
+     * @return sQPointF of (longitude, latitude) in
+     * degrees
      */
-    QPair<double, double>
-    sceneToWGS84(const QPointF &scenePos) const;
+    QPointF sceneToWGS84(const QPointF &scenePos) const;
 
     /**
      * @brief Convert WGS84 coordinates to scene coordinates
      *
-     * @param lat Latitude in degrees
-     * @param lon Longitude in degrees
+     * @param point QPointF of (Latitude in degrees,
+     * Longitude in degrees)
      * @return QPointF Position in scene coordinates
      */
-    QPointF wgs84ToScene(double lat, double lon) const;
+    QPointF wgs84ToScene(QPointF point) const;
 
     /**
      * @brief Convert latitude to Mercator Y coordinate
@@ -100,6 +103,12 @@ public:
     void setGridVisibility(bool visible);
 
     /**
+     * @brief Get the scene object
+     * @return The scene object
+     */
+    GraphicsScene *getScene() const;
+
+    /**
      * @brief Flag indicating whether projected coordinates
      * should be used
      */
@@ -116,13 +125,24 @@ public:
      */
     DistanceMeasurementTool *measurementTool;
 
-    QString getCurrentPanMode() {
+    QString getCurrentPanMode()
+    {
         return _panMode;
     }
 
-    void setCurrentPanMode(QString &newPanMode) {
+    void setCurrentPanMode(QString &newPanMode)
+    {
         _panMode = newPanMode;
     }
+
+    /**
+     * @brief Fit content in view with zoom constraints
+     * @param rect Rectangle to fit in view
+     * @param aspectRatioMode Aspect ratio mode for fitting
+     */
+    void fitInView(const QRectF       &rect,
+                   Qt::AspectRatioMode aspectRatioMode =
+                       Qt::KeepAspectRatio);
 
 protected:
     /**
@@ -203,15 +223,6 @@ protected:
      * @param event Drop event
      */
     void dropEvent(QDropEvent *event) override;
-
-    /**
-     * @brief Fit content in view with zoom constraints
-     * @param rect Rectangle to fit in view
-     * @param aspectRatioMode Aspect ratio mode for fitting
-     */
-    void fitInView(const QRectF       &rect,
-                   Qt::AspectRatioMode aspectRatioMode =
-                       Qt::KeepAspectRatio);
 
     /**
      * @brief Handle key press events for navigation

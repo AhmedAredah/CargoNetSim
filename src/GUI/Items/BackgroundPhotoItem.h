@@ -1,13 +1,17 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QMap>
 #include <QPixmap>
 #include <QPropertyAnimation>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief A custom QGraphicsObject for displaying background
@@ -18,7 +22,8 @@ namespace GUI {
  * properties and can be serialized/deserialized for project
  * saving.
  */
-class BackgroundPhotoItem : public QGraphicsObject {
+class BackgroundPhotoItem : public GraphicsObjectBase
+{
     Q_OBJECT
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity)
 
@@ -40,25 +45,12 @@ public:
     virtual ~BackgroundPhotoItem() = default;
 
     /**
-     * @brief Lock or unlock the background from being moved
-     * @param locked True to prevent movement, false to
-     * allow movement
-     */
-    void setLocked(bool locked);
-
-    /**
-     * @brief Check if the background is locked
-     * @return True if locked, false otherwise
-     */
-    bool isLocked() const;
-
-    /**
      * @brief Set the position using WGS84 (geographic)
      * coordinates
-     * @param lat Latitude in degrees
      * @param lon Longitude in degrees
+     * @param lat Latitude in degrees
      */
-    void setFromWGS84(double lat, double lon);
+    void setFromWGS84(QPointF GeoPoint);
 
     /**
      * @brief Update the scale based on the "Scale" property
@@ -70,6 +62,15 @@ public:
      * @param region The region name as a QString
      */
     void setRegion(const QString &region);
+
+    /**
+     * @brief Get the current region name
+     * @return The region name as a QString
+     */
+    QString getRegion() const
+    {
+        return m_properties["Region"].toString();
+    }
 
     /**
      * @brief Update the properties of the background item
@@ -92,8 +93,9 @@ public:
      * @brief get Properties
      * @return QMap<QString, QVariant>
      */
-    QMap<QString, QVariant> getProperties() const {
-        return properties;
+    QMap<QString, QVariant> getProperties() const
+    {
+        return m_properties;
     }
 
     /**
@@ -165,13 +167,6 @@ signals:
     void regionChanged(QString region);
 
     /**
-     * @brief Signal emitted when the locked state changes
-     * @param locked True if the item is now locked, false
-     * otherwise
-     */
-    void lockStateChanged(bool locked);
-
-    /**
      * @brief Signal emitted when properties change
      */
     void propertiesChanged();
@@ -197,14 +192,10 @@ private:
      */
     void updateCoordinates();
 
-    QPixmap pixmap;     ///< The image to display
-    QString regionName; ///< The region this background
-                        ///< belongs to
-    QMap<QString, QVariant> properties; ///< Properties map
-    bool locked;        ///< Whether the item is locked from
-                        ///< movement
-    QPointF dragOffset; ///< Offset for dragging
-    qreal   currentOpacity; ///< Current opacity value
+    QPixmap m_pixmap; ///< The image to display
+    QMap<QString, QVariant>
+         m_properties; ///< Properties map
+    QPointF m_dragOffset;     ///< Offset for dragging
 };
 
 } // namespace GUI

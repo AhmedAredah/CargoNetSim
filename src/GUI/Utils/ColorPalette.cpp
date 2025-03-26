@@ -1,7 +1,9 @@
 #include "ColorPalette.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 // Initialize the COLORS map with the predefined colors.
 const QMap<QString, QColor> ColorPalette::COLORS = {
     {"Steel Blue", QColor(70, 130, 180)},
@@ -20,7 +22,8 @@ const QMap<QString, QColor> ColorPalette::COLORS = {
     {"Indigo", QColor(75, 0, 130)},
     {"Chocolate Brown", QColor(139, 69, 19)}};
 
-QColor ColorPalette::getColor(const QString &name) {
+QColor ColorPalette::getColor(const QString &name)
+{
     // If the color exists in the map, return it; otherwise,
     // default to black.
     if (COLORS.contains(name))
@@ -28,7 +31,8 @@ QColor ColorPalette::getColor(const QString &name) {
     return QColor(0, 0, 0);
 }
 
-QStringList ColorPalette::getAllColors() {
+QStringList ColorPalette::getAllColors()
+{
     // Return the list of all color names (keys in the map).
     return COLORS.keys();
 }

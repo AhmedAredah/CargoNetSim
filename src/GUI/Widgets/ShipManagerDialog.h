@@ -10,8 +10,10 @@
 #include <QToolBar>
 #include <memory>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 class ToolbarController;
 class BasicButtonController;
@@ -25,7 +27,8 @@ class BasicButtonController;
  * simulation. It displays ships in a table with detailed
  * properties in a separate view.
  */
-class ShipManagerDialog : public QDialog {
+class ShipManagerDialog : public QDialog
+{
     Q_OBJECT
 
     friend class ToolbarController;

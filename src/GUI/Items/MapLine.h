@@ -1,5 +1,8 @@
 #pragma once
 
+#include "GUI/Items/TerminalItem.h"
+#include "GraphicsObjectBase.h"
+
 #include <QGraphicsObject>
 #include <QMap>
 #include <QPen>
@@ -7,8 +10,10 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 /**
  * @brief Represents a line connecting two points in a
@@ -18,7 +23,8 @@ namespace GUI {
  * between two points in a network. It belongs to a specific
  * network region and can have various properties.
  */
-class MapLine : public QGraphicsObject {
+class MapLine : public GraphicsObjectBase
+{
     Q_OBJECT
 
 public:
@@ -32,11 +38,31 @@ public:
      */
     MapLine(const QPointF &startPoint,
             const QPointF &endPoint,
-            const QString &region = "default",
+            const QString &region = "Default Region",
             const QMap<QString, QVariant> &properties =
                 QMap<QString, QVariant>());
 
     virtual ~MapLine() = default;
+
+    /**
+     * @brief Sets the reference network that this point is
+     * created from
+     * @param network The network pointer
+     */
+    void setReferenceNetwork(QObject *network)
+    {
+        m_referenceNetwork = network;
+    }
+
+    /**
+     * @brief Get the reference network that this point is
+     * created from
+     * @return QObject* The network pointer
+     */
+    QObject *getReferenceNetwork()
+    {
+        return m_referenceNetwork;
+    }
 
     /**
      * @brief Sets the color of the line
@@ -55,35 +81,40 @@ public:
     /**
      * @brief Sets the region of the line
      */
-    void setRegion(const QString region) {
-        this->region = region;
+    void setRegion(const QString region)
+    {
+        properties.value("region") = region;
     }
 
     /**
      * @brief Get the start point
      */
-    const QPointF &getStartPoint() const {
+    const QPointF &getStartPoint() const
+    {
         return startPoint;
     }
 
     /**
      * @brief Get the end point
      */
-    const QPointF &getEndPoint() const {
+    const QPointF &getEndPoint() const
+    {
         return endPoint;
     }
 
     /**
      * @brief Get the region
      */
-    const QString &getRegion() const {
-        return region;
+    const QString getRegion() const
+    {
+        return properties.value("region").toString();
     }
 
     /**
      * @brief Get the properties
      */
-    const QMap<QString, QVariant> &getProperties() const {
+    const QMap<QString, QVariant> &getProperties() const
+    {
         return properties;
     }
 
@@ -129,10 +160,10 @@ private:
 
     QPointF                 startPoint;
     QPointF                 endPoint;
-    QString                 region;
     QMap<QString, QVariant> properties;
     int                     baseWidth;
     QPen                    pen;
+    QObject                *m_referenceNetwork;
 };
 
 } // namespace GUI

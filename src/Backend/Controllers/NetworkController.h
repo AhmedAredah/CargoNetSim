@@ -19,21 +19,10 @@
 #include "Backend/Clients/TrainClient/TrainNetwork.h"
 #include "Backend/Clients/TruckClient/TruckNetwork.h"
 
-namespace CargoNetSim {
-namespace Backend {
-
-/**
- * @class NetworkControllerCleanup
- * @brief Utility class to handle singleton cleanup.
- */
-class NetworkControllerCleanup {
-public:
-    /**
-     * @brief Cleanup the NetworkController singleton
-     *        instance.
-     */
-    static void cleanup();
-};
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @class NetworkController
@@ -45,21 +34,27 @@ public:
  * It ensures thread-safety and prevents name conflicts
  * within the same region.
  */
-class NetworkController : public QObject {
+class NetworkController : public QObject
+{
     Q_OBJECT
 
-    // Make the cleanup class a friend
-    friend class NetworkControllerCleanup;
+    // Make the RegionData a friend
+    friend class RegionData;
+
+    // Make the RegionDataController a friend
+    friend class RegionDataController;
 
 public:
     /**
-     * @brief Get the singleton instance of
-     *        NetworkController.
+     * @brief Constructor for NetworkController.
      * @param parent Optional parent QObject.
-     * @return Reference to the singleton instance.
      */
-    static NetworkController &
-    getInstance(QObject *parent = nullptr);
+    explicit NetworkController(QObject *parent = nullptr);
+
+    /**
+     * @brief Destructor.
+     */
+    ~NetworkController();
 
     // Delete copy and move constructors and operators
     NetworkController(const NetworkController &) = delete;
@@ -183,6 +178,36 @@ public:
      */
     QStringList regions() const;
 
+    /**
+     * @brief Clear all networks from the controller.
+     *
+     * Removes and deletes all train networks and truck
+     * network configurations from all regions.
+     */
+    void clear();
+
+    /**
+     * @brief Clear all train networks from the controller.
+     *
+     * Removes and deletes all train networks from all
+     * regions. This operation is thread-safe.
+     *
+     * @return The number of train networks that were
+     * removed.
+     */
+    int clearTrainNetworks();
+
+    /**
+     * @brief Clear all truck networks from the controller.
+     *
+     * Removes and deletes all truck network configurations
+     * from all regions. This operation is thread-safe.
+     *
+     * @return The number of truck network configurations
+     * that were removed.
+     */
+    int clearTruckNetworks();
+
 signals:
     /**
      * @brief Emitted when a train network is added.
@@ -218,26 +243,7 @@ signals:
     void truckNetworkConfigRemoved(const QString &name,
                                    const QString &region);
 
-protected:
-    /** @brief Singleton instance */
-    static NetworkController *m_instance;
-
 private:
-    /**
-     * @brief Private constructor for singleton pattern.
-     * @param parent Optional parent QObject.
-     */
-    explicit NetworkController(QObject *parent = nullptr);
-
-    /**
-     * @brief Destructor.
-     */
-    ~NetworkController();
-
-    /** @brief Lock for thread safety of singleton creation
-     */
-    static QReadWriteLock m_instanceLock;
-
     /** @brief Lock for thread safety of train networks */
     mutable QReadWriteLock m_trainNetworksLock;
 
@@ -252,9 +258,8 @@ private:
      * - Inner key is the network name
      * - Value is the pointer to the network/configuration
      */
-    QMap<
-        QString,
-        QMap<QString, TrainClient::NeTrainSimNetwork *>>
+    QMap<QString,
+         QMap<QString, TrainClient::NeTrainSimNetwork *>>
         m_trainNetworks;
 
     QMap<QString,

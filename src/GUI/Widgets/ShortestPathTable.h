@@ -13,14 +13,19 @@
 #include <QVector>
 #include <QWidget>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
 // Custom delegate for rendering the terminal path column
-class TerminalPathDelegate : public QStyledItemDelegate {
+class TerminalPathDelegate : public QStyledItemDelegate
+{
 public:
     explicit TerminalPathDelegate(QObject *parent = nullptr)
-        : QStyledItemDelegate(parent) {}
+        : QStyledItemDelegate(parent)
+    {
+    }
 
     void paint(QPainter                   *painter,
                const QStyleOptionViewItem &option,
@@ -30,11 +35,13 @@ public:
                    const QModelIndex &index) const override;
 };
 
-class ShortestPathsTable : public QWidget {
+class ShortestPathsTable : public QWidget
+{
     Q_OBJECT
 public:
     // Structure to hold path data
-    struct PathData {
+    struct PathData
+    {
         int              pathId;
         QVector<int>     terminalIds;
         QVector<QString> terminalNames;

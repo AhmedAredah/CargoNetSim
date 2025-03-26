@@ -1,8 +1,10 @@
 // ship_system.cpp
 #include "ShipSystem.h"
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 // Define the ordered parameters for file parsing
 const QVector<QPair<QString, bool>>
@@ -84,7 +86,9 @@ Ship::Ship(QObject *parent)
     , m_stopIfNoEnergy(false)
     , m_maxRudderAngle(-1.0f)
     , m_vesselWeight(0.0f)
-    , m_cargoWeight(0.0f) {}
+    , m_cargoWeight(0.0f)
+{
+}
 
 Ship::Ship(
     const QString                 &shipId,
@@ -155,11 +159,13 @@ Ship::Ship(
     , m_maxRudderAngle(maxRudderAngle)
     , m_vesselWeight(vesselWeight)
     , m_cargoWeight(cargoWeight)
-    , m_appendagesWettedSurfaces(appendagesWettedSurfaces) {
+    , m_appendagesWettedSurfaces(appendagesWettedSurfaces)
+{
 }
 
 Ship::Ship(const QJsonObject &json, QObject *parent)
-    : QObject(parent) {
+    : QObject(parent)
+{
     // Parse basic string parameters
     m_shipId = json["ID"].toString();
 
@@ -174,18 +180,24 @@ Ship::Ship(const QJsonObject &json, QObject *parent)
 
     // Parse optional numeric parameters
     if (json.contains("VolumetricDisplacement")
-        && !json["VolumetricDisplacement"].isNull()) {
+        && !json["VolumetricDisplacement"].isNull())
+    {
         m_volumetricDisplacement =
             json["VolumetricDisplacement"].toDouble();
-    } else {
+    }
+    else
+    {
         m_volumetricDisplacement = -1.0f;
     }
 
     if (json.contains("WettedHullSurface")
-        && !json["WettedHullSurface"].isNull()) {
+        && !json["WettedHullSurface"].isNull())
+    {
         m_wettedHullSurface =
             json["WettedHullSurface"].toDouble();
-    } else {
+    }
+    else
+    {
         m_wettedHullSurface = -1.0f;
     }
 
@@ -201,10 +213,13 @@ Ship::Ship(const QJsonObject &json, QObject *parent)
         json["ImmersedTransomArea"].toDouble(0.0);
 
     if (json.contains("HalfWaterlineEntranceAngle")
-        && !json["HalfWaterlineEntranceAngle"].isNull()) {
+        && !json["HalfWaterlineEntranceAngle"].isNull())
+    {
         m_entranceAngle =
             json["HalfWaterlineEntranceAngle"].toDouble();
-    } else {
+    }
+    else
+    {
         m_entranceAngle = -1.0f;
     }
 
@@ -214,41 +229,56 @@ Ship::Ship(const QJsonObject &json, QObject *parent)
         json["LongitudinalBuoyancyCenter"].toDouble(0.0);
 
     if (json.contains("SternShapeParam")
-        && !json["SternShapeParam"].isNull()) {
+        && !json["SternShapeParam"].isNull())
+    {
         m_sternShapeParam =
             json["SternShapeParam"].toInt(-1);
-    } else {
+    }
+    else
+    {
         m_sternShapeParam = -1;
     }
 
     // More optional parameters
     if (json.contains("MidshipSectionCoef")
-        && !json["MidshipSectionCoef"].isNull()) {
+        && !json["MidshipSectionCoef"].isNull())
+    {
         m_midshipSectionCoef =
             json["MidshipSectionCoef"].toDouble();
-    } else {
+    }
+    else
+    {
         m_midshipSectionCoef = -1.0f;
     }
 
     if (json.contains("WaterplaneAreaCoef")
-        && !json["WaterplaneAreaCoef"].isNull()) {
+        && !json["WaterplaneAreaCoef"].isNull())
+    {
         m_waterplaneAreaCoef =
             json["WaterplaneAreaCoef"].toDouble();
-    } else {
+    }
+    else
+    {
         m_waterplaneAreaCoef = -1.0f;
     }
 
     if (json.contains("PrismaticCoef")
-        && !json["PrismaticCoef"].isNull()) {
+        && !json["PrismaticCoef"].isNull())
+    {
         m_prismaticCoef = json["PrismaticCoef"].toDouble();
-    } else {
+    }
+    else
+    {
         m_prismaticCoef = -1.0f;
     }
 
     if (json.contains("BlockCoef")
-        && !json["BlockCoef"].isNull()) {
+        && !json["BlockCoef"].isNull())
+    {
         m_blockCoef = json["BlockCoef"].toDouble();
-    } else {
+    }
+    else
+    {
         m_blockCoef = -1.0f;
     }
 
@@ -270,17 +300,23 @@ Ship::Ship(const QJsonObject &json, QObject *parent)
         json["PropellerExpandedAreaRatio"].toDouble(0.0);
 
     if (json.contains("StopIfNoEnergy")
-        && !json["StopIfNoEnergy"].isNull()) {
+        && !json["StopIfNoEnergy"].isNull())
+    {
         m_stopIfNoEnergy = json["StopIfNoEnergy"].toBool();
-    } else {
+    }
+    else
+    {
         m_stopIfNoEnergy = false;
     }
 
     if (json.contains("MaxRudderAngle")
-        && !json["MaxRudderAngle"].isNull()) {
+        && !json["MaxRudderAngle"].isNull())
+    {
         m_maxRudderAngle =
             json["MaxRudderAngle"].toDouble();
-    } else {
+    }
+    else
+    {
         m_maxRudderAngle = -1.0f;
     }
 
@@ -305,95 +341,122 @@ Ship::Ship(const QJsonObject &json, QObject *parent)
 
     // 4. EngineTierIIIPropertiesPoints (optional)
     if (json.contains("EngineTierIIIPropertiesPoints")
-        && !json["EngineTierIIIPropertiesPoints"]
-                .isNull()) {
+        && !json["EngineTierIIIPropertiesPoints"].isNull())
+    {
         QString engineTier3Str =
             json["EngineTierIIIPropertiesPoints"]
                 .toString();
         if (engineTier3Str.toLower().contains("nan")
-            || engineTier3Str.toLower().contains("na")) {
+            || engineTier3Str.toLower().contains("na"))
+        {
             m_engineTierIII.clear();
-        } else {
+        }
+        else
+        {
             m_engineTierIII =
                 ShipsReader::parseEnginePoints(
                     engineTier3Str);
         }
-    } else {
+    }
+    else
+    {
         m_engineTierIII.clear();
     }
 
     // 5. EngineTierIICurve (optional)
     if (json.contains("EngineTierIICurve")
-        && !json["EngineTierIICurve"].isNull()) {
+        && !json["EngineTierIICurve"].isNull())
+    {
         QString engineTier2CurveStr =
             json["EngineTierIICurve"].toString();
         if (engineTier2CurveStr.toLower().contains("nan")
-            || engineTier2CurveStr.toLower().contains(
-                "na")) {
+            || engineTier2CurveStr.toLower().contains("na"))
+        {
             m_engineTierIICurve.clear();
-        } else {
+        }
+        else
+        {
             m_engineTierIICurve =
                 ShipsReader::parseEnginePoints(
                     engineTier2CurveStr);
         }
-    } else {
+    }
+    else
+    {
         m_engineTierIICurve.clear();
     }
 
     // 6. EngineTierIIICurve (optional)
     if (json.contains("EngineTierIIICurve")
-        && !json["EngineTierIIICurve"].isNull()) {
+        && !json["EngineTierIIICurve"].isNull())
+    {
         QString engineTier3CurveStr =
             json["EngineTierIIICurve"].toString();
         if (engineTier3CurveStr.toLower().contains("nan")
-            || engineTier3CurveStr.toLower().contains(
-                "na")) {
+            || engineTier3CurveStr.toLower().contains("na"))
+        {
             m_engineTierIIICurve.clear();
-        } else {
+        }
+        else
+        {
             m_engineTierIIICurve =
                 ShipsReader::parseEnginePoints(
                     engineTier3CurveStr);
         }
-    } else {
+    }
+    else
+    {
         m_engineTierIIICurve.clear();
     }
 
     // 7. AppendagesWettedSurfaces (optional)
     if (json.contains("AppendagesWettedSurfaces")
-        && !json["AppendagesWettedSurfaces"].isNull()) {
+        && !json["AppendagesWettedSurfaces"].isNull())
+    {
         QVariant appendagesVar =
             json["AppendagesWettedSurfaces"].toVariant();
         if (appendagesVar.toString().toLower().contains(
                 "na")
             || appendagesVar.toString().toLower().contains(
-                "nan")) {
+                "nan"))
+        {
             m_appendagesWettedSurfaces.clear();
-        } else {
+        }
+        else
+        {
             QString appendagesStr =
                 json["AppendagesWettedSurfaces"].toString();
             m_appendagesWettedSurfaces =
                 ShipsReader::parseAppendages(appendagesStr);
         }
-    } else {
+    }
+    else
+    {
         m_appendagesWettedSurfaces.clear();
     }
 }
 
 // Helper function to check if value contains NaN
-bool Ship::containsNaN(const QVariant &value) const {
-    if (value.isNull()) {
+bool Ship::containsNaN(const QVariant &value) const
+{
+    if (value.isNull())
+    {
         return true;
     }
 
     if (value.typeId() == QMetaType::QString
-        && value.toString().toLower().contains("na")) {
+        && value.toString().toLower().contains("na"))
+    {
         return true;
     }
 
-    if (value.typeId() == QMetaType::QVariantList) {
+    if (value.typeId() == QMetaType::QVariantList)
+    {
         QVariantList list = value.toList();
-        for (const auto &item : list) {
-            if (containsNaN(item)) {
+        for (const auto &item : list)
+        {
+            if (containsNaN(item))
+            {
                 return true;
             }
         }
@@ -402,17 +465,21 @@ bool Ship::containsNaN(const QVariant &value) const {
     return false;
 }
 
-QJsonObject Ship::toJson() const {
+QJsonObject Ship::toJson() const
+{
     // Helper function to format path
     auto formatPath =
         [](const QVector<QVector<float>> &path) -> QString {
-        if (path.isEmpty()) {
+        if (path.isEmpty())
+        {
             return QString();
         }
 
         QStringList pointList;
-        for (const auto &point : path) {
-            if (point.size() >= 2) {
+        for (const auto &point : path)
+        {
+            if (point.size() >= 2)
+            {
                 pointList.append(
                     QString("%1,%2").arg(point[0]).arg(
                         point[1]));
@@ -426,17 +493,20 @@ QJsonObject Ship::toJson() const {
     auto formatTanksDetails =
         [](const QVector<QMap<QString, float>> &tanks)
         -> QString {
-        if (tanks.isEmpty()) {
+        if (tanks.isEmpty())
+        {
             return QString();
         }
 
         QStringList tanksList;
-        for (const auto &tank : tanks) {
+        for (const auto &tank : tanks)
+        {
             if (tank.contains("FuelType")
                 && tank.contains("MaxCapacity")
                 && tank.contains(
                     "TankInitialCapacityPercentage")
-                && tank.contains("TankDepthOfDischage")) {
+                && tank.contains("TankDepthOfDischage"))
+            {
                 tanksList.append(
                     QString("%1,%2,%3,%4")
                         .arg(tank["FuelType"])
@@ -454,20 +524,24 @@ QJsonObject Ship::toJson() const {
     auto formatEnginePoints =
         [this](const QVector<QMap<QString, float>> &points)
         -> QString {
-        if (points.isEmpty()) {
+        if (points.isEmpty())
+        {
             return "nan";
         }
 
         QVariant pointsVar = QVariant::fromValue(points);
-        if (containsNaN(pointsVar)) {
+        if (containsNaN(pointsVar))
+        {
             return "nan";
         }
 
         QStringList pointsList;
-        for (const auto &point : points) {
+        for (const auto &point : points)
+        {
             if (point.contains("Power")
                 && point.contains("RPM")
-                && point.contains("Efficiency")) {
+                && point.contains("Efficiency"))
+            {
                 pointsList.append(
                     QString("%1,%2,%3")
                         .arg(point["Power"])
@@ -484,7 +558,8 @@ QJsonObject Ship::toJson() const {
         [this](const QVariant &value) -> QVariant {
         if (value.isNull()
             || (value.typeId() == QMetaType::Double
-                && qIsNaN(value.toDouble()))) {
+                && qIsNaN(value.toDouble())))
+        {
             return value;
         }
 
@@ -547,14 +622,18 @@ QJsonObject Ship::toJson() const {
     json["CargoWeight"]    = m_cargoWeight;
 
     // Format appendages wetted surfaces
-    if (m_appendagesWettedSurfaces.isEmpty()) {
+    if (m_appendagesWettedSurfaces.isEmpty())
+    {
         json["AppendagesWettedSurfaces"] = "nan";
-    } else {
+    }
+    else
+    {
         QStringList appendagesList;
         for (auto it =
                  m_appendagesWettedSurfaces.constBegin();
              it != m_appendagesWettedSurfaces.constEnd();
-             ++it) {
+             ++it)
+        {
             appendagesList.append(
                 QString("%1,%2").arg(it.key()).arg(
                     it.value()));
@@ -566,14 +645,17 @@ QJsonObject Ship::toJson() const {
     return json;
 }
 
-QJsonObject Ship::toDict() const {
+QJsonObject Ship::toDict() const
+{
     QJsonObject dict;
 
     // Convert path coordinates to JSON array
     QJsonArray pathArray;
-    for (const auto &point : m_pathCoordinates) {
+    for (const auto &point : m_pathCoordinates)
+    {
         QJsonArray pointArray;
-        for (float value : point) {
+        for (float value : point)
+        {
             pointArray.append(value);
         }
         pathArray.append(pointArray);
@@ -581,10 +663,12 @@ QJsonObject Ship::toDict() const {
 
     // Convert tanks details to JSON array
     QJsonArray tanksArray;
-    for (const auto &tank : m_tanksDetails) {
+    for (const auto &tank : m_tanksDetails)
+    {
         QJsonObject tankObj;
         for (auto it = tank.constBegin();
-             it != tank.constEnd(); ++it) {
+             it != tank.constEnd(); ++it)
+        {
             tankObj[it.key()] = it.value();
         }
         tanksArray.append(tankObj);
@@ -592,10 +676,12 @@ QJsonObject Ship::toDict() const {
 
     // Convert engine tier II to JSON array
     QJsonArray engineTier2Array;
-    for (const auto &point : m_engineTierII) {
+    for (const auto &point : m_engineTierII)
+    {
         QJsonObject pointObj;
         for (auto it = point.constBegin();
-             it != point.constEnd(); ++it) {
+             it != point.constEnd(); ++it)
+        {
             pointObj[it.key()] = it.value();
         }
         engineTier2Array.append(pointObj);
@@ -603,10 +689,12 @@ QJsonObject Ship::toDict() const {
 
     // Convert engine tier III to JSON array
     QJsonArray engineTier3Array;
-    for (const auto &point : m_engineTierIII) {
+    for (const auto &point : m_engineTierIII)
+    {
         QJsonObject pointObj;
         for (auto it = point.constBegin();
-             it != point.constEnd(); ++it) {
+             it != point.constEnd(); ++it)
+        {
             pointObj[it.key()] = it.value();
         }
         engineTier3Array.append(pointObj);
@@ -614,10 +702,12 @@ QJsonObject Ship::toDict() const {
 
     // Convert engine tier II curve to JSON array
     QJsonArray engineTier2CurveArray;
-    for (const auto &point : m_engineTierIICurve) {
+    for (const auto &point : m_engineTierIICurve)
+    {
         QJsonObject pointObj;
         for (auto it = point.constBegin();
-             it != point.constEnd(); ++it) {
+             it != point.constEnd(); ++it)
+        {
             pointObj[it.key()] = it.value();
         }
         engineTier2CurveArray.append(pointObj);
@@ -625,10 +715,12 @@ QJsonObject Ship::toDict() const {
 
     // Convert engine tier III curve to JSON array
     QJsonArray engineTier3CurveArray;
-    for (const auto &point : m_engineTierIIICurve) {
+    for (const auto &point : m_engineTierIIICurve)
+    {
         QJsonObject pointObj;
         for (auto it = point.constBegin();
-             it != point.constEnd(); ++it) {
+             it != point.constEnd(); ++it)
+        {
             pointObj[it.key()] = it.value();
         }
         engineTier3CurveArray.append(pointObj);
@@ -637,8 +729,8 @@ QJsonObject Ship::toDict() const {
     // Convert appendages wetted surfaces to JSON object
     QJsonObject appendagesObj;
     for (auto it = m_appendagesWettedSurfaces.constBegin();
-         it != m_appendagesWettedSurfaces.constEnd();
-         ++it) {
+         it != m_appendagesWettedSurfaces.constEnd(); ++it)
+    {
         appendagesObj[QString::number(it.key())] =
             it.value();
     }
@@ -694,15 +786,18 @@ QJsonObject Ship::toDict() const {
 }
 
 Ship *Ship::fromDict(const QJsonObject &data,
-                     QObject           *parent) {
+                     QObject           *parent)
+{
     // Parse path coordinates from JSON array
     QVector<QVector<float>> pathCoordinates;
     QJsonArray              pathArray =
         data["path_coordinates"].toArray();
-    for (const QJsonValue &pointValue : pathArray) {
+    for (const QJsonValue &pointValue : pathArray)
+    {
         QVector<float> point;
         QJsonArray     pointArray = pointValue.toArray();
-        for (const QJsonValue &coordValue : pointArray) {
+        for (const QJsonValue &coordValue : pointArray)
+        {
             point.append(coordValue.toDouble());
         }
         pathCoordinates.append(point);
@@ -711,11 +806,13 @@ Ship *Ship::fromDict(const QJsonObject &data,
     // Parse tanks details from JSON array
     QVector<QMap<QString, float>> tanksDetails;
     QJsonArray tanksArray = data["tanks_details"].toArray();
-    for (const QJsonValue &tankValue : tanksArray) {
+    for (const QJsonValue &tankValue : tanksArray)
+    {
         QMap<QString, float> tank;
         QJsonObject          tankObj = tankValue.toObject();
         for (auto it = tankObj.constBegin();
-             it != tankObj.constEnd(); ++it) {
+             it != tankObj.constEnd(); ++it)
+        {
             tank[it.key()] = it.value().toDouble();
         }
         tanksDetails.append(tank);
@@ -725,11 +822,13 @@ Ship *Ship::fromDict(const QJsonObject &data,
     QVector<QMap<QString, float>> engineTierII;
     QJsonArray                    engineTier2Array =
         data["engine_tier_ii"].toArray();
-    for (const QJsonValue &pointValue : engineTier2Array) {
+    for (const QJsonValue &pointValue : engineTier2Array)
+    {
         QMap<QString, float> point;
         QJsonObject pointObj = pointValue.toObject();
         for (auto it = pointObj.constBegin();
-             it != pointObj.constEnd(); ++it) {
+             it != pointObj.constEnd(); ++it)
+        {
             point[it.key()] = it.value().toDouble();
         }
         engineTierII.append(point);
@@ -738,15 +837,18 @@ Ship *Ship::fromDict(const QJsonObject &data,
     // Parse engine tier III from JSON array (optional)
     QVector<QMap<QString, float>> engineTierIII;
     if (data.contains("engine_tier_iii")
-        && !data["engine_tier_iii"].isNull()) {
+        && !data["engine_tier_iii"].isNull())
+    {
         QJsonArray engineTier3Array =
             data["engine_tier_iii"].toArray();
         for (const QJsonValue &pointValue :
-             engineTier3Array) {
+             engineTier3Array)
+        {
             QMap<QString, float> point;
             QJsonObject pointObj = pointValue.toObject();
             for (auto it = pointObj.constBegin();
-                 it != pointObj.constEnd(); ++it) {
+                 it != pointObj.constEnd(); ++it)
+            {
                 point[it.key()] = it.value().toDouble();
             }
             engineTierIII.append(point);
@@ -756,15 +858,18 @@ Ship *Ship::fromDict(const QJsonObject &data,
     // Parse engine tier II curve from JSON array (optional)
     QVector<QMap<QString, float>> engineTierIICurve;
     if (data.contains("engine_tier_ii_curve")
-        && !data["engine_tier_ii_curve"].isNull()) {
+        && !data["engine_tier_ii_curve"].isNull())
+    {
         QJsonArray engineTier2CurveArray =
             data["engine_tier_ii_curve"].toArray();
         for (const QJsonValue &pointValue :
-             engineTier2CurveArray) {
+             engineTier2CurveArray)
+        {
             QMap<QString, float> point;
             QJsonObject pointObj = pointValue.toObject();
             for (auto it = pointObj.constBegin();
-                 it != pointObj.constEnd(); ++it) {
+                 it != pointObj.constEnd(); ++it)
+            {
                 point[it.key()] = it.value().toDouble();
             }
             engineTierIICurve.append(point);
@@ -775,15 +880,18 @@ Ship *Ship::fromDict(const QJsonObject &data,
     // (optional)
     QVector<QMap<QString, float>> engineTierIIICurve;
     if (data.contains("engine_tier_iii_curve")
-        && !data["engine_tier_iii_curve"].isNull()) {
+        && !data["engine_tier_iii_curve"].isNull())
+    {
         QJsonArray engineTier3CurveArray =
             data["engine_tier_iii_curve"].toArray();
         for (const QJsonValue &pointValue :
-             engineTier3CurveArray) {
+             engineTier3CurveArray)
+        {
             QMap<QString, float> point;
             QJsonObject pointObj = pointValue.toObject();
             for (auto it = pointObj.constBegin();
-                 it != pointObj.constEnd(); ++it) {
+                 it != pointObj.constEnd(); ++it)
+            {
                 point[it.key()] = it.value().toDouble();
             }
             engineTierIIICurve.append(point);
@@ -794,11 +902,13 @@ Ship *Ship::fromDict(const QJsonObject &data,
     // (optional)
     QMap<int, float> appendagesWettedSurfaces;
     if (data.contains("appendages_wetted_surfaces")
-        && !data["appendages_wetted_surfaces"].isNull()) {
+        && !data["appendages_wetted_surfaces"].isNull())
+    {
         QJsonObject appendagesObj =
             data["appendages_wetted_surfaces"].toObject();
         for (auto it = appendagesObj.constBegin();
-             it != appendagesObj.constEnd(); ++it) {
+             it != appendagesObj.constEnd(); ++it)
+        {
             appendagesWettedSurfaces[it.key().toInt()] =
                 it.value().toDouble();
         }
@@ -848,43 +958,50 @@ Ship *Ship::fromDict(const QJsonObject &data,
         appendagesWettedSurfaces, parent);
 }
 
-Ship *Ship::copy() const {
+Ship *Ship::copy() const
+{
     // Create deep copies of all complex data structures
 
     // Copy path coordinates
     QVector<QVector<float>> pathCopy;
-    for (const auto &point : m_pathCoordinates) {
+    for (const auto &point : m_pathCoordinates)
+    {
         pathCopy.append(QVector<float>(point));
     }
 
     // Copy tanks details
     QVector<QMap<QString, float>> tanksCopy;
-    for (const auto &tank : m_tanksDetails) {
+    for (const auto &tank : m_tanksDetails)
+    {
         tanksCopy.append(QMap<QString, float>(tank));
     }
 
     // Copy engine tier II
     QVector<QMap<QString, float>> engineTier2Copy;
-    for (const auto &point : m_engineTierII) {
+    for (const auto &point : m_engineTierII)
+    {
         engineTier2Copy.append(QMap<QString, float>(point));
     }
 
     // Copy engine tier III
     QVector<QMap<QString, float>> engineTier3Copy;
-    for (const auto &point : m_engineTierIII) {
+    for (const auto &point : m_engineTierIII)
+    {
         engineTier3Copy.append(QMap<QString, float>(point));
     }
 
     // Copy engine tier II curve
     QVector<QMap<QString, float>> engineTier2CurveCopy;
-    for (const auto &point : m_engineTierIICurve) {
+    for (const auto &point : m_engineTierIICurve)
+    {
         engineTier2CurveCopy.append(
             QMap<QString, float>(point));
     }
 
     // Copy engine tier III curve
     QVector<QMap<QString, float>> engineTier3CurveCopy;
-    for (const auto &point : m_engineTierIIICurve) {
+    for (const auto &point : m_engineTierIIICurve)
+    {
         engineTier3CurveCopy.append(
             QMap<QString, float>(point));
     }
@@ -917,33 +1034,40 @@ Ship *Ship::copy() const {
 }
 
 // Setters implementation with signals
-void Ship::setUserId(const QString &shipId) {
-    if (m_shipId != shipId) {
+void Ship::setUserId(const QString &shipId)
+{
+    if (m_shipId != shipId)
+    {
         m_shipId = shipId;
         emit shipChanged();
     }
 }
 
 void Ship::setPathCoordinates(
-    const QVector<QVector<float>> &pathCoordinates) {
-    if (m_pathCoordinates != pathCoordinates) {
+    const QVector<QVector<float>> &pathCoordinates)
+{
+    if (m_pathCoordinates != pathCoordinates)
+    {
         m_pathCoordinates = pathCoordinates;
         emit pathChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setMaxSpeed(float maxSpeed) {
-    if (!qFuzzyCompare(m_maxSpeed, maxSpeed)) {
+void Ship::setMaxSpeed(float maxSpeed)
+{
+    if (!qFuzzyCompare(m_maxSpeed, maxSpeed))
+    {
         m_maxSpeed = maxSpeed;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setWaterlineLength(float waterlineLength) {
-    if (!qFuzzyCompare(m_waterlineLength,
-                       waterlineLength)) {
+void Ship::setWaterlineLength(float waterlineLength)
+{
+    if (!qFuzzyCompare(m_waterlineLength, waterlineLength))
+    {
         m_waterlineLength = waterlineLength;
         emit propertiesChanged();
         emit shipChanged();
@@ -951,9 +1075,11 @@ void Ship::setWaterlineLength(float waterlineLength) {
 }
 
 void Ship::setLengthBetweenPerpendiculars(
-    float lengthBetweenPerpendiculars) {
+    float lengthBetweenPerpendiculars)
+{
     if (!qFuzzyCompare(m_lengthBetweenPerpendiculars,
-                       lengthBetweenPerpendiculars)) {
+                       lengthBetweenPerpendiculars))
+    {
         m_lengthBetweenPerpendiculars =
             lengthBetweenPerpendiculars;
         emit propertiesChanged();
@@ -961,24 +1087,30 @@ void Ship::setLengthBetweenPerpendiculars(
     }
 }
 
-void Ship::setBeam(float beam) {
-    if (!qFuzzyCompare(m_beam, beam)) {
+void Ship::setBeam(float beam)
+{
+    if (!qFuzzyCompare(m_beam, beam))
+    {
         m_beam = beam;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setDraftAtForward(float draftAtForward) {
-    if (!qFuzzyCompare(m_draftAtForward, draftAtForward)) {
+void Ship::setDraftAtForward(float draftAtForward)
+{
+    if (!qFuzzyCompare(m_draftAtForward, draftAtForward))
+    {
         m_draftAtForward = draftAtForward;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setDraftAtAft(float draftAtAft) {
-    if (!qFuzzyCompare(m_draftAtAft, draftAtAft)) {
+void Ship::setDraftAtAft(float draftAtAft)
+{
+    if (!qFuzzyCompare(m_draftAtAft, draftAtAft))
+    {
         m_draftAtAft = draftAtAft;
         emit propertiesChanged();
         emit shipChanged();
@@ -986,27 +1118,33 @@ void Ship::setDraftAtAft(float draftAtAft) {
 }
 
 void Ship::setVolumetricDisplacement(
-    float volumetricDisplacement) {
+    float volumetricDisplacement)
+{
     if (!qFuzzyCompare(m_volumetricDisplacement,
-                       volumetricDisplacement)) {
+                       volumetricDisplacement))
+    {
         m_volumetricDisplacement = volumetricDisplacement;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setWettedHullSurface(float wettedHullSurface) {
+void Ship::setWettedHullSurface(float wettedHullSurface)
+{
     if (!qFuzzyCompare(m_wettedHullSurface,
-                       wettedHullSurface)) {
+                       wettedHullSurface))
+    {
         m_wettedHullSurface = wettedHullSurface;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setAreaAboveWaterline(float areaAboveWaterline) {
+void Ship::setAreaAboveWaterline(float areaAboveWaterline)
+{
     if (!qFuzzyCompare(m_areaAboveWaterline,
-                       areaAboveWaterline)) {
+                       areaAboveWaterline))
+    {
         m_areaAboveWaterline = areaAboveWaterline;
         emit propertiesChanged();
         emit shipChanged();
@@ -1014,94 +1152,115 @@ void Ship::setAreaAboveWaterline(float areaAboveWaterline) {
 }
 
 void Ship::setBulbousBowCenterHeight(
-    float bulbousBowCenterHeight) {
+    float bulbousBowCenterHeight)
+{
     if (!qFuzzyCompare(m_bulbousBowCenterHeight,
-                       bulbousBowCenterHeight)) {
+                       bulbousBowCenterHeight))
+    {
         m_bulbousBowCenterHeight = bulbousBowCenterHeight;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setBulbousBowArea(float bulbousBowArea) {
-    if (!qFuzzyCompare(m_bulbousBowArea, bulbousBowArea)) {
+void Ship::setBulbousBowArea(float bulbousBowArea)
+{
+    if (!qFuzzyCompare(m_bulbousBowArea, bulbousBowArea))
+    {
         m_bulbousBowArea = bulbousBowArea;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setImmersedTransomArea(
-    float immersedTransomArea) {
+void Ship::setImmersedTransomArea(float immersedTransomArea)
+{
     if (!qFuzzyCompare(m_immersedTransomArea,
-                       immersedTransomArea)) {
+                       immersedTransomArea))
+    {
         m_immersedTransomArea = immersedTransomArea;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setEntranceAngle(float entranceAngle) {
-    if (!qFuzzyCompare(m_entranceAngle, entranceAngle)) {
+void Ship::setEntranceAngle(float entranceAngle)
+{
+    if (!qFuzzyCompare(m_entranceAngle, entranceAngle))
+    {
         m_entranceAngle = entranceAngle;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setSurfaceRoughness(float surfaceRoughness) {
+void Ship::setSurfaceRoughness(float surfaceRoughness)
+{
     if (!qFuzzyCompare(m_surfaceRoughness,
-                       surfaceRoughness)) {
+                       surfaceRoughness))
+    {
         m_surfaceRoughness = surfaceRoughness;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setBuoyancyCenter(float buoyancyCenter) {
-    if (!qFuzzyCompare(m_buoyancyCenter, buoyancyCenter)) {
+void Ship::setBuoyancyCenter(float buoyancyCenter)
+{
+    if (!qFuzzyCompare(m_buoyancyCenter, buoyancyCenter))
+    {
         m_buoyancyCenter = buoyancyCenter;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setSternShapeParam(int sternShapeParam) {
-    if (m_sternShapeParam != sternShapeParam) {
+void Ship::setSternShapeParam(int sternShapeParam)
+{
+    if (m_sternShapeParam != sternShapeParam)
+    {
         m_sternShapeParam = sternShapeParam;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setMidshipSectionCoef(float midshipSectionCoef) {
+void Ship::setMidshipSectionCoef(float midshipSectionCoef)
+{
     if (!qFuzzyCompare(m_midshipSectionCoef,
-                       midshipSectionCoef)) {
+                       midshipSectionCoef))
+    {
         m_midshipSectionCoef = midshipSectionCoef;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setWaterplaneAreaCoef(float waterplaneAreaCoef) {
+void Ship::setWaterplaneAreaCoef(float waterplaneAreaCoef)
+{
     if (!qFuzzyCompare(m_waterplaneAreaCoef,
-                       waterplaneAreaCoef)) {
+                       waterplaneAreaCoef))
+    {
         m_waterplaneAreaCoef = waterplaneAreaCoef;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setPrismaticCoef(float prismaticCoef) {
-    if (!qFuzzyCompare(m_prismaticCoef, prismaticCoef)) {
+void Ship::setPrismaticCoef(float prismaticCoef)
+{
+    if (!qFuzzyCompare(m_prismaticCoef, prismaticCoef))
+    {
         m_prismaticCoef = prismaticCoef;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setBlockCoef(float blockCoef) {
-    if (!qFuzzyCompare(m_blockCoef, blockCoef)) {
+void Ship::setBlockCoef(float blockCoef)
+{
+    if (!qFuzzyCompare(m_blockCoef, blockCoef))
+    {
         m_blockCoef = blockCoef;
         emit propertiesChanged();
         emit shipChanged();
@@ -1109,16 +1268,20 @@ void Ship::setBlockCoef(float blockCoef) {
 }
 
 void Ship::setTanksDetails(
-    const QVector<QMap<QString, float>> &tanksDetails) {
-    if (m_tanksDetails != tanksDetails) {
+    const QVector<QMap<QString, float>> &tanksDetails)
+{
+    if (m_tanksDetails != tanksDetails)
+    {
         m_tanksDetails = tanksDetails;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setEnginesPerPropeller(int enginesPerPropeller) {
-    if (m_enginesPerPropeller != enginesPerPropeller) {
+void Ship::setEnginesPerPropeller(int enginesPerPropeller)
+{
+    if (m_enginesPerPropeller != enginesPerPropeller)
+    {
         m_enginesPerPropeller = enginesPerPropeller;
         emit propertiesChanged();
         emit shipChanged();
@@ -1126,8 +1289,10 @@ void Ship::setEnginesPerPropeller(int enginesPerPropeller) {
 }
 
 void Ship::setEngineTierII(
-    const QVector<QMap<QString, float>> &engineTierII) {
-    if (m_engineTierII != engineTierII) {
+    const QVector<QMap<QString, float>> &engineTierII)
+{
+    if (m_engineTierII != engineTierII)
+    {
         m_engineTierII = engineTierII;
         emit propertiesChanged();
         emit shipChanged();
@@ -1135,8 +1300,10 @@ void Ship::setEngineTierII(
 }
 
 void Ship::setEngineTierIII(
-    const QVector<QMap<QString, float>> &engineTierIII) {
-    if (m_engineTierIII != engineTierIII) {
+    const QVector<QMap<QString, float>> &engineTierIII)
+{
+    if (m_engineTierIII != engineTierIII)
+    {
         m_engineTierIII = engineTierIII;
         emit propertiesChanged();
         emit shipChanged();
@@ -1144,9 +1311,10 @@ void Ship::setEngineTierIII(
 }
 
 void Ship::setEngineTierIICurve(
-    const QVector<QMap<QString, float>>
-        &engineTierIICurve) {
-    if (m_engineTierIICurve != engineTierIICurve) {
+    const QVector<QMap<QString, float>> &engineTierIICurve)
+{
+    if (m_engineTierIICurve != engineTierIICurve)
+    {
         m_engineTierIICurve = engineTierIICurve;
         emit propertiesChanged();
         emit shipChanged();
@@ -1154,110 +1322,133 @@ void Ship::setEngineTierIICurve(
 }
 
 void Ship::setEngineTierIIICurve(
-    const QVector<QMap<QString, float>>
-        &engineTierIIICurve) {
-    if (m_engineTierIIICurve != engineTierIIICurve) {
+    const QVector<QMap<QString, float>> &engineTierIIICurve)
+{
+    if (m_engineTierIIICurve != engineTierIIICurve)
+    {
         m_engineTierIIICurve = engineTierIIICurve;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setGearboxRatio(float gearboxRatio) {
-    if (!qFuzzyCompare(m_gearboxRatio, gearboxRatio)) {
+void Ship::setGearboxRatio(float gearboxRatio)
+{
+    if (!qFuzzyCompare(m_gearboxRatio, gearboxRatio))
+    {
         m_gearboxRatio = gearboxRatio;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setGearboxEfficiency(float gearboxEfficiency) {
+void Ship::setGearboxEfficiency(float gearboxEfficiency)
+{
     if (!qFuzzyCompare(m_gearboxEfficiency,
-                       gearboxEfficiency)) {
+                       gearboxEfficiency))
+    {
         m_gearboxEfficiency = gearboxEfficiency;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setShaftEfficiency(float shaftEfficiency) {
-    if (!qFuzzyCompare(m_shaftEfficiency,
-                       shaftEfficiency)) {
+void Ship::setShaftEfficiency(float shaftEfficiency)
+{
+    if (!qFuzzyCompare(m_shaftEfficiency, shaftEfficiency))
+    {
         m_shaftEfficiency = shaftEfficiency;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setPropellerCount(int propellerCount) {
-    if (m_propellerCount != propellerCount) {
+void Ship::setPropellerCount(int propellerCount)
+{
+    if (m_propellerCount != propellerCount)
+    {
         m_propellerCount = propellerCount;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setPropellerDiameter(float propellerDiameter) {
+void Ship::setPropellerDiameter(float propellerDiameter)
+{
     if (!qFuzzyCompare(m_propellerDiameter,
-                       propellerDiameter)) {
+                       propellerDiameter))
+    {
         m_propellerDiameter = propellerDiameter;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setPropellerPitch(float propellerPitch) {
-    if (!qFuzzyCompare(m_propellerPitch, propellerPitch)) {
+void Ship::setPropellerPitch(float propellerPitch)
+{
+    if (!qFuzzyCompare(m_propellerPitch, propellerPitch))
+    {
         m_propellerPitch = propellerPitch;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setPropellerBladesCount(
-    int propellerBladesCount) {
-    if (m_propellerBladesCount != propellerBladesCount) {
+void Ship::setPropellerBladesCount(int propellerBladesCount)
+{
+    if (m_propellerBladesCount != propellerBladesCount)
+    {
         m_propellerBladesCount = propellerBladesCount;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setExpandedAreaRatio(float expandedAreaRatio) {
+void Ship::setExpandedAreaRatio(float expandedAreaRatio)
+{
     if (!qFuzzyCompare(m_expandedAreaRatio,
-                       expandedAreaRatio)) {
+                       expandedAreaRatio))
+    {
         m_expandedAreaRatio = expandedAreaRatio;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setStopIfNoEnergy(bool stopIfNoEnergy) {
-    if (m_stopIfNoEnergy != stopIfNoEnergy) {
+void Ship::setStopIfNoEnergy(bool stopIfNoEnergy)
+{
+    if (m_stopIfNoEnergy != stopIfNoEnergy)
+    {
         m_stopIfNoEnergy = stopIfNoEnergy;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setMaxRudderAngle(float maxRudderAngle) {
-    if (!qFuzzyCompare(m_maxRudderAngle, maxRudderAngle)) {
+void Ship::setMaxRudderAngle(float maxRudderAngle)
+{
+    if (!qFuzzyCompare(m_maxRudderAngle, maxRudderAngle))
+    {
         m_maxRudderAngle = maxRudderAngle;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setVesselWeight(float vesselWeight) {
-    if (!qFuzzyCompare(m_vesselWeight, vesselWeight)) {
+void Ship::setVesselWeight(float vesselWeight)
+{
+    if (!qFuzzyCompare(m_vesselWeight, vesselWeight))
+    {
         m_vesselWeight = vesselWeight;
         emit propertiesChanged();
         emit shipChanged();
     }
 }
 
-void Ship::setCargoWeight(float cargoWeight) {
-    if (!qFuzzyCompare(m_cargoWeight, cargoWeight)) {
+void Ship::setCargoWeight(float cargoWeight)
+{
+    if (!qFuzzyCompare(m_cargoWeight, cargoWeight))
+    {
         m_cargoWeight = cargoWeight;
         emit propertiesChanged();
         emit shipChanged();
@@ -1265,9 +1456,11 @@ void Ship::setCargoWeight(float cargoWeight) {
 }
 
 void Ship::setAppendagesWettedSurfaces(
-    const QMap<int, float> &appendagesWettedSurfaces) {
+    const QMap<int, float> &appendagesWettedSurfaces)
+{
     if (m_appendagesWettedSurfaces
-        != appendagesWettedSurfaces) {
+        != appendagesWettedSurfaces)
+    {
         m_appendagesWettedSurfaces =
             appendagesWettedSurfaces;
         emit propertiesChanged();
@@ -1278,10 +1471,12 @@ void Ship::setAppendagesWettedSurfaces(
 // ShipsReader Implementation
 QVector<Ship *>
 ShipsReader::readShipsFile(const QString &filePath,
-                           QObject       *parent) {
+                           QObject       *parent)
+{
     QVector<Ship *> ships;
 
-    if (!QFile::exists(filePath)) {
+    if (!QFile::exists(filePath))
+    {
         // ApplicationLogger::log_error(
         //     QString("File '%1' does not
         //     exist.").arg(filePath),
@@ -1291,7 +1486,8 @@ ShipsReader::readShipsFile(const QString &filePath,
     }
 
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
         // ApplicationLogger::log_error(
         //     QString("Could not open file '%1' for
         //     reading.").arg(filePath),
@@ -1301,17 +1497,20 @@ ShipsReader::readShipsFile(const QString &filePath,
     }
 
     QTextStream in(&file);
-    while (!in.atEnd()) {
+    while (!in.atEnd())
+    {
         QString line = in.readLine();
 
         // Remove comments and leading/trailing whitespace
         int commentPos = line.indexOf('#');
-        if (commentPos >= 0) {
+        if (commentPos >= 0)
+        {
             line = line.left(commentPos);
         }
         line = line.trimmed();
 
-        if (line.isEmpty()) {
+        if (line.isEmpty())
+        {
             continue; // Skip empty or comment-only lines
         }
 
@@ -1319,7 +1518,8 @@ ShipsReader::readShipsFile(const QString &filePath,
         QStringList parts =
             line.split('\t'); // tab-separated values
 
-        if (parts.size() < FILE_ORDERED_PARAMETERS.size()) {
+        if (parts.size() < FILE_ORDERED_PARAMETERS.size())
+        {
             // ApplicationLogger::log_error(
             //     QString("Incomplete data in line:
             //     %1").arg(line), ClientType::ShipClient
@@ -1327,7 +1527,8 @@ ShipsReader::readShipsFile(const QString &filePath,
             continue;
         }
 
-        try {
+        try
+        {
             // Map the parts to the Ship class parameters
             QMap<QString, QVariant> shipParams =
                 parseShipParameters(parts);
@@ -1408,7 +1609,9 @@ ShipsReader::readShipsFile(const QString &filePath,
                 parent);
 
             ships.append(ship);
-        } catch (const std::exception &e) {
+        }
+        catch (const std::exception &e)
+        {
             // ApplicationLogger::log_error(
             //     QString("Error parsing ship:
             //     %1").arg(e.what()),
@@ -1423,90 +1626,119 @@ ShipsReader::readShipsFile(const QString &filePath,
 }
 
 QMap<QString, QVariant>
-ShipsReader::parseShipParameters(const QStringList &parts) {
+ShipsReader::parseShipParameters(const QStringList &parts)
+{
     QMap<QString, QVariant> paramMapping;
 
-    for (int i = 0; i < FILE_ORDERED_PARAMETERS.size();
-         ++i) {
+    for (int i = 0; i < FILE_ORDERED_PARAMETERS.size(); ++i)
+    {
         const auto &paramInfo  = FILE_ORDERED_PARAMETERS[i];
         QString     paramName  = paramInfo.first;
         bool        isOptional = paramInfo.second;
 
         // Check if the parameter has a value in the parts
         // list
-        if (i < parts.size()) {
+        if (i < parts.size())
+        {
             QString paramValue = parts[i];
 
             // Handle optional parameters that might be
             // empty
-            if (paramValue.isEmpty() && isOptional) {
+            if (paramValue.isEmpty() && isOptional)
+            {
                 paramMapping[paramName] = QVariant();
-            } else {
+            }
+            else
+            {
                 // Parse the parameter based on its type
-                if (paramName == "Path") {
+                if (paramName == "Path")
+                {
                     paramMapping[paramName] =
                         QVariant::fromValue(
                             parsePath(paramValue));
-                } else if (paramName
-                           == "EngineTierIIPropertiesPoint"
-                              "s") {
+                }
+                else if (paramName
+                         == "EngineTierIIPropertiesPoint"
+                            "s")
+                {
                     paramMapping[paramName] =
                         QVariant::fromValue(
                             parseEnginePoints(paramValue));
-                } else if (paramName
-                           == "EngineTierIIIPropertiesPoint"
-                              "s") {
+                }
+                else if (paramName
+                         == "EngineTierIIIPropertiesPoint"
+                            "s")
+                {
                     QString cleanValue =
                         paramValue.trimmed().toLower();
-                    if (cleanValue.contains("na")) {
+                    if (cleanValue.contains("na"))
+                    {
                         paramMapping[paramName] =
                             QVariant::fromValue(
                                 QVector<QMap<QString,
                                              float>>());
-                    } else {
+                    }
+                    else
+                    {
                         paramMapping[paramName] =
                             QVariant::fromValue(
                                 parseEnginePoints(
                                     paramValue));
                     }
-                } else if (paramName == "EngineTierIICurve"
-                           || paramName
-                                  == "EngineTierIIICurve") {
+                }
+                else if (paramName == "EngineTierIICurve"
+                         || paramName
+                                == "EngineTierIIICurve")
+                {
                     QString cleanValue =
                         paramValue.trimmed().toLower();
-                    if (cleanValue.contains("na")) {
+                    if (cleanValue.contains("na"))
+                    {
                         paramMapping[paramName] =
                             QVariant::fromValue(
                                 QVector<QMap<QString,
                                              float>>());
-                    } else {
+                    }
+                    else
+                    {
                         paramMapping[paramName] =
                             QVariant::fromValue(
                                 parseEnginePoints(
                                     paramValue));
                     }
-                } else if (paramName
-                           == "AppendagesWettedSurfaces") {
+                }
+                else if (paramName
+                         == "AppendagesWettedSurfaces")
+                {
                     QString cleanValue =
                         paramValue.trimmed().toLower();
-                    if (cleanValue.contains("na")) {
+                    if (cleanValue.contains("na"))
+                    {
                         paramMapping[paramName] =
                             QVariant::fromValue(
                                 QMap<int, float>());
-                    } else {
+                    }
+                    else
+                    {
                         paramMapping[paramName] =
                             QVariant::fromValue(
                                 parseAppendages(
                                     paramValue));
                     }
-                } else if (paramName == "StopIfNoEnergy") {
+                }
+                else if (paramName == "StopIfNoEnergy")
+                {
                     paramMapping[paramName] =
                         QVariant(paramValue.toInt() != 0);
-                } else if (paramName == "TanksDetails") {
+                }
+                else if (paramName == "TanksDetails")
+                {
                     paramMapping[paramName] =
                         QVariant::fromValue(
                             parseTanksDetails(paramValue));
-                } else {
+                }
+                else
+                {
                     QString cleanValue =
                         paramValue.trimmed()
                             .toLower()
@@ -1517,14 +1749,18 @@ ShipsReader::parseShipParameters(const QStringList &parts) {
                                       // minus
                     // Check if paramValue contains "na"
                     // (anywhere in the string)
-                    if (cleanValue.contains("na")) {
+                    if (cleanValue.contains("na"))
+                    {
                         paramMapping[paramName] =
                             QVariant();
-                    } else {
+                    }
+                    else
+                    {
                         bool  ok;
                         float numValue =
                             cleanValue.toFloat(&ok);
-                        if (!ok) {
+                        if (!ok)
+                        {
                             throw std::runtime_error(
                                 QString("Invalid numeric "
                                         "value for %1: %2")
@@ -1537,8 +1773,11 @@ ShipsReader::parseShipParameters(const QStringList &parts) {
                     }
                 }
             }
-        } else {
-            if (!isOptional) {
+        }
+        else
+        {
+            if (!isOptional)
+            {
                 throw std::runtime_error(
                     QString(
                         "Missing required parameter: %1")
@@ -1555,18 +1794,22 @@ ShipsReader::parseShipParameters(const QStringList &parts) {
 }
 
 QVector<QVector<float>>
-ShipsReader::parsePath(const QString &pathString) {
+ShipsReader::parsePath(const QString &pathString)
+{
     QVector<QVector<float>> pathPoints;
 
     if (pathString.isEmpty()
-        || pathString.toLower().contains("na")) {
+        || pathString.toLower().contains("na"))
+    {
         return pathPoints;
     }
 
     QStringList pairs = pathString.split(';');
-    for (const QString &pair : pairs) {
+    for (const QString &pair : pairs)
+    {
         QStringList keyValue = pair.split(',');
-        if (keyValue.size() != 2) {
+        if (keyValue.size() != 2)
+        {
             throw std::runtime_error(
                 QString("Malformed coordinate pair: %1")
                     .arg(pair)
@@ -1577,14 +1820,16 @@ ShipsReader::parsePath(const QString &pathString) {
         float lon = keyValue[0].trimmed().toFloat(&okLon);
         float lat = keyValue[1].trimmed().toFloat(&okLat);
 
-        if (!okLon || !okLat) {
+        if (!okLon || !okLat)
+        {
             throw std::runtime_error(
                 QString("Invalid coordinate values: %1")
                     .arg(pair)
                     .toStdString());
         }
 
-        if (qAbs(lon) > 180.0f || qAbs(lat) > 90.0f) {
+        if (qAbs(lon) > 180.0f || qAbs(lat) > 90.0f)
+        {
             throw std::runtime_error(
                 QString("Invalid WGS84 coordinates: %1")
                     .arg(pair)
@@ -1602,17 +1847,21 @@ ShipsReader::parsePath(const QString &pathString) {
 
 QVector<QMap<QString, float>>
 ShipsReader::parseEnginePoints(
-    const QString &enginePointsStr) {
+    const QString &enginePointsStr)
+{
     QVector<QMap<QString, float>> engineProperties;
 
-    if (enginePointsStr.toLower().contains("na")) {
+    if (enginePointsStr.toLower().contains("na"))
+    {
         return engineProperties;
     }
 
     QStringList pointsData = enginePointsStr.split(';');
-    for (const QString &pointData : pointsData) {
+    for (const QString &pointData : pointsData)
+    {
         QStringList values = pointData.split(',');
-        if (values.size() != 3) {
+        if (values.size() != 3)
+        {
             throw std::runtime_error(
                 QString("Malformed Engine Property: "
                         "%1\nEngine Power-RPM-Efficiency "
@@ -1630,7 +1879,8 @@ ShipsReader::parseEnginePoints(
         float efficiency =
             values[2].trimmed().toFloat(&okEff);
 
-        if (!okPower || !okRPM || !okEff) {
+        if (!okPower || !okRPM || !okEff)
+        {
             throw std::runtime_error(
                 QString("Invalid engine point values: %1")
                     .arg(pointData)
@@ -1648,25 +1898,30 @@ ShipsReader::parseEnginePoints(
 }
 
 QMap<int, float>
-ShipsReader::parseAppendages(const QString &appendagesStr) {
+ShipsReader::parseAppendages(const QString &appendagesStr)
+{
     QMap<int, float> appendages;
 
     if (appendagesStr.isEmpty()
-        || appendagesStr.toLower().contains("na")) {
+        || appendagesStr.toLower().contains("na"))
+    {
         return appendages;
     }
 
     QStringList pairs = appendagesStr.split(';');
-    for (const QString &pair : pairs) {
+    for (const QString &pair : pairs)
+    {
         QStringList keyValue = pair.split(',');
-        if (keyValue.size() == 2) {
+        if (keyValue.size() == 2)
+        {
             bool okType, okSurface;
             int  appendageType =
                 keyValue[0].trimmed().toInt(&okType);
             float wettedSurface =
                 keyValue[1].trimmed().toFloat(&okSurface);
 
-            if (!okType || !okSurface) {
+            if (!okType || !okSurface)
+            {
                 throw std::runtime_error(
                     QString("Invalid appendage values: %1")
                         .arg(pair)
@@ -1674,7 +1929,9 @@ ShipsReader::parseAppendages(const QString &appendagesStr) {
             }
 
             appendages[appendageType] = wettedSurface;
-        } else {
+        }
+        else
+        {
             throw std::runtime_error(
                 QString("Malformed appendage entry: %1")
                     .arg(pair)
@@ -1686,17 +1943,21 @@ ShipsReader::parseAppendages(const QString &appendagesStr) {
 }
 
 QVector<QMap<QString, float>>
-ShipsReader::parseTanksDetails(const QString &tanksStr) {
+ShipsReader::parseTanksDetails(const QString &tanksStr)
+{
     QVector<QMap<QString, float>> tanks;
 
-    if (tanksStr.isEmpty()) {
+    if (tanksStr.isEmpty())
+    {
         return tanks;
     }
 
     QStringList tanksList = tanksStr.split(';');
-    for (const QString &tankStr : tanksList) {
+    for (const QString &tankStr : tanksList)
+    {
         QStringList values = tankStr.split(',');
-        if (values.size() != 4) {
+        if (values.size() != 4)
+        {
             throw std::runtime_error(
                 QString("Malformed tank details: %1")
                     .arg(tankStr)
@@ -1709,7 +1970,8 @@ ShipsReader::parseTanksDetails(const QString &tanksStr) {
         float initialCapacity  = values[2].toFloat(&ok3);
         float depthOfDischarge = values[3].toFloat(&ok4);
 
-        if (!ok1 || !ok2 || !ok3 || !ok4) {
+        if (!ok1 || !ok2 || !ok3 || !ok4)
+        {
             throw std::runtime_error(
                 QString("Invalid tank detail values: %1")
                     .arg(tankStr)
@@ -1728,15 +1990,20 @@ ShipsReader::parseTanksDetails(const QString &tanksStr) {
     return tanks;
 }
 
-bool ShipsReader::containsNa(const QVariant &value) {
-    if (value.typeId() == QMetaType::QString) {
+bool ShipsReader::containsNa(const QVariant &value)
+{
+    if (value.typeId() == QMetaType::QString)
+    {
         return value.toString().toLower().contains("na");
     }
 
-    if (value.typeId() == QMetaType::QVariantList) {
+    if (value.typeId() == QMetaType::QVariantList)
+    {
         const QVariantList list = value.toList();
-        for (const QVariant &item : list) {
-            if (containsNa(item)) {
+        for (const QVariant &item : list)
+        {
+            if (containsNa(item))
+            {
                 return true;
             }
         }

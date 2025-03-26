@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GraphicsObjectBase.h"
+
 #include <QColor>
 #include <QGraphicsObject>
 #include <QMap>
@@ -7,10 +9,13 @@
 #include <QString>
 #include <QVariant>
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
-class ConnectionLabel : public QGraphicsObject {
+class ConnectionLabel : public GraphicsObjectBase
+{
     Q_OBJECT
 
 public:
@@ -19,13 +24,16 @@ public:
     virtual ~ConnectionLabel() = default;
 
     // Accessors
-    QString text() const {
+    QString text() const
+    {
         return m_text;
     }
-    QColor color() const {
+    QColor color() const
+    {
         return m_color;
     }
-    bool isSelected() const {
+    bool isSelected() const
+    {
         return m_isSelected;
     }
 

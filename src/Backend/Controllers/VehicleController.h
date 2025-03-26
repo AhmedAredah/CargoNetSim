@@ -14,9 +14,32 @@
 #include <QMutex>
 #include <QObject>
 #include <QVector>
+#include <QtCore/qreadwritelock.h>
 
-namespace CargoNetSim {
-namespace Backend {
+// Forward declarations
+namespace CargoNetSim
+{
+class CargoNetSimController;
+}
+
+namespace CargoNetSim
+{
+namespace Backend
+{
+
+/**
+ * @class VehicleControllerCleanup
+ * @brief Utility class to handle singleton cleanup.
+ */
+class VehicleControllerCleanup
+{
+public:
+    /**
+     * @brief Cleanup the VehicleController singleton
+     *        instance.
+     */
+    static void cleanup();
+};
 
 /**
  * @class VehicleController
@@ -28,23 +51,31 @@ namespace Backend {
  * loading from files, tracking, and updating vehicle
  * states.
  */
-class VehicleController : public QObject {
+class VehicleController : public QObject
+{
     Q_OBJECT
+
+    friend class VehicleControllerCleanup;
+
+    // Make the CargoNetSimController a friend
+    friend class CargoNetSim::CargoNetSimController;
+
 public:
     /**
-     * @brief Get the singleton instance of the controller.
-     * @return Pointer to the singleton instance.
+     * @brief Constructor for VehicleController.
+     * @param parent Optional parent QObject.
      */
-    static VehicleController *getInstance();
+    explicit VehicleController(QObject *parent = nullptr);
 
     /**
-     * @brief Clean up the singleton instance.
-     *
-     * This method should be called before application exit
-     * to properly destroy the singleton instance and free
-     * all associated resources.
+     * @brief destructor for VehicleController.
      */
-    static void cleanup();
+    ~VehicleController();
+
+    // Disable copy constructor and assignment operator
+    VehicleController(const VehicleController &) = delete;
+    VehicleController &
+    operator=(const VehicleController &) = delete;
 
     // Ship Management
 
@@ -169,7 +200,7 @@ signals:
      * @brief Signal emitted when a ship is added.
      * @param ship Pointer to the added ship.
      */
-    void shipAdded(Ship *ship);
+    void shipAdded(CargoNetSim::Backend::Ship *ship);
 
     /**
      * @brief Signal emitted when a ship is removed.
@@ -181,7 +212,7 @@ signals:
      * @brief Signal emitted when a ship is updated.
      * @param ship Pointer to the updated ship.
      */
-    void shipUpdated(Ship *ship);
+    void shipUpdated(CargoNetSim::Backend::Ship *ship);
 
     /**
      * @brief Signal emitted when ships are loaded.
@@ -198,7 +229,7 @@ signals:
      * @brief Signal emitted when a train is added.
      * @param train Pointer to the added train.
      */
-    void trainAdded(Train *train);
+    void trainAdded(CargoNetSim::Backend::Train *train);
 
     /**
      * @brief Signal emitted when a train is removed.
@@ -210,7 +241,7 @@ signals:
      * @brief Signal emitted when a train is updated.
      * @param train Pointer to the updated train.
      */
-    void trainUpdated(Train *train);
+    void trainUpdated(CargoNetSim::Backend::Train *train);
 
     /**
      * @brief Signal emitted when trains are loaded.
@@ -224,27 +255,6 @@ signals:
     void trainsCleared();
 
 private:
-    /**
-     * @brief Private constructor for singleton pattern.
-     * @param parent Optional parent QObject.
-     */
-    explicit VehicleController(QObject *parent = nullptr);
-
-    /**
-     * @brief Private destructor for singleton pattern.
-     */
-    ~VehicleController();
-
-    // Disable copy constructor and assignment operator
-    VehicleController(const VehicleController &) = delete;
-    VehicleController &
-    operator=(const VehicleController &) = delete;
-
-    /** @brief The singleton instance */
-    static VehicleController *m_instance;
-
-    /** @brief Mutex for thread-safe singleton access */
-    static QMutex m_mutex;
 
     /** @brief Map of ship identifiers to ship objects */
     QMap<QString, Ship *> m_ships;

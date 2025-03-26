@@ -15,15 +15,19 @@
 #include <QString>
 #include <containerLib/container.h>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @struct TripRequest
  * @brief Represents a trip request parameters
  */
-struct TripRequest {
+struct TripRequest
+{
     QString networkName;   ///< Network identifier
     int     originId;      ///< Origin node ID
     int     destinationId; ///< Destination node ID
@@ -35,7 +39,8 @@ struct TripRequest {
  * @struct TripResult
  * @brief Represents the result of a completed trip
  */
-struct TripResult {
+struct TripResult
+{
     QString tripId;          ///< Trip identifier
     QString networkName;     ///< Network identifier
     int     originId;        ///< Origin node ID
@@ -56,7 +61,8 @@ struct TripResult {
  * Provides a Future/Promise based API for handling trips
  * that complete asynchronously after simulation runs.
  */
-class AsyncTripManager : public QObject {
+class AsyncTripManager : public QObject
+{
     Q_OBJECT
 
 public:
@@ -112,7 +118,8 @@ public slots:
 
 private:
     // Container for trip promises
-    struct TripPromiseData {
+    struct TripPromiseData
+    {
         QPromise<TripResult> promise;
         TripRequest          request;
     };

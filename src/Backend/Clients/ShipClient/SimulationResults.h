@@ -14,14 +14,18 @@
 
 #include "Backend/Clients/ShipClient/SimulationSummaryData.h"
 
-namespace CargoNetSim {
-namespace Backend {
-namespace ShipClient {
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace ShipClient
+{
 
 /**
  * @brief Stores simulation results data
  */
-class SimulationResults {
+class SimulationResults
+{
 public:
     /**
      * @brief Default constructor

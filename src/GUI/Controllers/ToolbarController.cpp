@@ -15,13 +15,17 @@
 #include "../Utils/IconCreator.h"
 #include "../Widgets/ShipManagerDialog.h"
 #include "../Widgets/TrainManagerDialog.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Controllers/VehicleController.h"
+#include "GUI/Controllers/ViewController.h"
 
-namespace CargoNetSim {
-namespace GUI {
+namespace CargoNetSim
+{
+namespace GUI
+{
 
-void ToolbarController::setupToolbar(
-    MainWindow *mainWindow) {
+void ToolbarController::setupToolbar(MainWindow *mainWindow)
+{
     // Create ribbon-style toolbar
     mainWindow->ribbon_ = new QTabWidget();
 
@@ -133,11 +137,12 @@ void ToolbarController::setupToolbar(
     connectButton->setMenu(mainWindow->connectionMenu_);
     connectButton->setPopupMode(
         QToolButton::ToolButtonPopupMode::MenuButtonPopup);
-    // QObject::connect(connectButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleConnectMode(mainWindow,
-    //                  checked); });
+    QObject::connect(
+        connectButton, &QToolButton::clicked,
+        [mainWindow](bool checked) {
+            BasicButtonController::toggleConnectMode(
+                mainWindow, checked);
+        });
     mainWindow->connectButton_ = connectButton;
     toolsLayout->addWidget(connectButton);
 
@@ -149,11 +154,12 @@ void ToolbarController::setupToolbar(
     linkTerminalButton->setIcon(
         QIcon(IconFactory::createLinkTerminalIcon()));
     linkTerminalButton->setCheckable(true);
-    // QObject::connect(linkTerminalButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleLinkTerminalMode(mainWindow,
-    //                  checked); });
+    QObject::connect(
+        linkTerminalButton, &QToolButton::clicked,
+        [mainWindow](bool checked) {
+            BasicButtonController::toggleLinkTerminalMode(
+                mainWindow, checked);
+        });
     toolsLayout->addWidget(linkTerminalButton);
     mainWindow->linkTerminalButton_ = linkTerminalButton;
 
@@ -164,11 +170,12 @@ void ToolbarController::setupToolbar(
     unlinkTerminalButton->setIcon(
         QIcon(IconFactory::createUnlinkTerminalIcon()));
     unlinkTerminalButton->setCheckable(true);
-    // QObject::connect(unlinkTerminalButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleUnlinkTerminalMode(mainWindow,
-    //                  checked); });
+    QObject::connect(
+        unlinkTerminalButton, &QToolButton::clicked,
+        [mainWindow](bool checked) {
+            BasicButtonController::toggleUnlinkTerminalMode(
+                mainWindow, checked);
+        });
     toolsLayout->addWidget(unlinkTerminalButton);
     mainWindow->unlinkTerminalButton_ =
         unlinkTerminalButton;
@@ -183,11 +190,13 @@ void ToolbarController::setupToolbar(
     setGlobalPositionButton->setIcon(
         QIcon(IconFactory::createSetGlobalPositionIcon()));
     setGlobalPositionButton->setCheckable(true);
-    // QObject::connect(setGlobalPositionButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleSetGlobalPositionMode(mainWindow,
-    //                  checked); });
+    QObject::connect(setGlobalPositionButton,
+                     &QToolButton::clicked,
+                     [mainWindow](bool checked) {
+                         BasicButtonController::
+                             toggleSetGlobalPositionMode(
+                                 mainWindow, checked);
+                     });
     setGlobalPositionButton->setVisible(false);
     toolsLayout->addWidget(setGlobalPositionButton);
     mainWindow->setGlobalPositionButton_ =
@@ -214,11 +223,12 @@ void ToolbarController::setupToolbar(
     measureButton->setIcon(
         QIcon(IconFactory::createMeasureDistancePixmap()));
     measureButton->setCheckable(true);
-    // QObject::connect(measureButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleMeasureMode(mainWindow,
-    //                  checked); });
+    QObject::connect(
+        measureButton, &QToolButton::clicked,
+        [mainWindow](bool checked) {
+            BasicButtonController::toggleMeasureMode(
+                mainWindow, checked);
+        });
     measurementsLayout->addWidget(measureButton);
     mainWindow->measureButton_ = measureButton;
 
@@ -229,11 +239,12 @@ void ToolbarController::setupToolbar(
     clearMeasureButton->setText("Clear\nMeasurements");
     clearMeasureButton->setIcon(QIcon(
         IconFactory::createClearMeasurementsPixmap()));
-    // QObject::connect(clearMeasureButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  BasicButtonController::clearMeasurements(mainWindow);
-    //                  });
+    QObject::connect(
+        clearMeasureButton, &QToolButton::clicked,
+        [mainWindow]() {
+            BasicButtonController::clearMeasurements(
+                mainWindow);
+        });
     measurementsLayout->addWidget(clearMeasureButton);
 
     mainWindow->measurementsButtons_ = {measureButton,
@@ -253,15 +264,8 @@ void ToolbarController::setupToolbar(
     regionInnerLayout->addWidget(
         new QLabel("Active Region:"));
 
-    // Setup region combo box (placeholder)
+    // Setup region combo box
     mainWindow->regionCombo_ = new QComboBox();
-    // Add regions (this would be populated from
-    // RegionDataController)
-    // QObject::connect(mainWindow->regionCombo_,
-    // QOverload<int>::of(&QComboBox::currentIndexChanged),
-    //                  [mainWindow](int index) {
-    //                  BasicButtonController::changeRegion(mainWindow,
-    //                  index); });
     regionInnerLayout->addWidget(mainWindow->regionCombo_);
     regionLayout->addWidget(regionWidget);
 
@@ -312,17 +316,22 @@ void ToolbarController::setupToolbar(
     connectVisibleTerminalsButton->setMenu(autoConnectMenu);
     connectVisibleTerminalsButton->setPopupMode(
         QToolButton::ToolButtonPopupMode::MenuButtonPopup);
-    // QObject::connect(connectVisibleTerminalsButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  UtilityFunctions::connectVisibleTerminalsByNetworks(mainWindow,
-    //                  mainWindow->scene_); });
+    // QObject::connect(
+    //     connectVisibleTerminalsButton,
+    //     &QToolButton::clicked, [mainWindow]() {
+    //         ViewController::
+    //             connectVisibleTerminalsByNetworks(
+    //                 mainWindow, mainWindow->scene_);
+    //     });
 
-    // Connect the menu button's click signal
-    // QObject::connect(menuButton, &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  UtilityFunctions::connectVisibleTerminalsByInterfaces(mainWindow);
-    //                  });
+    // // Connect the menu button's click signal
+    // QObject::connect(
+    //     menuButton, &QToolButton::clicked, [mainWindow]()
+    //     {
+    //         ViewController::
+    //             connectVisibleTerminalsByInterfaces(
+    //                 mainWindow);
+    //     });
 
     networkToolsLayout->addWidget(
         connectVisibleTerminalsButton);
@@ -336,17 +345,20 @@ void ToolbarController::setupToolbar(
         "Disconnect Visible\nTerminals");
     disconnectAllTerminalsButton->setIcon(
         QIcon(IconFactory::createUnconnectTerminalsIcon()));
-    // QObject::connect(disconnectAllTerminalsButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                      BasicButtonController::disconnectAllTerminals(
-    //                          mainWindow,
-    //                          mainWindow->getCurrentScene(),
-    //                          (mainWindow->isRegionViewActive()
-    //                          ? mainWindow->currentRegion_
-    //                          : "*")
-    //                          );
-    //                  });
+    QObject::connect(
+        disconnectAllTerminalsButton, &QToolButton::clicked,
+        [mainWindow]() {
+            QString currentRegion =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegion();
+            BasicButtonController::disconnectAllTerminals(
+                mainWindow, mainWindow->getCurrentScene(),
+                (mainWindow->isRegionViewActive()
+                     ? currentRegion
+                     : "*"));
+        });
     networkToolsLayout->addWidget(
         disconnectAllTerminalsButton);
 
@@ -356,11 +368,12 @@ void ToolbarController::setupToolbar(
     checkNetworkButton->setText("Check Region\nTerminals");
     checkNetworkButton->setIcon(
         QIcon(IconFactory::createCheckNetworkIcon()));
-    // QObject::connect(checkNetworkButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  BasicButtonController::checkNetwork(mainWindow,
-    //                  mainWindow->scene_); });
+    QObject::connect(
+        checkNetworkButton, &QToolButton::clicked,
+        [mainWindow]() {
+            BasicButtonController::checkNetwork(
+                mainWindow, mainWindow->regionScene_);
+        });
     networkToolsLayout->addWidget(checkNetworkButton);
 
     mainWindow->networkToolsButtons_ = {
@@ -385,15 +398,13 @@ void ToolbarController::setupToolbar(
         "Find Top Heuristic\nShortest Paths");
     shortestPathsButton->setIcon(
         QIcon(IconFactory::createShortestPathsIcon()));
-    // QObject::connect(shortestPathsButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                      NetworkController::getTopShortestPaths(
-    //                          mainWindow,
-    //                          mainWindow->scene_,
-    //                          mainWindow->globalMapScene_
-    //                          );
-    //                  });
+    // QObject::connect(
+    //     shortestPathsButton, &QToolButton::clicked,
+    //     [mainWindow]() {
+    //         NetworkController::getTopShortestPaths(
+    //             mainWindow, mainWindow->scene_,
+    //             mainWindow->globalMapScene_);
+    //     });
     simulationToolsLayout->addWidget(shortestPathsButton);
 
     // Add verify by simulation button
@@ -439,11 +450,11 @@ void ToolbarController::setupToolbar(
         "document-save",
         QIcon(mainWindow->style()->standardIcon(
             QStyle::StandardPixmap::SP_DialogSaveButton))));
-    // QObject::connect(saveLogsButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  BasicButtonController::exportLog(mainWindow);
-    //                  });
+    QObject::connect(saveLogsButton, &QToolButton::clicked,
+                     [mainWindow]() {
+                         BasicButtonController::exportLog(
+                             mainWindow);
+                     });
     logsLayout->addWidget(saveLogsButton);
 
     // Hide both the button and group initially
@@ -480,8 +491,10 @@ void ToolbarController::setupToolbar(
     bgPhotoButton->setIcon(QIcon(
         IconFactory::createSetBackgroundColorPixmap()));
     QObject::connect(bgPhotoButton, &QToolButton::clicked,
-                     mainWindow,
-                     &MainWindow::addBackgroundPhoto);
+                     mainWindow, [mainWindow]() {
+                         ViewController::addBackgroundPhoto(
+                             mainWindow);
+                     });
     viewImportLayout->addWidget(bgPhotoButton);
 
     mainWindow->viewImportButtons_ = {bgPhotoButton};
@@ -886,7 +899,8 @@ void ToolbarController::setupToolbar(
     // need a different approach Perhaps store it separately
     // or cast it if it's safe to do so
     if (QToolButton *toolButton =
-            dynamic_cast<QToolButton *>(regionWidget)) {
+            dynamic_cast<QToolButton *>(regionWidget))
+    {
         mainWindow->toolsButtonsVisibility_[toolButton] =
             QList<int>{0};
     }

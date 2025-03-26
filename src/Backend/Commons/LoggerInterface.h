@@ -12,9 +12,12 @@
  */
 
 #include <QString>
+#include <QtCore/qobject.h>
 
-namespace CargoNetSim {
-namespace Backend {
+namespace CargoNetSim
+{
+namespace Backend
+{
 
 /**
  * @brief Abstract interface for logging
@@ -22,7 +25,9 @@ namespace Backend {
  * Defines a contract for logging messages, allowing backend
  * components to log without depending on a specific logger.
  */
-class LoggerInterface {
+class LoggerInterface : public QObject
+{
+    Q_OBJECT
 public:
     virtual ~LoggerInterface() = default;
 

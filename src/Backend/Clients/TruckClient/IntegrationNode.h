@@ -11,9 +11,14 @@
 #include <QObject>
 #include <QString>
 
-namespace CargoNetSim {
-namespace Backend {
-namespace TruckClient {
+#include "Backend/Models/BaseObject.h"
+
+namespace CargoNetSim
+{
+namespace Backend
+{
+namespace TruckClient
+{
 
 /**
  * @class IntegrationNode
@@ -23,30 +28,31 @@ namespace TruckClient {
  * properties such as node type and information
  * availability.
  */
-class IntegrationNode : public QObject {
+class IntegrationNode : public BaseObject
+{
     Q_OBJECT
 
     // Node properties as Q_PROPERTY for meta-object access
-    Q_PROPERTY(int nodeId READ nodeId WRITE setNodeId NOTIFY
-                   nodeChanged)
-    Q_PROPERTY(float xCoordinate READ xCoordinate WRITE
-                   setXCoordinate NOTIFY nodeChanged)
-    Q_PROPERTY(float yCoordinate READ yCoordinate WRITE
-                   setYCoordinate NOTIFY nodeChanged)
-    Q_PROPERTY(int nodeType READ nodeType WRITE setNodeType
+    Q_PROPERTY(int nodeId READ getNodeId WRITE setNodeId
                    NOTIFY nodeChanged)
+    Q_PROPERTY(float xCoordinate READ getXCoordinate WRITE
+                   setXCoordinate NOTIFY nodeChanged)
+    Q_PROPERTY(float yCoordinate READ getYCoordinate WRITE
+                   setYCoordinate NOTIFY nodeChanged)
+    Q_PROPERTY(int nodeType READ getNodeType WRITE
+                   setNodeType NOTIFY nodeChanged)
     Q_PROPERTY(
-        int macroZoneCluster READ macroZoneCluster WRITE
+        int macroZoneCluster READ getMacroZoneCluster WRITE
             setMacroZoneCluster NOTIFY nodeChanged)
     Q_PROPERTY(int informationAvailability READ
-                   informationAvailability WRITE
+                   getInformationAvailability WRITE
                        setInformationAvailability NOTIFY
                            nodeChanged)
-    Q_PROPERTY(QString description READ description WRITE
+    Q_PROPERTY(QString description READ getDescription WRITE
                    setDescription NOTIFY nodeChanged)
-    Q_PROPERTY(float xScale READ xScale WRITE setXScale
+    Q_PROPERTY(float xScale READ getXScale WRITE setXScale
                    NOTIFY nodeChanged)
-    Q_PROPERTY(float yScale READ yScale WRITE setYScale
+    Q_PROPERTY(float yScale READ getYScale WRITE setYScale
                    NOTIFY nodeChanged)
 
 public:
@@ -103,31 +109,40 @@ public:
              QObject           *parent = nullptr);
 
     // Getters
-    int nodeId() const {
+    int getNodeId() const
+    {
         return m_nodeId;
     }
-    float xCoordinate() const {
+    float getXCoordinate() const
+    {
         return m_xCoordinate;
     }
-    float yCoordinate() const {
+    float getYCoordinate() const
+    {
         return m_yCoordinate;
     }
-    int nodeType() const {
+    int getNodeType() const
+    {
         return m_nodeType;
     }
-    int macroZoneCluster() const {
+    int getMacroZoneCluster() const
+    {
         return m_macroZoneCluster;
     }
-    int informationAvailability() const {
+    int getInformationAvailability() const
+    {
         return m_informationAvailability;
     }
-    QString description() const {
+    QString getDescription() const
+    {
         return m_description;
     }
-    float xScale() const {
+    float getXScale() const
+    {
         return m_xScale;
     }
-    float yScale() const {
+    float getYScale() const
+    {
         return m_yScale;
     }
 
