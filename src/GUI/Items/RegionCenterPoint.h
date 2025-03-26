@@ -48,18 +48,17 @@ public:
 
     /**
      * @brief Updates the region's center coordinates.
-     * @param lat New latitude
-     * @param lon New longitude
+     * @param geoPoint New geodetic coordinates (long, lat)
      */
-    void updateCoordinates(double lat, double lon);
+    void updateCoordinates(QPointF geoPoint);
 
     /**
      * @brief Updates the region's shared coordinates for
      * global mapping.
-     * @param lat New shared latitude
-     * @param lon New shared longitude
+     * @param geoPoint New shared geodetic coordinates
+     * (long, lat)
      */
-    void updateSharedCoordinates(double lat, double lon);
+    void updateSharedCoordinates(QPointF geoPoint);
 
     /**
      * @brief Set the point's newRegion
@@ -142,18 +141,16 @@ signals:
 
     /**
      * @brief Signal emitted when the coordinates change.
-     * @param lat New latitude
-     * @param lon New longitude
+     * @param GeoPoint Geodetic point (long, lat)
      */
-    void coordinatesChanged(double lat, double lon);
+    void coordinatesChanged(QPointF GeoPoint);
 
     /**
      * @brief Signal emitted when the shared coordinates
      * change.
-     * @param lat New shared latitude
-     * @param lon New shared longitude
+     * @param GeoPoint Geodetic point (long, lat)
      */
-    void sharedCoordinatesChanged(double lat, double lon);
+    void sharedCoordinatesChanged(QPointF GeoPoint);
 
     /**
      * @brief Signal emitted when the region color changes.

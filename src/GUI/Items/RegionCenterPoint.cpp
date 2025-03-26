@@ -1,4 +1,5 @@
 #include "RegionCenterPoint.h"
+#include "GUI/Widgets/GraphicsView.h"
 
 #include <QApplication>
 #include <QCursor>
@@ -46,50 +47,51 @@ RegionCenterPoint::RegionCenterPoint(
     setAcceptHoverEvents(true);
 }
 
-void RegionCenterPoint::updateCoordinates(double lat,
-                                          double lon)
+void RegionCenterPoint::updateCoordinates(QPointF geoPoint)
 {
-    QString oldLat = properties["Latitude"].toString();
     QString oldLon = properties["Longitude"].toString();
+    QString oldLat = properties["Latitude"].toString();
 
     // Format with 6 decimal places
-    properties["Latitude"]  = QString::number(lat, 'f', 6);
-    properties["Longitude"] = QString::number(lon, 'f', 6);
+    properties["Latitude"] =
+        QString::number(geoPoint.y(), 'f', 6);
+    properties["Longitude"] =
+        QString::number(geoPoint.x(), 'f', 6);
 
     // Only emit signals if values actually changed
     if (properties["Latitude"].toString() != oldLat
         || properties["Longitude"].toString() != oldLon)
     {
-        emit coordinatesChanged(lat, lon);
-        emit propertyChanged("Latitude",
-                             properties["Latitude"]);
+        emit coordinatesChanged(geoPoint);
         emit propertyChanged("Longitude",
                              properties["Longitude"]);
+        emit propertyChanged("Latitude",
+                             properties["Latitude"]);
     }
 
     update();
 }
 
-void RegionCenterPoint::updateSharedCoordinates(double lat,
-                                                double lon)
+void RegionCenterPoint::updateSharedCoordinates(
+    QPointF geoPoint)
 {
-    QString oldLat =
-        properties["Shared Latitude"].toString();
     QString oldLon =
         properties["Shared Longitude"].toString();
+    QString oldLat =
+        properties["Shared Latitude"].toString();
 
     // Format with 6 decimal places
-    properties["Shared Latitude"] =
-        QString::number(lat, 'f', 6);
     properties["Shared Longitude"] =
-        QString::number(lon, 'f', 6);
+        QString::number(geoPoint.x(), 'f', 6);
+    properties["Shared Latitude"] =
+        QString::number(geoPoint.y(), 'f', 6);
 
     // Only emit signals if values actually changed
     if (properties["Shared Latitude"].toString() != oldLat
         || properties["Shared Longitude"].toString()
                != oldLon)
     {
-        emit sharedCoordinatesChanged(lat, lon);
+        emit sharedCoordinatesChanged(geoPoint);
         emit propertyChanged("Shared Latitude",
                              properties["Shared Latitude"]);
         emit propertyChanged(
@@ -148,45 +150,16 @@ void RegionCenterPoint::updateCoordinatesFromPosition()
     {
         return;
     }
-
-    // Get the view that contains this item
-    QObject *viewObj = view->parent();
-    while (viewObj
-           && !viewObj->inherits(
-               "CargoNetSim::GUI::GraphicsView"))
-    {
-        viewObj = viewObj->parent();
-    }
-
+    GraphicsView *viewObj =
+        dynamic_cast<GraphicsView *>(view);
     if (!viewObj)
     {
         return;
     }
 
-    // Then try the call with the correct type name as
-    // string
-    QPair<double, double> result;
+    QPointF result = viewObj->sceneToWGS84(pos());
 
-    // First, ensure the type is properly registered with
-    // the Qt meta-type system
-    qRegisterMetaType<QPair<double, double>>(
-        "QPair<double,double>");
-
-    using Coordinates = QPair<double, double>;
-
-    bool invoked = QMetaObject::invokeMethod(
-        viewObj, "sceneToWGS84", Qt::AutoConnection,
-        Q_RETURN_ARG(Coordinates, result),
-        Q_ARG(QPointF, pos()));
-
-    if (invoked)
-    {
-        updateCoordinates(result.first, result.second);
-    }
-    else
-    {
-        // Handle the case where invokeMethod fails
-    }
+    updateCoordinates(result);
 }
 
 QRectF RegionCenterPoint::boundingRect() const
@@ -229,19 +202,7 @@ QVariant
 RegionCenterPoint::itemChange(GraphicsItemChange change,
                               const QVariant    &value)
 {
-    if (change == ItemPositionChange && scene())
-    {
-        // If drag offset is set, adjust position during
-        // drag
-        if (dragOffset != QPointF())
-        {
-            QGraphicsView *view = scene()->views().first();
-            QPointF        mousePos = view->mapToScene(
-                view->mapFromGlobal(QCursor::pos()));
-            return mousePos - dragOffset;
-        }
-    }
-    else if (change == ItemPositionHasChanged && scene())
+    if (change == ItemPositionHasChanged && scene())
     {
         // Update coordinates when position changes
         updateCoordinatesFromPosition();
