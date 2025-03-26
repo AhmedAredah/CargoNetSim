@@ -230,7 +230,7 @@ CargoNetSim::GUI::ViewController::createTerminalAtPoint(
     // Connections
     QObject::connect(
         terminal, &TerminalItem::positionChanged,
-        [&mainWindow, &terminal]() {
+        [mainWindow, terminal]() {
             CargoNetSim::GUI::ViewController::
                 updateGlobalMapItem(mainWindow, terminal);
         });
@@ -597,7 +597,7 @@ void CargoNetSim::GUI::ViewController::addBackgroundPhoto(
         // Open file dialog (using non-native dialog for
         // consistency)
         QString fileName = QFileDialog::getOpenFileName(
-            mainWindow, "Select Background Photo", "",
+            nullptr, "Select Background Photo", "",
             "Images (*.png *.jpg *.bmp)", nullptr,
             QFileDialog::DontUseNativeDialog);
 
@@ -639,7 +639,7 @@ void CargoNetSim::GUI::ViewController::addBackgroundPhoto(
                 background,
                 &BackgroundPhotoItem::positionChanged,
                 [background,
-                 &mainWindow](const QPointF &pos) {
+                 mainWindow](const QPointF &pos) {
                     if (mainWindow->propertiesPanel_
                             ->getCurrentItem()
                         == background)
@@ -685,8 +685,7 @@ void CargoNetSim::GUI::ViewController::addBackgroundPhoto(
             // Create a new BackgroundPhotoItem for the
             // global map
             BackgroundPhotoItem *background =
-                new BackgroundPhotoItem(pixmap,
-                                        "Global Map");
+                new BackgroundPhotoItem(pixmap, "global");
             QObject::connect(
                 background, &BackgroundPhotoItem::clicked,
                 [mainWindow](BackgroundPhotoItem *item) {
