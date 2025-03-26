@@ -483,7 +483,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     bgPhotoButton->setIcon(QIcon(
         IconFactory::createSetBackgroundColorPixmap()));
     QObject::connect(bgPhotoButton, &QToolButton::clicked,
-                     mainWindow, [&mainWindow]() {
+                     mainWindow, [mainWindow]() {
                          ViewController::addBackgroundPhoto(
                              mainWindow);
                      });
