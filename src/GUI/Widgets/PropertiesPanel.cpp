@@ -744,11 +744,11 @@ void PropertiesPanel::displayGenericProperties(
             continue;
         }
 
+        // Show on Global Map checkbox
         if (it.key() == "Show on Global Map" && terminal)
         {
             QCheckBox *checkbox = new QCheckBox();
-            checkbox->setChecked(
-                it.value().toString().toLower() == "true");
+            checkbox->setChecked(it.value().toBool());
             editFields[it.key()] = checkbox;
             layout->addRow(it.key() + ":", checkbox);
         }
@@ -988,8 +988,8 @@ void PropertiesPanel::updatePositionFields(
     }
 }
 
-void PropertiesPanel::updateCoordinateFields(double lat,
-                                             double lon)
+void PropertiesPanel::updateCoordinateFields(
+    QPointF geoPoint)
 {
     if (currentItem && !editFields.isEmpty())
     {
@@ -1000,7 +1000,7 @@ void PropertiesPanel::updateCoordinateFields(double lat,
             if (latField)
             {
                 latField->setText(
-                    QString::number(lat, 'f', 6));
+                    QString::number(geoPoint.y(), 'f', 6));
             }
         }
         if (editFields.contains("Longitude"))
@@ -1010,7 +1010,7 @@ void PropertiesPanel::updateCoordinateFields(double lat,
             if (lonField)
             {
                 lonField->setText(
-                    QString::number(lon, 'f', 6));
+                    QString::number(geoPoint.x(), 'f', 6));
             }
         }
     }
@@ -1089,6 +1089,10 @@ void PropertiesPanel::saveTerminalProperties(
     // Update the item properties
     terminal->updateProperties(newProperties);
 
+    // Update the visibility of the global terminal
+    ViewController::updateGlobalMapItem(mainWindow,
+                                        terminal);
+
     // Emit the properties changed signal
     emit propertiesChanged(terminal, newProperties);
 }
@@ -1123,7 +1127,7 @@ void PropertiesPanel::saveBackgroundPhotoProperties(
         }
 
         // Update position using WGS84 coordinates
-        background->setFromWGS84(newLat, newLon);
+        background->setFromWGS84(QPointF(newLon, newLat));
 
         // Update scale and trigger redraw
         background->getProperties()["Scale"] =
@@ -1177,7 +1181,8 @@ void PropertiesPanel::saveRegionCenterProperties(
             if (view)
             {
                 QPointF newPos = view->wgs84ToScene(
-                    QPointF(newLat, newLon));
+                    QPointF(newLon, newLat));
+
                 regionCenter->setPos(newPos);
             }
         }
@@ -1195,7 +1200,7 @@ void PropertiesPanel::saveRegionCenterProperties(
     }
 
     // Update the item properties
-    regionCenter->updateProperties(newProperties);
+    // regionCenter->updateProperties(newProperties);
 
     // Emit the properties changed signal
     emit propertiesChanged(regionCenter, newProperties);

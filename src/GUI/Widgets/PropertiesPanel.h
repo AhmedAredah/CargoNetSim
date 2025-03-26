@@ -36,7 +36,7 @@ public:
     void displayProperties(QGraphicsItem *item);
     // Update position fields for selected item
     void updatePositionFields(const QPointF &pos);
-    void updateCoordinateFields(double lat, double lon);
+    void           updateCoordinateFields(QPointF geoPoint);
     QGraphicsItem *getCurrentItem()
     {
         return currentItem;
