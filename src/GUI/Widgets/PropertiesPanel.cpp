@@ -46,6 +46,9 @@ PropertiesPanel::PropertiesPanel(QWidget *parent)
     layout->setContentsMargins(10, 10, 10, 10);
     layout->setSpacing(10);
 
+    layout->setFieldGrowthPolicy(
+        QFormLayout::AllNonFixedFieldsGrow);
+
     // Save button
     saveButton = new QPushButton(tr("Save"));
     connect(saveButton, &QPushButton::clicked, this,
@@ -883,382 +886,450 @@ void PropertiesPanel::saveProperties()
         return;
     }
 
-    // Create new properties dictionary
-    QMap<QString, QVariant> newProperties;
+    // Get main window reference if needed
+    if (!mainWindow)
+    {
+        mainWindow = qobject_cast<MainWindow *>(window());
+    }
 
+    // Dispatch to the appropriate handler based on item
+    // type
+    if (TerminalItem *terminal =
+            dynamic_cast<TerminalItem *>(currentItem))
+    {
+        saveTerminalProperties(terminal);
+    }
+    else if (BackgroundPhotoItem *background =
+                 dynamic_cast<BackgroundPhotoItem *>(
+                     currentItem))
+    {
+        saveBackgroundPhotoProperties(background);
+    }
+    else if (RegionCenterPoint *regionCenter =
+                 dynamic_cast<RegionCenterPoint *>(
+                     currentItem))
+    {
+        saveRegionCenterProperties(regionCenter);
+    }
+    else if (MapPoint *mapPoint =
+                 dynamic_cast<MapPoint *>(currentItem))
+    {
+        saveMapPointProperties(mapPoint);
+    }
+    else if (ConnectionLine *connection =
+                 dynamic_cast<ConnectionLine *>(
+                     currentItem))
+    {
+        saveConnectionProperties(connection);
+    }
+
+    // Show status bar message
+    if (mainWindow)
+    {
+        mainWindow->showStatusBarMessage(
+            tr("Properties updated successfully"), 2000);
+    }
+}
+
+void PropertiesPanel::saveTerminalProperties(
+    TerminalItem *terminal)
+{
+    QMap<QString, QVariant> newProperties =
+        terminal->getProperties();
+
+    // Process all edit fields
+    processEditFields(newProperties);
+
+    // Handle region change
+    if (newProperties.contains("Region")
+        && terminal->getRegion()
+               != newProperties["Region"].toString())
+    {
+        handleRegionChange(
+            terminal, newProperties["Region"].toString());
+    }
+
+    // Update the item properties
+    terminal->updateProperties(newProperties);
+
+    // Emit the properties changed signal
+    emit propertiesChanged(terminal, newProperties);
+}
+
+void PropertiesPanel::saveBackgroundPhotoProperties(
+    BackgroundPhotoItem *background)
+{
+    QMap<QString, QVariant> newProperties =
+        background->getProperties();
+
+    // Process all edit fields
+    processEditFields(newProperties);
+
+    // Handle special background photo properties
+    try
+    {
+        // Get new lat/lon values
+        double newLat =
+            newProperties.value("Latitude", "0.0")
+                .toDouble();
+        double newLon =
+            newProperties.value("Longitude", "0.0")
+                .toDouble();
+
+        // Get and validate new scale value
+        double newScale =
+            newProperties.value("Scale", "1.0").toDouble();
+        if (newScale <= 0)
+        {
+            throw std::invalid_argument(
+                "Scale must be greater than 0");
+        }
+
+        // Update position using WGS84 coordinates
+        background->setFromWGS84(newLat, newLon);
+
+        // Update scale and trigger redraw
+        background->getProperties()["Scale"] =
+            QString::number(newScale);
+        background->updateScale();
+    }
+    catch (const std::exception &e)
+    {
+        if (mainWindow)
+        {
+            mainWindow->showStatusBarMessage(
+                tr("Invalid coordinate or scale values: %1")
+                    .arg(e.what()),
+                3000);
+            return;
+        }
+    }
+
+    // Update the item properties
+    background->updateProperties(newProperties);
+
+    // Emit the properties changed signal
+    emit propertiesChanged(background, newProperties);
+}
+
+void PropertiesPanel::saveRegionCenterProperties(
+    RegionCenterPoint *regionCenter)
+{
+    QMap<QString, QVariant> newProperties =
+        regionCenter->getProperties();
+
+    // Process all edit fields
+    processEditFields(newProperties);
+
+    // Handle coordinate changes
+    try
+    {
+        // Get new lat/lon values
+        double newLat =
+            newProperties.value("Latitude", "0.0")
+                .toDouble();
+        double newLon =
+            newProperties.value("Longitude", "0.0")
+                .toDouble();
+
+        // Convert to scene coordinates and update position
+        if (mainWindow)
+        {
+            GraphicsView *view =
+                mainWindow->getCurrentView();
+            if (view)
+            {
+                QPointF newPos = view->wgs84ToScene(
+                    QPointF(newLat, newLon));
+                regionCenter->setPos(newPos);
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        if (mainWindow)
+        {
+            mainWindow->showStatusBarMessage(
+                tr("Invalid coordinate values: %1")
+                    .arg(e.what()),
+                3000);
+            return;
+        }
+    }
+
+    // Update the item properties
+    regionCenter->updateProperties(newProperties);
+
+    // Emit the properties changed signal
+    emit propertiesChanged(regionCenter, newProperties);
+}
+
+void PropertiesPanel::saveMapPointProperties(
+    MapPoint *mapPoint)
+{
+    QMap<QString, QVariant> newProperties =
+        mapPoint->getProperties();
+
+    // Process all edit fields
+    processEditFields(newProperties);
+
+    // Update the item properties
+    mapPoint->updateProperties(newProperties);
+
+    // Emit the properties changed signal
+    emit propertiesChanged(mapPoint, newProperties);
+}
+
+void PropertiesPanel::saveConnectionProperties(
+    ConnectionLine *connection)
+{
+    QMap<QString, QVariant> newProperties =
+        connection->getProperties();
+
+    // Process all edit fields
+    processEditFields(newProperties);
+
+    // Update the item properties
+    connection->updateProperties(newProperties);
+
+    // Emit the properties changed signal
+    emit propertiesChanged(connection, newProperties);
+}
+
+void PropertiesPanel::processEditFields(
+    QMap<QString, QVariant> &properties)
+{
     // Handle all properties
     for (auto it = editFields.constBegin();
          it != editFields.constEnd(); ++it)
     {
         if (it.key().contains('.'))
-        { // Handle nested properties
-            QStringList parts = it.key().split('.');
-            QMap<QString, QVariant> *currentDict =
-                &newProperties;
+        {
+            processNestedProperty(properties, it.key(),
+                                  it.value());
+        }
+        else
+        {
+            processSimpleProperty(properties, it.key(),
+                                  it.value());
+        }
+    }
+}
 
-            // Special handling for interfaces
-            if (parts[0] == "interfaces")
+void PropertiesPanel::processNestedProperty(
+    QMap<QString, QVariant> &properties, const QString &key,
+    QWidget *widget)
+{
+    QStringList parts = key.split('.');
+
+    // Special handling for interfaces
+    if (parts[0] == "interfaces")
+    {
+        processInterfaceProperty(properties, parts, widget);
+        return;
+    }
+
+    // Get the value from the widget
+    QVariant value = getWidgetValue(widget);
+
+    // Handle nested properties (like
+    // dwell_time.parameters.mean)
+    if (parts.size() == 2)
+    {
+        // Two-level nesting (e.g., "dwell_time.method")
+        if (properties.contains(parts[0]))
+        {
+            QVariantMap nestedMap =
+                properties[parts[0]].toMap();
+            nestedMap[parts[1]]  = value;
+            properties[parts[0]] = nestedMap;
+        }
+        else
+        {
+            QVariantMap nestedMap;
+            nestedMap[parts[1]]  = value;
+            properties[parts[0]] = nestedMap;
+        }
+    }
+    else if (parts.size() == 3)
+    {
+        // Three-level nesting (e.g.,
+        // "dwell_time.parameters.mean")
+        if (properties.contains(parts[0]))
+        {
+            QVariantMap topLevelMap =
+                properties[parts[0]].toMap();
+
+            if (topLevelMap.contains(parts[1]))
             {
-                if (!newProperties.contains(
-                        "Available Interfaces"))
-                {
-                    newProperties["Available Interfaces"] =
-                        QVariantMap{
-                            {"land_side", QVariantList()},
-                            {"sea_side", QVariantList()}};
-                }
-
-                // Get the current lists
-                QVariantMap interfaces =
-                    newProperties["Available Interfaces"]
-                        .toMap();
-                QStringList landSide =
-                    interfaces["land_side"].toStringList();
-                QStringList seaSide =
-                    interfaces["sea_side"].toStringList();
-
-                // Add to appropriate side if checked
-                if (QCheckBox *checkbox =
-                        qobject_cast<QCheckBox *>(
-                            it.value()))
-                {
-                    if (checkbox->isChecked())
-                    {
-                        if (parts[1] == "land")
-                        {
-                            QString mode = parts[2];
-                            mode[0] =
-                                mode[0]
-                                    .toUpper(); // Capitalize
-                                                // first
-                                                // letter
-                            if (!landSide.contains(mode))
-                            {
-                                landSide.append(mode);
-                            }
-                        }
-                        else if (parts[1] == "sea")
-                        {
-                            QString mode = parts[2];
-                            mode[0] =
-                                mode[0]
-                                    .toUpper(); // Capitalize
-                                                // first
-                                                // letter
-                            if (!seaSide.contains(mode))
-                            {
-                                seaSide.append(mode);
-                            }
-                        }
-                    }
-
-                    // Update the interfaces in the map
-                    interfaces["land_side"] = landSide;
-                    interfaces["sea_side"]  = seaSide;
-                    newProperties["Available Interfaces"] =
-                        interfaces;
-
-                    continue;
-                }
-
-                // Handle other nested properties
-                QVariantMap nestedMap;
-                for (int i = 0; i < parts.size() - 1; ++i)
-                {
-                    QString part = parts[i];
-                    if (i == 0)
-                    {
-                        if (!newProperties.contains(part))
-                        {
-                            newProperties[part] =
-                                QVariantMap();
-                        }
-                        nestedMap =
-                            newProperties[part].toMap();
-                    }
-                    else
-                    {
-                        if (!nestedMap.contains(part))
-                        {
-                            nestedMap[part] = QVariantMap();
-                        }
-                        nestedMap = nestedMap[part].toMap();
-                    }
-                }
-
-                // Set the value in the nested map
-                QString finalKey = parts.last();
-                if (QComboBox *combo =
-                        qobject_cast<QComboBox *>(
-                            it.value()))
-                {
-                    nestedMap[finalKey] =
-                        combo->currentText();
-                }
-                else if (QLineEdit *lineEdit =
-                             qobject_cast<QLineEdit *>(
-                                 it.value()))
-                {
-                    nestedMap[finalKey] = lineEdit->text();
-                }
-
-                // Update the nested properties in the
-                // parent map
-                if (parts.size() > 1)
-                {
-                    QVariantMap parentMap =
-                        newProperties[parts.first()]
-                            .toMap();
-                    if (parts.size() == 2)
-                    {
-                        parentMap[parts.last()] =
-                            nestedMap[parts.last()];
-                    }
-                    else if (parts.size() == 3)
-                    {
-                        QVariantMap middleMap =
-                            parentMap[parts[1]].toMap();
-                        middleMap[parts.last()] =
-                            nestedMap[parts.last()];
-                        parentMap[parts[1]] = middleMap;
-                    }
-                    newProperties[parts.first()] =
-                        parentMap;
-                }
+                QVariantMap secondLevelMap =
+                    topLevelMap[parts[1]].toMap();
+                secondLevelMap[parts[2]] = value;
+                topLevelMap[parts[1]]    = secondLevelMap;
             }
             else
-            { // Handle top-level properties
-                if (QCheckBox *checkbox =
-                        qobject_cast<QCheckBox *>(
-                            it.value()))
-                {
-                    newProperties[it.key()] =
-                        checkbox->isChecked() ? "True"
-                                              : "False";
-                }
-                else if (QComboBox *combo =
-                             qobject_cast<QComboBox *>(
-                                 it.value()))
-                {
-                    newProperties[it.key()] =
-                        combo->currentText();
-                }
-                else if (QLineEdit *lineEdit =
-                             qobject_cast<QLineEdit *>(
-                                 it.value()))
-                {
-                    newProperties[it.key()] =
-                        lineEdit->text();
-                }
-            }
-        }
-
-        // Get main window reference
-        if (!mainWindow)
-        {
-            mainWindow =
-                qobject_cast<MainWindow *>(window());
-        }
-
-        // Handle region change if present - skip for
-        // RegionCenterPoint
-        RegionCenterPoint *regionCenter =
-            dynamic_cast<RegionCenterPoint *>(currentItem);
-        if (!regionCenter
-            && newProperties.contains("Region"))
-        {
-            TerminalItem *terminal =
-                dynamic_cast<TerminalItem *>(currentItem);
-            if (terminal
-                && terminal->getRegion()
-                       != newProperties["Region"]
-                              .toString())
             {
-                QString newRegionName =
-                    newProperties["Region"].toString();
-                QString oldRegionName =
-                    terminal->getRegion();
-
-                // Get the new region's center point
-                RegionCenterPoint *newRegionCenter =
-                    nullptr;
-                RegionCenterPoint *oldRegionCenter =
-                    nullptr;
-
-                if (mainWindow)
-                {
-                    const auto &centers =
-                        CargoNetSim::CargoNetSimController::
-                            getInstance()
-                                .getRegionDataController()
-                                ->getAllRegionVariableAs<
-                                    RegionCenterPoint *>(
-                                    "regionCenterPoint");
-                    newRegionCenter =
-                        centers.value(newRegionName);
-                    oldRegionCenter =
-                        centers.value(oldRegionName);
-                }
-
-                if (newRegionCenter && oldRegionCenter)
-                {
-                    // Calculate item's offset from old
-                    // region center
-                    QPointF oldOffset(
-                        terminal->pos().x()
-                            - oldRegionCenter->pos().x(),
-                        terminal->pos().y()
-                            - oldRegionCenter->pos().y());
-
-                    // Apply offset to new region center
-                    QPointF newPos(
-                        newRegionCenter->pos().x()
-                            + oldOffset.x(),
-                        newRegionCenter->pos().y()
-                            + oldOffset.y());
-
-                    // Update item position
-                    terminal->setPos(newPos);
-
-                    // Update region property
-                    terminal->setRegion(
-                        newProperties["Region"].toString());
-                }
+                QVariantMap secondLevelMap;
+                secondLevelMap[parts[2]] = value;
+                topLevelMap[parts[1]]    = secondLevelMap;
             }
-        }
 
-        // Handle coordinate changes for RegionCenterPoint
-        if (regionCenter)
+            properties[parts[0]] = topLevelMap;
+        }
+        else
         {
-            try
+            QVariantMap secondLevelMap;
+            secondLevelMap[parts[2]] = value;
+
+            QVariantMap topLevelMap;
+            topLevelMap[parts[1]] = secondLevelMap;
+
+            properties[parts[0]] = topLevelMap;
+        }
+    }
+    // Don't add the dotted key as a new property
+}
+
+void PropertiesPanel::processInterfaceProperty(
+    QMap<QString, QVariant> &properties,
+    const QStringList &parts, QWidget *widget)
+{
+    if (!properties.contains("Available Interfaces"))
+    {
+        properties["Available Interfaces"] =
+            QVariantMap{{"land_side", QVariantList()},
+                        {"sea_side", QVariantList()}};
+    }
+
+    // Get the current lists
+    QVariantMap interfaces =
+        properties["Available Interfaces"].toMap();
+    QStringList landSide =
+        interfaces["land_side"].toStringList();
+    QStringList seaSide =
+        interfaces["sea_side"].toStringList();
+
+    // Update interfaces based on checkbox state
+    if (QCheckBox *checkbox =
+            qobject_cast<QCheckBox *>(widget))
+    {
+        QString mode = parts[2];
+        mode[0] =
+            mode[0].toUpper(); // Capitalize first letter
+
+        if (parts[1] == "land")
+        {
+            // Remove the mode if it exists (to avoid
+            // duplicates)
+            landSide.removeAll(mode);
+
+            // Add it back if checked
+            if (checkbox->isChecked()
+                && !landSide.contains(mode))
             {
-                // Get new lat/lon values
-                double newLat =
-                    newProperties.value("Latitude", "0.0")
-                        .toDouble();
-                double newLon =
-                    newProperties.value("Longitude", "0.0")
-                        .toDouble();
-
-                // Convert to scene coordinates and update
-                // position
-                if (mainWindow)
-                {
-                    GraphicsView *view =
-                        mainWindow->getCurrentView();
-                    if (view)
-                    {
-                        QPointF newPos = view->wgs84ToScene(
-                            QPointF(newLat, newLon));
-                        regionCenter->setPos(newPos);
-                    }
-                }
+                landSide.append(mode);
             }
-            catch (const std::exception &e)
+        }
+        else if (parts[1] == "sea")
+        {
+            // Remove the mode if it exists (to avoid
+            // duplicates)
+            seaSide.removeAll(mode);
+
+            // Add it back if checked
+            if (checkbox->isChecked()
+                && !seaSide.contains(mode))
             {
-                if (mainWindow)
-                {
-                    mainWindow->showStatusBarMessage(
-                        tr("Invalid coordinate values: %1")
-                            .arg(e.what()),
-                        3000);
-                }
-                return;
+                seaSide.append(mode);
             }
         }
 
-        // Handle coordinate changes for BackgroundPhotoItem
-        BackgroundPhotoItem *bgPhoto =
-            dynamic_cast<BackgroundPhotoItem *>(
-                currentItem);
-        if (bgPhoto)
-        {
-            try
-            {
-                // Get new lat/lon values
-                double newLat =
-                    newProperties.value("Latitude", "0.0")
-                        .toDouble();
-                double newLon =
-                    newProperties.value("Longitude", "0.0")
-                        .toDouble();
+        // Update the interfaces in the map
+        interfaces["land_side"]            = landSide;
+        interfaces["sea_side"]             = seaSide;
+        properties["Available Interfaces"] = interfaces;
+    }
+}
 
-                // Get and validate new scale value
-                double newScale =
-                    newProperties.value("Scale", "1.0")
-                        .toDouble();
-                if (newScale <= 0)
-                {
-                    throw std::invalid_argument(
-                        "Scale must be greater than 0");
-                }
+void PropertiesPanel::processSimpleProperty(
+    QMap<QString, QVariant> &properties, const QString &key,
+    QWidget *widget)
+{
+    properties[key] = getWidgetValue(widget);
+}
 
-                // Update position using WGS84 coordinates
-                bgPhoto->setFromWGS84(newLat, newLon);
+QVariant PropertiesPanel::getWidgetValue(QWidget *widget)
+{
+    if (QCheckBox *checkbox =
+            qobject_cast<QCheckBox *>(widget))
+    {
+        return checkbox->isChecked();
+    }
+    else if (QComboBox *combo =
+                 qobject_cast<QComboBox *>(widget))
+    {
+        return combo->currentText();
+    }
+    else if (QLineEdit *lineEdit =
+                 qobject_cast<QLineEdit *>(widget))
+    {
+        return lineEdit->text();
+    }
+    else if (QSpinBox *spinBox =
+                 qobject_cast<QSpinBox *>(widget))
+    {
+        return spinBox->value();
+    }
+    else if (QDoubleSpinBox *doubleSpinBox =
+                 qobject_cast<QDoubleSpinBox *>(widget))
+    {
+        return doubleSpinBox->value();
+    }
 
-                // Update scale and trigger redraw
-                bgPhoto->getProperties()["Scale"] =
-                    QString::number(newScale);
-                bgPhoto->updateScale();
-            }
-            catch (const std::exception &e)
-            {
-                if (mainWindow)
-                {
-                    mainWindow->showStatusBarMessage(
-                        tr("Invalid coordinate or scale "
-                           "values: %1")
-                            .arg(e.what()),
-                        3000);
-                }
-                return;
-            }
-        }
+    return QVariant(); // Return empty variant if widget
+                       // type not recognized
+}
 
-        // Update the item's properties
-        if (TerminalItem *terminal =
-                dynamic_cast<TerminalItem *>(currentItem))
-        {
-            terminal->updateProperties(newProperties);
-        }
-        else if (BackgroundPhotoItem *background =
-                     dynamic_cast<BackgroundPhotoItem *>(
-                         currentItem))
-        {
-            background->updateProperties(newProperties);
-        }
-        else if (RegionCenterPoint *regionCenter =
-                     dynamic_cast<RegionCenterPoint *>(
-                         currentItem))
-        {
-            regionCenter->updateProperties(newProperties);
-        }
-        else if (MapPoint *mapPoint =
-                     dynamic_cast<MapPoint *>(currentItem))
-        {
-            mapPoint->updateProperties(newProperties);
-        }
-        else if (ConnectionLine *connection =
-                     dynamic_cast<ConnectionLine *>(
-                         currentItem))
-        {
-            connection->updateProperties(newProperties);
-        }
+void PropertiesPanel::handleRegionChange(
+    TerminalItem *terminal, const QString &newRegionName)
+{
+    QString oldRegionName = terminal->getRegion();
 
-        // Emit the properties changed signal
-        emit propertiesChanged(currentItem, newProperties);
+    // Get the new region's center point
+    RegionCenterPoint *newRegionCenter = nullptr;
+    RegionCenterPoint *oldRegionCenter = nullptr;
 
-        // Show status bar message
-        if (mainWindow)
-        {
-            mainWindow->showStatusBarMessage(
-                tr("Properties updated successfully"),
-                2000);
+    if (mainWindow)
+    {
+        const auto &centers =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->getAllRegionVariableAs<
+                        RegionCenterPoint *>(
+                        "regionCenterPoint");
+        newRegionCenter = centers.value(newRegionName);
+        oldRegionCenter = centers.value(oldRegionName);
+    }
 
-            // TODO: Update visibility and global map
-            // ViewController::updateSceneVisibility(mainWindow);
-            // ViewController::updateGlobalMapScene(mainWindow);
-        }
+    if (newRegionCenter && oldRegionCenter)
+    {
+        // Calculate item's offset from old region center
+        QPointF oldOffset(terminal->pos().x()
+                              - oldRegionCenter->pos().x(),
+                          terminal->pos().y()
+                              - oldRegionCenter->pos().y());
+
+        // Apply offset to new region center
+        QPointF newPos(
+            newRegionCenter->pos().x() + oldOffset.x(),
+            newRegionCenter->pos().y() + oldOffset.y());
+
+        // Update item position
+        terminal->setPos(newPos);
+
+        // Update region property
+        terminal->setRegion(newRegionName);
     }
 }
 
@@ -1308,6 +1379,16 @@ void PropertiesPanel::onCoordSystemChanged(int index)
 
     view->useProjectedCoords = (index == 1);
     mainWindow->updateAllCoordinates();
+}
+
+void PropertiesPanel::setExpandingWidgetPolicy(
+    QWidget *widget)
+{
+    if (widget)
+    {
+        widget->setSizePolicy(QSizePolicy::Expanding,
+                              QSizePolicy::Preferred);
+    }
 }
 
 } // namespace GUI

@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -14,12 +13,10 @@
 #include <QSpinBox>
 #include <QVariant>
 #include <QWidget>
-
 namespace CargoNetSim
 {
 namespace GUI
 {
-
 // Forward declarations
 class MainWindow;
 class GraphicsView;
@@ -28,38 +25,30 @@ class RegionCenterPoint;
 class ConnectionLine;
 class BackgroundPhotoItem;
 class MapPoint;
-
 class PropertiesPanel : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit PropertiesPanel(QWidget *parent = nullptr);
     ~PropertiesPanel() = default;
-
     // Display property methods for different items
     void displayMapProperties();
     void displayProperties(QGraphicsItem *item);
-
     // Update position fields for selected item
     void updatePositionFields(const QPointF &pos);
     void updateCoordinateFields(double lat, double lon);
-
     QGraphicsItem *getCurrentItem()
     {
         return currentItem;
     }
-
 signals:
     void propertiesChanged(
         QGraphicsItem                 *item,
         const QMap<QString, QVariant> &properties);
     void requestRefresh();
-
 public slots:
     void saveProperties();
     void openContainerManager(TerminalItem *item);
-
 private slots:
     void onCoordSystemChanged(int index);
     void onDwellMethodChanged(const QString &method,
@@ -68,7 +57,6 @@ private slots:
 private:
     // Clear the form layout
     void clearLayout();
-
     // Display methods for specific item types
     void displayMapPointProperties(MapPoint *item);
     void
@@ -78,7 +66,6 @@ private:
     void displayGenericProperties(
         QGraphicsItem     *item,
         const QStringList &skipProperties = QStringList());
-
     // Helper methods for terminal properties
     void addInterfacesSection(
         TerminalItem              *item,
@@ -97,13 +84,11 @@ private:
     void addCustomsSection(TerminalItem *item);
     void addDwellTimeSection(TerminalItem *item);
     void addContainerManagement(TerminalItem *item);
-
     // Helper method for coordinate fields
     void addCoordinateField(const QString     &key,
                             const QVariant    &value,
                             GraphicsView      *view,
                             RegionCenterPoint *item);
-
     // Common helper methods
     void addGenericField(const QString  &key,
                          const QVariant &value);
@@ -113,6 +98,33 @@ private:
         const QMap<QString, QVariant> &currentParams =
             QMap<QString, QVariant>());
 
+    // Save property methods for different item types
+    void saveTerminalProperties(TerminalItem *terminal);
+    void saveBackgroundPhotoProperties(
+        BackgroundPhotoItem *background);
+    void saveRegionCenterProperties(
+        RegionCenterPoint *regionCenter);
+    void saveMapPointProperties(MapPoint *mapPoint);
+    void
+    saveConnectionProperties(ConnectionLine *connection);
+
+    // Helper methods for property saving
+    void
+    processEditFields(QMap<QString, QVariant> &properties);
+    void processNestedProperty(
+        QMap<QString, QVariant> &properties,
+        const QString &key, QWidget *widget);
+    void processInterfaceProperty(
+        QMap<QString, QVariant> &properties,
+        const QStringList &parts, QWidget *widget);
+    void processSimpleProperty(
+        QMap<QString, QVariant> &properties,
+        const QString &key, QWidget *widget);
+    QVariant getWidgetValue(QWidget *widget);
+    void     handleRegionChange(TerminalItem  *terminal,
+                                const QString &newRegionName);
+    void     setExpandingWidgetPolicy(QWidget *widget);
+
     // Member variables
     MainWindow              *mainWindow;
     QFormLayout             *layout;
@@ -121,6 +133,5 @@ private:
     QGraphicsItem           *currentItem;
     QMap<QString, QWidget *> editFields;
 };
-
 } // namespace GUI
 } // namespace CargoNetSim
