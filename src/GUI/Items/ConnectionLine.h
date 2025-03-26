@@ -48,10 +48,6 @@ public:
     {
         return m_connectionType;
     }
-    QString getRegion() const
-    {
-        return m_region;
-    }
     int connectionId() const
     {
         return m_id;
@@ -63,7 +59,20 @@ public:
         return m_properties;
     }
 
+    /**
+     * @brief Set the current region name
+     * @param region The region name as a QString
+     */
     void setRegion(const QString &region);
+
+    /**
+     * @brief Get the current region name
+     * @return The region name as a QString
+     */
+    QString getRegion() const
+    {
+        return m_properties["Region"].toString();
+    }
     void setConnectionType(const QString &type);
     void setProperty(const QString  &key,
                      const QVariant &value);
@@ -127,13 +136,12 @@ private:
     void onStartItemPositionChanged(const QPointF &newPos);
     void onEndItemPositionChanged(const QPointF &newPos);
     void createConnections();
-    void initializeProperties();
+    void initializeProperties(QString region);
 
     // Member variables
     QGraphicsItem          *m_startItem;
     QGraphicsItem          *m_endItem;
     QString                 m_connectionType;
-    QString                 m_region;
     QMap<QString, QVariant> m_properties;
     int                     m_id;
     bool                    m_isHovered;

@@ -49,7 +49,6 @@ ConnectionLine::ConnectionLine(
     , m_startItem(startItem)
     , m_endItem(endItem)
     , m_connectionType(connectionType)
-    , m_region(region)
     , m_properties(properties)
     , m_id(getNewConnectionID())
     , m_isHovered(false)
@@ -68,7 +67,7 @@ ConnectionLine::ConnectionLine(
     // Initialize properties if needed
     if (m_properties.isEmpty())
     {
-        initializeProperties();
+        initializeProperties(region);
     }
 
     // Create label
@@ -95,9 +94,8 @@ ConnectionLine::~ConnectionLine()
 
 void ConnectionLine::setRegion(const QString &region)
 {
-    if (m_region != region)
+    if (m_properties["Region"].toString() != region)
     {
-        m_region               = region;
         m_properties["Region"] = region;
         emit regionChanged(region);
     }
@@ -175,12 +173,12 @@ void ConnectionLine::createConnections()
             [this]() { emit clicked(this); });
 }
 
-void ConnectionLine::initializeProperties()
+void ConnectionLine::initializeProperties(QString region)
 {
     m_properties = {
         {"Type", "Connection"},
         {"Connection type", m_connectionType},
-        {"Region", m_region},
+        {"Region", region},
         {"cost", "0.0"},             // USD
         {"travelTime", "0.0"},       // Hours
         {"distance", "0.0"},         // Km
@@ -728,7 +726,6 @@ QMap<QString, QVariant> ConnectionLine::toDict() const
     data["end_item_type"]   = endItemType;
     data["connection_type"] = m_connectionType;
     data["properties"]      = m_properties;
-    data["region"]          = m_region;
     data["selected"]        = isSelected();
     data["z_value"]         = zValue();
     data["visible"]         = isVisible();
