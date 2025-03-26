@@ -257,15 +257,16 @@ double DistanceMeasurementTool::calculateDistance() const
 
     if (m_view)
     {
-        auto startLatLon = m_view->sceneToWGS84(m_startPoint);
-        auto endLatLon   = m_view->sceneToWGS84(m_endPoint);
+        auto startLonLat =
+            m_view->sceneToWGS84(m_startPoint);
+        auto endLonLat = m_view->sceneToWGS84(m_endPoint);
 
         startLat =
-            startLatLon.y(); // Latitude is y in WGS84
+            startLonLat.y(); // Latitude is y in WGS84
         startLon =
-            startLatLon.x(); // Longitude is x in WGS84
-        endLat = endLatLon.y();
-        endLon = endLatLon.x();
+            startLonLat.x(); // Longitude is x in WGS84
+        endLat = endLonLat.y();
+        endLon = endLonLat.x();
     }
 
     // Calculate distance based on coordinate system
