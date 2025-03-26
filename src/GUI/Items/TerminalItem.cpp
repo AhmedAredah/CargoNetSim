@@ -342,9 +342,11 @@ QVariant TerminalItem::itemChange(GraphicsItemChange change,
                 QPointF mousePos = view->mapToScene(
                     view->mapFromGlobal(QCursor::pos()));
 
+                auto newPos = mousePos - m_dragOffset;
+
                 // Adjust position to keep item under the
                 // mouse at the right offset
-                return mousePos - m_dragOffset;
+                return newPos;
             }
         }
     }
