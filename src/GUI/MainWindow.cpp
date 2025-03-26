@@ -96,7 +96,8 @@ MainWindow::MainWindow()
                                           "color");
 
     ViewController::createRegionCenter(
-        this, "Default Region", regionColor);
+        this, "Default Region", regionColor, QPoint(0, 0),
+        true);
 
     // Initialize heartbeat controller
     // heartbeatController_ = new HeartbeatController(this);

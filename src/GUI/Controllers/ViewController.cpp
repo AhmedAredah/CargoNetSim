@@ -97,7 +97,7 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
                     .getRegionDataController()
                     ->getRegionData(terminal->getRegion())
                     ->getVariableAs<RegionCenterPoint *>(
-                        "regionCenterPoint*", nullptr);
+                        "regionCenterPoint", nullptr);
         if (terminal->getGlobalTerminalItem())
         {
             // Update the global terminal item position
@@ -119,6 +119,20 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
                                 global_terminal->getID());
             terminal->setGlobalTerminalItem(
                 global_terminal);
+
+            QObject::connect(
+                terminal, &TerminalItem::positionChanged,
+                [main_window, regionCenterPoint,
+                 terminal]() {
+                    if (!regionCenterPoint)
+                    {
+                        return;
+                    }
+                    CargoNetSim::GUI::ViewController::
+                        updateTerminalGlobalPosition(
+                            main_window, regionCenterPoint,
+                            terminal);
+                });
         }
     }
     else
@@ -144,7 +158,7 @@ void CargoNetSim::GUI::ViewController::
         TerminalItem      *terminal)
 {
     // Check if the regionCenterPoint is not nullptr
-    if (!regionCenterPoint)
+    if (!regionCenterPoint || !terminal || !main_window)
     {
         return;
     }
@@ -159,21 +173,21 @@ void CargoNetSim::GUI::ViewController::
             ? props.value("Shared Longitude").toDouble()
             : 0;
 
-    auto center_lat =
-        props.contains("Latitude")
-            ? props.value("Latitude").toDouble()
-            : 0;
     auto center_lon =
         props.contains("Longitude")
             ? props.value("Longitude").toDouble()
+            : 0;
+    auto center_lat =
+        props.contains("Latitude")
+            ? props.value("Latitude").toDouble()
             : 0;
 
     // Get terminal's coordinates in region view
     auto out = main_window->regionView_->sceneToWGS84(
         terminal->pos());
 
-    double terminal_lat = out.x();
-    double terminal_lon = out.y();
+    double terminal_lon = out.x();
+    double terminal_lat = out.y();
 
     // Calculate terminal's offset from region
     // center Calculate the deltas (terminal
@@ -182,15 +196,21 @@ void CargoNetSim::GUI::ViewController::
     double delta_lon = terminal_lon - center_lon;
 
     // Apply these deltas to the shared coordinates
-    double item_global_view_lat =
-        center_shared_lat + delta_lat;
     double item_global_view_lon =
         center_shared_lon + delta_lon;
+    double item_global_view_lat =
+        center_shared_lat + delta_lat;
 
     // Update the global terminal item
-    terminal->getGlobalTerminalItem()->setPos(
+    GlobalTerminalItem *globalITem =
+        terminal->getGlobalTerminalItem();
+    if (!globalITem)
+    {
+        return;
+    }
+    globalITem->setPos(
         main_window->globalMapView_->wgs84ToScene(QPointF(
-            item_global_view_lat, item_global_view_lon)));
+            item_global_view_lon, item_global_view_lat)));
 }
 
 void CargoNetSim::GUI::ViewController::flashTerminalItems(
@@ -719,8 +739,8 @@ void CargoNetSim::GUI::ViewController::addBackgroundPhoto(
             auto   wgsPoint =
                 mainWindow->regionView_->sceneToWGS84(
                     viewCenter);
-            lat = wgsPoint.x();
-            lon = wgsPoint.y();
+            lon = wgsPoint.x();
+            lat = wgsPoint.y();
             background->getProperties()["Latitude"] =
                 QString::number(lat, 'f', 6);
             background->getProperties()["Longitude"] =
@@ -962,7 +982,8 @@ void CargoNetSim::GUI::ViewController::
 CargoNetSim::GUI::RegionCenterPoint *
 CargoNetSim::GUI::ViewController::createRegionCenter(
     MainWindow *mainWindow, const QString &regionName,
-    const QColor &color, const QPointF pos)
+    const QColor &color, const QPointF pos,
+    const bool keepVisible)
 {
     RegionCenterPoint *centerPoint =
         new RegionCenterPoint(regionName, color);
@@ -975,10 +996,14 @@ CargoNetSim::GUI::ViewController::createRegionCenter(
 
     // Add position change connection
     QObject::connect(
-        centerPoint, &RegionCenterPoint::positionChanged,
-        [regionName, mainWindow](const QPointF &) {
+        centerPoint, &RegionCenterPoint::coordinatesChanged,
+        [regionName, mainWindow](QPointF newGeopoint) {
+            PropertiesPanel *propertiesPanel =
+                mainWindow->propertiesPanel_;
             UtilitiesFunctions::updateGlobalMapForRegion(
                 mainWindow, regionName);
+            propertiesPanel->updateCoordinateFields(
+                newGeopoint);
         });
 
     centerPoint->setPos(pos);
@@ -989,5 +1014,8 @@ CargoNetSim::GUI::ViewController::createRegionCenter(
         ->setRegionVariable(
             regionName, "regionCenterPoint",
             QVariant::fromValue(centerPoint));
+
+    // update visibility
+    centerPoint->setVisible(keepVisible);
     return centerPoint;
 }

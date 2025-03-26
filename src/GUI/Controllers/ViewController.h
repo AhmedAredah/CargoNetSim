@@ -32,11 +32,6 @@ public:
     static void updateGlobalMapItem(MainWindow *main_window,
                                     TerminalItem *terminal);
 
-    static void updateTerminalGlobalPosition(
-        MainWindow        *main_window,
-        RegionCenterPoint *regionCenterPoint,
-        TerminalItem      *terminal);
-
     static TerminalItem *createTerminalAtPoint(
         MainWindow *main_window, const QString &region,
         const QString &terminalType, const QPointF &point);
@@ -98,9 +93,15 @@ public:
     createRegionCenter(MainWindow    *mainWindow,
                        const QString &regionName,
                        const QColor  &color,
-                       const QPointF  pos = QPointF(0, 0));
+                       const QPointF  pos = QPointF(0, 0),
+                       const bool     keepVisible = false);
 
 private:
+    static void updateTerminalGlobalPosition(
+        MainWindow        *main_window,
+        RegionCenterPoint *regionCenterPoint,
+        TerminalItem      *terminal);
+
     static void drawTrainNetwork(
         MainWindow                              *mainWindow,
         Backend::TrainClient::NeTrainSimNetwork *network,
