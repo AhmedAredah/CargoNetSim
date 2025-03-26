@@ -61,7 +61,8 @@ public:
      * latitude/longitude
      *
      * @param scenePos Position in scene coordinates
-     * @return sQPointF of (latitude, longitude) in degrees
+     * @return sQPointF of (longitude, latitude) in
+     * degrees
      */
     QPointF sceneToWGS84(const QPointF &scenePos) const;
 
