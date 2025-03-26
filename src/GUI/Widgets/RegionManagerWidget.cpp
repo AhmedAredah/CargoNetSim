@@ -221,7 +221,8 @@ void RegionManagerWidget::addRegion()
 
         // Create region center point
         ViewController::createRegionCenter(
-            mainWindow, newRegionName, color);
+            mainWindow, newRegionName, color, QPointF(0, 0),
+            false);
 
         // // Update UI
         updateRegionList();
