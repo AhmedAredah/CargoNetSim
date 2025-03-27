@@ -202,21 +202,6 @@ public:
              const QPixmap                 &pixmap,
              QGraphicsItem *parent = nullptr);
 
-    /**
-     * @brief Create a visual highlighting effect
-     *
-     * Creates a pulsing highlight effect to draw attention
-     * to this terminal
-     *
-     * @param evenIfHidden Make the terminal temporarily
-     * visible if it's hidden
-     * @param color Highlight color (semi-transparent red by
-     * default)
-     */
-    void flash(bool          evenIfHidden = false,
-               const QColor &color = QColor(255, 0, 0,
-                                            180));
-
 signals:
     /**
      * @brief Emitted when terminal is clicked
