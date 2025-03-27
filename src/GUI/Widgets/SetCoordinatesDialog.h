@@ -37,8 +37,7 @@ public:
      * @param parent Parent widget
      */
     explicit SetCoordinatesDialog(
-        const QString &terminalName,
-        double currentLat = 0.0, double currentLon = 0.0,
+        const QString &terminalName, QPointF geoPoint,
         QWidget *parent = nullptr);
 
     /**

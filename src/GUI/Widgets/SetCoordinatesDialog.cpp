@@ -6,8 +6,8 @@ namespace GUI
 {
 
 SetCoordinatesDialog::SetCoordinatesDialog(
-    const QString &terminalName, double currentLat,
-    double currentLon, QWidget *parent)
+    const QString &terminalName, QPointF geoPoint,
+    QWidget *parent)
     : QDialog(parent)
 {
     // Set window properties
@@ -34,7 +34,7 @@ SetCoordinatesDialog::SetCoordinatesDialog(
     latInput = new QDoubleSpinBox();
     latInput->setRange(-90.0, 90.0);
     latInput->setDecimals(6);
-    latInput->setValue(currentLat);
+    latInput->setValue(geoPoint.y());
     latInput->setSingleStep(0.1);
     latInput->setToolTip(
         tr("Latitude value in degrees (-90° to 90°)"));
@@ -44,7 +44,7 @@ SetCoordinatesDialog::SetCoordinatesDialog(
     lonInput = new QDoubleSpinBox();
     lonInput->setRange(-180.0, 180.0);
     lonInput->setDecimals(6);
-    lonInput->setValue(currentLon);
+    lonInput->setValue(geoPoint.x());
     lonInput->setSingleStep(0.1);
     lonInput->setToolTip(
         tr("Longitude value in degrees (-180° to 180°)"));
