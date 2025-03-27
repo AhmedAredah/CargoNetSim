@@ -96,6 +96,10 @@ public:
                        const QPointF  pos = QPointF(0, 0),
                        const bool     keepVisible = false);
 
+    static bool updateTerminalPositionByGlobalPosition(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        QPointF globalGeoPos);
+
 private:
     static void updateTerminalGlobalPosition(
         MainWindow        *main_window,

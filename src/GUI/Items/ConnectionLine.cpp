@@ -213,42 +213,18 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
 
     if (isStart && !newPos.isNull())
     {
-        startCenter =
-            newPos
-            + QPointF(
-                m_startItem->boundingRect().width() / 2,
-                m_startItem->boundingRect().height() / 2);
-        endCenter =
-            m_endItem->scenePos()
-            + QPointF(m_endItem->boundingRect().width() / 2,
-                      m_endItem->boundingRect().height()
-                          / 2);
+        startCenter = newPos;
+        endCenter = m_endItem->scenePos();
     }
     else if (!isStart && !newPos.isNull())
     {
-        startCenter =
-            m_startItem->scenePos()
-            + QPointF(
-                m_startItem->boundingRect().width() / 2,
-                m_startItem->boundingRect().height() / 2);
-        endCenter =
-            newPos
-            + QPointF(m_endItem->boundingRect().width() / 2,
-                      m_endItem->boundingRect().height()
-                          / 2);
+        startCenter = m_startItem->scenePos();
+        endCenter = newPos;
     }
     else
     {
-        startCenter =
-            m_startItem->scenePos()
-            + QPointF(
-                m_startItem->boundingRect().width() / 2,
-                m_startItem->boundingRect().height() / 2);
-        endCenter =
-            m_endItem->scenePos()
-            + QPointF(m_endItem->boundingRect().width() / 2,
-                      m_endItem->boundingRect().height()
-                          / 2);
+        startCenter = m_startItem->scenePos();
+        endCenter = m_endItem->scenePos();
     }
 
     // Create base line and apply offset
@@ -268,8 +244,7 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
 
     if (lineLength > 0)
     {
-        // Determine curve direction based on line
-        // orientation
+        // Determine curve direction based on line orientation
         if (m_connectionType != "Truck")
         {
             // Choose perpendicular offset direction
@@ -278,12 +253,8 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
 
             if (isVertical)
             {
-                // For vertical alignments, curve
-                // horizontally Use normalized perpendicular
-                // vector
-                qreal nx = (m_connectionType == "Ship")
-                               ? 1.0
-                               : -1.0;
+                // For vertical alignments, curve horizontally
+                qreal nx = (m_connectionType == "Ship") ? 1.0 : -1.0;
                 qreal ny = 0.0;
 
                 // Set control point
@@ -292,22 +263,16 @@ void ConnectionLine::updatePosition(const QPointF &newPos,
             }
             else
             {
-                // For horizontal alignments, curve
-                // vertically
+                // For horizontal alignments, curve vertically
                 qreal nx = 0.0;
-                qreal ny = (m_connectionType == "Rail")
-                               ? -1.0
-                               : 1.0;
+                qreal ny = (m_connectionType == "Rail") ? -1.0 : 1.0;
 
                 // Set control point
                 ctrlX = midX + nx * offset;
                 ctrlY = midY + ny * offset;
             }
 
-            // Calculate label position at t=0.5 (middle of
-            // Bezier curve) For quadratic Bezier B(t) =
-            // (1-t)²P₀ + 2(1-t)tP₁ + t²P₂ At t=0.5: B(0.5)
-            // = 0.25*P₀ + 0.5*P₁ + 0.25*P₂
+            // Calculate label position at t=0.5 (middle of Bezier curve)
             qreal t = 0.5;
             labelX  = (1 - t) * (1 - t) * m_line.x1()
                      + 2 * (1 - t) * t * ctrlX

@@ -38,7 +38,7 @@ public:
      */
     static void
     resetOtherButtons(MainWindow  *mainWindow,
-                      QToolButton *activeButton);
+                      QToolButton *activeButton = nullptr);
 
     /**
      * @brief Toggles the grid visibility in both views
