@@ -22,6 +22,7 @@
 #include "Items/RegionCenterPoint.h"
 #include "Items/TerminalItem.h"
 #include "Widgets/CustomMainWindow.h"
+#include "Widgets/NetworkManagerDialog.h"
 #include "Widgets/RegionManagerWidget.h"
 
 namespace CargoNetSim
@@ -35,7 +36,6 @@ class PropertiesPanel;
 class SettingsWidget;
 class ShortestPathsTable;
 class SplashScreen;
-class NetworkManagerDialog;
 class ToolbarController;
 class BasicButtonController;
 class ViewController;
@@ -126,6 +126,15 @@ public:
 
     void showStatusBarError(QString message,
                             int     timeout = 0);
+
+    /**
+     * @brief Gets the connection type
+     * @return The current connection type
+     */
+    QString getConnectionType() const
+    {
+        return currentConnectionType_;
+    }
 
 public slots:
     /**

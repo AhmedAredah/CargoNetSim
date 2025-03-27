@@ -281,6 +281,12 @@ void MainWindow::setupDocks()
     settingsDock_->setWidget(settingsWidget_);
     addDockWidget(Qt::RightDockWidgetArea, settingsDock_);
 
+    // Tabify properties and settings docks
+    tabifyDockWidget(propertiesDock_, settingsDock_);
+
+    // Make settings visible by default instead of hiding properties
+    settingsDock_->raise();
+
     // Shortest paths table dock
     shortestPathTableDock_ =
         new QDockWidget("Shortest Paths Table", this);
@@ -306,10 +312,12 @@ void MainWindow::setupDocks()
 
     // Network manager dock
     networkManagerDock_ = new NetworkManagerDialog(this);
-    addDockWidget(Qt::LeftDockWidgetArea,
-                  networkManagerDock_);
-    networkManagerDock_->resize(
-        networkManagerDock_->width(), 200);
+    
+    // Tabify the region manager and network manager docks
+    tabifyDockWidget(regionManagerDock_, networkManagerDock_);
+    
+    // Ensure region manager is visible by default
+    regionManagerDock_->raise();
 }
 
 void MainWindow::setupTerminalLibrary()
@@ -726,8 +734,7 @@ void MainWindow::handleTabChange(int index)
 
     // Reset measurement mode when changing tabs
     measureButton_->setChecked(false);
-    // BasicButtonController::toggleMeasureMode(this,
-    // false); // TODO
+    BasicButtonController::resetOtherButtons(this);
 
     // Handle tool button visibility based on current tab
     for (auto it = toolsButtonsVisibility_.begin();
@@ -744,8 +751,8 @@ void MainWindow::handleTabChange(int index)
     {
         int        toolbarTabIndex = it.key();
         QList<int> tabIndices      = it.value();
-        // ToolbarController::getRibbon(this)->setTabVisible(toolbarTabIndex,
-        // tabIndices.contains(index)); // TODO
+        ribbon_->setTabVisible(toolbarTabIndex,
+                               tabIndices.contains(index));
     }
 
     // Handle dock window visibility
