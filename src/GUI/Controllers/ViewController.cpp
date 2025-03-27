@@ -213,6 +213,69 @@ void CargoNetSim::GUI::ViewController::
             item_global_view_lon, item_global_view_lat)));
 }
 
+bool CargoNetSim::GUI::ViewController::
+    updateTerminalPositionByGlobalPosition(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        QPointF globalGeoPos)
+{
+    if (!mainWindow || !terminal
+        || !terminal->getGlobalTerminalItem())
+    {
+        return false;
+    }
+
+    QString currentRegion = terminal->getRegion();
+
+    // Get the region center point
+    auto regionCenterPoint =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getRegionData(currentRegion)
+            ->getVariableAs<RegionCenterPoint *>(
+                "regionCenterPoint", nullptr);
+
+    if (!regionCenterPoint)
+    {
+        return false;
+    }
+
+    auto props = regionCenterPoint->getProperties();
+
+    auto center_lon =
+        props.contains("Longitude")
+            ? props.value("Longitude").toDouble()
+            : 0;
+    auto center_lat =
+        props.contains("Latitude")
+            ? props.value("Latitude").toDouble()
+            : 0;
+
+    QPointF terminalGeoPos =
+        mainWindow->regionView_->sceneToWGS84(
+            terminal->pos());
+
+    // Calculate the delta (how far the terminal is from its
+    // region center)
+    double delta_lat = terminalGeoPos.y() - center_lat;
+    double delta_lon = terminalGeoPos.x() - center_lon;
+
+    // Calculate what the shared coordinates need to be to
+    // position the terminal at the target location
+    double new_shared_lat = globalGeoPos.y() - delta_lat;
+    double new_shared_lon = globalGeoPos.x() - delta_lon;
+
+    regionCenterPoint->setProperty("Shared Latitude",
+                                   new_shared_lat);
+    regionCenterPoint->setProperty("Shared Longitude",
+                                   new_shared_lon);
+
+    // Update the terminal position
+    CargoNetSim::GUI::UtilitiesFunctions::
+        updateGlobalMapForRegion(mainWindow, currentRegion);
+
+    return true;
+}
+
 void CargoNetSim::GUI::ViewController::flashTerminalItems(
     QList<TerminalItem *> terminals, bool evenIfHidden)
 {
@@ -775,7 +838,7 @@ bool CargoNetSim::GUI::ViewController::
                             const QString &connectionType)
 {
     // Early validation check
-    if (!startItem || !endItem)
+    if (!startItem || !endItem || !mainWindow)
     {
         return false;
     }
@@ -852,6 +915,11 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
     MainWindow *mainWindow, QGraphicsItem *startItem,
     QGraphicsItem *endItem, const QString &connectionType)
 {
+    if (!mainWindow || !startItem || !endItem)
+    {
+        return nullptr; // Early validation check
+    }
+
     // Check if a connection of the same type already
     // exists between the terminals
     if (CargoNetSim::GUI::ViewController::
@@ -871,6 +939,14 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
             new ConnectionLine(SP, EP, connectionType);
         mainWindow->regionScene_->addItemWithId(
             line, line->getID());
+
+        // Connect the clicked signal to update properties panel
+        QObject::connect(line, &ConnectionLine::clicked,
+                        [mainWindow](ConnectionLine *line) {
+                            UtilitiesFunctions::updatePropertiesPanel(
+                                mainWindow, line);
+                        });
+
         return line;
     }
     else
@@ -886,6 +962,14 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                                            connectionType);
             mainWindow->globalMapView_->getScene()
                 ->addItemWithId(line, line->getID());
+
+            // Connect the clicked signal to update properties panel
+            QObject::connect(line, &ConnectionLine::clicked,
+                            [mainWindow](ConnectionLine *line) {
+                                UtilitiesFunctions::updatePropertiesPanel(
+                                    mainWindow, line);
+                            });
+
             return line;
         }
     }

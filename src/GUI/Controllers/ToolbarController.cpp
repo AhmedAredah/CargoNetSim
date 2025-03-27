@@ -698,18 +698,13 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     regionNetworksButton->setCheckable(true);
     regionNetworksButton->setChecked(true);
     regionNetworksButton->setText("Hide\nNetwork Manager");
-    // QObject::connect(regionNetworksButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow,
-    //                  regionNetworksButton](bool checked)
-    //                  {
-    //                      ToolbarController::toggleDockWidget(
-    //                          checked,
-    //                          mainWindow->networkManagerDock_,
-    //                          regionNetworksButton,
-    //                          "Network Manager"
-    //                          );
-    //                  });
+    QObject::connect(
+        regionNetworksButton, &QToolButton::clicked,
+        [mainWindow, regionNetworksButton](bool checked) {
+            BasicButtonController::toggleDockWidget(
+                checked, mainWindow->networkManagerDock_,
+                regionNetworksButton, "Network Manager");
+        });
     windowsLayout->addWidget(regionNetworksButton);
 
     QToolButton *shortestPathsTableButton =
