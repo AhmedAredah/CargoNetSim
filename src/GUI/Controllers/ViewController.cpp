@@ -927,6 +927,8 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                                     endItem,
                                     connectionType))
     {
+        mainWindow->showStatusBarError(
+            "A connection of this type already exists.", 3000);
         return nullptr;
     }
 
@@ -949,15 +951,35 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
 
         return line;
     }
-    else
+    else if (SP && EP && SP->getRegion() != EP->getRegion())
+    {
+        mainWindow->showStatusBarError(
+            "Cannot create a connection between two "
+            "different regions in region view.",
+            3000);
+        return nullptr;
+    }
+    else if (!SP && !EP)
     {
         auto SPG =
             dynamic_cast<GlobalTerminalItem *>(startItem);
         auto EPG =
             dynamic_cast<GlobalTerminalItem *>(endItem);
 
-        if (SPG && EPG)
+        if (SPG && EPG && SPG != EPG)
         {
+            if (SPG->getLinkedTerminalItem()->getRegion()
+                == EPG->getLinkedTerminalItem()
+                       ->getRegion())
+            {
+                mainWindow->showStatusBarError(
+                    "Cannot link terminals in the same "
+                    "region in global map.",
+                    3000);
+                return nullptr;
+            }
+
+            // Create the connection line
             auto line = new ConnectionLine(SPG, EPG,
                                            connectionType);
             mainWindow->globalMapView_->getScene()
@@ -971,6 +993,11 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                             });
 
             return line;
+        }
+        else if (SPG && EPG && SPG == EPG)
+        {
+            mainWindow->showStatusBarError(
+                "Cannot link a terminal to itself.", 3000);
         }
     }
 }
