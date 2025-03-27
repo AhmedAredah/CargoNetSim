@@ -35,8 +35,7 @@ public:
      * @param parent The parent widget, typically the main
      * window.
      */
-    explicit NetworkManagerDialog(
-        QWidget *parent = nullptr);
+    explicit NetworkManagerDialog(QWidget *parent = nullptr);
 
     /**
      * @brief Destructor.
@@ -108,7 +107,7 @@ private slots:
      * @param networkType The type of network that changed.
      */
     void onItemCheckedChanged(QListWidgetItem *item,
-                              const QString   &networkType);
+                             const QString &networkType);
 
 private:
     /**
@@ -127,11 +126,10 @@ private:
      * @return The created pixmap.
      */
     QPixmap createColorPixmap(const QColor &color,
-                              int           size = 16);
+                             int size = 16);
 
     MainWindow *mainWindow;
-    QMap<QString, QMap<QString, QPushButton *>>
-        networkButtons;
+    QMap<QString, QMap<QString, QPushButton *>> networkButtons;
 };
 
 } // namespace GUI

@@ -39,27 +39,24 @@ NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
     if (!mainWindow)
     {
         // Fallback if not directly parented to MainWindow
-        mainWindow =
-            qobject_cast<MainWindow *>(parent->window());
+        mainWindow = qobject_cast<MainWindow *>(parent->window());
     }
 
     setObjectName("NetworkManagerDock");
 
     // Create main widget and layout
-    QWidget     *mainWidget = new QWidget(this);
+    QWidget *mainWidget = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
 
     // Create tab widget
     QTabWidget *tabWidget = new QTabWidget(mainWidget);
 
     // Create NeTrainSim tab
-    QWidget *netrainsimTab =
-        createNetworkTab("Train Network");
+    QWidget *netrainsimTab = createNetworkTab("Train Network");
     tabWidget->addTab(netrainsimTab, "Train Network");
 
     // Create INTEGRATION tab
-    QWidget *integrationTab =
-        createNetworkTab("Truck Network");
+    QWidget *integrationTab = createNetworkTab("Truck Network");
     tabWidget->addTab(integrationTab, "Truck Network");
 
     mainLayout->addWidget(tabWidget);
@@ -69,14 +66,12 @@ NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
     updateNetworkList("Train Network");
     updateNetworkList("Truck Network");
 
-    // Connect to region change signals if MainWindow
-    // provides them
+    // Connect to region change signals if MainWindow provides them
     if (mainWindow)
     {
         connect(mainWindow, &MainWindow::regionChanged,
                 this, [this](const QString &region) {
-                    // updateNetworkListForChangedRegion("Train
-                    // Network", region);
+                    updateNetworkListForChangedRegion(region);
                 });
     }
 }
