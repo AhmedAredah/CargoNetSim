@@ -920,53 +920,57 @@ bool BasicButtonController::setTerminalGlobalPosition(
 {
     try
     {
-        // // Get the terminal's current global position
-        // QGraphicsItem* globalItem =
-        // mainWindow->globalMapItems_.value(terminal,
-        // nullptr); if (!globalItem) {
-        //     mainWindow->statusBar()->showMessage("Terminal
-        //     not found in global map", 2000); return
-        //     false;
-        // }
+        if (!mainWindow || !terminal)
+        {
+            return false;
+        }
 
-        // // Get the current position
-        // QPointF globalPos = globalItem->pos() + QPointF(
-        //                         globalItem->boundingRect().width()
-        //                         / 2,
-        //                         globalItem->boundingRect().height()
-        //                         / 2
-        //                         );
+        // Get the terminal's current global position
+        GlobalTerminalItem *globalItem =
+            terminal->getGlobalTerminalItem();
+        if (!globalItem)
+        {
+            mainWindow->showStatusBarMessage(
+                "Terminal not found in global map", 2000);
+            return false;
+        }
 
-        // double currentLat, currentLon;
-        // std::tie(currentLat, currentLon) =
-        // mainWindow->globalMapView_->sceneToWGS84(globalPos);
+        // Get the current position
+        QPointF globalProjectedPos = globalItem->pos();
 
-        // // Show the dialog
-        // SetCoordinatesDialog dialog(
-        //     terminal->getProperties()["Name"].toString(),
-        //     currentLat,
-        //     currentLon,
-        //     mainWindow
-        //     );
+        QPointF globalGeoPos =
+            mainWindow->globalMapView_->sceneToWGS84(
+                globalProjectedPos);
 
-        // if (dialog.exec() == QDialog::Accepted) {
-        //     // Get the new coordinates
-        //     double lat, lon;
-        //     std::tie(lat, lon) = dialog.getCoordinates();
+        // Show the dialog
+        SetCoordinatesDialog dialog(
+            terminal->getProperties()["Name"].toString(),
+            globalGeoPos, mainWindow);
 
-        //     // Set the terminal position
-        //     if
-        //     (ViewController::setTerminalGlobalPosition(mainWindow,
-        //     terminal, lat, lon)) {
-        //         mainWindow->statusBar()->showMessage("Terminal
-        //         position updated", 2000); return true;
-        //     }
-        //     else {
-        //         mainWindow->statusBar()->showMessage("Failed
-        //         to update terminal position", 2000);
-        //         return false;
-        //     }
-        // }
+        if (dialog.exec() == QDialog::Accepted)
+        {
+            // Get the new coordinates
+            QPointF userGeoPoint = dialog.getCoordinates();
+
+            bool result = ViewController::
+                updateTerminalPositionByGlobalPosition(
+                    mainWindow, terminal, userGeoPoint);
+
+            // Set the terminal position
+            if (result)
+            {
+                mainWindow->statusBar()->showMessage(
+                    "Terminal position updated", 2000);
+                return true;
+            }
+            else
+            {
+                mainWindow->statusBar()->showMessage(
+                    "Failed to update terminal position",
+                    2000);
+                return false;
+            }
+        }
 
         // Dialog was cancelled
         return false;
