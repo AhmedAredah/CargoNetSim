@@ -324,14 +324,13 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     //                 mainWindow, mainWindow->scene_);
     //     });
 
-    // // Connect the menu button's click signal
-    // QObject::connect(
-    //     menuButton, &QToolButton::clicked, [mainWindow]()
-    //     {
-    //         ViewController::
-    //             connectVisibleTerminalsByInterfaces(
-    //                 mainWindow);
-    //     });
+    // Connect the menu button's click signal
+    QObject::connect(
+        menuButton, &QToolButton::clicked, [mainWindow]() {
+            ViewController::
+                connectVisibleTerminalsByInterfaces(
+                    mainWindow);
+        });
 
     networkToolsLayout->addWidget(
         connectVisibleTerminalsButton);
