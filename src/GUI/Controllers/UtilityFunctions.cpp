@@ -112,6 +112,117 @@ CargoNetSim::GUI::UtilitiesFunctions::getTerminalItems(
     return result;
 }
 
+QList<CargoNetSim::GUI::GlobalTerminalItem *> CargoNetSim::
+    GUI::UtilitiesFunctions::getGlobalTerminalItems(
+        GraphicsScene *scene, const QString &region,
+        const QString &terminalType,
+        ConnectionType connectionType, LinkType linkType)
+{
+    // Get all terminals upfront
+    QList<GlobalTerminalItem *> allTerminals =
+        scene->getItemsByType<GlobalTerminalItem>();
+
+    // Pre-calculate the connection and link sets only if
+    // needed
+    QSet<GlobalTerminalItem *> connectionLineTerminalItems;
+    QSet<TerminalItem *>       mapPointsLinkedTerminals;
+
+    if (connectionType != ConnectionType::Any)
+    {
+        QList<ConnectionLine *> connectionLines =
+            scene->getItemsByType<ConnectionLine>();
+        for (auto connectionLine : connectionLines)
+        {
+            if (auto startTerminal =
+                    dynamic_cast<GlobalTerminalItem *>(
+                        connectionLine->startItem()))
+                connectionLineTerminalItems.insert(
+                    startTerminal);
+            if (auto endTerminal =
+                    dynamic_cast<GlobalTerminalItem *>(
+                        connectionLine->endItem()))
+                connectionLineTerminalItems.insert(
+                    endTerminal);
+        }
+    }
+
+    if (linkType != LinkType::Any)
+    {
+        QList<MapPoint *> mapPoints =
+            scene->getItemsByType<MapPoint>();
+        for (auto mapPoint : mapPoints)
+        {
+            if (auto linkedTerminal =
+                    mapPoint->getLinkedTerminal())
+                mapPointsLinkedTerminals.insert(
+                    linkedTerminal);
+        }
+    }
+
+    // Create result container with initial capacity to
+    // avoid reallocations
+    QList<GlobalTerminalItem *> result;
+    result.reserve(allTerminals.size());
+
+    const bool anyRegion = region == "*";
+    const bool anyType   = terminalType == "*";
+
+    // Filter terminals
+    for (auto terminal : allTerminals)
+    {
+        // Region check
+        if (!anyRegion && terminal->getLinkedTerminalItem()
+            && terminal->getLinkedTerminalItem()
+                       ->getRegion()
+                   != region)
+        {
+            continue;
+        }
+
+        // Type check
+        if (!anyType && terminal->getLinkedTerminalItem()
+            && terminal->getLinkedTerminalItem()
+                       ->getTerminalType()
+                   != terminalType)
+        {
+            continue;
+        }
+
+        // Connection check
+        if (connectionType == ConnectionType::Connected
+            && !connectionLineTerminalItems.contains(
+                terminal))
+        {
+            continue;
+        }
+        else if (connectionType
+                     == ConnectionType::NotConnected
+                 && connectionLineTerminalItems.contains(
+                     terminal))
+        {
+            continue;
+        }
+
+        // Link check
+        if (linkType == LinkType::Linked
+            && !mapPointsLinkedTerminals.contains(
+                terminal->getLinkedTerminalItem()))
+        {
+            continue;
+        }
+        else if (linkType == LinkType::NotLinked
+                 && mapPointsLinkedTerminals.contains(
+                     terminal->getLinkedTerminalItem()))
+        {
+            continue;
+        }
+
+        result.append(terminal);
+    }
+
+    return result;
+}
+
 QList<CargoNetSim::GUI::MapPoint *> CargoNetSim::GUI::
     UtilitiesFunctions::getMapPointsOfTerminal(
         GraphicsScene *scene, TerminalItem *terminal,
@@ -290,4 +401,232 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         ViewController::updateGlobalMapItem(mainWindow,
                                             item);
     }
+}
+
+QList<QString>
+CargoNetSim::GUI::UtilitiesFunctions::getCommonModes(
+    QGraphicsItem *sourceItem, QGraphicsItem *targetItem)
+{
+    // Early null check to avoid segmentation faults
+    if (!sourceItem || !targetItem)
+    {
+        return {};
+    }
+
+    // Get modes from each terminal
+    QSet<QString> sourceModes;
+    QSet<QString> targetModes;
+
+    // Handle different terminal types
+    if (auto *sourceGlobal = dynamic_cast<
+            CargoNetSim::GUI::GlobalTerminalItem *>(
+            sourceItem))
+    {
+        if (auto *linkedTerminal =
+                sourceGlobal->getLinkedTerminalItem())
+        {
+            const QMap<QString, QVariant> &interfaces =
+                linkedTerminal->getProperties()
+                    .value("Available Interfaces")
+                    .toMap();
+            const QStringList &landModes =
+                interfaces.value("land_side")
+                    .toStringList();
+            const QStringList &seaModes =
+                interfaces.value("sea_side").toStringList();
+
+            sourceModes.reserve(landModes.size()
+                                + seaModes.size());
+            for (const auto &mode : landModes)
+                sourceModes.insert(mode);
+            for (const auto &mode : seaModes)
+                sourceModes.insert(mode);
+        }
+    }
+    else if (auto *sourceTerminal = dynamic_cast<
+                 CargoNetSim::GUI::TerminalItem *>(
+                 sourceItem))
+    {
+        const QMap<QString, QVariant> &interfaces =
+            sourceTerminal->getProperties()
+                .value("Available Interfaces")
+                .toMap();
+        const QStringList &landModes =
+            interfaces.value("land_side").toStringList();
+        const QStringList &seaModes =
+            interfaces.value("sea_side").toStringList();
+
+        sourceModes.reserve(landModes.size()
+                            + seaModes.size());
+        for (const auto &mode : landModes)
+            sourceModes.insert(mode);
+        for (const auto &mode : seaModes)
+            sourceModes.insert(mode);
+    }
+
+    // Skip processing target if source is empty
+    if (sourceModes.isEmpty())
+    {
+        return {};
+    }
+
+    // Build target modes set and find common modes directly
+    QSet<QString> commonModes;
+
+    if (auto *targetGlobal = dynamic_cast<
+            CargoNetSim::GUI::GlobalTerminalItem *>(
+            targetItem))
+    {
+        if (auto *linkedTerminal =
+                targetGlobal->getLinkedTerminalItem())
+        {
+            const QMap<QString, QVariant> &interfaces =
+                linkedTerminal->getProperties()
+                    .value("Available Interfaces")
+                    .toMap();
+            const QStringList &landModes =
+                interfaces.value("land_side")
+                    .toStringList();
+            const QStringList &seaModes =
+                interfaces.value("sea_side").toStringList();
+
+            commonModes.reserve(
+                qMin(sourceModes.size(),
+                     landModes.size() + seaModes.size()));
+            for (const auto &mode : landModes)
+            {
+                if (sourceModes.contains(mode))
+                {
+                    commonModes.insert(mode);
+                }
+            }
+            for (const auto &mode : seaModes)
+            {
+                if (sourceModes.contains(mode))
+                {
+                    commonModes.insert(mode);
+                }
+            }
+        }
+    }
+    else if (auto *targetTerminal = dynamic_cast<
+                 CargoNetSim::GUI::TerminalItem *>(
+                 targetItem))
+    {
+        const QMap<QString, QVariant> &interfaces =
+            targetTerminal->getProperties()
+                .value("Available Interfaces")
+                .toMap();
+        const QStringList &landModes =
+            interfaces.value("land_side").toStringList();
+        const QStringList &seaModes =
+            interfaces.value("sea_side").toStringList();
+
+        commonModes.reserve(
+            qMin(sourceModes.size(),
+                 landModes.size() + seaModes.size()));
+        for (const auto &mode : landModes)
+        {
+            if (sourceModes.contains(mode))
+            {
+                commonModes.insert(mode);
+            }
+        }
+        for (const auto &mode : seaModes)
+        {
+            if (sourceModes.contains(mode))
+            {
+                commonModes.insert(mode);
+            }
+        }
+    }
+
+    return QList<QString>(commonModes.begin(),
+                          commonModes.end());
+}
+
+double CargoNetSim::GUI::UtilitiesFunctions::
+    getApproximateGeoDistance(const QPointF &point1,
+                              const QPointF &point2)
+{
+    // Earth's approximate radius in meters
+    const double earthRadius = 6371000.0;
+
+    // Get coordinates (QPointF stores as x=longitude,
+    // y=latitude)
+    double lon1 = point1.x();
+    double lat1 = point1.y();
+    double lon2 = point2.x();
+    double lat2 = point2.y();
+
+    // Convert degrees to radians
+    double lat1Rad = lat1 * M_PI / 180.0;
+    double lon1Rad = lon1 * M_PI / 180.0;
+    double lat2Rad = lat2 * M_PI / 180.0;
+    double lon2Rad = lon2 * M_PI / 180.0;
+
+    // Simplified haversine formula for performance
+    double dLat = lat2Rad - lat1Rad;
+    double dLon = lon2Rad - lon1Rad;
+
+    // Approximate using equirectangular projection
+    double x = dLon * cos((lat1Rad + lat2Rad) / 2.0);
+    double y = dLat;
+
+    // Calculate distance
+    return earthRadius * sqrt(x * x + y * y);
+}
+
+CargoNetSim::GUI::UtilitiesFunctions::PathResult
+findShortestPath(const QString                &regionName,
+                 const QString                &networkName,
+                 CargoNetSim::GUI::NetworkType networkType,
+                 int startNodeId, int endNodeId)
+{
+    CargoNetSim::GUI::UtilitiesFunctions::PathResult result;
+    try
+    {
+        if (networkType
+            == CargoNetSim::GUI::NetworkType::Train)
+        {
+            auto network =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getRegionData(regionName)
+                        ->getTrainNetwork(networkName);
+
+            // Find the shortest path
+            auto path = network->findShortestPath(
+                startNodeId, endNodeId);
+
+            result.path_nodes    = path.pathNodes;
+            result.totalLength   = path.totalLength;
+            result.minTravelTime = path.minTravelTime;
+        }
+        else if (networkType
+                 == CargoNetSim::GUI::NetworkType::Truck)
+        {
+            auto network =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getRegionData(regionName)
+                        ->getTruckNetwork(networkName);
+
+            auto path = network->findShortestPath(
+                startNodeId, endNodeId);
+
+            result.path_nodes    = path.pathNodes;
+            result.totalLength   = path.totalLength;
+            result.minTravelTime = path.minTravelTime;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        qWarning() << "Error finding shortest path:"
+                   << e.what();
+    }
+
+    return result;
 }

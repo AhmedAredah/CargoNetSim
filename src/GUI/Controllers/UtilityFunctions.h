@@ -35,12 +35,26 @@ public:
         NotLinked
     };
 
+    struct PathResult
+    {
+        QList<int> path_nodes;
+        double     totalLength   = 0.0;
+        double     minTravelTime = 0.0;
+    };
+
     static QList<CargoNetSim::GUI::TerminalItem *>
     getTerminalItems(
         GraphicsScene *scene, const QString &region = "*",
         const QString &terminalType   = "*",
         ConnectionType connectionType = ConnectionType::Any,
         LinkType       linkType       = LinkType::Any);
+
+    static QList<CargoNetSim::GUI::GlobalTerminalItem *>
+    getGlobalTerminalItems(GraphicsScene *scene,
+                           const QString &region,
+                           const QString &terminalType,
+                           ConnectionType connectionType,
+                           LinkType       linkType);
 
     static QList<CargoNetSim::GUI::MapPoint *>
     getMapPointsOfTerminal(
@@ -79,6 +93,20 @@ public:
     static void
     updateGlobalMapForRegion(MainWindow    *mainWindow,
                              const QString &regionName);
+
+    static QList<QString>
+    getCommonModes(QGraphicsItem *sourceItem,
+                   QGraphicsItem *targetItem);
+
+    static double
+    getApproximateGeoDistance(const QPointF &point1,
+                              const QPointF &point2);
+
+    static PathResult
+    findShortestPath(const QString &regionName,
+                     const QString &networkName,
+                     NetworkType    networkType,
+                     int startNodeId, int endNodeId);
 };
 
 } // namespace GUI
