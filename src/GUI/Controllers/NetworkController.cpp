@@ -43,17 +43,17 @@ QString NetworkController::importNetwork(
         }
 
         // Add train prefix if not already present
-        if (!networkName_user.toLower().startsWith("train_")
+        if (!networkName_user.toLower().startsWith("Rail_")
             || !networkName_user.toLower().startsWith(
-                "truck_"))
+                "Truck_"))
         {
             if (networkType == NetworkType::Train)
             {
-                networkName = "train_" + networkName_user;
+                networkName = "Rail_" + networkName_user;
             }
             else if (networkType == NetworkType::Truck)
             {
-                networkName = "truck_" + networkName_user;
+                networkName = "Truck_" + networkName_user;
             }
         }
 
@@ -191,7 +191,7 @@ NetworkController::getNetworkTypeString(NetworkType type)
     switch (type)
     {
     case NetworkType::Train:
-        return "Train";
+        return "Rail";
     case NetworkType::Truck:
         return "Truck";
     default:
