@@ -23,6 +23,7 @@
 #include <QVector>
 
 #include "Backend/Commons/DirectedGraph.h"
+#include "Backend/Commons/ShortestPathResult.h"
 #include "Backend/Models/BaseObject.h"
 
 namespace CargoNetSim
@@ -765,10 +766,10 @@ public:
      * @param startNodeId Starting node ID
      * @param endNodeId Ending node ID
      * @param optimizeFor Optimization criteria ("distance"
-     * or another metric)
-     * @return JSON object with path details
+     * or "time")
+     * @return ShortestPathResult struct with path details
      */
-    QJsonObject findShortestPath(
+    ShortestPathResult findShortestPath(
         int startNodeId, int endNodeId,
         const QString &optimizeFor = "distance");
 

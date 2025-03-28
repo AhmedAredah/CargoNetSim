@@ -82,7 +82,7 @@ void TerminalItem::initializeDefaultProperties()
     {
         QMap<QString, QVariant> interfaces;
         QStringList             landSide, seaSide;
-        landSide << "Train" << "Truck";
+        landSide << "Rail" << "Truck";
         seaSide << "Ship";
         interfaces["land_side"] = landSide;
         interfaces["sea_side"]  = seaSide;
@@ -135,19 +135,19 @@ void TerminalItem::initializeDefaultProperties()
 
         if (m_terminalType == "Sea Port Terminal")
         {
-            landSide << "Truck" << "Train";
+            landSide << "Truck" << "Rail";
             seaSide << "Ship";
         }
         else if (m_terminalType
                  == "Intermodal Land Terminal")
         {
-            landSide << "Truck" << "Train";
+            landSide << "Truck" << "Rail";
             this->m_properties["Show on Global Map"] =
                 false;
         }
         else if (m_terminalType == "Train Stop/Depot")
         {
-            landSide << "Train";
+            landSide << "Rail";
             this->m_properties["Show on Global Map"] =
                 false;
         }
@@ -381,106 +381,6 @@ void TerminalItem::hoverLeaveEvent(
 {
     unsetCursor();
     QGraphicsObject::hoverLeaveEvent(event);
-}
-
-void TerminalItem::flash(bool          evenIfHidden,
-                         const QColor &color)
-{
-    bool wasHidden = !isVisible();
-    if (evenIfHidden && wasHidden)
-    {
-        setVisible(true);
-    }
-
-    // Clean up any existing animation
-    if (animation)
-    {
-        animation->stop();
-        animation->deleteLater();
-        animation = nullptr;
-    }
-
-    if (animObject)
-    {
-        animObject->deleteLater();
-        animObject = nullptr;
-    }
-
-    // Create a rectangle item as an overlay
-    QGraphicsRectItem *rect =
-        new QGraphicsRectItem(boundingRect(), this);
-    rect->setBrush(QBrush(color));
-    rect->setPen(QPen(Qt::NoPen));
-    rect->setZValue(100);
-
-    // Create an animation object to control opacity
-    class AnimationObject : public QObject
-    {
-    public:
-        AnimationObject(QObject *parent = nullptr)
-            : QObject(parent)
-            , _opacity(1.0)
-        {
-        }
-
-        qreal opacity() const
-        {
-            return _opacity;
-        }
-        void setOpacity(qreal opacity)
-        {
-            _opacity = opacity;
-            if (_rect)
-                _rect->setOpacity(opacity);
-        }
-
-        void setRect(QGraphicsRectItem *rect)
-        {
-            _rect = rect;
-        }
-
-    private:
-        qreal              _opacity;
-        QGraphicsRectItem *_rect = nullptr;
-    };
-
-    // Store animation object as an instance variable
-    animObject = new AnimationObject(this);
-    static_cast<AnimationObject *>(animObject)
-        ->setRect(rect);
-
-    // Create and configure animation
-    animation =
-        new QPropertyAnimation(animObject, "opacity", this);
-    animation->setDuration(1000);
-    animation->setLoopCount(3);
-    animation->setStartValue(1.0);
-    animation->setKeyValueAt(0.5, 0.0);
-    animation->setEndValue(1.0);
-
-    // Connect finished signal for cleanup
-    connect(animation, &QPropertyAnimation::finished,
-            [=]() {
-                if (rect && scene())
-                {
-                    scene()->removeItem(rect);
-                    delete rect;
-                }
-
-                if (evenIfHidden && wasHidden)
-                {
-                    setVisible(false);
-                }
-
-                // Clean up animation resources
-                animation->deleteLater();
-                animation = nullptr;
-                animObject->deleteLater();
-                animObject = nullptr;
-            });
-
-    // Start animation
-    animation->start();
 }
 
 QMap<QString, QVariant> TerminalItem::toDict() const

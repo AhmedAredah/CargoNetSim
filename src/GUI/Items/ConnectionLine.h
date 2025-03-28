@@ -88,7 +88,7 @@ public:
     // Flash effect for highlighting
     void flash(bool          evenIfHidden = false,
                const QColor &color = QColor(255, 0, 0,
-                                            180));
+                                            180)) override;
 
     // Serialization methods
     QMap<QString, QVariant> toDict() const;

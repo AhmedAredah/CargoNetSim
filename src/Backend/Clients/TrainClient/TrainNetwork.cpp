@@ -1021,11 +1021,12 @@ NeTrainSimNetwork::getPathLinks(
     return qMakePair(linkIds, distances);
 }
 
-QJsonObject NeTrainSimNetwork::findShortestPath(
+ShortestPathResult NeTrainSimNetwork::findShortestPath(
     int startNodeId, int endNodeId,
     const QString &optimizeFor)
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker       locker(&m_mutex);
+    ShortestPathResult result;
 
     if (optimizeFor != "distance" && optimizeFor != "time")
     {
@@ -1034,39 +1035,34 @@ QJsonObject NeTrainSimNetwork::findShortestPath(
             "'distance' or 'time'");
     }
 
+    result.optimizationCriterion = optimizeFor;
+
     // Find shortest path using the directed graph
-    QVector<int> pathNodeIds = m_graph->findShortestPath(
+    result.pathNodes = m_graph->findShortestPath(
         startNodeId, endNodeId, optimizeFor);
 
-    // If no path found, return empty result
-    if (pathNodeIds.isEmpty())
+    // If no path found, return empty result (already
+    // initialized with infinity values)
+    if (result.pathNodes.isEmpty())
     {
-        QJsonObject result;
-        result["path_nodes"] = QJsonArray();
-        result["path_links"] = QJsonArray();
-        result["total_length"] =
-            std::numeric_limits<double>::infinity();
-        result["min_travel_time"] =
-            std::numeric_limits<double>::infinity();
-        result["optimization_criterion"] = optimizeFor;
         return result;
     }
 
     // Get link IDs along the path
     QPair<QVector<int>, QVector<float>> pathLinksInfo =
-        getPathLinks(pathNodeIds);
-    QVector<int>   pathLinkIds   = pathLinksInfo.first;
+        getPathLinks(result.pathNodes);
+    result.pathLinks             = pathLinksInfo.first;
     QVector<float> linkDistances = pathLinksInfo.second;
 
     // Calculate total distance and travel time
-    float totalDistance   = 0.0f;
-    float totalTravelTime = 0.0f;
+    result.totalLength   = 0.0;
+    result.minTravelTime = 0.0;
 
-    for (int i = 0; i < pathLinkIds.size(); ++i)
+    for (int i = 0; i < result.pathLinks.size(); ++i)
     {
-        int   linkId   = pathLinkIds[i];
+        int   linkId   = result.pathLinks[i];
         float distance = linkDistances[i];
-        totalDistance += distance;
+        result.totalLength += distance;
 
         // Find the link to get its max_speed
         for (NeTrainSimLink *link : m_links)
@@ -1074,31 +1070,11 @@ QJsonObject NeTrainSimNetwork::findShortestPath(
             if (link->getUserId() == linkId)
             {
                 float maxSpeed = link->getMaxSpeed();
-                totalTravelTime += distance / maxSpeed;
+                result.minTravelTime += distance / maxSpeed;
                 break;
             }
         }
     }
-
-    // Convert to JSON
-    QJsonArray pathNodesArray;
-    for (int nodeId : pathNodeIds)
-    {
-        pathNodesArray.append(nodeId);
-    }
-
-    QJsonArray pathLinksArray;
-    for (int linkId : pathLinkIds)
-    {
-        pathLinksArray.append(linkId);
-    }
-
-    QJsonObject result;
-    result["path_nodes"]             = pathNodesArray;
-    result["path_links"]             = pathLinksArray;
-    result["total_length"]           = totalDistance;
-    result["min_travel_time"]        = totalTravelTime;
-    result["optimization_criterion"] = optimizeFor;
 
     return result;
 }

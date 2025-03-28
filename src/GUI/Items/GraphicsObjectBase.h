@@ -1,12 +1,58 @@
 #pragma once
+#include <QBrush>
 #include <QGraphicsObject>
+#include <QGraphicsRectItem>
+#include <QGraphicsScene>
 #include <QObject>
+#include <QPen>
+#include <QPropertyAnimation>
 #include <QUuid>
 
 namespace CargoNetSim
 {
 namespace GUI
 {
+/**
+ * @brief Helper class for animations with proper property support
+ * 
+ * This class provides a way to animate opacity that is properly
+ * registered with Qt's property system.
+ */
+class AnimationObject : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity)
+
+public:
+    AnimationObject(QObject *parent = nullptr)
+        : QObject(parent)
+        , _opacity(1.0)
+        , _rect(nullptr)
+    {
+    }
+
+    qreal opacity() const
+    {
+        return _opacity;
+    }
+    
+    void setOpacity(qreal opacity)
+    {
+        _opacity = opacity;
+        if (_rect)
+            _rect->setOpacity(opacity);
+    }
+
+    void setRect(QGraphicsRectItem *rect)
+    {
+        _rect = rect;
+    }
+
+private:
+    qreal _opacity;
+    QGraphicsRectItem *_rect;
+};
+
 /**
  * @brief Base class for all graphics objects in the
  * CargoNetSim application
@@ -33,6 +79,8 @@ public:
     explicit GraphicsObjectBase(
         QGraphicsItem *parent = nullptr)
         : QGraphicsObject(parent)
+        , m_animObject(nullptr)
+        , m_animation(nullptr)
     {
         m_ID = QUuid::createUuid().toString(
             QUuid::WithoutBraces);
@@ -42,7 +90,22 @@ public:
      * @brief Virtual destructor ensuring proper cleanup of
      * derived classes
      */
-    virtual ~GraphicsObjectBase() = default;
+    virtual ~GraphicsObjectBase()
+    {
+        // Clean up any existing animation
+        if (m_animation)
+        {
+            m_animation->stop();
+            m_animation->deleteLater();
+            m_animation = nullptr;
+        }
+
+        if (m_animObject)
+        {
+            m_animObject->deleteLater();
+            m_animObject = nullptr;
+        }
+    }
 
     /**
      * @brief Get the unique UUID for this object
@@ -54,11 +117,89 @@ public:
         return m_ID;
     }
 
+    /**
+     * @brief Create a visual highlighting effect
+     *      * Creates a pulsing highlight effect to draw
+     * attention to this object
+     *      * @param evenIfHidden Make the object
+     * temporarily visible if it's hidden
+     * @param color Highlight color (semi-transparent red by
+     * default)
+     */
+    virtual void flash(bool          evenIfHidden = false,
+                       const QColor &color = QColor(255, 0,
+                                                    0, 180))
+    {
+        bool wasHidden = !isVisible();
+        if (evenIfHidden && wasHidden)
+        {
+            setVisible(true);
+        }
+
+        // Clean up any existing animation
+        if (m_animation)
+        {
+            m_animation->stop();
+            m_animation->deleteLater();
+            m_animation = nullptr;
+        }
+
+        if (m_animObject)
+        {
+            m_animObject->deleteLater();
+            m_animObject = nullptr;
+        }
+
+        // Create a rectangle item as an overlay
+        QGraphicsRectItem *rect = new QGraphicsRectItem(boundingRect(), this);
+        rect->setBrush(QBrush(color));
+        rect->setPen(QPen(Qt::NoPen));
+        rect->setZValue(100);
+
+        // Create and configure animation object
+        m_animObject = new AnimationObject(this);
+        static_cast<AnimationObject *>(m_animObject)->setRect(rect);
+
+        // Create and configure animation
+        m_animation = new QPropertyAnimation(m_animObject, "opacity", this);
+        m_animation->setDuration(1000);
+        m_animation->setLoopCount(3);
+        m_animation->setStartValue(1.0);
+        m_animation->setKeyValueAt(0.5, 0.0);
+        m_animation->setEndValue(1.0);
+
+        // Connect finished signal for cleanup
+        connect(m_animation, &QPropertyAnimation::finished,
+                [=]() {
+                    if (rect && scene())
+                    {
+                        scene()->removeItem(rect);
+                        delete rect;
+                    }
+
+                    if (evenIfHidden && wasHidden)
+                    {
+                        setVisible(false);
+                    }
+
+                    // Clean up animation resources
+                    m_animation->deleteLater();
+                    m_animation = nullptr;
+                    m_animObject->deleteLater();
+                    m_animObject = nullptr;
+                });
+
+        // Start animation
+        m_animation->start();
+    }
+
 signals:
     void IDChanged(const QString &newID);
 
 protected:
     QString m_ID; ///< Unique UUID for this object
+    QObject *m_animObject; ///< Animation object for flash effect
+    QPropertyAnimation *m_animation; ///< Property animation for effects
 
 private:
     /**

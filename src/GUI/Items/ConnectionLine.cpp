@@ -69,6 +69,10 @@ ConnectionLine::ConnectionLine(
     {
         initializeProperties(region);
     }
+    else
+    {
+        m_properties["Region"] = region;
+    }
 
     // Create label
     m_label = new ConnectionLabel(this);

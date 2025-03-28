@@ -372,11 +372,13 @@ void BasicButtonController::clearMeasurements(
 
         // Remove all measurement tools from the scene
         QList<GraphicsObjectBase *> itemsToRemove;
-        for (QGraphicsItem *item : currentScene->items())
+
+        auto measurementItems =
+            currentScene
+                ->getItemsByType<DistanceMeasurementTool>();
+        for (DistanceMeasurementTool *convertedItem :
+             measurementItems)
         {
-            DistanceMeasurementTool *convertedItem =
-                dynamic_cast<DistanceMeasurementTool *>(
-                    item);
             if (convertedItem)
             {
                 itemsToRemove.append(convertedItem);
@@ -570,7 +572,10 @@ void BasicButtonController::disconnectAllTerminals(
     try
     {
         QList<GraphicsObjectBase *> itemsToRemove;
-        for (QGraphicsItem *item : scene->items())
+
+        auto itemsToCheck =
+            scene->getItemsByType<ConnectionLine>();
+        for (QGraphicsItem *item : itemsToCheck)
         {
             ConnectionLine *connection =
                 dynamic_cast<ConnectionLine *>(item);
@@ -619,24 +624,30 @@ void BasicButtonController::toggleConnectionLines(
                     .arg(checked ? "Hide" : "Show"));
         }
 
-        // Update visibility of connection lines
-        for (QGraphicsItem *item :
-             mainWindow->regionScene_->items())
-        {
-            ConnectionLine *connection =
-                dynamic_cast<ConnectionLine *>(item);
-            if (connection
-                && connection->getRegion()
-                       == CargoNetSim::CargoNetSimController::
+        // Get all connection lines in the region
+        QList<ConnectionLine *> connectionLines =
+            mainWindow->regionScene_->getItemsByType<
+                ConnectionLine>();
+
+        QString currentRegion =
+            CargoNetSim::CargoNetSimController::
                               getInstance()
                                   .getRegionDataController()
-                                  ->getCurrentRegion())
+                                  ->getCurrentRegion();
+
+        // Update visibility of connection lines
+        for (ConnectionLine *connection :
+             connectionLines)
+        {
+            if (connection
+                && connection->getRegion()
+                       == currentRegion)
             {
                 connection->setVisible(checked);
             }
         }
 
-        mainWindow->statusBar()->showMessage(
+        mainWindow->showStatusBarMessage(
             QString("Connection lines %1")
                 .arg(checked ? "shown" : "hidden"),
             2000);
@@ -645,10 +656,10 @@ void BasicButtonController::toggleConnectionLines(
     {
         qCritical() << "Error in toggleConnectionLines:"
                     << e.what();
-        QMessageBox::critical(
-            mainWindow, "Error",
+        mainWindow->showStatusBarMessage(
             QString("Failed to toggle connection lines: %1")
-                .arg(e.what()));
+                .arg(e.what()),
+            3000);
     }
 }
 
@@ -667,12 +678,15 @@ void BasicButtonController::toggleTerminals(
                     .arg(checked ? "Hide" : "Show"));
         }
 
+        // Get terminals
+
+        auto terminals =
+            mainWindow->regionScene_
+                ->getItemsByType<TerminalItem>();
+
         // Update visibility of terminals
-        for (QGraphicsItem *item :
-             mainWindow->regionScene_->items())
+        for (TerminalItem *terminal : terminals)
         {
-            TerminalItem *terminal =
-                dynamic_cast<TerminalItem *>(item);
             if (terminal
                 && terminal->getRegion()
                        == CargoNetSim::CargoNetSimController::

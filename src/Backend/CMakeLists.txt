@@ -12,6 +12,7 @@ set(Backend_SOURCES
     Commons/DirectedGraphBase.cpp
     Commons/DirectedGraph.h
     Commons/DirectedGraph.cpp
+    Commons/ShortestPathResult.h
 
     # Models
     Models/TrainSystem.h
