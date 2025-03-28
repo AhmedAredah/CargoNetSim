@@ -928,7 +928,8 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                                     connectionType))
     {
         mainWindow->showStatusBarError(
-            "A connection of this type already exists.", 3000);
+            "A connection of this type already exists.",
+            3000);
         return nullptr;
     }
 
@@ -942,12 +943,14 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
         mainWindow->regionScene_->addItemWithId(
             line, line->getID());
 
-        // Connect the clicked signal to update properties panel
-        QObject::connect(line, &ConnectionLine::clicked,
-                        [mainWindow](ConnectionLine *line) {
-                            UtilitiesFunctions::updatePropertiesPanel(
-                                mainWindow, line);
-                        });
+        // Connect the clicked signal to update properties
+        // panel
+        QObject::connect(
+            line, &ConnectionLine::clicked,
+            [mainWindow](ConnectionLine *line) {
+                UtilitiesFunctions::updatePropertiesPanel(
+                    mainWindow, line);
+            });
 
         return line;
     }
@@ -985,12 +988,15 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
             mainWindow->globalMapView_->getScene()
                 ->addItemWithId(line, line->getID());
 
-            // Connect the clicked signal to update properties panel
-            QObject::connect(line, &ConnectionLine::clicked,
-                            [mainWindow](ConnectionLine *line) {
-                                UtilitiesFunctions::updatePropertiesPanel(
-                                    mainWindow, line);
-                            });
+            // Connect the clicked signal to update
+            // properties panel
+            QObject::connect(
+                line, &ConnectionLine::clicked,
+                [mainWindow](ConnectionLine *line) {
+                    UtilitiesFunctions::
+                        updatePropertiesPanel(mainWindow,
+                                              line);
+                });
 
             return line;
         }
@@ -1006,32 +1012,61 @@ void CargoNetSim::GUI::ViewController::
     connectVisibleTerminalsByNetworks(
         MainWindow *mainWindow)
 {
-    QString currentRegion =
-        CargoNetSim::CargoNetSimController::getInstance()
-            .getRegionDataController()
-            ->getCurrentRegion();
-    auto terminals = CargoNetSim::GUI::UtilitiesFunctions::
-        getTerminalItems(
-            mainWindow->regionScene_, currentRegion, "*",
-            UtilitiesFunctions::ConnectionType::Any,
-            UtilitiesFunctions::LinkType::Any);
+    bool isGlobalView = mainWindow->isGlobalViewActive();
+    GraphicsScene *currentScene =
+        isGlobalView ? mainWindow->globalMapScene_
+                     : mainWindow->regionScene_;
 
-    if (terminals.empty())
+    QString                     currentRegion = "";
+    QList<TerminalItem *>       terminals;
+    QList<GlobalTerminalItem *> globalTerminals;
+    if (isGlobalView)
     {
-        mainWindow->showStatusBarError(
-            "There are no terminals in the current region.",
-            3000);
+        globalTerminals = CargoNetSim::GUI::
+            UtilitiesFunctions::getGlobalTerminalItems(
+                mainWindow->globalMapScene_, "*", "*",
+                UtilitiesFunctions::ConnectionType::Any,
+                UtilitiesFunctions::LinkType::Any);
+    }
+    else
+    {
+
+        currentRegion = CargoNetSim::CargoNetSimController::
+                            getInstance()
+                                .getRegionDataController()
+                                ->getCurrentRegion();
+        terminals = CargoNetSim::GUI::UtilitiesFunctions::
+            getTerminalItems(
+                mainWindow->regionScene_, currentRegion,
+                "*",
+                UtilitiesFunctions::ConnectionType::Any,
+                UtilitiesFunctions::LinkType::Any);
+    }
+
+    if ((terminals.empty() && !isGlobalView)
+        || (terminals.empty() && isGlobalView))
+    {
+        QString msgHndler =
+            isGlobalView ? "view" : "region";
+        QString mssg = QString("There is no terminal "
+                               "in the current %1")
+                           .arg(msgHndler);
+        mainWindow->showStatusBarError(mssg, 3000);
         return;
     }
-    else if (terminals.size() == 1)
+    else if ((terminals.size() == 1 && !isGlobalView)
+             || (terminals.size() == 1 && isGlobalView))
     {
-        mainWindow->showStatusBarError(
-            "There is only one terminal in the current "
-            "region.",
-            3000);
+        QString msgHndler =
+            isGlobalView ? "view" : "region";
+        QString mssg = QString("There is only one terminal "
+                               "in the current %1.")
+                           .arg(msgHndler);
+        mainWindow->showStatusBarError(mssg, 3000);
         return;
     }
 
+    // Connect terminals based on common networks
     for (auto &sourceTerminal : terminals)
     {
         for (auto &targetTerminal : terminals)
@@ -1041,53 +1076,162 @@ void CargoNetSim::GUI::ViewController::
                 continue;
             }
 
-            // Get available interfaces first to check if
-            // Rail connection is needed
-            auto sourceInterfaces =
-                sourceTerminal->getProperties()
-                    .value("Available Interfaces")
-                    .toMap();
-            auto targetInterfaces =
-                targetTerminal->getProperties()
-                    .value("Available Interfaces")
-                    .toMap();
+            QList<QString> commonModes =
+                UtilitiesFunctions::getCommonModes(
+                    sourceTerminal, targetTerminal);
 
-            QSet<QString> sourceAllModes;
-            sourceAllModes.unite(QSet<QString>(
-                sourceInterfaces.value("land_side")
-                    .toStringList()
-                    .begin(),
-                sourceInterfaces.value("land_side")
-                    .toStringList()
-                    .end()));
-            sourceAllModes.unite(QSet<QString>(
-                sourceInterfaces.value("sea_side")
-                    .toStringList()
-                    .begin(),
-                sourceInterfaces.value("sea_side")
-                    .toStringList()
-                    .end()));
+            if (commonModes.contains("Rail"))
+            {
+                auto sourceTerminalObj =
+                    dynamic_cast<TerminalItem *>(
+                        sourceTerminal);
+                auto targetTerminalObj =
+                    dynamic_cast<TerminalItem *>(
+                        targetTerminal);
+                auto sourceMapPoints = UtilitiesFunctions::
+                    getMapPointsOfTerminal(
+                        mainWindow->regionScene_,
+                        sourceTerminalObj, currentRegion,
+                        "*", NetworkType::Train);
 
-            QSet<QString> targetAllModes;
-            targetAllModes.unite(QSet<QString>(
-                targetInterfaces.value("land_side")
-                    .toStringList()
-                    .begin(),
-                targetInterfaces.value("land_side")
-                    .toStringList()
-                    .end()));
-            targetAllModes.unite(QSet<QString>(
-                targetInterfaces.value("sea_side")
-                    .toStringList()
-                    .begin(),
-                targetInterfaces.value("sea_side")
-                    .toStringList()
-                    .end()));
+                auto tqrgetMapPoints = UtilitiesFunctions::
+                    getMapPointsOfTerminal(
+                        mainWindow->regionScene_,
+                        targetTerminalObj, currentRegion,
+                        "*", NetworkType::Train);
 
-            QSet<QString> commonModes = sourceAllModes;
-            commonModes.intersect(targetAllModes);
+                bool keepProcessing = true;
+                if (sourceMapPoints.empty())
+                {
+                    mainWindow->showStatusBarError(
+                        QString("Terminal %1 has no "
+                                "associated nodes.")
+                            .arg(sourceTerminalObj
+                                     ->getProperty("Name",
+                                                   "")
+                                     .toString()),
+                        3000);
+                    keepProcessing = false;
+                }
+
+                if (tqrgetMapPoints.empty())
+                {
+                    mainWindow->showStatusBarError(
+                        QString("Terminal %1 has no "
+                                "associated nodes.")
+                            .arg(sourceTerminalObj
+                                     ->getProperty("Name",
+                                                   "")
+                                     .toString()),
+                        3000);
+                    keepProcessing = false;
+                }
+
+                if (keepProcessing)
+                {
+                }
+            }
         }
     }
+}
+
+void CargoNetSim::GUI::ViewController::
+    connectVisibleTerminalsByInterfaces(
+        MainWindow *mainWindow)
+{
+    // Get the current view and scene based on which tab is
+    // active
+    bool isGlobalView =
+        mainWindow->tabWidget_->currentIndex() == 0 ? false
+                                                    : true;
+    GraphicsScene *currentScene =
+        isGlobalView ? mainWindow->globalMapScene_
+                     : mainWindow->regionScene_;
+
+    // Get all visible terminals in the current view
+    QList<QGraphicsItem *> visibleTerminals;
+
+    if (isGlobalView)
+    {
+        QList<GlobalTerminalItem *> allTerminals =
+            currentScene
+                ->getItemsByType<GlobalTerminalItem>();
+        // Filter visible GlobalTerminalItems
+        for (auto terminal : allTerminals)
+        {
+            if (terminal && terminal->isVisible())
+            {
+                visibleTerminals.append(terminal);
+            }
+        }
+    }
+    else
+    {
+        QList<TerminalItem *> allTerminals =
+            currentScene->getItemsByType<TerminalItem>();
+        // Filter visible TerminalItems in current region
+        QString currentRegion =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->getCurrentRegion();
+
+        for (auto terminal : allTerminals)
+        {
+            if (terminal && terminal->isVisible()
+                && terminal->getRegion() == currentRegion)
+            {
+                visibleTerminals.append(terminal);
+            }
+        }
+    }
+
+    if (visibleTerminals.empty())
+    {
+        mainWindow->showStatusBarError(
+            "No visible terminals found in the current "
+            "view.",
+            3000);
+        return;
+    }
+
+    // Connect terminals based on common interfaces
+    for (int i = 0; i < visibleTerminals.size(); ++i)
+    {
+        for (int j = i + 1; j < visibleTerminals.size();
+             ++j)
+        {
+            // Skip if the same terminal
+            if (i == j)
+            {
+                continue;
+            }
+
+            // Get the source and target terminals
+            QGraphicsItem *sourceItem = visibleTerminals[i];
+            QGraphicsItem *targetItem = visibleTerminals[j];
+
+            QList<QString> commonModes =
+                UtilitiesFunctions::getCommonModes(
+                    sourceItem, targetItem);
+
+            // Create connections for each common mode
+            for (const QString &mode : commonModes)
+            {
+
+                if (!mode.isEmpty())
+                {
+                    createConnectionLine(mainWindow,
+                                         sourceItem,
+                                         targetItem, mode);
+                }
+            }
+        }
+    }
+
+    mainWindow->showStatusBarMessage(
+        "Terminal connections created by common "
+        "interfaces.");
 }
 
 CargoNetSim::GUI::RegionCenterPoint *

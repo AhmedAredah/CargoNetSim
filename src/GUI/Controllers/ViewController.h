@@ -80,6 +80,9 @@ public:
     static void connectVisibleTerminalsByNetworks(
         MainWindow *mainWindow);
 
+    static void connectVisibleTerminalsByInterfaces(
+        MainWindow *mainWindow);
+
     /**
      * @brief Creates a new region center
      * @param mainWindow The main window
