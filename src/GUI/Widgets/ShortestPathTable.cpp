@@ -243,8 +243,7 @@ QPixmap ShortestPathsTable::createArrowPixmap(
         arrowColor =
             QColor(255, 0, 255); // Magenta for truck
     }
-    else if (mode.contains("Rail", Qt::CaseInsensitive)
-             || mode.contains("Train", Qt::CaseInsensitive))
+    else if (mode.contains("Rail", Qt::CaseInsensitive))
     {
         arrowColor =
             QColor(80, 80, 80); // Dark gray for rail

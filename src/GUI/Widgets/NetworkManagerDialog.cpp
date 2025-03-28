@@ -348,8 +348,8 @@ void NetworkManagerDialog::renameNetwork(
         }
 
         QString prefix = (networkType == "Train Network")
-                             ? "train_"
-                             : "truck_";
+                             ? "Rail_"
+                             : "Truck_";
         QString oldNameStore = prefix + oldName;
         QString newNameStore = prefix + newName;
 
@@ -541,11 +541,11 @@ void NetworkManagerDialog::updateNetworkList(
     // if (networkType == "Train Network") {
     //     auto& registry =
     //     get_NeTrainSim_network_registry(); networkNames =
-    //     registry.listNetworks(); prefix = "train_";
+    //     registry.listNetworks(); prefix = "Rail_";
     // } else {
     //     auto& registry =
     //     get_INTEGRATION_network_registry(); networkNames
-    //     = registry.listConfigs(); prefix = "truck_";
+    //     = registry.listConfigs(); prefix = "Truck_";
     // }
 
     // Get the current region
@@ -645,16 +645,16 @@ void NetworkManagerDialog::onItemCheckedChanged(
     // Add prefix based on network type
     if (networkType == "Train Network")
     {
-        if (!networkName.startsWith("train_"))
+        if (!networkName.startsWith("Rail_"))
         {
-            networkName = "train_" + networkName;
+            networkName = "Rail_" + networkName;
         }
     }
     else if (networkType == "Truck Network")
     {
-        if (!networkName.startsWith("truck_"))
+        if (!networkName.startsWith("Truck_"))
         {
-            networkName = "truck_" + networkName;
+            networkName = "Truck_" + networkName;
         }
     }
 

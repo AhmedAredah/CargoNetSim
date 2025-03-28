@@ -375,7 +375,7 @@ void PropertiesPanel::addInterfacesSection(
         interfaces["land_side"].toStringList();
     QLayout *landLayout = createInterfaceLayout(
         tr("Land-side:"),
-        {{tr("Truck"), "truck"}, {tr("Train"), "train"}},
+        {{tr("Truck"), "truck"}, {tr("Rail"), "rail"}},
         currentLand, "land",
         isEditable.value("land_side", false));
 
