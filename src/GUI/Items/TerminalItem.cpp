@@ -82,7 +82,7 @@ void TerminalItem::initializeDefaultProperties()
     {
         QMap<QString, QVariant> interfaces;
         QStringList             landSide, seaSide;
-        landSide << "Train" << "Truck";
+        landSide << "Rail" << "Truck";
         seaSide << "Ship";
         interfaces["land_side"] = landSide;
         interfaces["sea_side"]  = seaSide;
@@ -135,19 +135,19 @@ void TerminalItem::initializeDefaultProperties()
 
         if (m_terminalType == "Sea Port Terminal")
         {
-            landSide << "Truck" << "Train";
+            landSide << "Truck" << "Rail";
             seaSide << "Ship";
         }
         else if (m_terminalType
                  == "Intermodal Land Terminal")
         {
-            landSide << "Truck" << "Train";
+            landSide << "Truck" << "Rail";
             this->m_properties["Show on Global Map"] =
                 false;
         }
         else if (m_terminalType == "Train Stop/Depot")
         {
-            landSide << "Train";
+            landSide << "Rail";
             this->m_properties["Show on Global Map"] =
                 false;
         }
