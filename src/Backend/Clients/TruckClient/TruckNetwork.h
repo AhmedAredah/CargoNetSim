@@ -18,6 +18,7 @@
 #include <QString>
 #include <QVector>
 
+#include "Backend/Commons/ShortestPathResult.h"
 #include "Backend/Models/BaseObject.h"
 
 namespace CargoNetSim
@@ -71,10 +72,10 @@ public:
      * @brief Find shortest path between nodes
      * @param startNodeId Starting node ID
      * @param endNodeId Ending node ID
-     * @return Path details as JSON object
+     * @return ShortestPathResult containing path details
      */
-    QJsonObject findShortestPath(int startNodeId,
-                                 int endNodeId);
+    ShortestPathResult findShortestPath(int startNodeId,
+                                        int endNodeId);
 
     /**
      * @brief Get terminal nodes (those with no outgoing

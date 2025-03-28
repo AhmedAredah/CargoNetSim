@@ -113,52 +113,35 @@ bool IntegrationNetwork::nodeExists(int nodeId) const
     return m_graph->hasNode(nodeId);
 }
 
-QJsonObject
+ShortestPathResult
 IntegrationNetwork::findShortestPath(int startNodeId,
                                      int endNodeId)
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker       locker(&m_mutex);
+    ShortestPathResult result;
+
+    result.optimizationCriterion =
+        "distance"; // Default optimization criterion
 
     // Find path using transportation graph
-    QVector<int> pathNodes = m_graph->findShortestPath(
+    result.pathNodes = m_graph->findShortestPath(
         startNodeId, endNodeId, "distance");
 
-    // Return empty object if no path found
-    if (pathNodes.isEmpty())
+    // If no path found, return empty result (already
+    // initialized with infinity values)
+    if (result.pathNodes.isEmpty())
     {
-        return QJsonObject();
+        return result;
     }
 
     // Get corresponding links
-    QVector<int> pathLinks = getPathLinks(pathNodes);
+    result.pathLinks = getPathLinks(result.pathNodes);
 
     // Calculate path metrics
-    double totalLength = getPathLengthByLinks(pathLinks);
-    double totalTime =
-        m_graph->calculatePathMetric(pathNodes, "time");
-
-    // Build result object
-    QJsonObject result;
-
-    // Convert nodes to JSON array
-    QJsonArray nodesArray;
-    for (int nodeId : pathNodes)
-    {
-        nodesArray.append(nodeId);
-    }
-    result["path_nodes"] = nodesArray;
-
-    // Convert links to JSON array
-    QJsonArray linksArray;
-    for (int linkId : pathLinks)
-    {
-        linksArray.append(linkId);
-    }
-    result["path_links"] = linksArray;
-
-    // Add metrics
-    result["total_length"]    = totalLength;
-    result["min_travel_time"] = totalTime;
+    result.totalLength =
+        getPathLengthByLinks(result.pathLinks);
+    result.minTravelTime = m_graph->calculatePathMetric(
+        result.pathNodes, "time");
 
     return result;
 }
