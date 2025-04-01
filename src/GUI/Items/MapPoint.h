@@ -130,6 +130,12 @@ public:
         return m_y;
     }
 
+    QString getReferencedNetworkNodeID() const
+    {
+        return m_properties.value("Network_ID", "-1")
+            .toString();
+    }
+
     /**
      * @brief Get the network m_region
      */
