@@ -37,6 +37,8 @@ set(Backend_SOURCES
     Controllers/RegionDataController.cpp
     Controllers/CargoNetSimController.h
     Controllers/CargoNetSimController.cpp
+    Controllers/ConfigController.h
+    Controllers/ConfigController.cpp
 
     # Clients
 
@@ -105,6 +107,8 @@ set(Backend_SOURCES
     Clients/TruckClient/IntegrationLink.h
     Clients/TruckClient/IntegrationLink.cpp
 
+    Utils/Utils.h
+
 
     # Initialization
     BackendInit.h
@@ -117,6 +121,7 @@ add_library(CargoNetSimBackend STATIC ${Backend_SOURCES})
 target_link_libraries(CargoNetSimBackend
     PUBLIC
     Qt6::Core
+    Qt6::Xml
     Container::Container
     rabbitmq::rabbitmq
 )
