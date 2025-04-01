@@ -9,8 +9,8 @@ set(GUI_SOURCES
     # Controllers
     Controllers/BasicButtonController.cpp
     Controllers/BasicButtonController.h
-    # Controllers/HeartbeatController.cpp
-    # Controllers/HeartbeatController.h
+    Controllers/HeartbeatController.cpp
+    Controllers/HeartbeatController.h
     Controllers/NetworkController.cpp
     Controllers/NetworkController.h
     Controllers/ToolbarController.cpp
@@ -102,6 +102,7 @@ target_link_libraries(CargoNetSimGUI
     Qt6::Gui
     Qt6::Widgets
     Qt6::Network
+    Qt6::Xml
     Container::Container
     rabbitmq::rabbitmq
     CargoNetSimBackend
