@@ -141,7 +141,10 @@ public:
      * @brief Gets the command queue name
      * @return The name of the command queue
      */
-    QString getCommandQueueName() const { return m_commandQueue; }
+    QString getCommandQueueName() const
+    {
+        return m_commandQueue;
+    }
 
 signals:
     /**
