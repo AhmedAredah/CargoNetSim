@@ -358,7 +358,7 @@ protected:
     bool         tableWasVisible_;
 
     // Controllers
-    // HeartbeatController* heartbeatController_;
+    HeartbeatController *heartbeatController_;
 
     // Toolbar organization
     QTabWidget *ribbon_;
