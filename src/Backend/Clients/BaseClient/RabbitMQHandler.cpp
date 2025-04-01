@@ -1457,5 +1457,110 @@ void RabbitMQHandler::reconnectReceiving()
         << "Successfully reconnected receiving connection";
 }
 
+bool RabbitMQHandler::hasConsumers(const QString &queueName)
+{
+    QMutexLocker locker(&m_mutex);
+
+    qDebug() << "hasConsumers check for queue:"
+             << queueName;
+    qDebug() << "Connection status: connected ="
+             << m_connected << ", sendConnection ="
+             << (m_sendConnection ? "valid" : "nullptr");
+
+    if (!m_connected || !m_sendConnection)
+    {
+        qWarning()
+            << "Cannot check consumers: not connected";
+        return false;
+    }
+
+    try
+    {
+        qDebug() << "Attempting to declare queue:"
+                 << queueName;
+
+        // Get queue info - use amqp_queue_declare_ok_t
+        // directly
+        amqp_queue_declare_ok_t *queueDeclareOk =
+            amqp_queue_declare(
+                m_sendConnection,
+                1, // channel
+                amqp_cstring_bytes(
+                    queueName.toUtf8().constData()),
+                1, // passive - don't create if doesn't
+                   // exist
+                1, // durable
+                0, // exclusive
+                0, // auto delete
+                amqp_empty_table);
+
+        // Check RPC reply
+        amqp_rpc_reply_t reply =
+            amqp_get_rpc_reply(m_sendConnection);
+        if (reply.reply_type != AMQP_RESPONSE_NORMAL)
+        {
+            qWarning() << "Failed to get queue info for"
+                       << queueName
+                       << "reply type:" << reply.reply_type;
+
+            if (reply.reply_type
+                == AMQP_RESPONSE_SERVER_EXCEPTION)
+            {
+                // This means the queue doesn't exist or
+                // another server error
+                if (reply.reply.id != 0)
+                {
+                    qWarning()
+                        << "Server exception: class id ="
+                        << (int)reply.reply.id;
+                }
+            }
+
+            return false;
+        }
+
+        if (!queueDeclareOk)
+        {
+            qWarning() << "Queue declare OK is null for"
+                       << queueName;
+            return false;
+        }
+
+        // Log the consumer count
+        int consumerCount = queueDeclareOk->consumer_count;
+        qDebug() << "Queue" << queueName << "has"
+                 << consumerCount << "consumers";
+
+        // Log message count too
+        int messageCount = queueDeclareOk->message_count;
+        qDebug() << "Queue" << queueName << "has"
+                 << messageCount << "messages";
+
+        return consumerCount > 0;
+    }
+    catch (const std::exception &e)
+    {
+        qWarning() << "Exception while checking consumers "
+                      "for queue"
+                   << queueName << ":" << e.what();
+        return false;
+    }
+}
+
+bool RabbitMQHandler::hasCommandQueueConsumers()
+{
+    qDebug() << "Checking consumers for command queue:"
+             << m_commandQueue;
+    bool result = hasConsumers(m_commandQueue);
+    qDebug() << "Command queue" << m_commandQueue
+             << "has consumers:" << result;
+    return result;
+}
+
+bool RabbitMQHandler::hasResponseQueueConsumers()
+{
+    return hasConsumers(m_responseQueue);
+}
+
 } // namespace Backend
 } // namespace CargoNetSim
