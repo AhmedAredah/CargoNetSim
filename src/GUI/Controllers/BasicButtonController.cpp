@@ -48,12 +48,14 @@ void BasicButtonController::resetOtherButtons(
         }
 
         // Reset associated modes in the scene
-        mainWindow->regionScene_->connectMode        = false;
-        mainWindow->regionScene_->linkTerminalMode   = false;
-        mainWindow->regionScene_->unlinkTerminalMode = false;
-        mainWindow->regionScene_->measureMode        = false;
-        mainWindow->regionScene_->connectFirstItem   = QVariant();
-        mainWindow->selectedTerminal_          = nullptr;
+        mainWindow->regionScene_->connectMode      = false;
+        mainWindow->regionScene_->linkTerminalMode = false;
+        mainWindow->regionScene_->unlinkTerminalMode =
+            false;
+        mainWindow->regionScene_->measureMode = false;
+        mainWindow->regionScene_->connectFirstItem =
+            QVariant();
+        mainWindow->selectedTerminal_ = nullptr;
     }
     catch (const std::exception &e)
     {
@@ -163,9 +165,10 @@ void BasicButtonController::toggleLinkTerminalMode(
                 mainWindow->linkTerminalButton_);
 
             // Disable other modes when entering link mode
-            mainWindow->regionScene_->connectMode      = false;
-            mainWindow->regionScene_->linkTerminalMode = true;
-            mainWindow->selectedTerminal_        = nullptr;
+            mainWindow->regionScene_->connectMode = false;
+            mainWindow->regionScene_->linkTerminalMode =
+                true;
+            mainWindow->selectedTerminal_ = nullptr;
             mainWindow->statusBar()->showMessage(
                 "Select a terminal, then select a node to "
                 "link them...",
@@ -173,8 +176,9 @@ void BasicButtonController::toggleLinkTerminalMode(
         }
         else
         {
-            mainWindow->regionScene_->linkTerminalMode = false;
-            mainWindow->selectedTerminal_        = nullptr;
+            mainWindow->regionScene_->linkTerminalMode =
+                false;
+            mainWindow->selectedTerminal_ = nullptr;
             mainWindow->linkTerminalButton_->setChecked(
                 false);
             mainWindow->statusBar()->showMessage(
@@ -205,9 +209,11 @@ void BasicButtonController::toggleUnlinkTerminalMode(
                 mainWindow->unlinkTerminalButton_);
 
             // Disable other modes when entering unlink mode
-            mainWindow->regionScene_->connectMode        = false;
-            mainWindow->regionScene_->linkTerminalMode   = false;
-            mainWindow->regionScene_->unlinkTerminalMode = true;
+            mainWindow->regionScene_->connectMode = false;
+            mainWindow->regionScene_->linkTerminalMode =
+                false;
+            mainWindow->regionScene_->unlinkTerminalMode =
+                true;
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->statusBar()->showMessage(
                 "Select a terminal, then select a node to "
@@ -216,7 +222,8 @@ void BasicButtonController::toggleUnlinkTerminalMode(
         }
         else
         {
-            mainWindow->regionScene_->unlinkTerminalMode = false;
+            mainWindow->regionScene_->unlinkTerminalMode =
+                false;
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->unlinkTerminalButton_->setChecked(
                 false);
@@ -626,22 +633,20 @@ void BasicButtonController::toggleConnectionLines(
 
         // Get all connection lines in the region
         QList<ConnectionLine *> connectionLines =
-            mainWindow->regionScene_->getItemsByType<
-                ConnectionLine>();
+            mainWindow->regionScene_
+                ->getItemsByType<ConnectionLine>();
 
         QString currentRegion =
             CargoNetSim::CargoNetSimController::
-                              getInstance()
-                                  .getRegionDataController()
-                                  ->getCurrentRegion();
+                getInstance()
+                    .getRegionDataController()
+                    ->getCurrentRegion();
 
         // Update visibility of connection lines
-        for (ConnectionLine *connection :
-             connectionLines)
+        for (ConnectionLine *connection : connectionLines)
         {
             if (connection
-                && connection->getRegion()
-                       == currentRegion)
+                && connection->getRegion() == currentRegion)
             {
                 connection->setVisible(checked);
             }
