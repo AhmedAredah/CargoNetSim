@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Backend/Clients/BaseClient/RabbitMQHandler.h"
 #include "TruckSimulationClient.h"
 #include <QMap>
 #include <QObject>
@@ -37,6 +38,30 @@ public:
     runSimulationAsync(const QStringList &networkNames);
 
     double getOverallProgress() const;
+
+    /**
+     * @brief Checks if any of the truck clients are
+     * connected
+     * @return True if at least one client is connected,
+     * false otherwise
+     */
+    bool isConnected() const;
+
+    /**
+     * @brief Checks if any of the truck clients have active
+     * command queue consumers
+     * @return True if at least one client has an active
+     * consumer, false otherwise
+     */
+    bool hasCommandQueueConsumers() const;
+
+    /**
+     * @brief Gets the RabbitMQ handler of the first
+     * connected client
+     * @return Pointer to the RabbitMQ handler, or nullptr
+     * if no clients are connected
+     */
+    RabbitMQHandler *getRabbitMQHandler() const;
 
 private:
     bool keepGoing(const QStringList &networkNames) const;
