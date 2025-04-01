@@ -112,6 +112,37 @@ public:
      */
     void stopHeartbeat();
 
+    /**
+     * @brief Checks if there are any consumers for a
+     * specific queue
+     * @param queueName The name of the queue to check
+     * @return True if there are active consumers, false
+     * otherwise
+     */
+    bool hasConsumers(const QString &queueName);
+
+    /**
+     * @brief Checks if there are any consumers for the
+     * command queue
+     * @return True if there are active consumers, false
+     * otherwise
+     */
+    bool hasCommandQueueConsumers();
+
+    /**
+     * @brief Checks if there are any consumers for the
+     * response queue
+     * @return True if there are active consumers, false
+     * otherwise
+     */
+    bool hasResponseQueueConsumers();
+
+    /**
+     * @brief Gets the command queue name
+     * @return The name of the command queue
+     */
+    QString getCommandQueueName() const { return m_commandQueue; }
+
 signals:
     /**
      * @brief Emitted when a message is received

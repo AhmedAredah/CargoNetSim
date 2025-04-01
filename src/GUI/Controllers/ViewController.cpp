@@ -1231,7 +1231,8 @@ void CargoNetSim::GUI::ViewController::
 
     mainWindow->showStatusBarMessage(
         "Terminal connections created by common "
-        "interfaces.");
+        "interfaces.",
+        3000);
 }
 
 CargoNetSim::GUI::RegionCenterPoint *

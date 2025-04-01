@@ -1,5 +1,7 @@
 #include "SettingsWidget.h"
 
+#include "Backend/Controllers/CargoNetSimController.h"
+#include "GUI/MainWindow.h"
 #include <QDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -620,9 +622,14 @@ bool SettingsWidget::loadSettings()
 {
     try
     {
-        // TODO
-        // configLoader = GlobalConfigLoader::getInstance();
-        // settings = configLoader->getAllParams();
+        // load settings from the controller
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getConfigController()
+            ->loadConfig();
+        settings = CargoNetSim::CargoNetSimController::
+                       getInstance()
+                           .getConfigController()
+                           ->getAllParams();
 
         // Example settings
         settings = QMap<QString, QVariant>();
@@ -947,33 +954,32 @@ void SettingsWidget::applySettings()
 
     newSettings["transport_modes"] = transportModes;
 
-    // TODO
-    // if (configLoader) {
-    //     configLoader->updateConfig(newSettings);
-    //     configLoader->saveConfig();
-    // }
+    // Update settings in the controller
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getConfigController()
+        ->updateConfig(newSettings);
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getConfigController()
+        ->saveConfig();
 
     settings = newSettings;
 
     // Emit signal that settings have changed
     emit settingsChanged(newSettings);
 
-    // TODO: Show a message in the status bar if the parent
-    // is a main window QWidget* mainWindow = nullptr;
-    // QWidget* parent = parentWidget();
-    // while (parent) {
-    //     if (parent->inherits("QMainWindow")) {
-    //         mainWindow = parent;
-    //         break;
-    //     }
-    //     parent = parent->parentWidget();
-    // }
-
-    // if (mainWindow &&
-    // mainWindow->findChild<QStatusBar*>()) {
-    //     mainWindow->findChild<QStatusBar*>()->showMessage(tr("Settings
-    //     applied."), 3000);
-    // }
+    // Settings applied message
+    if (!parent())
+    {
+        return;
+    }
+    MainWindow *mainWindow =
+        dynamic_cast<MainWindow *>(parent());
+    if (!mainWindow)
+    {
+        return;
+    }
+    mainWindow->showStatusBarMessage("Settings applied.",
+                                     3000);
 }
 
 QMap<QString, QVariant> SettingsWidget::getSettings() const

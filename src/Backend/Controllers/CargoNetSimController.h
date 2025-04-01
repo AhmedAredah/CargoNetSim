@@ -18,6 +18,7 @@
 #include "Backend/Clients/TrainClient/TrainSimulationClient.h"
 #include "Backend/Clients/TruckClient/TruckSimulationClient.h"
 #include "Backend/Clients/TruckClient/TruckSimulationManager.h"
+#include "Backend/Controllers/ConfigController.h"
 #include "Backend/Controllers/NetworkController.h"
 #include "Backend/Controllers/RegionDataController.h"
 #include "Backend/Controllers/VehicleController.h"
@@ -115,6 +116,12 @@ public:
      * @return Pointer to vehicle controller
      */
     Backend::VehicleController *getVehicleController();
+
+    /**
+     *  @bried Gets the config controller
+     *  @return Pointer to config controller
+     */
+    Backend::ConfigController *getConfigController();
 
     /**
      * @brief Gets the network controller
@@ -296,6 +303,7 @@ private:
     Backend::RegionDataController *m_regionDataController;
     Backend::VehicleController    *m_vehicleController;
     Backend::NetworkController    *m_networkController;
+    Backend::ConfigController     *m_configController;
 
     // Logger
     Backend::LoggerInterface *m_logger;

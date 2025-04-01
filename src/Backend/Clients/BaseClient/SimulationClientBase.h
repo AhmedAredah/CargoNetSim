@@ -156,6 +156,15 @@ public:
      */
     QString getClientTypeString() const;
 
+    /**
+     * @brief Get the RabbitMQ handler
+     * @return Pointer to the RabbitMQ handler
+     */
+    RabbitMQHandler *getRabbitMQHandler() const
+    {
+        return m_rabbitMQHandler;
+    }
+
 signals:
     /**
      * @brief Emitted when an event is received

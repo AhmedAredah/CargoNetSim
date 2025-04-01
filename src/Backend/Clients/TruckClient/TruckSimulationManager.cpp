@@ -82,7 +82,7 @@ double TruckSimulationManager::getOverallProgress() const
         }
     }
     double progress = count ? totalProgress / count : 0.0;
-    emit   progressUpdated(progress);
+    emit progressUpdated(progress);
     return progress;
 }
 
@@ -142,6 +142,52 @@ void TruckSimulationManager::syncGoOnce(
             }
         }
     }
+}
+
+bool TruckSimulationManager::isConnected() const
+{
+    // Check if any client is connected
+    for (const auto *client : m_clients.values())
+    {
+        if (client && client->isConnected())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool TruckSimulationManager::hasCommandQueueConsumers()
+    const
+{
+    // Check if any client has command queue consumers
+    for (const auto *client : m_clients.values())
+    {
+        if (client && client->isConnected())
+        {
+            auto *handler = client->getRabbitMQHandler();
+            if (handler
+                && handler->hasCommandQueueConsumers())
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+RabbitMQHandler *
+TruckSimulationManager::getRabbitMQHandler() const
+{
+    // Return the first connected client's RabbitMQ handler
+    for (const auto *client : m_clients.values())
+    {
+        if (client && client->isConnected())
+        {
+            return client->getRabbitMQHandler();
+        }
+    }
+    return nullptr;
 }
 
 } // namespace TruckClient

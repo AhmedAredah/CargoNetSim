@@ -1,5 +1,5 @@
 # Find Qt6
-find_package(Qt6 COMPONENTS Core Gui Widgets Network REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml REQUIRED)
 
 # Platform-specific paths
 if(WIN32)

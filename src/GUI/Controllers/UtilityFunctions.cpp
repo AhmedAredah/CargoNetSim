@@ -13,6 +13,12 @@ CargoNetSim::GUI::UtilitiesFunctions::getTerminalItems(
     const QString &terminalType,
     ConnectionType connectionType, LinkType linkType)
 {
+    // Early check
+    if (!scene)
+    {
+        return QList<CargoNetSim::GUI::TerminalItem *>();
+    }
+
     // Get all terminals upfront
     QList<TerminalItem *> allTerminals =
         scene->getItemsByType<TerminalItem>();
@@ -118,6 +124,13 @@ QList<CargoNetSim::GUI::GlobalTerminalItem *> CargoNetSim::
         const QString &terminalType,
         ConnectionType connectionType, LinkType linkType)
 {
+    // Early check
+    if (!scene)
+    {
+        return QList<
+            CargoNetSim::GUI::GlobalTerminalItem *>();
+    }
+
     // Get all terminals upfront
     QList<GlobalTerminalItem *> allTerminals =
         scene->getItemsByType<GlobalTerminalItem>();
@@ -232,7 +245,7 @@ QList<CargoNetSim::GUI::MapPoint *> CargoNetSim::GUI::
     QList<MapPoint *> result;
 
     // Early return if terminal is null
-    if (!terminal)
+    if (!terminal || !scene)
     {
         return result;
     }
@@ -312,7 +325,12 @@ CargoNetSim::GUI::UtilitiesFunctions::getOriginTerminal(
     GraphicsScene *scene)
 {
 
-    CargoNetSim::GUI::TerminalItem *result;
+    CargoNetSim::GUI::TerminalItem *result = nullptr;
+
+    if (!scene)
+    {
+        return result;
+    }
 
     for (auto &terminal :
          scene->getItemsByType<TerminalItem>())
@@ -331,7 +349,12 @@ CargoNetSim::GUI::TerminalItem *
 CargoNetSim::GUI::UtilitiesFunctions::
     getDestinationTerminal(GraphicsScene *scene)
 {
-    CargoNetSim::GUI::TerminalItem *result;
+    CargoNetSim::GUI::TerminalItem *result = nullptr;
+
+    if (!scene)
+    {
+        return result;
+    }
 
     for (auto &terminal :
          scene->getItemsByType<TerminalItem>())
@@ -350,6 +373,12 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     updatePropertiesPanel(MainWindow    *mainWindow,
                           QGraphicsItem *item)
 {
+    // Early check
+    if (!mainWindow)
+    {
+        return;
+    }
+
     if (!item)
     {
         // If no item is selected, hide the properties dock
@@ -368,6 +397,12 @@ void CargoNetSim::GUI::UtilitiesFunctions::
 void CargoNetSim::GUI::UtilitiesFunctions::
     hidePropertiesPanel(MainWindow *mainWindow)
 {
+    // Early check
+    if (!mainWindow)
+    {
+        return;
+    }
+
     // Show map properties only if on main view or global
     // map tabs
     int currentTab = mainWindow->tabWidget_->currentIndex();
@@ -393,6 +428,12 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     updateGlobalMapForRegion(MainWindow    *mainWindow,
                              const QString &regionName)
 {
+    // Early check
+    if (!mainWindow)
+    {
+        return;
+    }
+
     auto regionTerminals = CargoNetSim::GUI::
         UtilitiesFunctions::getTerminalItems(
             mainWindow->regionScene_, regionName, "*");
@@ -577,13 +618,12 @@ double CargoNetSim::GUI::UtilitiesFunctions::
     return earthRadius * sqrt(x * x + y * y);
 }
 
-CargoNetSim::GUI::UtilitiesFunctions::PathResult
-findShortestPath(const QString                &regionName,
-                 const QString                &networkName,
-                 CargoNetSim::GUI::NetworkType networkType,
-                 int startNodeId, int endNodeId)
+CargoNetSim::Backend::ShortestPathResult
+CargoNetSim::GUI::UtilitiesFunctions::findShortestPath(
+    const QString &regionName, const QString &networkName,
+    CargoNetSim::GUI::NetworkType networkType,
+    int startNodeId, int endNodeId)
 {
-    CargoNetSim::GUI::UtilitiesFunctions::PathResult result;
     try
     {
         if (networkType
@@ -597,12 +637,8 @@ findShortestPath(const QString                &regionName,
                         ->getTrainNetwork(networkName);
 
             // Find the shortest path
-            auto path = network->findShortestPath(
-                startNodeId, endNodeId);
-
-            result.path_nodes    = path.pathNodes;
-            result.totalLength   = path.totalLength;
-            result.minTravelTime = path.minTravelTime;
+            return network->findShortestPath(startNodeId,
+                                             endNodeId);
         }
         else if (networkType
                  == CargoNetSim::GUI::NetworkType::Truck)
@@ -614,12 +650,8 @@ findShortestPath(const QString                &regionName,
                         ->getRegionData(regionName)
                         ->getTruckNetwork(networkName);
 
-            auto path = network->findShortestPath(
-                startNodeId, endNodeId);
-
-            result.path_nodes    = path.pathNodes;
-            result.totalLength   = path.totalLength;
-            result.minTravelTime = path.minTravelTime;
+            return network->findShortestPath(startNodeId,
+                                             endNodeId);
         }
     }
     catch (const std::exception &e)
@@ -628,5 +660,301 @@ findShortestPath(const QString                &regionName,
                    << e.what();
     }
 
-    return result;
+    return CargoNetSim::Backend::ShortestPathResult();
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    setConnectionProperties(
+        CargoNetSim::GUI::ConnectionLine *connection,
+        const CargoNetSim::Backend::ShortestPathResult
+                                      &pathResult,
+        CargoNetSim::GUI::NetworkType &networkType)
+{
+    // Early check
+    if (!connection)
+    {
+        return;
+    }
+
+    // Convert distance from meters to kilometers
+    double totalDistanceKm =
+        pathResult.totalLength / 1000.0;
+
+    // Set basic properties
+    connection->setProperty(
+        "distance",
+        QString::number(totalDistanceKm, 'f', 2));
+
+    // Get transport mode properties
+    auto configController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getConfigController();
+    auto transportModes =
+        configController->getTransportModes();
+
+    QVariantMap modeProperties;
+    if (networkType == CargoNetSim::GUI::NetworkType::Train)
+    {
+        modeProperties =
+            transportModes.value("Rail").toMap();
+    }
+    else if (networkType
+             == CargoNetSim::GUI::NetworkType::Truck)
+    {
+        modeProperties =
+            transportModes.value("Truck").toMap();
+    }
+    else
+    {
+        return;
+    }
+
+    // Calculate travel time
+    bool useNetwork =
+        modeProperties.value("use_network", false).toBool();
+    if (!useNetwork)
+    {
+        double averageSpeed =
+            modeProperties.value("average_speed", 60.0)
+                .toDouble();
+        double travelTime =
+            totalDistanceKm / qMax(averageSpeed, 0.01);
+        connection->setProperty(
+            "travelTime",
+            QString::number(travelTime, 'f', 2));
+    }
+    else
+    {
+        // Use network-calculated travel time (convert from
+        // seconds to hours)
+        double travelTimeHours =
+            pathResult.minTravelTime / (60.0 * 60.0);
+        connection->setProperty(
+            "travelTime",
+            QString::number(travelTimeHours, 'f', 2));
+    }
+
+    // Set risk factor
+    connection->setProperty(
+        "risk", modeProperties.value("risk_factor"));
+
+    // Calculate energy consumption and carbon emissions
+    double fuelConsumption =
+        modeProperties
+            .value("average_fuel_consumption", 0.0)
+            .toDouble();
+    QString fuelType =
+        modeProperties
+            .value("fuel_type",
+                   networkType
+                           == CargoNetSim::GUI::
+                               NetworkType::Train
+                       ? "diesel_1"
+                       : "diesel_2")
+            .toString();
+
+    // Get fuel properties
+    double calorificValue =
+        configController->getFuelEnergy()
+            .value(fuelType, 10.0)
+            .toDouble();
+    double carbonContent =
+        configController->getFuelCarbonContent()
+            .value(fuelType, 2.68)
+            .toDouble();
+
+    // Calculate energy consumption
+    double energyConsumption =
+        fuelConsumption * totalDistanceKm * calorificValue;
+    connection->setProperty(
+        "energyConsumption",
+        QString::number(energyConsumption, 'f', 2));
+
+    // Calculate carbon emissions (convert to tons)
+    double carbonEmissions = fuelConsumption
+                             * totalDistanceKm
+                             * carbonContent / 1000.0;
+    connection->setProperty(
+        "carbonEmissions",
+        QString::number(carbonEmissions, 'f', 2));
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    processNetworkMode(
+        MainWindow                     *mainWindow,
+        CargoNetSim::GUI::TerminalItem *sourceTerminal,
+        CargoNetSim::GUI::TerminalItem *targetTerminal,
+        CargoNetSim::GUI::NetworkType   networkType)
+{
+
+    QString networkTypeStr =
+        networkType == CargoNetSim::GUI::NetworkType::Train
+            ? "Rail"
+            : "Truck";
+
+    QString regionName;
+
+    if (sourceTerminal && targetTerminal)
+    {
+        if (sourceTerminal->getRegion()
+            != targetTerminal->getRegion())
+        {
+            mainWindow->showStatusBarError(
+                "Terminals are in different regions.",
+                3000);
+            return;
+        }
+        else
+        {
+            regionName = sourceTerminal->getRegion();
+        }
+    }
+    else
+    {
+        return;
+    }
+
+    // Get map points for both terminals
+    QList<CargoNetSim::GUI::MapPoint *> sourcePoints =
+        getMapPointsOfTerminal(mainWindow->regionScene_,
+                               sourceTerminal, regionName,
+                               "*", networkType);
+
+    QList<CargoNetSim::GUI::MapPoint *> targetPoints =
+        getMapPointsOfTerminal(mainWindow->regionScene_,
+                               targetTerminal, regionName,
+                               "*", networkType);
+
+    bool continueProcess = true;
+    if (sourcePoints.empty())
+    {
+        mainWindow->showStatusBarError(
+            QString("Terminal %1 has no associated nodes.")
+                .arg(sourceTerminal->getProperty("Name", "")
+                         .toString()),
+            3000);
+        continueProcess = false;
+    }
+
+    if (targetPoints.empty())
+    {
+        mainWindow->showStatusBarError(
+            QString("Terminal %1 has no associated nodes.")
+                .arg(targetTerminal->getProperty("Name", "")
+                         .toString()),
+            3000);
+        continueProcess = false;
+    }
+
+    if (!continueProcess)
+        return;
+
+    // Group map points by network
+    QMap<QString, QList<CargoNetSim::GUI::MapPoint *>>
+        sourceNetworks;
+    QMap<QString, QList<CargoNetSim::GUI::MapPoint *>>
+        targetNetworks;
+
+    for (auto point : sourcePoints)
+    {
+        QString network = point->getRegion();
+        sourceNetworks[network].append(point);
+    }
+
+    for (auto point : targetPoints)
+    {
+        QString network = point->getRegion();
+        targetNetworks[network].append(point);
+    }
+
+    // Find common networks
+    QSet<QString> sourceNetworkNames =
+        QSet<QString>(sourceNetworks.keys().begin(),
+                      sourceNetworks.keys().end());
+    QSet<QString> targetNetworkNames =
+        QSet<QString>(targetNetworks.keys().begin(),
+                      targetNetworks.keys().end());
+    QSet<QString> commonNetworks = sourceNetworkNames;
+    commonNetworks.intersect(targetNetworkNames);
+
+    // Check each common network for valid paths
+    for (const QString &network : commonNetworks)
+    {
+        auto sourcePointsForNetwork =
+            sourceNetworks[network];
+        auto targetPointsForNetwork =
+            targetNetworks[network];
+
+        for (auto sourcePoint : sourcePointsForNetwork)
+        {
+            for (auto targetPoint : targetPointsForNetwork)
+            {
+                try
+                {
+                    QString sourceNodeId =
+                        sourcePoint
+                            ->getReferencedNetworkNodeID();
+                    QString targetNodeId =
+                        targetPoint
+                            ->getReferencedNetworkNodeID();
+
+                    bool validSourceID, validTargetID;
+                    int  sourceID =
+                        sourceNodeId.toInt(&validSourceID);
+                    int targetID =
+                        targetNodeId.toInt(&validTargetID);
+
+                    if (!validSourceID || !validTargetID)
+                    {
+                        qWarning() << "Invalid source or "
+                                      "target node ID:"
+                                   << sourceNodeId << "or"
+                                   << targetNodeId;
+                        continue;
+                    }
+
+                    // Find shortest path
+                    CargoNetSim::Backend::ShortestPathResult
+                        result = findShortestPath(
+                            regionName, network,
+                            networkType, sourceID,
+                            targetID);
+
+                    if (!result.pathNodes.empty()
+                        && result.pathNodes.size() > 1)
+                    {
+                        // Create connection
+                        CargoNetSim::GUI::ConnectionLine
+                            *connection = CargoNetSim::GUI::
+                                ViewController::
+                                    createConnectionLine(
+                                        mainWindow,
+                                        sourceTerminal,
+                                        targetTerminal,
+                                        networkTypeStr);
+
+                        if (!connection)
+                        {
+                            continue;
+                        }
+
+                        // Set connection properties
+                        setConnectionProperties(
+                            connection, result,
+                            networkType);
+
+                        // We found a valid path, so break
+                        // out of the inner loops
+                        break;
+                    }
+                }
+                catch (const std::exception &e)
+                {
+                    qWarning()
+                        << "Error processing network path:"
+                        << e.what();
+                }
+            }
+        }
+    }
 }

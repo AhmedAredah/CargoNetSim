@@ -6,6 +6,7 @@
  */
 
 #include "CargoNetSimController.h"
+#include "Backend/Utils/Utils.h"
 
 namespace CargoNetSim
 {
@@ -54,6 +55,9 @@ CargoNetSimController::CargoNetSimController(
     // Create other controllers as needed
     m_vehicleController =
         new Backend::VehicleController(this);
+
+    m_configController = new Backend::ConfigController(
+        Backend::Utils::findConfigFilePath());
 
     // Initialize client status tracking
     m_clientInitialized[Backend::ClientType::TruckClient] =
@@ -117,6 +121,12 @@ CargoNetSimController::~CargoNetSimController()
         m_terminalThread->quit();
         m_terminalThread->wait(3000);
         delete m_terminalThread;
+    }
+
+    if (m_configController)
+    {
+        delete m_configController;
+        m_configController = nullptr;
     }
 
     // Clean up controllers
@@ -198,6 +208,12 @@ Backend::VehicleController *
 CargoNetSimController::getVehicleController()
 {
     return m_vehicleController;
+}
+
+Backend::ConfigController *
+CargoNetSimController::getConfigController()
+{
+    return m_configController;
 }
 
 Backend::TruckClient::TruckSimulationManager *
