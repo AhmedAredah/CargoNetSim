@@ -244,7 +244,8 @@ bool SimulationClientBase::sendCommandAndWait(
     // Clear any previously received events with the same
     // names
     {
-        QMutexLocker locker(&m_eventMutex);
+        CargoNetSim::Backend::Commons::ScopedWriteLock
+            locker(m_eventMutex);
         for (const QString &event : expectedEvents)
         {
             QString normalized = normalizeEventName(event);
@@ -350,78 +351,110 @@ QJsonObject SimulationClientBase::createCommandObject(
 bool SimulationClientBase::waitForEvent(
     const QStringList &expectedEvents, int timeoutMs)
 {
-    QMutexLocker locker(&m_eventMutex);
+    if (expectedEvents.isEmpty())
+    {
+        qWarning() << "No event to wait for";
+        return false;
+    }
 
-    // Normalize expected event names
     QStringList normalizedEvents;
     for (const QString &event : expectedEvents)
     {
         normalizedEvents.append(normalizeEventName(event));
     }
 
-    // Check if any expected event is already received
-    for (const QString &eventName : normalizedEvents)
+    QElapsedTimer timer;
+    timer.start();
+    bool receivedEvent = false;
+
+    while (!receivedEvent)
     {
-        if (m_receivedEvents.contains(eventName))
+        // First check with a read lock if event is already
+        // received
         {
-            // Found an expected event, remove it from
-            // registry
-            m_receivedEvents.remove(eventName);
-            return true;
-        }
-    }
-
-    // Setup event loop for waiting
-    QEventLoop eventLoop;
-    QTimer     timeoutTimer;
-
-    // Connect the event signal to break the event loop
-    QMetaObject::Connection eventConnection = connect(
-        this, &SimulationClientBase::eventReceived,
-        &eventLoop,
-        [&](const QString &eventName, const QJsonObject &) {
-            if (normalizedEvents.contains(
-                    normalizeEventName(eventName)))
+            CargoNetSim::Backend::Commons::ScopedReadLock
+                readLocker(m_eventMutex);
+            for (const QString &event : normalizedEvents)
             {
-                eventLoop.quit();
+                if (m_receivedEvents.contains(event))
+                {
+                    if (m_logger)
+                    {
+                        m_logger->log(
+                            "Event " + event + " received",
+                            static_cast<int>(m_clientType));
+                    }
+                    else
+                    {
+                        qDebug() << "Event" << event
+                                 << "received";
+                    }
+                    receivedEvent = true;
+                    break;
+                }
             }
-        });
+        }
 
-    // Setup timeout if requested
-    if (timeoutMs > 0)
-    {
-        timeoutTimer.setSingleShot(true);
-        connect(&timeoutTimer, &QTimer::timeout, &eventLoop,
-                &QEventLoop::quit);
-        timeoutTimer.start(timeoutMs);
-    }
-
-    // Release mutex before entering event loop
-    locker.unlock();
-
-    // Wait for event or timeout
-    eventLoop.exec();
-
-    // Disconnect and stop timer
-    disconnect(eventConnection);
-    if (timeoutTimer.isActive())
-    {
-        timeoutTimer.stop();
-    }
-
-    // Re-acquire mutex and check if event was received
-    locker.relock();
-    for (const QString &eventName : normalizedEvents)
-    {
-        if (m_receivedEvents.contains(eventName))
+        // If event not received, wait with a write lock
+        if (!receivedEvent)
         {
-            m_receivedEvents.remove(eventName);
-            return true;
+            CargoNetSim::Backend::Commons::ScopedWriteLock
+                writeLocker(m_eventMutex);
+
+            // Check again after acquiring write lock
+            for (const QString &event : normalizedEvents)
+            {
+                if (m_receivedEvents.contains(event))
+                {
+                    receivedEvent = true;
+                    break;
+                }
+            }
+
+            // If still not received, wait
+            if (!receivedEvent)
+            {
+                if (timeoutMs <= 0)
+                {
+                    // Wait indefinitely for the event
+                    m_eventCondition.wait(&m_eventMutex);
+                }
+                else
+                {
+                    // Calculate remaining time to wait
+                    int remainingTime =
+                        timeoutMs - timer.elapsed();
+                    if (remainingTime <= 0)
+                    {
+                        if (m_logger)
+                        {
+                            m_logger->logError(
+                                "Timeout waiting for "
+                                "response to command",
+                                static_cast<int>(
+                                    m_clientType));
+                        }
+                        return false;
+                    }
+                    m_eventCondition.wait(&m_eventMutex,
+                                          remainingTime);
+                }
+
+                // Check one more time after waiting
+                for (const QString &event :
+                     normalizedEvents)
+                {
+                    if (m_receivedEvents.contains(event))
+                    {
+                        receivedEvent = true;
+                        break;
+                    }
+                }
+            }
         }
     }
 
-    // Timeout occurred
-    return false;
+    return true;
 }
 
 /**
@@ -430,9 +463,10 @@ bool SimulationClientBase::waitForEvent(
 bool SimulationClientBase::hasReceivedEvent(
     const QString &eventName) const
 {
-    QMutexLocker locker(&m_eventMutex);
-    return m_receivedEvents.contains(
-        normalizeEventName(eventName));
+    CargoNetSim::Backend::Commons::ScopedReadLock locker(
+        m_eventMutex);
+    QString normalizedEvent = normalizeEventName(eventName);
+    return m_receivedEvents.contains(normalizedEvent);
 }
 
 /**
@@ -441,15 +475,10 @@ bool SimulationClientBase::hasReceivedEvent(
 QJsonObject SimulationClientBase::getEventData(
     const QString &eventName) const
 {
-    QMutexLocker locker(&m_eventMutex);
-    QString      normalized = normalizeEventName(eventName);
-
-    if (m_receivedEvents.contains(normalized))
-    {
-        return m_receivedEvents.value(normalized);
-    }
-
-    return QJsonObject(); // Empty object if event not found
+    CargoNetSim::Backend::Commons::ScopedReadLock locker(
+        m_eventMutex);
+    QString normalizedEvent = normalizeEventName(eventName);
+    return m_receivedEvents.value(normalizedEvent);
 }
 
 /**
@@ -510,7 +539,8 @@ QString SimulationClientBase::normalizeEventName(
 void SimulationClientBase::registerEvent(
     const QString &eventName, const QJsonObject &eventData)
 {
-    QMutexLocker locker(&m_eventMutex);
+    CargoNetSim::Backend::Commons::ScopedWriteLock locker(
+        m_eventMutex);
     m_receivedEvents[eventName] = eventData;
     m_eventCondition.wakeAll();
 
@@ -522,7 +552,8 @@ void SimulationClientBase::registerEvent(
  */
 void SimulationClientBase::clearEvents()
 {
-    QMutexLocker locker(&m_eventMutex);
+    CargoNetSim::Backend::Commons::ScopedWriteLock locker(
+        m_eventMutex);
     m_receivedEvents.clear();
 }
 

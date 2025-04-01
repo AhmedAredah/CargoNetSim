@@ -3,6 +3,7 @@
 #include "Backend/Clients/BaseClient/RabbitMQHandler.h"
 #include "Backend/Commons/ClientType.h"
 #include "Backend/Commons/LoggerInterface.h"
+#include "Backend/Commons/ThreadSafetyUtils.h"
 #include <QEventLoop>
 #include <QFuture>
 #include <QJsonObject>
@@ -11,6 +12,7 @@
 #include <QObject>
 #include <QPromise>
 #include <QQueue>
+#include <QReadWriteLock>
 #include <QStringList>
 #include <QTimer>
 #include <QWaitCondition>
@@ -347,7 +349,8 @@ protected:
                                      "command execution");
         }
 
-        QMutexLocker locker(&m_commandSerializationMutex);
+        CargoNetSim::Backend::Commons::ScopedWriteLock
+            locker(m_commandSerializationMutex);
         return func();
     }
 
@@ -359,7 +362,7 @@ protected:
 
     // Event registry for synchronization
     QMap<QString, QJsonObject> m_receivedEvents;
-    mutable QMutex             m_eventMutex;
+    mutable QReadWriteLock     m_eventMutex;
     QWaitCondition             m_eventCondition;
 
     // Connection parameters
@@ -390,7 +393,7 @@ private slots:
 
 private:
     // Command serialization
-    QMutex m_commandSerializationMutex;
+    QReadWriteLock m_commandSerializationMutex;
 
     // Currently processing flag for preventing concurrent
     // operations
