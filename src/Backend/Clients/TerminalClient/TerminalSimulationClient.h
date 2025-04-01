@@ -18,6 +18,7 @@
  */
 
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
+#include "Backend/Commons/ThreadSafetyUtils.h"
 #include "Backend/Models/Path.h"
 #include "Backend/Models/PathSegment.h"
 #include "Backend/Models/Terminal.h"
@@ -25,8 +26,8 @@
 #include <QJsonObject>
 #include <QList>
 #include <QMap>
-#include <QMutex>
 #include <QObject>
+#include <QReadWriteLock>
 #include <QString>
 #include <containerLib/container.h>
 
@@ -48,6 +49,15 @@ namespace Backend
  * varies.
  * @warning Thread-safe via mutex; ensure proper pointer
  * management.
+ *
+ * Thread Safety Implementation:
+ * - Uses ThreadSafetyUtils' ScopedReadLock for read-only
+ * operations
+ * - Uses ThreadSafetyUtils' ScopedWriteLock for write
+ * operations
+ * - Ensures all access to shared data structures is
+ * properly protected
+ * - Prevents potential deadlocks through timeout mechanisms
  */
 class TerminalSimulationClient : public SimulationClientBase
 {
@@ -470,9 +480,18 @@ private:
     void onCapacityFetched(const QJsonObject &message);
 
     /**
-     * @brief Mutex for thread-safe data access
+     * @brief Read-write lock for thread-safe data access
+     *
+     * Protects internal data structures from concurrent
+     * access. Access to this lock should be managed using:
+     * - Commons::ScopedReadLock for read-only operations
+     * - Commons::ScopedWriteLock for write operations
+     *
+     * Using read-write locks allows multiple concurrent
+     * readers while ensuring exclusive access for writers,
+     * improving performance for read-heavy workloads.
      */
-    mutable QMutex m_dataMutex;
+    mutable QReadWriteLock m_dataMutex;
 
     /**
      * @brief Map of terminal IDs to Terminal pointers

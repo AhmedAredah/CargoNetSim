@@ -28,7 +28,7 @@ TerminalSimulationClient::TerminalSimulationClient(
 TerminalSimulationClient::~TerminalSimulationClient()
 {
     // Lock mutex to ensure thread-safe cleanup
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Clean up terminal status objects
     for (Terminal *terminal : m_terminalStatus.values())
@@ -169,7 +169,7 @@ QStringList TerminalSimulationClient::getTerminalAliases(
     });
 
     // Access aliases with thread safety
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
 
     // Retrieve aliases from dedicated map
     return m_terminalAliases.value(terminalId,
@@ -202,7 +202,7 @@ int TerminalSimulationClient::getTerminalCount()
                                   {"terminalCount"});
     });
     // Access count thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_terminalCount;
 }
 
@@ -226,7 +226,7 @@ Terminal *TerminalSimulationClient::getTerminalStatus(
                                   {"terminalStatus"});
     });
     // Access status thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_terminalStatus.value(terminalId, nullptr);
 }
 
@@ -328,8 +328,8 @@ TerminalSimulationClient::findShortestPath(
                                   params, {"pathFound"});
     });
     // Access path thread-safely
-    QMutexLocker locker(&m_dataMutex);
-    QString      key =
+    Commons::ScopedReadLock locker(m_dataMutex);
+    QString                 key =
         start + "-" + end + "-" + QString::number(mode);
     return m_shortestPaths.value(key,
                                  QList<PathSegment *>());
@@ -355,8 +355,8 @@ QList<Path *> TerminalSimulationClient::findTopPaths(
                                   {"pathFound"});
     });
     // Access paths thread-safely
-    QMutexLocker locker(&m_dataMutex);
-    QString      key =
+    Commons::ScopedReadLock locker(m_dataMutex);
+    QString                 key =
         start + "-" + end + "-" + QString::number(mode);
     return m_topPaths.value(key, QList<Path *>());
 }
@@ -454,7 +454,7 @@ TerminalSimulationClient::getContainersByDepartingTime(
             {"containersFetched"});
     });
     // Access containers thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_containers.value(
         terminalId, QList<ContainerCore::Container *>());
 }
@@ -478,7 +478,7 @@ TerminalSimulationClient::getContainersByAddedTime(
             {"containersFetched"});
     });
     // Access containers thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_containers.value(
         terminalId, QList<ContainerCore::Container *>());
 }
@@ -500,7 +500,7 @@ TerminalSimulationClient::getContainersByNextDestination(
             {"containersFetched"});
     });
     // Access containers thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_containers.value(
         terminalId, QList<ContainerCore::Container *>());
 }
@@ -523,7 +523,7 @@ QList<ContainerCore::Container *> TerminalSimulationClient::
             params, {"containersFetched"});
     });
     // Access dequeued containers thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_containers.value(
         terminalId, QList<ContainerCore::Container *>());
 }
@@ -543,7 +543,7 @@ int TerminalSimulationClient::getContainerCount(
                                   {"capacityFetched"});
     });
     // Access count thread-safely and cast
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     double count = m_capacities.value(terminalId, 0.0);
     return static_cast<int>(count);
 }
@@ -563,7 +563,7 @@ double TerminalSimulationClient::getAvailableCapacity(
                                   {"capacityFetched"});
     });
     // Access capacity thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_capacities.value(terminalId, 0.0);
 }
 
@@ -582,7 +582,7 @@ double TerminalSimulationClient::getMaxCapacity(
                                   {"capacityFetched"});
     });
     // Access max capacity thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_capacities.value(terminalId, 0.0);
 }
 
@@ -613,7 +613,7 @@ QJsonObject TerminalSimulationClient::serializeGraph()
     });
 
     // Access serialized graph thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_serializedGraph;
 }
 
@@ -650,7 +650,7 @@ TerminalSimulationClient::ping(const QString &echo)
                                   {"pingResponse"});
     });
     // Access ping response thread-safely
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_pingResponse;
 }
 
@@ -711,12 +711,12 @@ void TerminalSimulationClient::processMessage(
     }
     else if (normEvent == "graphserialized")
     {
-        QMutexLocker locker(&m_dataMutex);
+        Commons::ScopedWriteLock locker(m_dataMutex);
         m_serializedGraph = message["result"].toObject();
     }
     else if (normEvent == "pingresponse")
     {
-        QMutexLocker locker(&m_dataMutex);
+        Commons::ScopedWriteLock locker(m_dataMutex);
         m_pingResponse = message["result"].toObject();
     }
     else
@@ -744,10 +744,10 @@ void TerminalSimulationClient::processMessage(
 void TerminalSimulationClient::onTerminalAdded(
     const QJsonObject &message)
 {
-    QJsonObject  result = message["result"].toObject();
-    QString      name = result["terminal_name"].toString();
-    QMutexLocker locker(&m_dataMutex);
-    Terminal    *existing =
+    QJsonObject result = message["result"].toObject();
+    QString     name   = result["terminal_name"].toString();
+    Commons::ScopedWriteLock locker(m_dataMutex);
+    Terminal                *existing =
         m_terminalStatus.value(name, nullptr);
     if (existing)
     {
@@ -776,12 +776,18 @@ void TerminalSimulationClient::onTerminalAdded(
 void TerminalSimulationClient::onRouteAdded(
     const QJsonObject &message)
 {
-    // Extract result data from message
-    QJsonObject result  = message["result"].toObject();
-    QString     routeId = result["route_id"].toString();
+    // Extract parameters and results
+    QJsonObject params = message["params"].toObject();
+    QString     startTerminal =
+        params["start_terminal"].toString();
+    QString endTerminal = params["end_terminal"].toString();
 
-    // Log event for tracking; no local storage needed
-    qDebug() << "Route added:" << routeId;
+    // Lock mutex for thread-safe update
+    Commons::ScopedWriteLock locker(m_dataMutex);
+
+    // Log event for auditing
+    qDebug() << "Route added from" << startTerminal << "to"
+             << endTerminal;
 }
 
 // Handle path found event
@@ -798,7 +804,7 @@ void TerminalSimulationClient::onPathFound(
         start + "-" + end + "-" + QString::number(mode);
 
     // Lock mutex for thread-safe update
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Handle top paths if 'n' is present
     if (params.contains("n"))
@@ -878,12 +884,16 @@ void TerminalSimulationClient::onPathFound(
 void TerminalSimulationClient::onContainersAdded(
     const QJsonObject &message)
 {
-    // Extract parameters from message
+    // Extract parameters and results
     QJsonObject params = message["params"].toObject();
     QString terminalId = params["terminal_id"].toString();
 
-    // Log event for tracking
-    qDebug() << "Containers added to:" << terminalId;
+    // Lock mutex for thread-safe update
+    Commons::ScopedWriteLock locker(m_dataMutex);
+
+    // Log event for auditing
+    qDebug() << "Containers added to terminal:"
+             << terminalId;
 }
 
 // Handle server reset event
@@ -891,7 +901,7 @@ void TerminalSimulationClient::onServerReset(
     const QJsonObject &message)
 {
     // Lock mutex for thread-safe cleanup
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Clean up all terminal status objects
     for (Terminal *terminal : m_terminalStatus.values())
@@ -964,7 +974,7 @@ void TerminalSimulationClient::onTerminalRemoved(
     QString terminalId = params["terminal_name"].toString();
 
     // Lock mutex for thread-safe update
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Remove and delete terminal if exists
     Terminal *terminal = m_terminalStatus.take(terminalId);
@@ -987,7 +997,7 @@ void TerminalSimulationClient::onTerminalCount(
     int count = message["result"].toInt();
 
     // Lock mutex for thread-safe update
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
     m_terminalCount = count;
 
     // Log event for tracking
@@ -1004,7 +1014,7 @@ void TerminalSimulationClient::onContainersFetched(
     QString terminalId = params["terminal_id"].toString();
 
     // Lock mutex for thread-safe update
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Check if this is a dequeue operation
     bool isDequeue = params.contains("destination")
@@ -1048,7 +1058,7 @@ void TerminalSimulationClient::onCapacityFetched(
     QString terminalId   = params["terminal_id"].toString();
 
     // Lock mutex for thread-safe update
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Store capacity in map
     m_capacities[terminalId] = capacity;
