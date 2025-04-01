@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Backend/Commons/ShortestPathResult.h"
 #include "GUI/Commons/NetworkType.h"
 #include "GUI/Items/RegionCenterPoint.h"
 #include "GUI/Items/TerminalItem.h"
@@ -33,13 +34,6 @@ public:
         Any,
         Linked,
         NotLinked
-    };
-
-    struct PathResult
-    {
-        QList<int> path_nodes;
-        double     totalLength   = 0.0;
-        double     minTravelTime = 0.0;
     };
 
     static QList<CargoNetSim::GUI::TerminalItem *>
@@ -102,11 +96,23 @@ public:
     getApproximateGeoDistance(const QPointF &point1,
                               const QPointF &point2);
 
-    static PathResult
+    static CargoNetSim::Backend::ShortestPathResult
     findShortestPath(const QString &regionName,
                      const QString &networkName,
                      NetworkType    networkType,
                      int startNodeId, int endNodeId);
+
+    static void setConnectionProperties(
+        CargoNetSim::GUI::ConnectionLine *connection,
+        const CargoNetSim::Backend::ShortestPathResult
+                                      &pathResult,
+        CargoNetSim::GUI::NetworkType &networkType);
+
+    static void processNetworkMode(
+        MainWindow                     *mainWindow,
+        CargoNetSim::GUI::TerminalItem *sourceTerminal,
+        CargoNetSim::GUI::TerminalItem *targetTerminal,
+        CargoNetSim::GUI::NetworkType   networkType);
 };
 
 } // namespace GUI
