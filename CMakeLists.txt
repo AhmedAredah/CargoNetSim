@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Option to enable or disable tests
+option(CARGONET_BUILD_TESTS "Build the CargoNetSim test suite" ON)
+
 # Include our custom CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -25,6 +28,11 @@ configure_file(
 
 # Add subdirectories
 add_subdirectory(src)
+
+# Conditionally add tests directory
+if(CARGONET_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 
 # Install configuration
 install(DIRECTORY config/ DESTINATION etc/CargoNetSim)
