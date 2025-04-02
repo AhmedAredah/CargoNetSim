@@ -68,6 +68,7 @@ void ShipManagerDialog::initUI()
     m_deleteAction->setIcon(
         QIcon(IconFactory::createDeleteShipIcon()));
     m_deleteAction->setToolTip(tr("Delete selected ship"));
+    m_deleteAction->setEnabled(false);  // Initially disabled
     connect(m_deleteAction, &QAction::triggered, this,
             &ShipManagerDialog::deleteShip);
 
@@ -92,6 +93,11 @@ void ShipManagerDialog::initUI()
          tr("Length (m)"), tr("Beam (m)"),
          tr("Draft (F/A) (m)"), tr("Displacement (m³)"),
          tr("Cargo Weight (t)"), tr("Propulsion")});
+
+    // Set selection behavior and editing flags
+    m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     // Set column stretch
     QHeaderView *header = m_table->horizontalHeader();
@@ -118,9 +124,12 @@ void ShipManagerDialog::initUI()
 
     layout->addWidget(m_splitter);
 
-    // Connect selection change to update details
+    // Connect selection change to update details and delete button state
     connect(m_table, &QTableWidget::itemSelectionChanged,
-            this, &ShipManagerDialog::updateDetails);
+            this, [this]() {
+                updateDetails();
+                m_deleteAction->setEnabled(m_table->currentRow() >= 0);
+            });
 
     // Add Accept/Cancel buttons
     QDialogButtonBox *buttonBox = new QDialogButtonBox(
@@ -286,13 +295,18 @@ void ShipManagerDialog::updateDetails()
         return;
     }
 
-    auto ship = m_ships.at(currentRow);
+    Backend::Ship* ship = m_ships.at(currentRow);
+    if (!ship)
+    {
+        m_detailsText->clear();
+        return;
+    }
 
     // Emit signal when a ship is selected
     emit shipSelected(ship->getUserId());
 
     // Format and display the details
-    m_detailsText->setHtml(formatShipDetails(ship));
+    m_detailsText->setHtml(formatShipDetails(*ship));
 }
 
 QString ShipManagerDialog::formatShipDetails(
