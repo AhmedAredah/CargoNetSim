@@ -106,8 +106,13 @@ set(Backend_SOURCES
     Clients/TruckClient/TransportationGraph.cpp
     Clients/TruckClient/IntegrationNode.h
     Clients/TruckClient/IntegrationNode.cpp
+    Clients/TruckClient/IntegrationNodeDataReader.h
+    Clients/TruckClient/IntegrationNodeDataReader.cpp
     Clients/TruckClient/IntegrationLink.h
     Clients/TruckClient/IntegrationLink.cpp
+    Clients/TruckClient/IntegrationLinkDataReader.h
+    Clients/TruckClient/IntegrationLinkDataReader.cpp
+
 
     Utils/Utils.h
 

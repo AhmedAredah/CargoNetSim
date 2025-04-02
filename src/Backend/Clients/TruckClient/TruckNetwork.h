@@ -8,7 +8,9 @@
 #pragma once
 
 #include "IntegrationLink.h"
+#include "IntegrationLinkDataReader.h"
 #include "IntegrationNode.h"
+#include "IntegrationNodeDataReader.h"
 #include "MessageFormatter.h"
 #include "TransportationGraph.h"
 #include <QJsonObject>
@@ -134,9 +136,9 @@ public:
      * @param maxPaths Maximum number of paths to find
      * @return List of paths as JSON objects
      */
-    QList<QJsonObject> getMultiplePaths(int startNodeId,
-                                        int endNodeId,
-                                        int maxPaths = 3);
+    QList<ShortestPathResult>
+    getMultiplePaths(int startNodeId, int endNodeId,
+                     int maxPaths = 3);
 
     /**
      * @brief Format as JSON
@@ -223,13 +225,20 @@ public:
      * @param simTime Simulation duration
      * @param inputFiles Map of input file paths
      * @param outputFiles Map of output file paths
+     * @param inputFolder Input folder path
+     * @param outputFolder Output folder path
+     * @param additionalVariables Map of additional
+     * variables
      * @return True if initialization successful
      */
-    bool
-    initialize(const QString &configDir,
-               const QString &title, double simTime,
-               const QMap<QString, QString> &inputFiles,
-               const QMap<QString, QString> &outputFiles);
+    bool initialize(
+        const QString &configDir, const QString &title,
+        double                         simTime,
+        const QMap<QString, QString>  &inputFiles,
+        const QMap<QString, QString>  &outputFiles,
+        const QString                 &inputFolder,
+        const QString                 &outputFolder,
+        const QMap<QString, QVariant> &additionalVariables);
 
     /**
      * @brief Get the network object
@@ -304,7 +313,7 @@ private:
     QMap<QString, QString> m_outputFiles;
 
     // Configuration variables
-    QMap<QString, QString> m_variables;
+    QMap<QString, QVariant> m_variables;
 
     // Shared network model
     IntegrationNetwork *m_network;
@@ -350,7 +359,7 @@ public:
      * @param configFilePath Path to configuration file
      * @return Configuration as JSON object
      */
-    static QJsonObject
+    static IntegrationSimulationConfig *
     readConfig(const QString &configFilePath);
 
 private:

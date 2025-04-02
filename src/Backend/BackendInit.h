@@ -80,6 +80,26 @@ initializeBackend(LoggerInterface *logger = nullptr)
         "CargoNetSim::Backend::ShipClient::"
         "ShipSimulationClient*");
 
+    // Terminal classes
+    qRegisterMetaType<CargoNetSim::Backend::Terminal>(
+        "CargoNetSim::Backend::Terminal");
+    qRegisterMetaType<CargoNetSim::Backend::Terminal *>(
+        "CargoNetSim::Backend::Terminal*");
+    qRegisterMetaType<CargoNetSim::Backend::PathSegment>(
+        "CargoNetSim::Backend::PathSegment");
+    qRegisterMetaType<CargoNetSim::Backend::PathSegment *>(
+        "CargoNetSim::Backend::PathSegment*");
+    qRegisterMetaType<CargoNetSim::Backend::Path>(
+        "CargoNetSim::Backend::Path");
+    qRegisterMetaType<CargoNetSim::Backend::Path *>(
+        "CargoNetSim::Backend::Path*");
+    qRegisterMetaType<
+        CargoNetSim::Backend::TerminalSimulationClient>(
+        "CargoNetSim::Backend::TerminalSimulationClient");
+    qRegisterMetaType<
+        CargoNetSim::Backend::TerminalSimulationClient *>(
+        "CargoNetSim::Backend::TerminalSimulationClient *");
+
     // TrainClient classes
     qRegisterMetaType<TrainClient::TrainState>(
         "CargoNetSim::Backend::TrainClient::TrainState");
@@ -238,6 +258,34 @@ initializeBackend(LoggerInterface *logger = nullptr)
         "CargoNetSim::Backend::TruckClient::"
         "TruckSimulationManager*");
 
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationNodeDataReader>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationNodeDataReader");
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationNodeDataReader *>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationNodeDataReader*");
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationLinkDataReader>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationLinkDataReader");
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationLinkDataReader *>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationLinkDataReader*");
+
+    qRegisterMetaType<
+        CargoNetSim::Backend::TruckClient::
+            IntegrationSimulationConfigReader>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationSimulationConfigReader");
+    qRegisterMetaType<
+        CargoNetSim::Backend::TruckClient::
+            IntegrationSimulationConfigReader *>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationSimulationConfigReader*");
+
     // TerminalClient
     qRegisterMetaType<TerminalSimulationClient>(
         "CargoNetSim::Backend::TerminalSimulationClient");
@@ -245,6 +293,14 @@ initializeBackend(LoggerInterface *logger = nullptr)
     // Register ClientType
     qRegisterMetaType<ClientType>(
         "CargoNetSim::Backend::ClientType");
+
+    // Common classes
+    qRegisterMetaType<
+        CargoNetSim::Backend::ShortestPathResult>(
+        "CargoNetSim::Backend::ShortestPathResult");
+    qRegisterMetaType<
+        CargoNetSim::Backend::ShortestPathResult *>(
+        "CargoNetSim::Backend::ShortestPathResult*");
 
     qDebug() << "Backend metatypes registered successfully";
 
