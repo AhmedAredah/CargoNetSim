@@ -248,8 +248,8 @@ void MainWindow::setupRegionMapScene()
     regionView_->setScene(regionScene_);
 
     // Add connection methods
-    regionScene_->connectMode      = false;
-    regionScene_->connectFirstItem = QVariant();
+    regionScene_->setIsInConnectMode(false);
+    regionScene_->setConnectedFirstItem(QVariant());
 }
 
 void MainWindow::setupGlobalMapScene()
@@ -258,12 +258,12 @@ void MainWindow::setupGlobalMapScene()
     globalMapView_  = new GraphicsView(globalMapScene_);
 
     // Force geodetic coordinates for global map
-    globalMapView_->useProjectedCoords = false;
+    globalMapView_->setUsingProjectedCoords(false);
     globalMapView_->setScene(globalMapScene_);
 
     // Add connection methods
-    globalMapScene_->connectMode      = false;
-    globalMapScene_->connectFirstItem = QVariant();
+    globalMapScene_->setIsInConnectMode(false);
+    globalMapScene_->setConnectedFirstItem(QVariant());
 }
 
 void MainWindow::setupDocks()
@@ -732,8 +732,8 @@ void MainWindow::handleTabChange(int index)
     bool isMainView = !(isGlobalMap || isLoggingTab);
 
     // Common state reset
-    regionScene_->connectMode    = false;
-    globalMapScene_->connectMode = false;
+    regionScene_->setIsInConnectMode(false);
+    globalMapScene_->setIsInConnectMode(false);
 
     // Reset measurement mode when changing tabs
     measureButton_->setChecked(false);
@@ -849,29 +849,25 @@ void MainWindow::updateGroupVisibility(
 
 void MainWindow::updateAllCoordinates()
 {
-    // TODO
-    // for (auto it = regionCenters_.begin(); it !=
-    // regionCenters_.end(); ++it) {
-    //     const QString& regionName = it.key();
-    //     RegionCenterPoint* center = it.value();
-    //     QPointF pos = center->pos();
+    if (!regionScene_ || !regionView_)
+        return;
 
-    //     double lat, lon;
-    //     std::tie(lat, lon) =
-    //     regionView_->sceneToWGS84(pos);
-    //     center->getProperties()["Latitude"] =
-    //     QString::number(lat, 'f', 6);
-    //     center->getProperties()["Longitude"] =
-    //     QString::number(lon, 'f', 6);
-    // }
+    // Get all items in the scene
+    QList<QGraphicsItem*> allItems = regionScene_->items();
 
-    // // If properties panel is displaying a region center,
-    // update its display if
-    // (propertiesPanel_->getCurrentItem() &&
-    // dynamic_cast<RegionCenterPoint*>(propertiesPanel_->getCurrentItem()))
-    // {
-    //     propertiesPanel_->displayProperties(propertiesPanel_->getCurrentItem());
-    // }
+    // Update the properties panel if it's showing coordinates
+    if (propertiesPanel_ && propertiesPanel_->getCurrentItem()) {
+        QGraphicsItem* currentItem = propertiesPanel_->getCurrentItem();
+        if (dynamic_cast<RegionCenterPoint*>(currentItem) ||
+            dynamic_cast<MapPoint*>(currentItem) ||
+            dynamic_cast<TerminalItem*>(currentItem) ||
+            dynamic_cast<BackgroundPhotoItem*>(currentItem)) {
+            propertiesPanel_->displayProperties(currentItem);
+        }
+    }
+
+    // Update the view
+    regionView_->viewport()->update();
 }
 
 void MainWindow::showStatusBarMessage(QString message,
@@ -920,7 +916,7 @@ void MainWindow::togglePanMode()
 void MainWindow::handleTerminalNodeLinking(
     QGraphicsItem *item)
 {
-    if (!regionScene_->linkTerminalMode)
+    if (!regionScene_->isInLinkTerminalMode())
     {
         return;
     }
@@ -954,7 +950,7 @@ void MainWindow::handleTerminalNodeLinking(
 
         // Exit linking mode
         linkTerminalButton_->setChecked(false);
-        regionScene_->linkTerminalMode = false;
+        regionScene_->setIsInLinkTerminalMode(false);
         selectedTerminal_              = nullptr;
         showStatusBarMessage(
             "Terminal linked to node successfully", 2000);
@@ -973,7 +969,7 @@ void MainWindow::handleTerminalNodeLinking(
 void MainWindow::handleTerminalNodeUnlinking(
     QGraphicsItem *item)
 {
-    if (!regionScene_->unlinkTerminalMode)
+    if (!regionScene_->isInUnlinkTerminalMode())
     {
         return;
     }
@@ -993,7 +989,7 @@ void MainWindow::handleTerminalNodeUnlinking(
 
         // Exit unlinking mode
         unlinkTerminalButton_->setChecked(false);
-        regionScene_->unlinkTerminalMode = false;
+        regionScene_->setIsInUnlinkTerminalMode(false);
         selectedTerminal_                = nullptr;
         showStatusBarMessage(
             "Terminal unlinked successfully", 2000);
@@ -1369,11 +1365,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         measureButton_->setChecked(false);
 
         // Reset all scene modes
-        regionScene_->connectMode        = false;
-        regionScene_->linkTerminalMode   = false;
-        regionScene_->unlinkTerminalMode = false;
-        regionScene_->measureMode        = false;
-        regionScene_->connectFirstItem   = QVariant();
+        regionScene_->setIsInConnectMode(false);
+        regionScene_->setIsInLinkTerminalMode(false);
+        regionScene_->setIsInUnlinkTerminalMode(false);
+        regionScene_->setIsInMeasureMode(false);
+        regionScene_->setConnectedFirstItem(QVariant());
         selectedTerminal_                = nullptr;
 
         // Reset cursor
