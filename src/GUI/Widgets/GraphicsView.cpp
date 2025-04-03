@@ -29,7 +29,7 @@ GraphicsView::GraphicsView(QGraphicsScene *scene,
     : QGraphicsView(scene, parent)
     , useProjectedCoords(false)
     , measureMode(false)
-    , measurementTool(nullptr)
+    , m_measurementTool(nullptr)
     , _zoom(0)
     , _panMode("ctrl_left")
     , _ctrlLeftDrag(false)
@@ -809,11 +809,11 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     {
         QPointF scenePos = mapToScene(event->pos());
 
-        if (!measurementTool)
+        if (!m_measurementTool)
         {
             // Create new measurement tool for this
             // measurement
-            measurementTool =
+            m_measurementTool =
                 new DistanceMeasurementTool(this);
             GraphicsScene *scene =
                 dynamic_cast<GraphicsScene *>(
@@ -821,25 +821,25 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
             if (scene)
             {
                 scene->addItemWithId(
-                    measurementTool,
-                    measurementTool->getID());
+                    m_measurementTool,
+                    m_measurementTool->getID());
             }
-            measurementTool->setStartPoint(scenePos);
-            measurementTool->setEndPoint(
+            m_measurementTool->setStartPoint(scenePos);
+            m_measurementTool->setEndPoint(
                 scenePos); // Initialize end point
-            measurementTool->update();
+            m_measurementTool->update();
             event->accept();
             return;
         }
         else
         {
             // Complete the measurement
-            measurementTool->setEndPoint(scenePos);
-            measurementTool->update();
+            m_measurementTool->setEndPoint(scenePos);
+            m_measurementTool->update();
 
             // Important: Set measurementTool to None so
             // next measurement creates a new one
-            measurementTool = nullptr;
+            m_measurementTool = nullptr;
             measureMode     = false;
 
             unsetCursor();
@@ -950,12 +950,12 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         // Handle measurement tool updates
         try
         {
-            if (measureMode && measurementTool
-                && measurementTool->hasStartPoint())
+            if (measureMode && m_measurementTool
+                && m_measurementTool->hasStartPoint())
             {
-                measurementTool->setEndPoint(
+                m_measurementTool->setEndPoint(
                     mapToScene(event->pos()));
-                measurementTool->update();
+                m_measurementTool->update();
             }
         }
         catch (...)

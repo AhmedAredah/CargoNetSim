@@ -270,7 +270,7 @@ double DistanceMeasurementTool::calculateDistance() const
     }
 
     // Calculate distance based on coordinate system
-    if (m_view && m_view->useProjectedCoords)
+    if (m_view && m_view->isUsingProjectedCoords())
     {
         return calculateProjectedDistance(
             startLat, startLon, endLat, endLon);
