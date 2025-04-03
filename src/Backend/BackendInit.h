@@ -44,7 +44,8 @@ namespace Backend
  * those that use signals/slots across thread boundaries.
  */
 inline void
-initializeBackend(LoggerInterface *logger = nullptr)
+initializeBackend(const QString   &integrationExePath = "",
+                  LoggerInterface *logger = nullptr)
 {
     // Base classes
     qRegisterMetaType<RabbitMQHandler>(
@@ -305,6 +306,10 @@ initializeBackend(LoggerInterface *logger = nullptr)
     qDebug() << "Backend metatypes registered successfully";
 
     CargoNetSim::CargoNetSimController::getInstance(logger);
+    CargoNetSim::CargoNetSimController::getInstance()
+        .initialize(integrationExePath);
+    CargoNetSim::CargoNetSimController::getInstance()
+        .startAll();
 }
 
 } // namespace Backend

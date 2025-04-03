@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("CargoNetSim Org");
 
     // Initialize backend metatypes
-    CargoNetSim::Backend::initializeBackend(logger);
+    CargoNetSim::Backend::initializeBackend("", logger);
 
     // Set up signal handling
     signal(SIGINT, signalHandler);
