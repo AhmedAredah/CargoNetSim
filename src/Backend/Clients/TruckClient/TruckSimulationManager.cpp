@@ -30,13 +30,28 @@ TruckSimulationManager::~TruckSimulationManager()
     }
 }
 
+void TruckSimulationManager::initializeManager(
+    LoggerInterface *logger)
+{
+    m_defaultLogger = logger;
+}
+
 void TruckSimulationManager::addClient(
     const QString         &networkName,
-    TruckSimulationClient *client, LoggerInterface *logger)
+    TruckSimulationClient *client)
 {
     Commons::ScopedWriteLock locker(m_mutex);
     m_clients[networkName] = client;
-    m_clients[networkName]->initializeClient(logger);
+    moveClientToThread(networkName,
+                       QThread::currentThread(),
+                       m_defaultLogger);
+}
+
+QList<TruckSimulationClient *>
+TruckSimulationManager::getAllClients()
+{
+    Commons::ScopedWriteLock locker(m_mutex);
+    return m_clients.values();
 }
 
 void TruckSimulationManager::removeClient(
@@ -70,6 +85,19 @@ bool TruckSimulationManager::runSimulationAsync(
         }
     }
     return true;
+}
+
+void TruckSimulationManager::moveClientToThread(
+    const QString &networkName, QThread *thread,
+    LoggerInterface *logger)
+{
+    Commons::ScopedReadLock locker(m_mutex);
+    if (m_clients.contains(networkName))
+    {
+        m_clients[networkName]->moveToThread(thread);
+        m_clients[networkName]->initializeClient(logger);
+        m_clients[networkName]->connectToServer();
+    }
 }
 
 double TruckSimulationManager::getOverallProgress() const

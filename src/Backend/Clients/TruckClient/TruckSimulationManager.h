@@ -42,14 +42,21 @@ public:
         QObject *parent = nullptr);
     ~TruckSimulationManager() override;
 
+    void
+    initializeManager(LoggerInterface *logger = nullptr);
+
     void addClient(const QString         &networkName,
-                   TruckSimulationClient *client,
-                   LoggerInterface       *logger = nullptr);
+                   TruckSimulationClient *client);
+    QList<TruckSimulationClient *> getAllClients();
     void removeClient(const QString &networkName);
 
     bool runSimulationSync(const QStringList &networkNames);
     bool
     runSimulationAsync(const QStringList &networkNames);
+
+    void moveClientToThread(const QString   &networkName,
+                            QThread         *thread,
+                            LoggerInterface *logger);
 
     double getOverallProgress() const;
 
@@ -97,8 +104,11 @@ private:
      * - Commons::ScopedWriteLock for write operations
      */
     mutable QReadWriteLock m_mutex;
-    
-    /** @brief Wait interval between simulation steps in seconds */
+
+    LoggerInterface *m_defaultLogger = nullptr;
+
+    /** @brief Wait interval between simulation steps in
+     * seconds */
     static constexpr double WAIT_INTERVAL = 0.1;
 
 signals:
