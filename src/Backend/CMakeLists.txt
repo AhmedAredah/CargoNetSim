@@ -29,6 +29,8 @@ set(Backend_SOURCES
     Models/Path.cpp
     Models/BaseObject.h
     Models/BaseObject.cpp
+    Models/BaseNetwork.h
+    Models/BaseNetwork.cpp
 
     # Controllers
     Controllers/VehicleController.h
