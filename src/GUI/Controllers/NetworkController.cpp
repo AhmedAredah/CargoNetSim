@@ -1,5 +1,6 @@
 #import "NetworkController.h"
 #import "../MainWindow.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Controllers/RegionDataController.h"
 #include "GUI/Controllers/ViewController.h"
 
@@ -43,17 +44,17 @@ QString NetworkController::importNetwork(
         }
 
         // Add train prefix if not already present
-        if (!networkName_user.toLower().startsWith("Rail_")
+        if (!networkName_user.toLower().startsWith("rail_")
             || !networkName_user.toLower().startsWith(
-                "Truck_"))
+                "truck_"))
         {
             if (networkType == NetworkType::Train)
             {
-                networkName = "Rail_" + networkName_user;
+                networkName = "rail_" + networkName_user;
             }
             else if (networkType == NetworkType::Truck)
             {
-                networkName = "Truck_" + networkName_user;
+                networkName = "truck_" + networkName_user;
             }
         }
 
@@ -211,12 +212,58 @@ bool NetworkController::removeNetwork(
     // remove the network from the backend
     if (networkType == NetworkType::Train)
     {
-        regionData->removeTrainNetwork(networkName);
+        return regionData->removeTrainNetwork(networkName);
     }
     else if (networkType == NetworkType::Truck)
     {
-        regionData->removeTruckNetwork(networkName);
+        return regionData->removeTruckNetwork(networkName);
     }
+    return false;
+}
+
+bool NetworkController::clearAllNetworks(
+    MainWindow *mainWindow)
+{
+    if (!mainWindow)
+    {
+        return false;
+    }
+
+    auto regionController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController();
+    auto regionNames =
+        regionController->getAllRegionNames();
+
+    for (auto regionName : regionNames)
+    {
+        Backend::RegionData *regionData =
+            regionController->getRegionData(regionName);
+        if (regionData)
+        {
+            for (auto netName :
+                 regionData->getTrainNetworks())
+            {
+                // Remove the network from the canvas
+                CargoNetSim::GUI::ViewController::
+                    removeNetwork(mainWindow,
+                                  NetworkType::Train,
+                                  regionData, netName);
+            }
+
+            for (auto netName :
+                 regionData->getTruckNetworks())
+            {
+                // Remove the network from the canvas
+                CargoNetSim::GUI::ViewController::
+                    removeNetwork(mainWindow,
+                                  NetworkType::Truck,
+                                  regionData, netName);
+            }
+        }
+    }
+
+    return true;
 }
 
 } // namespace GUI

@@ -33,6 +33,8 @@ public:
                   QString             &networkName,
                   Backend::RegionData *regionData);
 
+    static bool clearAllNetworks(MainWindow *mainWindow);
+
 protected:
     static bool
     importTrainNetwork(MainWindow          *mainWindow,
