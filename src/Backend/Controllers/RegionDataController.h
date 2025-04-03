@@ -127,16 +127,20 @@ public:
      * @param name Name of the network to remove.
      * @throws std::runtime_error if the network doesn't
      *         exist.
+     *
+     * @return True if the network was removed. False O.W.
      */
-    void removeTrainNetwork(const QString &name);
+    bool removeTrainNetwork(const QString &name);
 
     /**
      * @brief Remove a truck network.
      * @param name Name of the network to remove.
      * @throws std::runtime_error if the network doesn't
      *         exist.
+     *
+     * @return True if the network was removed. False O.W.
      */
-    void removeTruckNetwork(const QString &name);
+    bool removeTruckNetwork(const QString &name);
 
     /**
      * @brief Check if a train network exists.
