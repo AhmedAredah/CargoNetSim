@@ -24,6 +24,7 @@
 
 #include "Backend/Commons/DirectedGraph.h"
 #include "Backend/Commons/ShortestPathResult.h"
+#include "Backend/Models/BaseNetwork.h"
 #include "Backend/Models/BaseObject.h"
 
 namespace CargoNetSim
@@ -668,7 +669,7 @@ public:
  * links, providing path-finding capabilities and network
  * operations.
  */
-class NeTrainSimNetwork : public BaseObject
+class NeTrainSimNetwork : public BaseNetwork
 {
     Q_OBJECT
 
@@ -691,22 +692,22 @@ public:
      * @param key Variable name
      * @param value Variable value
      */
-    void addVariable(const QString &key,
-                     const QString &value);
+    void setVariable(const QString  &key,
+                     const QVariant &value) override;
 
     /**
-     * @brief Gets a variable from the network configuration
+     * @brief Gets a variable from the network
      * @param key Variable name
-     * @return Variable value as string
+     * @return Variable value as QVariant
      */
-    QString getVariable(const QString &key) const;
+    QVariant getVariable(const QString &key) const override;
 
     /**
      * @brief Gets all variables in the network
      * configuration
      * @return Map of all variables
      */
-    QMap<QString, QString> getVariables() const;
+    QMap<QString, QVariant> getVariables() const override;
 
     /**
      * @brief Loads a network from node and link files
@@ -850,8 +851,6 @@ private:
     QVector<NeTrainSimLink *> m_links; ///< Link objects
     DirectedGraph<int>
         *m_graph; ///< Directed graph of network
-    QMap<QString, QString>
-        m_variables; ///< Network variables
 
     mutable QMutex
         m_mutex; ///< Thread synchronization mutex

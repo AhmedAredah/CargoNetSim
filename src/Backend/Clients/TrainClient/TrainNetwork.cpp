@@ -678,7 +678,7 @@ NeTrainSimLinkDataReader::readLinksFile(
 // NeTrainSimNetworkBase Implementation
 
 NeTrainSimNetwork::NeTrainSimNetwork(QObject *parent)
-    : BaseObject(parent)
+    : BaseNetwork(parent)
     , m_graph(new DirectedGraph<int>(this))
 {
     // Connect graph signals to network signals
@@ -697,21 +697,21 @@ NeTrainSimNetwork::~NeTrainSimNetwork()
     m_links.clear();
 }
 
-void NeTrainSimNetwork::addVariable(const QString &key,
-                                    const QString &value)
+void NeTrainSimNetwork::setVariable(const QString  &key,
+                                    const QVariant &value)
 {
     QMutexLocker locker(&m_mutex);
     m_variables[key] = value;
 }
 
-QString
+QVariant
 NeTrainSimNetwork::getVariable(const QString &key) const
 {
     QMutexLocker locker(&m_mutex);
-    return m_variables.value(key, QString());
+    return m_variables.value(key);
 }
 
-QMap<QString, QString>
+QMap<QString, QVariant>
 NeTrainSimNetwork::getVariables() const
 {
     QMutexLocker locker(&m_mutex);

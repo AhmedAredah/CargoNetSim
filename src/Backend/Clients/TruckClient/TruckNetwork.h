@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Backend/Models/BaseNetwork.h"
 #include "IntegrationLink.h"
 #include "IntegrationLinkDataReader.h"
 #include "IntegrationNode.h"
@@ -38,7 +39,7 @@ namespace TruckClient
  * providing path-finding and network operations with
  * specialized transportation attributes.
  */
-class IntegrationNetwork : public BaseObject
+class IntegrationNetwork : public BaseNetwork
 {
     Q_OBJECT
 
@@ -139,6 +140,28 @@ public:
     QList<ShortestPathResult>
     getMultiplePaths(int startNodeId, int endNodeId,
                      int maxPaths = 3);
+
+    /**
+     * @brief Adds a variable to the network
+     * @param key Variable name
+     * @param value Variable value
+     */
+    void setVariable(const QString  &key,
+                     const QVariant &value) override;
+
+    /**
+     * @brief Gets a variable from the network
+     * @param key Variable name
+     * @return Variable value as QVariant
+     */
+    QVariant getVariable(const QString &key) const override;
+
+    /**
+     * @brief Gets all variables in the network
+     * configuration
+     * @return Map of all variables
+     */
+    QMap<QString, QVariant> getVariables() const override;
 
     /**
      * @brief Format as JSON

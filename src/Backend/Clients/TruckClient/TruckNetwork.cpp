@@ -27,7 +27,7 @@ class IntegrationLink;
 /**************** SharedIntegrationNetwork ****************/
 
 IntegrationNetwork::IntegrationNetwork(QObject *parent)
-    : BaseObject(parent)
+    : BaseNetwork(parent)
 {
 }
 
@@ -281,6 +281,27 @@ IntegrationNetwork::getMultiplePaths(int startNodeId,
     }
 
     return results;
+}
+
+void IntegrationNetwork::setVariable(const QString  &key,
+                                     const QVariant &value)
+{
+    QMutexLocker locker(&m_mutex);
+    m_variables[key] = value;
+}
+
+QVariant
+IntegrationNetwork::getVariable(const QString &key) const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_variables.value(key);
+}
+
+QMap<QString, QVariant>
+IntegrationNetwork::getVariables() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_variables;
 }
 
 QJsonObject IntegrationNetwork::toJson() const
