@@ -936,28 +936,13 @@ void MainWindow::handleTerminalNodeLinking(
     MapPoint *mapPoint = dynamic_cast<MapPoint *>(item);
     if (mapPoint && selectedTerminal_)
     {
-        // Link the terminal to the node
-        mapPoint->setLinkedTerminal(selectedTerminal_);
-        mapPoint->getProperties()["LinkedTerminal"] =
-            selectedTerminal_->getProperties()["ID"];
-
-        // Update the properties panel if this item is
-        // currently selected
-        if (propertiesPanel_->getCurrentItem() == mapPoint)
-        {
-            propertiesPanel_->displayProperties(mapPoint);
-        }
+        UtilitiesFunctions::linkMapPointToTerminal(
+            this, mapPoint, selectedTerminal_);
 
         // Exit linking mode
         linkTerminalButton_->setChecked(false);
         regionScene_->setIsInLinkTerminalMode(false);
-        selectedTerminal_              = nullptr;
-        showStatusBarMessage(
-            "Terminal linked to node successfully", 2000);
-
-        // Force a redraw of the MapPoint to show the
-        // terminal icon
-        mapPoint->update();
+        selectedTerminal_ = nullptr;
     }
     else if (!selectedTerminal_)
     {

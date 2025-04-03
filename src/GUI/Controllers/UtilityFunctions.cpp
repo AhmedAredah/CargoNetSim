@@ -958,3 +958,34 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         }
     }
 }
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    linkMapPointToTerminal(MainWindow   *mainWindow,
+                           MapPoint     *mapPoint,
+                           TerminalItem *terminal)
+{
+    if (!mainWindow || !mapPoint || !terminal)
+    {
+        return;
+    }
+
+    // Link the terminal to the node
+    mapPoint->setLinkedTerminal(terminal);
+
+    // Update the properties panel if this item is currently
+    // selected
+    if (mainWindow->propertiesPanel_->getCurrentItem()
+        == mapPoint)
+    {
+        mainWindow->propertiesPanel_->displayProperties(
+            mapPoint);
+    }
+
+    // Force a redraw of the MapPoint to show the terminal
+    // icon
+    mapPoint->update();
+
+    // Show status message
+    mainWindow->showStatusBarMessage(
+        "Terminal linked to node successfully", 2000);
+}

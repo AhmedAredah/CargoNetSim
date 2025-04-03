@@ -113,6 +113,11 @@ public:
         CargoNetSim::GUI::TerminalItem *sourceTerminal,
         CargoNetSim::GUI::TerminalItem *targetTerminal,
         CargoNetSim::GUI::NetworkType   networkType);
+
+    static void
+    linkMapPointToTerminal(MainWindow   *mainWindow,
+                           MapPoint     *mapPoint,
+                           TerminalItem *terminal);
 };
 
 } // namespace GUI

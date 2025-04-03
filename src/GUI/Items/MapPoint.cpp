@@ -1,4 +1,5 @@
 #include "MapPoint.h"
+#include "GUI/Controllers/UtilityFunctions.h"
 #include "GUI/Controllers/ViewController.h"
 #include "GUI/MainWindow.h"
 #include "TerminalItem.h"
@@ -266,12 +267,28 @@ void MapPoint::showContextMenu(
 void MapPoint::createTerminalAtPosition(
     const QString &terminalType)
 {
+    MainWindow *mainWindow =
+        qobject_cast<MainWindow *>(scene()->parent());
+
+    if (!mainWindow)
+    {
+        return;
+    }
+
     // Create terminal using ViewController
-    ViewController::createTerminalAtPoint(
-        qobject_cast<MainWindow *>(scene()->parent()),
-        m_properties.value("region", "Default Region")
-            .toString(),
-        terminalType, pos());
+    TerminalItem *newTerminal =
+        ViewController::createTerminalAtPoint(
+            mainWindow,
+            m_properties.value("region", "Default Region")
+                .toString(),
+            terminalType, pos());
+
+    // Link the newly created terminal to this map point
+    if (newTerminal)
+    {
+        UtilitiesFunctions::linkMapPointToTerminal(
+            mainWindow, this, newTerminal);
+    }
 }
 
 QMap<QString, QVariant> MapPoint::toDict() const
