@@ -14,18 +14,10 @@
 #include <QWidget>
 
 #include "../Controllers/NetworkController.h"
-#include "../Items/MapLine.h"
-#include "../Items/MapPoint.h"
 #include "../MainWindow.h"
-#include "../Utils/ColorUtils.h"
 #include "../Widgets/ColorPickerDialog.h"
 #include "Backend/Controllers/CargoNetSimController.h"
-
-// External services - these would be properly included in
-// your project #include
-// "service_clients/network_handlers/train_network/train_network_manager.h"
-// #include
-// "service_clients/network_handlers/truck_network/truck_network_manager.h"
+#include "GUI/Controllers/ViewController.h"
 
 namespace CargoNetSim
 {
@@ -52,8 +44,9 @@ NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
     QTabWidget *tabWidget = new QTabWidget(mainWidget);
 
     // Create NeTrainSim tab
-    QWidget *netrainsimTab = createNetworkTab("Train Network");
-    tabWidget->addTab(netrainsimTab, "Train Network");
+    QWidget *netrainsimTab =
+        createNetworkTab("Rail Network");
+    tabWidget->addTab(netrainsimTab, "Rail Network");
 
     // Create INTEGRATION tab
     QWidget *integrationTab = createNetworkTab("Truck Network");
@@ -63,7 +56,7 @@ NetworkManagerDialog::NetworkManagerDialog(QWidget *parent)
     setWidget(mainWidget);
 
     // Initialize network registries
-    updateNetworkList("Train Network");
+    updateNetworkList("Rail Network");
     updateNetworkList("Truck Network");
 
     // Connect to region change signals if MainWindow provides them
@@ -192,7 +185,7 @@ void NetworkManagerDialog::addNetwork(
 
     // Map network types to their corresponding methods
     QStringList networkNames;
-    if (networkType == "Train Network")
+    if (networkType == "Rail Network")
     {
         networkNames = regionData->getTrainNetworks();
     }
@@ -221,7 +214,7 @@ void NetworkManagerDialog::addNetwork(
     {
         QString networkName;
 
-        if (networkType == "Train Network")
+        if (networkType == "Rail Network")
         {
             networkName = NetworkController::importNetwork(
                 mainWindow, NetworkType::Train, regionData);
@@ -286,7 +279,7 @@ void NetworkManagerDialog::deleteNetwork(
                         ->getCurrentRegionData();
 
             NetworkType type =
-                (networkType == "Train Network")
+                (networkType == "Rail Network")
                     ? NetworkType::Train
                     : NetworkType::Truck;
             NetworkController::removeNetwork(
@@ -347,15 +340,15 @@ void NetworkManagerDialog::renameNetwork(
             return;
         }
 
-        QString prefix = (networkType == "Train Network")
-                             ? "Rail_"
-                             : "Truck_";
+        QString prefix = (networkType == "Rail Network")
+                             ? "rail_"
+                             : "truck_";
         QString oldNameStore = prefix + oldName;
         QString newNameStore = prefix + newName;
 
         // Check if network exists using appropriate method
         bool networkExists = false;
-        if (networkType == "Train Network")
+        if (networkType == "Rail Network")
         {
             networkExists = regionData->trainNetworkExists(
                 newNameStore);
@@ -380,7 +373,7 @@ void NetworkManagerDialog::renameNetwork(
         try
         {
             // Call appropriate rename method
-            if (networkType == "Train Network")
+            if (networkType == "Rail Network")
             {
                 regionData->renameTrainNetwork(
                     oldNameStore, newNameStore);
@@ -465,63 +458,56 @@ void NetworkManagerDialog::changeNetworkColor(
     }
 
     QString networkName = currentItem->text();
+    Backend::RegionData *regionData =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegionData();
 
     // Store color in network properties based on network
-    // type if (networkType == "Train Network") {
-    //     networkName =
-    //     QString("train_%1").arg(networkName); auto*
-    //     network =
-    //     get_NeTrainSim_network_registry().getNetwork(networkName);
-    //     if (network) {
-    //         network->addVariable("color",
-    //         newColor.name());
-    //     }
-    // } else {
-    //     networkName =
-    //     QString("truck_%1").arg(networkName); auto*
-    //     network =
-    //     get_INTEGRATION_network_registry().getConfig(networkName);
-    //     if (network) {
-    //         network->addVariable("color",
-    //         newColor.name());
-    //     }
-    // }
+    // type
+    if (networkType == "Rail Network")
+    {
+        networkName = QString("rail_%1").arg(networkName);
+        auto *network =
+            regionData->getTrainNetwork(networkName);
+        if (network)
+        {
+            network->setVariable("color", newColor);
+        }
+    }
+    else
+    {
+        networkName = QString("truck_%1").arg(networkName);
+        auto *network =
+            regionData->getTruckNetwork(networkName);
+        if (network)
+        {
+            network->setVariable("color", newColor);
+        }
+    }
 
     // Update the color pixmap for the list item
     currentItem->setIcon(
         QIcon(createColorPixmap(newColor)));
 
-    // TODO
-    // // Update color of all network items in the scene
-    // if (mainWindow && mainWindow->getScene()) {
-    //     QGraphicsScene* scene = mainWindow->getScene();
-    //     QColor darkerColor = newColor.darker(150);  //
-    //     150% darker for MapPoints
-
-    //     for (QGraphicsItem* item : scene->items()) {
-    //         if (MapLine* mapLine =
-    //         dynamic_cast<MapLine*>(item)) {
-    //             if (mapLine->getGroup() == networkName) {
-    //                 mapLine->setPen(QPen(newColor, 1));
-    //                 mapLine->update();
-    //             }
-    //         } else if (MapPoint* mapPoint =
-    //         dynamic_cast<MapPoint*>(item)) {
-    //             if (mapPoint->getGroup() == networkName)
-    //             {
-    //                 mapPoint->setColor(darkerColor);
-    //                 mapPoint->update();
-    //             }
-    //         }
-    //     }
-    // }
+    // Update color of all network items in the scene
+    if (mainWindow)
+    {
+        ViewController::changeNetworkColor(
+            mainWindow, networkName, newColor);
+    }
 }
 
 void NetworkManagerDialog::updateNetworkList(
     const QString &networkType)
 {
-    QListWidget *listWidget = findChild<QListWidget *>(
-        networkType.toLower().replace(" ", "_") + "_list");
+    const bool isTrainNetwork =
+        (networkType == "Rail Network");
+    const QString listWidgetName =
+        (isTrainNetwork ? "rail_network" : "truck_network")
+        + QString("_list");
+    QListWidget *listWidget =
+        findChild<QListWidget *>(listWidgetName);
 
     if (!listWidget)
         return;
@@ -535,79 +521,56 @@ void NetworkManagerDialog::updateNetworkList(
     }
     listWidget->clear();
 
-    // Get registry and functions based on network type
-    QStringList networkNames;
-    QString     prefix;
-    // if (networkType == "Train Network") {
-    //     auto& registry =
-    //     get_NeTrainSim_network_registry(); networkNames =
-    //     registry.listNetworks(); prefix = "Rail_";
-    // } else {
-    //     auto& registry =
-    //     get_INTEGRATION_network_registry(); networkNames
-    //     = registry.listConfigs(); prefix = "Truck_";
-    // }
+    // Get the current region data
+    auto regionController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController();
+    CargoNetSim::Backend::RegionData *regionData =
+        regionController->getCurrentRegionData();
+    if (!regionData)
+        return;
 
-    // Get the current region
-    QString currentRegion;
-    if (mainWindow)
+    // Get network names and prefix based on network type
+    const QString prefix =
+        isTrainNetwork ? "rail_" : "truck_";
+    const QStringList networkNames =
+        isTrainNetwork ? regionData->getTrainNetworks()
+                       : regionData->getTruckNetworks();
+
+    // Process each network
+    for (const auto &networkName : networkNames)
     {
-        currentRegion = CargoNetSim::CargoNetSimController::
-                            getInstance()
-                                .getRegionDataController()
-                                ->getCurrentRegion();
-    }
+        BaseNetwork *network =
+            isTrainNetwork
+                ? static_cast<BaseNetwork *>(
+                      regionData->getTrainNetwork(
+                          networkName))
+                : static_cast<BaseNetwork *>(
+                      regionData->getTruckNetwork(
+                          networkName));
 
-    // Add network items to list
-    for (const QString &networkName : networkNames)
-    {
-        QColor  color;
-        QString region;
-
-        // Get network object and region
-        // if (networkType == "Train Network") {
-        //     auto* network =
-        //     get_NeTrainSim_network_registry().getNetwork(networkName);
-        //     if (network) {
-        //         region = network->getVariable("region");
-        //         color =
-        //         QColor(network->getVariable("color"));
-        //     }
-        // } else {
-        //     auto* config =
-        //     get_INTEGRATION_network_registry().getConfig(networkName);
-        //     if (config) {
-        //         region = config->getVariable("region");
-        //         color =
-        //         QColor(config->getVariable("color"));
-        //     }
-        // }
-
-        // Only show networks for the current region
-        if (region != currentRegion)
-        {
+        if (!network)
             continue;
-        }
 
-        // Create list item
+        // Get network color
+        QColor color =
+            network->getVariableAs<QColor>("color");
+
+        // Create display name
         QString displayName = networkName;
         if (displayName.startsWith(prefix))
         {
             displayName = displayName.mid(prefix.length());
         }
 
+        // Create and configure list item
         QListWidgetItem *item =
             new QListWidgetItem(displayName);
         item->setFlags(item->flags()
                        | Qt::ItemIsUserCheckable);
+        item->setCheckState(
+            checkboxStates.value(displayName, Qt::Checked));
 
-        // Restore previous check state or default to
-        // checked
-        Qt::CheckState checkState =
-            checkboxStates.value(displayName, Qt::Checked);
-        item->setCheckState(checkState);
-
-        // Set color icon
         if (color.isValid())
         {
             item->setIcon(QIcon(createColorPixmap(color)));
@@ -629,7 +592,7 @@ void NetworkManagerDialog::
     updateNetworkListForChangedRegion(
         const QString &regionName)
 {
-    updateNetworkList("Train Network");
+    updateNetworkList("Rail Network");
     updateNetworkList("Truck Network");
 }
 
@@ -643,40 +606,25 @@ void NetworkManagerDialog::onItemCheckedChanged(
     bool    isVisible   = item->checkState() == Qt::Checked;
 
     // Add prefix based on network type
-    if (networkType == "Train Network")
+    if (networkType == "Rail Network")
     {
-        if (!networkName.startsWith("Rail_"))
+        if (!networkName.startsWith("rail_"))
         {
-            networkName = "Rail_" + networkName;
+            networkName = "rail_" + networkName;
         }
     }
     else if (networkType == "Truck Network")
     {
-        if (!networkName.startsWith("Truck_"))
+        if (!networkName.startsWith("truck_"))
         {
-            networkName = "Truck_" + networkName;
+            networkName = "truck_" + networkName;
         }
     }
 
-    // TODO
-    // Update visibility of scene items
-    // if (mainWindow->getScene()) {
-    //     QGraphicsScene* scene = mainWindow->getScene();
-    //     for (QGraphicsItem* item : scene->items()) {
-    //         if (MapPoint* mapPoint =
-    //         dynamic_cast<MapPoint*>(item)) {
-    //             if (mapPoint->getGroup() == networkName)
-    //             {
-    //                 mapPoint->setVisible(isVisible);
-    //             }
-    //         } else if (MapLine* mapLine =
-    //         dynamic_cast<MapLine*>(item)) {
-    //             if (mapLine->getGroup() == networkName) {
-    //                 mapLine->setVisible(isVisible);
-    //             }
-    //         }
-    //     }
-    // }
+    // Update visibility of scene
+    // items
+    ViewController::changeNetworkVisibility(
+        mainWindow, networkName, isVisible);
 }
 
 QPixmap
@@ -699,7 +647,7 @@ void NetworkManagerDialog::clear()
 {
     // Clear both list widgets
     QListWidget *trainList =
-        findChild<QListWidget *>("train_network_list");
+        findChild<QListWidget *>("rail_network_list");
     QListWidget *truckList =
         findChild<QListWidget *>("truck_network_list");
 
@@ -718,22 +666,7 @@ void NetworkManagerDialog::clear()
             SIGNAL(itemChanged(QListWidgetItem *)));
     }
 
-    // Remove all networks from canvas
-    // if (mainWindow) {
-    //     for (const QString& networkName :
-    //     get_NeTrainSim_network_registry().listNetworks())
-    //     {
-    //         NetworkController::removeFromCanvas(mainWindow,
-    //         networkName);
-    //     }
-
-    //     for (const QString& networkName :
-    //     get_INTEGRATION_network_registry().listConfigs())
-    //     {
-    //         NetworkController::removeFromCanvas(mainWindow,
-    //         networkName);
-    //     }
-    // }
+    NetworkController::clearAllNetworks(mainWindow);
 }
 
 } // namespace GUI
