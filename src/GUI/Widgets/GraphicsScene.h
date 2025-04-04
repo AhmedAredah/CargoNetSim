@@ -179,6 +179,8 @@ protected:
     void mousePressEvent(
         QGraphicsSceneMouseEvent *event) override;
 
+    void keyPressEvent(QKeyEvent *event) override;
+
 private:
     // Nested map structure: outer key is class name, inner
     // key is item ID

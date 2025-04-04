@@ -1425,6 +1425,15 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
         viewport()->setCursor(QCursor(Qt::OpenHandCursor));
     }
 
+    // Let Delete key propagate to MainWindow
+    else if (event->key() == Qt::Key_Delete
+             || event->key() == Qt::Key_Backspace)
+    {
+        event->ignore(); // This allows the event to
+                         // propagate to parent
+        return;
+    }
+
     QGraphicsView::keyPressEvent(event);
 }
 
