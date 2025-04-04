@@ -91,13 +91,26 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
 
     if (show)
     {
-        auto regionCenterPoint =
+        auto regionData =
             CargoNetSim::CargoNetSimController::
                 getInstance()
                     .getRegionDataController()
-                    ->getRegionData(terminal->getRegion())
-                    ->getVariableAs<RegionCenterPoint *>(
-                        "regionCenterPoint", nullptr);
+                    ->getRegionData(terminal->getRegion());
+
+        if (!regionData)
+        {
+            return;
+        }
+
+        auto regionCenterPoint =
+            regionData->getVariableAs<RegionCenterPoint *>(
+                "regionCenterPoint", nullptr);
+
+        if (!regionCenterPoint)
+        {
+            return;
+        }
+
         if (terminal->getGlobalTerminalItem())
         {
             // Update the global terminal item position
@@ -133,6 +146,10 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
                             main_window, regionCenterPoint,
                             terminal);
                 });
+
+            // Explicitly set its position
+            updateTerminalGlobalPosition(
+                main_window, regionCenterPoint, terminal);
         }
     }
     else
@@ -208,9 +225,20 @@ void CargoNetSim::GUI::ViewController::
     {
         return;
     }
-    globalITem->setPos(
+
+    // Important: Ensure we're using the correct coordinate
+    // transformation
+    QPointF globalPos =
         main_window->globalMapView_->wgs84ToScene(QPointF(
-            item_global_view_lon, item_global_view_lat)));
+            item_global_view_lon, item_global_view_lat));
+    // Set position directly to avoid any signal/slot
+    // cascading issues
+    globalITem->setPos(globalPos);
+
+    // globalITem->setPos(
+    //     main_window->globalMapView_->wgs84ToScene(QPointF(
+    //         item_global_view_lon,
+    //         item_global_view_lat)));
 }
 
 bool CargoNetSim::GUI::ViewController::
@@ -1202,6 +1230,8 @@ void CargoNetSim::GUI::ViewController::
     QString                     currentRegion = "";
     QList<TerminalItem *>       terminals;
     QList<GlobalTerminalItem *> globalTerminals;
+    bool anyConnectionCreated = false;
+
     if (isGlobalView)
     {
         globalTerminals = CargoNetSim::GUI::
@@ -1226,7 +1256,7 @@ void CargoNetSim::GUI::ViewController::
     }
 
     if ((terminals.empty() && !isGlobalView)
-        || (terminals.empty() && isGlobalView))
+        || (globalTerminals.empty() && isGlobalView))
     {
         QString msgHndler =
             isGlobalView ? "view" : "region";
@@ -1237,7 +1267,8 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
     else if ((terminals.size() == 1 && !isGlobalView)
-             || (terminals.size() == 1 && isGlobalView))
+             || (globalTerminals.size() == 1
+                 && isGlobalView))
     {
         QString msgHndler =
             isGlobalView ? "view" : "region";
@@ -1248,7 +1279,8 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
 
-    // Connect terminals based on common networks
+    // Connect terminals based on common networks in the
+    // region view
     for (auto &sourceTerminal : terminals)
     {
         for (auto &targetTerminal : terminals)
@@ -1262,58 +1294,91 @@ void CargoNetSim::GUI::ViewController::
                 UtilitiesFunctions::getCommonModes(
                     sourceTerminal, targetTerminal);
 
+            // Process Rail connections in region view
             if (commonModes.contains("Rail"))
             {
-                auto sourceTerminalObj =
-                    dynamic_cast<TerminalItem *>(
-                        sourceTerminal);
-                auto targetTerminalObj =
-                    dynamic_cast<TerminalItem *>(
-                        targetTerminal);
-                auto sourceMapPoints = UtilitiesFunctions::
-                    getMapPointsOfTerminal(
-                        mainWindow->regionScene_,
-                        sourceTerminalObj, currentRegion,
-                        "*", NetworkType::Train);
-
-                auto tqrgetMapPoints = UtilitiesFunctions::
-                    getMapPointsOfTerminal(
-                        mainWindow->regionScene_,
-                        targetTerminalObj, currentRegion,
-                        "*", NetworkType::Train);
-
-                bool keepProcessing = true;
-                if (sourceMapPoints.empty())
+                bool isConnected = UtilitiesFunctions::
+                    processNetworkModeConnection(
+                        mainWindow, sourceTerminal,
+                        targetTerminal, NetworkType::Train);
+                if (isConnected)
                 {
-                    mainWindow->showStatusBarError(
-                        QString("Terminal %1 has no "
-                                "associated nodes.")
-                            .arg(sourceTerminalObj
-                                     ->getProperty("Name",
-                                                   "")
-                                     .toString()),
-                        3000);
-                    keepProcessing = false;
+                    anyConnectionCreated = true;
                 }
+            }
 
-                if (tqrgetMapPoints.empty())
+            // Process Truck connections in region view
+            if (commonModes.contains("Truck")
+                && !isGlobalView)
+            {
+                bool isConnected = UtilitiesFunctions::
+                    processNetworkModeConnection(
+                        mainWindow, sourceTerminal,
+                        targetTerminal, NetworkType::Truck);
+                if (isConnected)
                 {
-                    mainWindow->showStatusBarError(
-                        QString("Terminal %1 has no "
-                                "associated nodes.")
-                            .arg(sourceTerminalObj
-                                     ->getProperty("Name",
-                                                   "")
-                                     .toString()),
-                        3000);
-                    keepProcessing = false;
+                    anyConnectionCreated = true;
                 }
+            }
 
-                if (keepProcessing)
+            // Process Ship connections (if needed)
+            if (commonModes.contains("Ship"))
+            {
+                // TODO
+                // Similar implementation as Rail and Truck
+                // Skip for now so we do not allow skips
+                // connections between ports in the same
+                // region
+            }
+        }
+    }
+
+    // Connect terminals based on common networks in the
+    // global view
+    for (auto &sourceTerminal : globalTerminals)
+    {
+        for (auto &targetTerminal : globalTerminals)
+        {
+            if (sourceTerminal == targetTerminal)
+            {
+                continue;
+            }
+
+            QList<QString> commonModes =
+                UtilitiesFunctions::getCommonModes(
+                    sourceTerminal, targetTerminal);
+            for (const QString &mode : commonModes)
+            {
+
+                QString connectionType;
+                if (mode.toLower() == "rail")
+                    connectionType = "Rail";
+                else if (mode.toLower() == "truck")
+                    connectionType = "Truck";
+                else if (mode.toLower() == "ship")
+                    connectionType = "Ship";
+
+                if (!connectionType.isEmpty())
                 {
+                    auto connectionLine = ViewController::
+                        createConnectionLine(
+                            mainWindow, sourceTerminal,
+                            targetTerminal, connectionType);
+                    if (connectionLine)
+                    {
+
+                        anyConnectionCreated = true;
+                    }
                 }
             }
         }
+    }
+
+    if (anyConnectionCreated)
+    {
+        mainWindow->showStatusBarMessage(
+            "Terminal connections created based on "
+            "networks.");
     }
 }
 
