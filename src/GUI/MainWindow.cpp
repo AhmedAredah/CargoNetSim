@@ -1176,7 +1176,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     // Handle Delete key for removing selected items
-    if (event->key() == Qt::Key_Delete)
+    if (event->key() == Qt::Key_Delete
+        || event->key() == Qt::Key_Backspace)
     {
         GraphicsScene *currentScene = getCurrentScene();
         if (!currentScene)
@@ -1227,7 +1228,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             }
         }
 
-        // Process all selected items
+        // Process terminal items first to handle their
+        // associated items
         for (QGraphicsItem *item : selectedItems)
         {
             // Handle terminal items
@@ -1236,49 +1238,56 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
             if (terminal)
             {
-                if (currentScene == regionScene_
-                    && terminal)
+                // If in main view, we need to clean up the
+                // global map as well
+                if (currentScene == regionScene_)
                 {
-                    // TODO
-                    // // If in main view, we need to clean
-                    // // up the global map as well
-                    // GlobalTerminalItem *globalItem =
-                    //     globalMapItems_.value(terminal,
-                    //                           nullptr);
+                    GlobalTerminalItem *globalItem =
+                        terminal->getGlobalTerminalItem();
 
-                    // if (globalItem)
-                    // {
-                    //     // Remove all connection lines in
-                    //     // the global scene that
-                    //     // involve this terminal
-                    //     for (QGraphicsItem *connection :
-                    //          globalMapScene_->items())
-                    //     {
-                    //         ConnectionLine *line =
-                    //             dynamic_cast<
-                    //                 ConnectionLine *>(
-                    //                 connection);
-                    //         if (line
-                    //             && (line->startItem()
-                    //                     == globalItem
-                    //                 || line->endItem()
-                    //                        ==
-                    //                        globalItem))
-                    //         {
-                    //             globalMapScene_->removeItem(
-                    //                 line);
-                    //         }
-                    //     }
+                    if (globalItem)
+                    {
+                        // Remove all connection lines in
+                        // the global scene that involve
+                        // this terminal
+                        QList<ConnectionLine *>
+                            linesToRemove;
+                        for (QGraphicsItem *connection :
+                             globalMapScene_->items())
+                        {
+                            ConnectionLine *line =
+                                dynamic_cast<
+                                    ConnectionLine *>(
+                                    connection);
+                            if (line
+                                && (line->startItem()
+                                        == globalItem
+                                    || line->endItem()
+                                           == globalItem))
+                            {
+                                linesToRemove.append(line);
+                            }
+                        }
 
-                    //     // Remove the global item
-                    //     globalMapScene_->removeItem(
-                    //         globalItem);
-                    // }
+                        // Remove the connections
+                        for (ConnectionLine *line :
+                             linesToRemove)
+                        {
+                            globalMapScene_->removeItem(
+                                line);
+                            delete line;
+                        }
+
+                        // Remove the global item
+                        globalMapScene_->removeItem(
+                            globalItem);
+                        delete globalItem;
+                    }
                 }
 
-                // Remove connection lines associated
-                // with this terminal in the current
-                // scene
+                // Remove connection lines associated with
+                // this terminal in the current scene
+                QList<ConnectionLine *> linesToRemove;
                 for (QGraphicsItem *connection :
                      currentScene->items())
                 {
@@ -1289,17 +1298,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                         && (line->startItem() == item
                             || line->endItem() == item))
                     {
-                        currentScene->removeItem(line);
+                        linesToRemove.append(line);
                     }
                 }
 
-                // Remove map point links to this
-                // terminal
-                for (QGraphicsItem *mapPoint :
+                // Remove the connections
+                for (ConnectionLine *line : linesToRemove)
+                {
+                    currentScene->removeItem(line);
+                    delete line;
+                }
+
+                // Remove map point links to this terminal
+                for (QGraphicsItem *mapPointItem :
                      currentScene->items())
                 {
                     MapPoint *point =
-                        dynamic_cast<MapPoint *>(mapPoint);
+                        dynamic_cast<MapPoint *>(
+                            mapPointItem);
                     if (point
                         && point->getLinkedTerminal()
                                == terminal)
@@ -1310,22 +1326,36 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
                 // Remove the terminal
                 currentScene->removeItem(item);
+                delete item;
             }
             // Handle connection lines
-            else if (dynamic_cast<ConnectionLine *>(item))
+            else if (ConnectionLine *line =
+                         dynamic_cast<ConnectionLine *>(
+                             item))
             {
-                currentScene->removeItem(item);
+                currentScene->removeItem(line);
+                delete line;
             }
             // Handle background photos
-            else if (dynamic_cast<BackgroundPhotoItem *>(
-                         item))
+            else if (BackgroundPhotoItem *photo =
+                         dynamic_cast<
+                             BackgroundPhotoItem *>(item))
             {
-                BackgroundPhotoItem *photo =
-                    dynamic_cast<BackgroundPhotoItem *>(
-                        item);
-                currentScene
-                    ->removeItemWithId<BackgroundPhotoItem>(
-                        photo->getID());
+                currentScene->removeItem(photo);
+                delete photo;
+            }
+            // Handle other item types as needed
+            else if (MapPoint *point =
+                         dynamic_cast<MapPoint *>(item))
+            {
+                currentScene->removeItem(point);
+                delete point;
+            }
+            else if (MapLine *line =
+                         dynamic_cast<MapLine *>(item))
+            {
+                currentScene->removeItem(line);
+                delete line;
             }
         }
 
@@ -1355,7 +1385,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         regionScene_->setIsInUnlinkTerminalMode(false);
         regionScene_->setIsInMeasureMode(false);
         regionScene_->setConnectedFirstItem(QVariant());
-        selectedTerminal_                = nullptr;
+        selectedTerminal_ = nullptr;
 
         // Reset cursor
         unsetCursor();
