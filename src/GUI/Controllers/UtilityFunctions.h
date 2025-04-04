@@ -96,11 +96,9 @@ public:
     getApproximateGeoDistance(const QPointF &point1,
                               const QPointF &point2);
 
-    static CargoNetSim::Backend::ShortestPathResult
-    findShortestPath(const QString &regionName,
-                     const QString &networkName,
-                     NetworkType    networkType,
-                     int startNodeId, int endNodeId);
+    static QList<Backend::ShortestPathResult>
+    getTopShortestPaths(MainWindow *mainWindow,
+                        int         PathsCount);
 
     static void setConnectionProperties(
         CargoNetSim::GUI::ConnectionLine *connection,
@@ -108,7 +106,7 @@ public:
                                       &pathResult,
         CargoNetSim::GUI::NetworkType &networkType);
 
-    static void processNetworkMode(
+    static bool processNetworkModeConnection(
         MainWindow                     *mainWindow,
         CargoNetSim::GUI::TerminalItem *sourceTerminal,
         CargoNetSim::GUI::TerminalItem *targetTerminal,

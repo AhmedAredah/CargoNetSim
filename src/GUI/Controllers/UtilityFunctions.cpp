@@ -1,5 +1,6 @@
 #include "UtilityFunctions.h"
 #include "../MainWindow.h"
+#include "GUI/Controllers/NetworkController.h"
 #include "GUI/Controllers/ViewController.h"
 #include "GUI/Items/ConnectionLine.h"
 #include "GUI/Items/MapPoint.h"
@@ -389,6 +390,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     {
         // Show properties dock and update its contents
         mainWindow->propertiesDock_->show();
+        mainWindow->propertiesDock_->raise();
         mainWindow->propertiesPanel_->displayProperties(
             item);
     }
@@ -618,49 +620,38 @@ double CargoNetSim::GUI::UtilitiesFunctions::
     return earthRadius * sqrt(x * x + y * y);
 }
 
-CargoNetSim::Backend::ShortestPathResult
-CargoNetSim::GUI::UtilitiesFunctions::findShortestPath(
-    const QString &regionName, const QString &networkName,
-    CargoNetSim::GUI::NetworkType networkType,
-    int startNodeId, int endNodeId)
+QList<CargoNetSim::Backend::ShortestPathResult>
+CargoNetSim::GUI::UtilitiesFunctions::getTopShortestPaths(
+    MainWindow *mainWindow, int PathsCount)
 {
-    try
+    if (!mainWindow)
     {
-        if (networkType
-            == CargoNetSim::GUI::NetworkType::Train)
-        {
-            auto network =
-                CargoNetSim::CargoNetSimController::
-                    getInstance()
-                        .getRegionDataController()
-                        ->getRegionData(regionName)
-                        ->getTrainNetwork(networkName);
-
-            // Find the shortest path
-            return network->findShortestPath(startNodeId,
-                                             endNodeId);
-        }
-        else if (networkType
-                 == CargoNetSim::GUI::NetworkType::Truck)
-        {
-            auto network =
-                CargoNetSim::CargoNetSimController::
-                    getInstance()
-                        .getRegionDataController()
-                        ->getRegionData(regionName)
-                        ->getTruckNetwork(networkName);
-
-            return network->findShortestPath(startNodeId,
-                                             endNodeId);
-        }
-    }
-    catch (const std::exception &e)
-    {
-        qWarning() << "Error finding shortest path:"
-                   << e.what();
+        return QList<Backend::ShortestPathResult>();
     }
 
-    return CargoNetSim::Backend::ShortestPathResult();
+    CargoNetSim::CargoNetSimController::getInstance()
+        .getTerminalClient()
+        ->resetServer();
+
+    // Get the Origin and Destination terminals from the
+    // region scene
+    auto originTerminals =
+        UtilitiesFunctions::getTerminalItems(
+            mainWindow->regionScene_, "*", "Origin");
+    auto destinationTerminals =
+        UtilitiesFunctions::getTerminalItems(
+            mainWindow->regionScene_, "*", "Destination");
+
+    if (originTerminals.isEmpty()
+        || destinationTerminals.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No Origin or Destination terminals found.",
+            3000);
+        return QList<Backend::ShortestPathResult>();
+    }
+
+    // TODO: Add Terminals to TerminalSim
 }
 
 void CargoNetSim::GUI::UtilitiesFunctions::
@@ -779,8 +770,8 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         QString::number(carbonEmissions, 'f', 2));
 }
 
-void CargoNetSim::GUI::UtilitiesFunctions::
-    processNetworkMode(
+bool CargoNetSim::GUI::UtilitiesFunctions::
+    processNetworkModeConnection(
         MainWindow                     *mainWindow,
         CargoNetSim::GUI::TerminalItem *sourceTerminal,
         CargoNetSim::GUI::TerminalItem *targetTerminal,
@@ -802,7 +793,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             mainWindow->showStatusBarError(
                 "Terminals are in different regions.",
                 3000);
-            return;
+            return false;
         }
         else
         {
@@ -811,7 +802,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     }
     else
     {
-        return;
+        return false;
     }
 
     // Get map points for both terminals
@@ -847,7 +838,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     }
 
     if (!continueProcess)
-        return;
+        return false;
 
     // Group map points by network
     QMap<QString, QList<CargoNetSim::GUI::MapPoint *>>
@@ -915,10 +906,11 @@ void CargoNetSim::GUI::UtilitiesFunctions::
 
                     // Find shortest path
                     CargoNetSim::Backend::ShortestPathResult
-                        result = findShortestPath(
-                            regionName, network,
-                            networkType, sourceID,
-                            targetID);
+                        result = NetworkController::
+                            findNetworkShortestPath(
+                                regionName, network,
+                                networkType, sourceID,
+                                targetID);
 
                     if (!result.pathNodes.empty()
                         && result.pathNodes.size() > 1)
@@ -957,6 +949,8 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             }
         }
     }
+
+    return true;
 }
 
 void CargoNetSim::GUI::UtilitiesFunctions::
