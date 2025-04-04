@@ -1,4 +1,5 @@
 #include "MapPoint.h"
+#include "GUI/Controllers/UtilityFunctions.h"
 #include "GUI/Controllers/ViewController.h"
 #include "GUI/MainWindow.h"
 #include "TerminalItem.h"
@@ -21,15 +22,13 @@ namespace GUI
 {
 
 int MapPoint::POINT_ID = 0;
-
 MapPoint::MapPoint(
-    const QString &referencedNetworkID, qreal x, qreal y,
-    const QString &shape, const QString &region,
-    TerminalItem                  *terminal,
+    const QString &referencedNetworkID,
+    QPointF sceneCoordinates, const QString &region,
+    const QString &shape, TerminalItem *terminal,
     const QMap<QString, QVariant> &properties)
     : m_id(POINT_ID++)
-    , m_x(x)
-    , m_y(y)
+    , m_sceneCoordinate(sceneCoordinates)
     , m_shape(shape)
     , m_terminal(terminal)
     , m_color(Qt::black)
@@ -38,8 +37,8 @@ MapPoint::MapPoint(
     // Initialize properties if none provided
     if (this->m_properties.isEmpty())
     {
-        this->m_properties["x"] = x;
-        this->m_properties["y"] = y;
+        this->m_properties["x"] = m_sceneCoordinate.x();
+        this->m_properties["y"] = m_sceneCoordinate.y();
         this->m_properties["Network_ID"] =
             referencedNetworkID;
         this->m_properties["region"] = region;
@@ -149,11 +148,11 @@ void MapPoint::paint(QPainter *painter,
 
         if (m_shape == "circle")
         {
-            painter->drawEllipse(-7, -7, 14, 14);
+            painter->drawEllipse(-7.0, -7.0, 14.0, 14.0);
         }
         else if (m_shape == "rectangle")
         {
-            painter->drawRect(-7, -7, 14, 14);
+            painter->drawRect(-7.0, -7.0, 14, 14);
         }
         else if (m_shape == "triangle")
         {
@@ -165,6 +164,8 @@ void MapPoint::paint(QPainter *painter,
             painter->drawPath(path);
         }
     }
+
+    setPos(m_sceneCoordinate);
 
     // Draw selection indicator
     if (option->state & QStyle::State_Selected)
@@ -266,12 +267,28 @@ void MapPoint::showContextMenu(
 void MapPoint::createTerminalAtPosition(
     const QString &terminalType)
 {
+    MainWindow *mainWindow =
+        qobject_cast<MainWindow *>(scene()->parent());
+
+    if (!mainWindow)
+    {
+        return;
+    }
+
     // Create terminal using ViewController
-    ViewController::createTerminalAtPoint(
-        qobject_cast<MainWindow *>(scene()->parent()),
-        m_properties.value("region", "Default Region")
-            .toString(),
-        terminalType, pos());
+    TerminalItem *newTerminal =
+        ViewController::createTerminalAtPoint(
+            mainWindow,
+            m_properties.value("region", "Default Region")
+                .toString(),
+            terminalType, pos());
+
+    // Link the newly created terminal to this map point
+    if (newTerminal)
+    {
+        UtilitiesFunctions::linkMapPointToTerminal(
+            mainWindow, this, newTerminal);
+    }
 }
 
 QMap<QString, QVariant> MapPoint::toDict() const
@@ -280,8 +297,8 @@ QMap<QString, QVariant> MapPoint::toDict() const
 
     data["referenced_network_ID"] =
         m_properties.value("Network_ID");
-    data["x"]          = m_x;
-    data["y"]          = m_y;
+    data["x"]          = m_sceneCoordinate.x();
+    data["y"]          = m_sceneCoordinate.y();
     data["shape"]      = m_shape;
     data["properties"] = m_properties;
     data["color"]      = m_color.name();
@@ -314,8 +331,8 @@ MapPoint *MapPoint::fromDict(
 
     MapPoint *instance = new MapPoint(
         data.value("referenced_network_ID").toString(),
-        data.value("x").toDouble(),
-        data.value("y").toDouble(),
+        QPointF(data.value("x").toDouble(),
+                data.value("y").toDouble()),
         data.value("shape", "circle").toString(),
         data.value("region", "default").toString(),
         terminal, data.value("properties").toMap());

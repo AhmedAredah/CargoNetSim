@@ -110,29 +110,66 @@ public:
         return true;
     }
 
-    // Mode flags
-    bool connectMode; ///< Flag indicating if connection
-                      ///< creation mode is active
-    bool linkTerminalMode;   ///< Flag indicating if
-                             ///< terminal-node linking mode
-                             ///< is active
-    bool unlinkTerminalMode; ///< Flag indicating if
-                             ///< terminal-node unlinking
-                             ///< mode is active
-    bool measureMode; ///< Flag indicating if distance
-                      ///< measurement mode is active
-    bool setGlobalPositionMode; ///< Flag indicating if
-                                ///< setting global position
-                                ///< mode is active
+    bool isInConnectMode()
+    {
+        return m_connectMode;
+    }
+    bool isInLinkTerminalMode()
+    {
+        return m_linkTerminalMode;
+    }
+    bool isInUnlinkTerminalMode()
+    {
+        return m_unlinkTerminalMode;
+    }
+    bool isInMeasureMode()
+    {
+        return m_measureMode;
+    }
+    bool isInGlobalPositionMode()
+    {
+        return m_globalPositionMode;
+    }
+    QVariant getConnectedFirstItem()
+    {
+        return m_connectFirstItem;
+    }
+    DistanceMeasurementTool *getMeasurementTool()
+    {
+        return m_measurementTool;
+    }
 
-    // Objects used for connection and measurement modes
-    QVariant connectFirstItem; ///< First terminal selected
-                               ///< in connect mode (can be
-                               ///< TerminalItem* or
-                               ///< GlobalTerminalItem*)
-    DistanceMeasurementTool
-        *measurementTool; ///< Current measurement tool
-                          ///< being used
+    void setIsInConnectMode(bool isInConnectMode)
+    {
+        m_connectMode = isInConnectMode;
+    }
+    void setIsInLinkTerminalMode(bool isInLinkTerminalMode)
+    {
+        m_linkTerminalMode = isInLinkTerminalMode;
+    }
+    void
+    setIsInUnlinkTerminalMode(bool isInUnlinkTerminalMode)
+    {
+        m_unlinkTerminalMode = isInUnlinkTerminalMode;
+    }
+    void setIsInMeasureMode(bool isInMeasureMode)
+    {
+        m_measureMode = isInMeasureMode;
+    }
+    void
+    setIsInGlobalPositionMode(bool isInGlobalPositionMode)
+    {
+        m_globalPositionMode = isInGlobalPositionMode;
+    }
+    void setConnectedFirstItem(QVariant connectedFirstItem)
+    {
+        m_connectFirstItem = connectedFirstItem;
+    }
+    void setMeasurementTool(
+        DistanceMeasurementTool *measurementTool)
+    {
+        m_measurementTool = measurementTool;
+    }
 
 protected:
     /**
@@ -142,11 +179,38 @@ protected:
     void mousePressEvent(
         QGraphicsSceneMouseEvent *event) override;
 
+    void keyPressEvent(QKeyEvent *event) override;
+
 private:
     // Nested map structure: outer key is class name, inner
     // key is item ID
     QMap<QString, QMap<QString, QGraphicsItem *>>
         itemsByType;
+
+    // Mode flags
+    bool m_connectMode; ///< Flag indicating if connection
+                        ///< creation mode is active
+    bool m_linkTerminalMode; ///< Flag indicating if
+                             ///< terminal-node linking mode
+                             ///< is active
+    bool m_unlinkTerminalMode; ///< Flag indicating if
+                               ///< terminal-node unlinking
+                               ///< mode is active
+    bool m_measureMode; ///< Flag indicating if distance
+                        ///< measurement mode is active
+    bool m_globalPositionMode; ///< Flag indicating if
+                               ///< setting global position
+                               ///< mode is active
+
+    // Objects used for connection and measurement modes
+    QVariant
+        m_connectFirstItem; ///< First terminal selected
+                            ///< in connect mode (can be
+                            ///< TerminalItem* or
+                            ///< GlobalTerminalItem*)
+    DistanceMeasurementTool
+        *m_measurementTool; ///< Current measurement tool
+                            ///< being used
 };
 
 } // namespace GUI

@@ -44,7 +44,8 @@ namespace Backend
  * those that use signals/slots across thread boundaries.
  */
 inline void
-initializeBackend(LoggerInterface *logger = nullptr)
+initializeBackend(const QString   &integrationExePath = "",
+                  LoggerInterface *logger = nullptr)
 {
     // Base classes
     qRegisterMetaType<RabbitMQHandler>(
@@ -79,6 +80,26 @@ initializeBackend(LoggerInterface *logger = nullptr)
     qRegisterMetaType<ShipClient::ShipSimulationClient *>(
         "CargoNetSim::Backend::ShipClient::"
         "ShipSimulationClient*");
+
+    // Terminal classes
+    qRegisterMetaType<CargoNetSim::Backend::Terminal>(
+        "CargoNetSim::Backend::Terminal");
+    qRegisterMetaType<CargoNetSim::Backend::Terminal *>(
+        "CargoNetSim::Backend::Terminal*");
+    qRegisterMetaType<CargoNetSim::Backend::PathSegment>(
+        "CargoNetSim::Backend::PathSegment");
+    qRegisterMetaType<CargoNetSim::Backend::PathSegment *>(
+        "CargoNetSim::Backend::PathSegment*");
+    qRegisterMetaType<CargoNetSim::Backend::Path>(
+        "CargoNetSim::Backend::Path");
+    qRegisterMetaType<CargoNetSim::Backend::Path *>(
+        "CargoNetSim::Backend::Path*");
+    qRegisterMetaType<
+        CargoNetSim::Backend::TerminalSimulationClient>(
+        "CargoNetSim::Backend::TerminalSimulationClient");
+    qRegisterMetaType<
+        CargoNetSim::Backend::TerminalSimulationClient *>(
+        "CargoNetSim::Backend::TerminalSimulationClient *");
 
     // TrainClient classes
     qRegisterMetaType<TrainClient::TrainState>(
@@ -238,6 +259,34 @@ initializeBackend(LoggerInterface *logger = nullptr)
         "CargoNetSim::Backend::TruckClient::"
         "TruckSimulationManager*");
 
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationNodeDataReader>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationNodeDataReader");
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationNodeDataReader *>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationNodeDataReader*");
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationLinkDataReader>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationLinkDataReader");
+    qRegisterMetaType<CargoNetSim::Backend::TruckClient::
+                          IntegrationLinkDataReader *>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationLinkDataReader*");
+
+    qRegisterMetaType<
+        CargoNetSim::Backend::TruckClient::
+            IntegrationSimulationConfigReader>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationSimulationConfigReader");
+    qRegisterMetaType<
+        CargoNetSim::Backend::TruckClient::
+            IntegrationSimulationConfigReader *>(
+        "CargoNetSim::Backend::TruckClient::"
+        "IntegrationSimulationConfigReader*");
+
     // TerminalClient
     qRegisterMetaType<TerminalSimulationClient>(
         "CargoNetSim::Backend::TerminalSimulationClient");
@@ -246,9 +295,21 @@ initializeBackend(LoggerInterface *logger = nullptr)
     qRegisterMetaType<ClientType>(
         "CargoNetSim::Backend::ClientType");
 
+    // Common classes
+    qRegisterMetaType<
+        CargoNetSim::Backend::ShortestPathResult>(
+        "CargoNetSim::Backend::ShortestPathResult");
+    qRegisterMetaType<
+        CargoNetSim::Backend::ShortestPathResult *>(
+        "CargoNetSim::Backend::ShortestPathResult*");
+
     qDebug() << "Backend metatypes registered successfully";
 
     CargoNetSim::CargoNetSimController::getInstance(logger);
+    CargoNetSim::CargoNetSimController::getInstance()
+        .initialize(integrationExePath);
+    CargoNetSim::CargoNetSimController::getInstance()
+        .startAll();
 }
 
 } // namespace Backend

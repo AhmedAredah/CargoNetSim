@@ -38,6 +38,7 @@ class ShortestPathsTable;
 class SplashScreen;
 class ToolbarController;
 class BasicButtonController;
+class NetworkController;
 class ViewController;
 class UtilitiesFunctions;
 
@@ -57,6 +58,7 @@ class MainWindow : public CustomMainWindow
     friend class ToolbarController;
     friend class BasicButtonController;
     friend class ViewController;
+    friend class NetworkController;
     friend class UtilitiesFunctions;
 
 public:

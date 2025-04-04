@@ -40,7 +40,7 @@ TruckSimulationClient::TruckSimulationClient(
 
 TruckSimulationClient::~TruckSimulationClient()
 {
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Terminate and clean up all processes
     for (auto *process : m_processes.values())
@@ -130,7 +130,7 @@ bool TruckSimulationClient::defineSimulator(
 
     if (success)
     {
-        QMutexLocker locker(&m_dataMutex);
+        Commons::ScopedWriteLock locker(m_dataMutex);
         m_totalSimTimes[networkName] = simTime;
     }
 
@@ -140,8 +140,8 @@ bool TruckSimulationClient::defineSimulator(
 bool TruckSimulationClient::runSimulator(
     const QStringList &networkNames)
 {
-    QMutexLocker locker(&m_dataMutex);
-    bool         allSucceeded = true;
+    Commons::ScopedReadLock locker(m_dataMutex);
+    bool                    allSucceeded = true;
 
     for (const QString &name : networkNames)
     {
@@ -173,8 +173,8 @@ bool TruckSimulationClient::runSimulator(
 bool TruckSimulationClient::endSimulator(
     const QStringList &networkNames)
 {
-    QMutexLocker locker(&m_dataMutex);
-    bool         allSucceeded = true;
+    Commons::ScopedWriteLock locker(m_dataMutex);
+    bool                     allSucceeded = true;
 
     for (const QString &name : networkNames)
     {
@@ -248,7 +248,7 @@ QString TruckSimulationClient::addTrip(
         return QString();
     }
 
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
 
     // Create new truck state
     auto *state = new TruckState(
@@ -299,7 +299,7 @@ QFuture<TripResult> TruckSimulationClient::addTripAsync(
 const TruckState *TruckSimulationClient::getTruckState(
     const QString &networkName, const QString &tripId) const
 {
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
 
     // Look up truck state
     for (const auto *state :
@@ -318,7 +318,7 @@ QList<const TruckState *>
 TruckSimulationClient::getAllNetworkTrucksStates(
     const QString &networkName) const
 {
-    QMutexLocker              locker(&m_dataMutex);
+    Commons::ScopedReadLock   locker(m_dataMutex);
     QList<const TruckState *> constStates;
 
     // Convert non-const states to const states
@@ -333,7 +333,7 @@ TruckSimulationClient::getAllNetworkTrucksStates(
 double TruckSimulationClient::getProgressPercentage(
     const QString &networkName) const
 {
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedReadLock locker(m_dataMutex);
 
     // Calculate current progress
     double time = m_simulationTimes.value(networkName, 0.0);
@@ -345,6 +345,7 @@ double TruckSimulationClient::getProgressPercentage(
 double TruckSimulationClient::getSimulationTime(
     const QString &networkName) const
 {
+    Commons::ScopedReadLock locker(m_dataMutex);
     return m_simulationTimes.value(networkName, 0.0);
 }
 
@@ -405,9 +406,7 @@ void TruckSimulationClient::processMessage(
     int     msgCode     = parts[3].toInt();
     QString networkName = message["networkName"].toString();
 
-    QMutexLocker locker(&m_dataMutex);
-
-    // Process based on message type
+    // Handle sync request within a limited scope
     if (msgType
             == static_cast<int>(
                 MessageFormatter::MessageType::SYNC)
@@ -415,20 +414,25 @@ void TruckSimulationClient::processMessage(
                == static_cast<int>(
                    MessageFormatter::MessageCode::SYNC_REQ))
     {
-        // Handle sync request
-        m_simulationTimes[networkName] =
-            parts[8].toDouble();
-        m_simulationHorizons[networkName] =
-            parts[9].toDouble();
-        m_lastRequestId = parts[0].toInt();
+        // First, update data with the lock held
+        {
+            Commons::ScopedWriteLock locker(m_dataMutex);
+            m_simulationTimes[networkName] =
+                parts[8].toDouble();
+            m_simulationHorizons[networkName] =
+                parts[9].toDouble();
+            m_lastRequestId = parts[0].toInt();
+        }
 
-        // Progress the simulation
-        locker.unlock();
+        // Then, run simulator without holding the lock
         runSimulator({networkName});
+        return;
     }
-    else if (msgType
-             == static_cast<int>(
-                 MessageFormatter::MessageType::TRIPS_INFO))
+
+    // Handle trip info type messages
+    if (msgType
+        == static_cast<int>(
+            MessageFormatter::MessageType::TRIPS_INFO))
     {
         // Parse payload as JSON
         QJsonObject payload =
@@ -442,47 +446,63 @@ void TruckSimulationClient::processMessage(
 
         QString tripId = payload["Trip_ID"].toString();
 
+        // Handle trip end event
         if (msgCode
             == static_cast<int>(
                 MessageFormatter::MessageCode::TRIP_END))
         {
-            // Handle trip end
-            auto *state = const_cast<TruckState *>(
-                getTruckState(networkName, tripId));
+            TruckState *state = nullptr;
+            TripEndData tripData;
 
+            // First, update state with the lock held and
+            // gather needed data
+            {
+                Commons::ScopedWriteLock locker(
+                    m_dataMutex);
+                state = const_cast<TruckState *>(
+                    getTruckState(networkName, tripId));
+
+                if (state)
+                {
+                    // Update state
+                    state->updateFromJson(payload);
+
+                    // Create trip end data for later
+                    // emission
+                    tripData.tripId      = tripId;
+                    tripData.networkName = networkName;
+                    tripData.origin =
+                        payload["Origin"].toString();
+                    tripData.destination =
+                        payload["Destination"].toString();
+                    tripData.distance =
+                        payload["Trip_Distance"].toDouble();
+                    tripData.fuelConsumption =
+                        payload["Fuel_Consumption"]
+                            .toDouble();
+                    tripData.travelTime =
+                        payload["Travel_Time"].toDouble();
+                    tripData.rawData = payload;
+                }
+            }
+
+            // Emit signals outside the lock scope if we
+            // found a valid state
             if (state)
             {
-                // Update state
-                state->updateFromJson(payload);
-
-                // Create trip end data
-                TripEndData tripData;
-                tripData.tripId      = tripId;
-                tripData.networkName = networkName;
-                tripData.origin =
-                    payload["Origin"].toString();
-                tripData.destination =
-                    payload["Destination"].toString();
-                tripData.distance =
-                    payload["Trip_Distance"].toDouble();
-                tripData.fuelConsumption =
-                    payload["Fuel_Consumption"].toDouble();
-                tripData.travelTime =
-                    payload["Travel_Time"].toDouble();
-                tripData.rawData = payload;
-
-                // Emit signals
-                locker.unlock();
                 emit tripEnded(networkName, tripId);
                 emit tripEndedWithData(tripData);
             }
+
+            return;
         }
+        // Handle trip info update
         else if (msgCode
                  == static_cast<int>(
                      MessageFormatter::MessageCode::
                          TRIP_INFO))
         {
-            // Handle trip info update
+            Commons::ScopedWriteLock locker(m_dataMutex);
             auto *state = const_cast<TruckState *>(
                 getTruckState(networkName, tripId));
 
@@ -491,6 +511,8 @@ void TruckSimulationClient::processMessage(
                 // Update state with info
                 state->updateInfoFromJson(payload);
             }
+
+            return;
         }
     }
 }
@@ -544,7 +566,7 @@ bool TruckSimulationClient::launchSimulator(
         return false;
     }
 
-    QMutexLocker locker(&m_dataMutex);
+    Commons::ScopedWriteLock locker(m_dataMutex);
     m_processes[networkName] = process;
 
     return true;

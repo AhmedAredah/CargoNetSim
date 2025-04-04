@@ -108,22 +108,38 @@ public:
      */
     GraphicsScene *getScene() const;
 
-    /**
-     * @brief Flag indicating whether projected coordinates
-     * should be used
-     */
-    bool useProjectedCoords;
+    bool isUsingProjectedCoords()
+    {
+        return useProjectedCoords;
+    }
 
-    /**
-     * @brief Flag indicating whether measurement mode is
-     * active
-     */
-    bool measureMode;
+    void setUsingProjectedCoords(bool useProjectedCoords)
+    {
+        if (this->useProjectedCoords != useProjectedCoords) {
+            this->useProjectedCoords = useProjectedCoords;
+            emit coordinateSystemChanged(useProjectedCoords);
+        }
+    }
 
-    /**
-     * @brief Pointer to current measurement tool
-     */
-    DistanceMeasurementTool *measurementTool;
+    bool isInMeasureMode()
+    {
+        return measureMode;
+    }
+
+    void setMeasureMode(bool measureMode)
+    {
+        measureMode = measureMode;
+    }
+
+    DistanceMeasurementTool *getMeasurementTool()
+    {
+        return m_measurementTool;
+    }
+
+    void setMeasurementTool(DistanceMeasurementTool *tool)
+    {
+        m_measurementTool = tool;
+    }
 
     QString getCurrentPanMode()
     {
@@ -143,6 +159,9 @@ public:
     void fitInView(const QRectF       &rect,
                    Qt::AspectRatioMode aspectRatioMode =
                        Qt::KeepAspectRatio);
+
+signals:
+    void coordinateSystemChanged(bool isProjected);
 
 protected:
     /**
@@ -312,6 +331,23 @@ private:
      * @brief WGS84 bounds - maximum latitude
      */
     double _maxLat;
+
+    /**
+     * @brief Flag indicating whether projected coordinates
+     * should be used
+     */
+    bool useProjectedCoords;
+
+    /**
+     * @brief Flag indicating whether measurement mode is
+     * active
+     */
+    bool measureMode;
+
+    /**
+     * @brief Pointer to current measurement tool
+     */
+    DistanceMeasurementTool *m_measurementTool;
 };
 
 } // namespace GUI

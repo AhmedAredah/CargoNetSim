@@ -4,6 +4,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QMessageBox>
+#include <QtGui/qevent.h>
 
 #include "../Controllers/UtilityFunctions.h"
 #include "../Controllers/ViewController.h"
@@ -23,13 +24,13 @@ namespace GUI
 
 GraphicsScene::GraphicsScene(QObject *parent)
     : QGraphicsScene(parent)
-    , connectMode(false)
-    , linkTerminalMode(false)
-    , unlinkTerminalMode(false)
-    , measureMode(false)
-    , setGlobalPositionMode(false)
-    , connectFirstItem(QVariant())
-    , measurementTool(nullptr)
+    , m_connectMode(false)
+    , m_linkTerminalMode(false)
+    , m_unlinkTerminalMode(false)
+    , m_measureMode(false)
+    , m_globalPositionMode(false)
+    , m_connectFirstItem(QVariant())
+    , m_measurementTool(nullptr)
 {
 }
 
@@ -79,7 +80,7 @@ void GraphicsScene::mousePressEvent(
         }
 
         // Handle global position setting mode
-        if (setGlobalPositionMode)
+        if (m_globalPositionMode)
         {
             QList<QGraphicsItem *> clickedItems =
                 items(event->scenePos());
@@ -116,7 +117,7 @@ void GraphicsScene::mousePressEvent(
             // terminal
             if (terminalFound)
             {
-                setGlobalPositionMode = false;
+                m_globalPositionMode = false;
 
                 // Get main window through the view's parent
                 // to uncheck the button
@@ -142,23 +143,23 @@ void GraphicsScene::mousePressEvent(
             }
         }
         // Handle measurement mode
-        else if (measureMode)
+        else if (m_measureMode)
         {
             QPointF scenePos = event->scenePos();
 
-            if (!measurementTool)
+            if (!m_measurementTool)
             {
                 // First click - create measurement tool and
                 // set start point
                 if (!views().isEmpty())
                 {
-                    measurementTool =
+                    m_measurementTool =
                         new DistanceMeasurementTool(
                             dynamic_cast<GraphicsView *>(
                                 views().first()));
-                    addItemWithId(measurementTool,
-                                  measurementTool->getID());
-                    measurementTool->setStartPoint(
+                    addItemWithId(m_measurementTool,
+                                  m_measurementTool->getID());
+                    m_measurementTool->setStartPoint(
                         scenePos);
 
                     // Show status message if we can find
@@ -189,9 +190,9 @@ void GraphicsScene::mousePressEvent(
             {
                 // Second click - complete measurement and
                 // reset for next measurement
-                measurementTool->setEndPoint(scenePos);
-                measurementTool = nullptr;
-                measureMode     = false;
+                m_measurementTool->setEndPoint(scenePos);
+                m_measurementTool = nullptr;
+                m_measureMode     = false;
 
                 // Get main window through the view's parent
                 // to uncheck the button and show message
@@ -226,7 +227,7 @@ void GraphicsScene::mousePressEvent(
             }
         }
         // Handle connection mode
-        else if (connectMode)
+        else if (m_connectMode)
         {
             // Get the current connection
             // type and region
@@ -268,10 +269,10 @@ void GraphicsScene::mousePressEvent(
 
             if (!terminalVariant.isNull())
             {
-                if (connectFirstItem.isNull())
+                if (m_connectFirstItem.isNull())
                 {
                     // First terminal selected
-                    connectFirstItem = terminalVariant;
+                    m_connectFirstItem = terminalVariant;
 
                     // Show status message
 
@@ -287,24 +288,24 @@ void GraphicsScene::mousePressEvent(
                     // Compare against first item
                     bool isSameItem = false;
 
-                    if (connectFirstItem
+                    if (m_connectFirstItem
                             .canConvert<TerminalItem *>()
                         && terminalVariant.canConvert<
                             TerminalItem *>())
                     {
                         isSameItem =
-                            connectFirstItem
+                            m_connectFirstItem
                                 .value<TerminalItem *>()
                             == terminalVariant
                                    .value<TerminalItem *>();
                     }
-                    else if (connectFirstItem.canConvert<
+                    else if (m_connectFirstItem.canConvert<
                                  GlobalTerminalItem *>()
                              && terminalVariant.canConvert<
                                  GlobalTerminalItem *>())
                     {
                         isSameItem =
-                            connectFirstItem.value<
+                            m_connectFirstItem.value<
                                 GlobalTerminalItem *>()
                             == terminalVariant.value<
                                 GlobalTerminalItem *>();
@@ -312,7 +313,7 @@ void GraphicsScene::mousePressEvent(
 
                     if (isSameItem)
                     {
-                        connectFirstItem =
+                        m_connectFirstItem =
                             QVariant(); // Reset to null
 
                         // Show error message
@@ -333,17 +334,17 @@ void GraphicsScene::mousePressEvent(
 
                     // Get first terminal
                     QGraphicsItem *firstItem = nullptr;
-                    if (connectFirstItem
+                    if (m_connectFirstItem
                             .canConvert<TerminalItem *>())
                     {
                         firstItem =
-                            connectFirstItem
+                            m_connectFirstItem
                                 .value<TerminalItem *>();
                     }
-                    else if (connectFirstItem.canConvert<
+                    else if (m_connectFirstItem.canConvert<
                                  GlobalTerminalItem *>())
                     {
-                        firstItem = connectFirstItem.value<
+                        firstItem = m_connectFirstItem.value<
                             GlobalTerminalItem *>();
                     }
 
@@ -389,13 +390,13 @@ void GraphicsScene::mousePressEvent(
                         // Set the second terminal
                         // as the first for the next
                         // connection
-                        connectFirstItem = terminalVariant;
+                        m_connectFirstItem = terminalVariant;
                     }
                     else
                     {
                         // If connection failed,
                         // reset first item
-                        connectFirstItem = QVariant();
+                        m_connectFirstItem = QVariant();
                     }
 
                     return;
@@ -433,6 +434,19 @@ void GraphicsScene::mousePressEvent(
         qWarning() << "Unknown exception in "
                       "GraphicsScene::mousePressEvent";
     }
+}
+
+void GraphicsScene::keyPressEvent(QKeyEvent *event)
+{
+    // For Delete key, pass it up to MainWindow
+    if (event->key() == Qt::Key_Delete
+        || event->key() == Qt::Key_Backspace)
+    {
+        event->ignore();
+        return;
+    }
+
+    QGraphicsScene::keyPressEvent(event);
 }
 
 } // namespace GUI

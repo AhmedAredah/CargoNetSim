@@ -393,7 +393,7 @@ void RegionData::renameTruckNetwork(const QString &oldName,
     }
 }
 
-void RegionData::removeTrainNetwork(const QString &name)
+bool RegionData::removeTrainNetwork(const QString &name)
 {
     if (!trainNetworkExists(name))
     {
@@ -402,6 +402,7 @@ void RegionData::removeTrainNetwork(const QString &name)
                 "Train network '%1' not found in region")
                 .arg(name)
                 .toStdString());
+        return false;
     }
 
     try
@@ -414,6 +415,7 @@ void RegionData::removeTrainNetwork(const QString &name)
             throw std::runtime_error(
                 "Failed to remove network from "
                 "NetworkController");
+            return false;
         }
 
         // Remove from our local list
@@ -421,6 +423,8 @@ void RegionData::removeTrainNetwork(const QString &name)
 
         // Notify listeners
         emit trainNetworkRemoved(name);
+
+        return true;
     }
     catch (const std::exception &e)
     {
@@ -428,10 +432,11 @@ void RegionData::removeTrainNetwork(const QString &name)
             QString("Failed to remove train network: %1")
                 .arg(e.what())
                 .toStdString());
+        return false;
     }
 }
 
-void RegionData::removeTruckNetwork(const QString &name)
+bool RegionData::removeTruckNetwork(const QString &name)
 {
     if (!truckNetworkExists(name))
     {
@@ -440,6 +445,7 @@ void RegionData::removeTruckNetwork(const QString &name)
                 "Truck network '%1' not found in region")
                 .arg(name)
                 .toStdString());
+        return false;
     }
 
     try
@@ -452,6 +458,8 @@ void RegionData::removeTruckNetwork(const QString &name)
             throw std::runtime_error(
                 "Failed to remove network config "
                 "from NetworkController");
+
+            return false;
         }
 
         // Remove from our local list
@@ -459,6 +467,8 @@ void RegionData::removeTruckNetwork(const QString &name)
 
         // Notify listeners
         emit truckNetworkRemoved(name);
+
+        return true;
     }
     catch (const std::exception &e)
     {
@@ -466,6 +476,8 @@ void RegionData::removeTruckNetwork(const QString &name)
             QString("Failed to remove truck network: %1")
                 .arg(e.what())
                 .toStdString());
+
+        return false;
     }
 }
 
@@ -538,7 +550,7 @@ QMap<QString, QVariant> RegionData::toMap() const
     {
         trainList.append(network);
     }
-    map["train_networks"] = trainList;
+    map["rail_networks"] = trainList;
 
     QVariantList truckList;
     for (const QString &network : m_truckNetworksList)
@@ -564,8 +576,7 @@ RegionData::fromMap(const QMap<QString, QVariant> &data,
         regionName, networkController, parent);
 
     // Deserialize the network lists
-    QVariantList trainList =
-        data["train_networks"].toList();
+    QVariantList trainList = data["rail_networks"].toList();
     for (const QVariant &network : trainList)
     {
         regionData->m_trainNetworksList.append(

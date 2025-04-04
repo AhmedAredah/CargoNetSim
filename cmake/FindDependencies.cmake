@@ -1,5 +1,11 @@
 # Find Qt6
-find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml REQUIRED)
+if(CARGONET_BUILD_TESTS)
+    # Include Test component when tests are enabled
+    find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml Test REQUIRED)
+else()
+    # Standard components otherwise
+    find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml REQUIRED)
+endif()
 
 # Platform-specific paths
 if(WIN32)

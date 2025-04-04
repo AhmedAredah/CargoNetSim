@@ -14,10 +14,11 @@
 #include "Backend/Clients/TruckClient/TruckState.h"
 #include "Backend/Commons/ClientType.h"
 #include "Backend/Commons/DirectedGraph.h"
+#include "Backend/Commons/ThreadSafetyUtils.h"
 #include "ContainerManager.h"
 #include "TransportationGraph.h"
 #include <QMap>
-#include <QMutex>
+#include <QReadWriteLock>
 #include <QObject>
 #include <QProcess>
 #include <QStringList>
@@ -37,6 +38,12 @@ namespace TruckClient
  * Provides an interface for launching, controlling and
  * monitoring truck simulations, handling trip creation
  * and completion, and managing containers.
+ *
+ * Thread Safety Implementation:
+ * - Uses ThreadSafetyUtils' ScopedReadLock for read-only operations
+ * - Uses ThreadSafetyUtils' ScopedWriteLock for write operations
+ * - Ensures all access to shared data structures is properly protected
+ * - Prevents potential deadlocks through timeout mechanisms
  */
 class TruckSimulationClient : public SimulationClientBase
 {
@@ -261,8 +268,18 @@ private:
     /** Counter for sent messages */
     int m_sentMsgCounter = 0;
 
-    /** Mutex for thread synchronization */
-    mutable QMutex m_dataMutex;
+    /** Read-write lock for thread synchronization 
+     * 
+     * Protects internal data structures from concurrent access.
+     * Access to this lock should be managed using:
+     * - Commons::ScopedReadLock for read-only operations
+     * - Commons::ScopedWriteLock for write operations
+     * 
+     * Using read-write locks allows multiple concurrent readers
+     * while ensuring exclusive access for writers, improving
+     * performance for read-heavy workloads.
+     */
+    mutable QReadWriteLock m_dataMutex;
 
     /** Pointer to transportation network graph */
     const TransportationGraph<QString> *m_networkGraph =

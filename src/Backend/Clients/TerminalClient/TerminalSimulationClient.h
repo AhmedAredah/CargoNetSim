@@ -18,6 +18,7 @@
  */
 
 #include "Backend/Clients/BaseClient/SimulationClientBase.h"
+#include "Backend/Commons/ThreadSafetyUtils.h"
 #include "Backend/Models/Path.h"
 #include "Backend/Models/PathSegment.h"
 #include "Backend/Models/Terminal.h"
@@ -25,8 +26,8 @@
 #include <QJsonObject>
 #include <QList>
 #include <QMap>
-#include <QMutex>
 #include <QObject>
+#include <QReadWriteLock>
 #include <QString>
 #include <containerLib/container.h>
 
@@ -48,6 +49,15 @@ namespace Backend
  * varies.
  * @warning Thread-safe via mutex; ensure proper pointer
  * management.
+ *
+ * Thread Safety Implementation:
+ * - Uses ThreadSafetyUtils' ScopedReadLock for read-only
+ * operations
+ * - Uses ThreadSafetyUtils' ScopedWriteLock for write
+ * operations
+ * - Ensures all access to shared data structures is
+ * properly protected
+ * - Prevents potential deadlocks through timeout mechanisms
  */
 class TerminalSimulationClient : public SimulationClientBase
 {
@@ -80,7 +90,7 @@ public:
      *
      * Sends a reset command to clear server state.
      */
-    bool resetServer();
+    Q_INVOKABLE bool resetServer();
 
     /**
      * @brief Initializes client in its thread
@@ -101,7 +111,7 @@ public:
      *
      * Sends terminal data for server-side addition.
      */
-    bool addTerminal(const Terminal *terminal);
+    Q_INVOKABLE bool addTerminal(const Terminal *terminal);
 
     /**
      * @brief Adds an alias to a terminal
@@ -111,8 +121,9 @@ public:
      *
      * Associates an additional ID with a terminal.
      */
-    bool addTerminalAlias(const QString &terminalId,
-                          const QString &alias);
+    Q_INVOKABLE bool
+    addTerminalAlias(const QString &terminalId,
+                     const QString &alias);
 
     /**
      * @brief Retrieves aliases for a terminal
@@ -121,7 +132,7 @@ public:
      *
      * Fetches all aliases linked to a terminal.
      */
-    QStringList
+    Q_INVOKABLE QStringList
     getTerminalAliases(const QString &terminalId);
 
     /**
@@ -131,7 +142,8 @@ public:
      *
      * Deletes a terminal and its data from the server.
      */
-    bool removeTerminal(const QString &terminalId);
+    Q_INVOKABLE bool
+    removeTerminal(const QString &terminalId);
 
     /**
      * @brief Gets the total terminal count
@@ -139,7 +151,7 @@ public:
      *
      * Retrieves the current count of terminals.
      */
-    int getTerminalCount();
+    Q_INVOKABLE int getTerminalCount();
 
     /**
      * @brief Gets status of a terminal
@@ -149,7 +161,8 @@ public:
      *
      * Fetches and returns terminal status as an object.
      */
-    Terminal *getTerminalStatus(const QString &terminalId);
+    Q_INVOKABLE Terminal *
+    getTerminalStatus(const QString &terminalId);
 
     // Route Management
     /**
@@ -159,7 +172,7 @@ public:
      *
      * Sends a route segment for server-side addition.
      */
-    bool addRoute(const PathSegment *route);
+    Q_INVOKABLE bool addRoute(const PathSegment *route);
 
     /**
      * @brief Updates route weight attributes
@@ -171,9 +184,10 @@ public:
      *
      * Modifies weight attributes of an existing route.
      */
-    bool changeRouteWeight(const QString &start,
-                           const QString &end, int mode,
-                           const QJsonObject &attributes);
+    Q_INVOKABLE bool
+    changeRouteWeight(const QString &start,
+                      const QString &end, int mode,
+                      const QJsonObject &attributes);
 
     // Auto-connection
     /**
@@ -182,7 +196,7 @@ public:
      *
      * Links terminals based on interface compatibility.
      */
-    bool connectTerminalsByInterfaceModes();
+    Q_INVOKABLE bool connectTerminalsByInterfaceModes();
 
     /**
      * @brief Connects terminals in a region by mode
@@ -191,7 +205,7 @@ public:
      *
      * Links terminals within a region by mode.
      */
-    bool
+    Q_INVOKABLE bool
     connectTerminalsInRegionByMode(const QString &region);
 
     /**
@@ -201,7 +215,7 @@ public:
      *
      * Establishes inter-region links by mode.
      */
-    bool connectRegionsByMode(int mode);
+    Q_INVOKABLE bool connectRegionsByMode(int mode);
 
     // Path Finding
     /**
@@ -214,9 +228,9 @@ public:
      *
      * Computes the shortest path using the given mode.
      */
-    QList<PathSegment *>
-    findShortestPath(const QString &start,
-                     const QString &end, int mode);
+    Q_INVOKABLE QList<PathSegment *>
+                findShortestPath(const QString &start,
+                                 const QString &end, int mode);
 
     /**
      * @brief Finds top N shortest paths
@@ -230,10 +244,9 @@ public:
      *
      * Retrieves the top N shortest paths.
      */
-    QList<Path *> findTopPaths(const QString &start,
-                               const QString &end, int n,
-                               int  mode,
-                               bool skipDelays = true);
+    Q_INVOKABLE QList<Path *>
+    findTopPaths(const QString &start, const QString &end,
+                 int n, int mode, bool skipDelays = true);
 
     // Container Management
     /**
@@ -245,7 +258,7 @@ public:
      *
      * Adds a single container to the specified terminal.
      */
-    bool
+    Q_INVOKABLE bool
     addContainer(const QString                  &terminalId,
                  const ContainerCore::Container *container,
                  double addTime = -1.0);
@@ -259,7 +272,7 @@ public:
      *
      * Adds multiple containers to the terminal.
      */
-    bool addContainers(
+    Q_INVOKABLE bool addContainers(
         const QString                     &terminalId,
         QList<ContainerCore::Container *> &containers,
         double                             addTime = -1.0);
@@ -273,9 +286,10 @@ public:
      *
      * Parses and adds containers from JSON.
      */
-    bool addContainersFromJson(const QString &terminalId,
-                               const QString &json,
-                               double addTime = -1.0);
+    Q_INVOKABLE bool
+    addContainersFromJson(const QString &terminalId,
+                          const QString &json,
+                          double         addTime = -1.0);
 
     /**
      * @brief Gets containers by departing time
@@ -287,7 +301,7 @@ public:
      *
      * Fetches containers based on departure time.
      */
-    QList<ContainerCore::Container *>
+    Q_INVOKABLE QList<ContainerCore::Container *>
     getContainersByDepartingTime(const QString &terminalId,
                                  double         time,
                                  const QString &condition);
@@ -302,7 +316,7 @@ public:
      *
      * Fetches containers based on addition time.
      */
-    QList<ContainerCore::Container *>
+    Q_INVOKABLE QList<ContainerCore::Container *>
     getContainersByAddedTime(const QString &terminalId,
                              double         time,
                              const QString &condition);
@@ -316,10 +330,10 @@ public:
      *
      * Fetches containers headed to a destination.
      */
-    QList<ContainerCore::Container *>
-    getContainersByNextDestination(
-        const QString &terminalId,
-        const QString &destination);
+    Q_INVOKABLE QList<ContainerCore::Container *>
+                getContainersByNextDestination(
+                    const QString &terminalId,
+                    const QString &destination);
 
     /**
      * @brief Dequeues containers by destination
@@ -330,10 +344,10 @@ public:
      *
      * Removes and returns containers for a destination.
      */
-    QList<ContainerCore::Container *>
-    dequeueContainersByNextDestination(
-        const QString &terminalId,
-        const QString &destination);
+    Q_INVOKABLE QList<ContainerCore::Container *>
+                dequeueContainersByNextDestination(
+                    const QString &terminalId,
+                    const QString &destination);
 
     /**
      * @brief Gets container count for a terminal
@@ -342,7 +356,8 @@ public:
      *
      * Retrieves the current container count.
      */
-    int getContainerCount(const QString &terminalId);
+    Q_INVOKABLE int
+    getContainerCount(const QString &terminalId);
 
     /**
      * @brief Gets available capacity of a terminal
@@ -351,7 +366,8 @@ public:
      *
      * Retrieves the remaining capacity.
      */
-    double getAvailableCapacity(const QString &terminalId);
+    Q_INVOKABLE double
+    getAvailableCapacity(const QString &terminalId);
 
     /**
      * @brief Gets maximum capacity of a terminal
@@ -360,7 +376,8 @@ public:
      *
      * Retrieves the total capacity.
      */
-    double getMaxCapacity(const QString &terminalId);
+    Q_INVOKABLE double
+    getMaxCapacity(const QString &terminalId);
 
     /**
      * @brief Clears containers from a terminal
@@ -369,7 +386,8 @@ public:
      *
      * Removes all containers from the terminal.
      */
-    bool clearTerminal(const QString &terminalId);
+    Q_INVOKABLE bool
+    clearTerminal(const QString &terminalId);
 
     // Serialization and Diagnostics
     /**
@@ -378,7 +396,7 @@ public:
      *
      * Retrieves the current graph state from the server.
      */
-    QJsonObject serializeGraph();
+    Q_INVOKABLE QJsonObject serializeGraph();
 
     /**
      * @brief Deserializes graph to server
@@ -387,7 +405,8 @@ public:
      *
      * Restores server state from graph data.
      */
-    bool deserializeGraph(const QJsonObject &graphData);
+    Q_INVOKABLE bool
+    deserializeGraph(const QJsonObject &graphData);
 
     /**
      * @brief Pings the server for connectivity
@@ -396,7 +415,7 @@ public:
      *
      * Tests server responsiveness with an optional echo.
      */
-    QJsonObject ping(const QString &echo = "");
+    Q_INVOKABLE QJsonObject ping(const QString &echo = "");
 
 protected:
     /**
@@ -470,9 +489,18 @@ private:
     void onCapacityFetched(const QJsonObject &message);
 
     /**
-     * @brief Mutex for thread-safe data access
+     * @brief Read-write lock for thread-safe data access
+     *
+     * Protects internal data structures from concurrent
+     * access. Access to this lock should be managed using:
+     * - Commons::ScopedReadLock for read-only operations
+     * - Commons::ScopedWriteLock for write operations
+     *
+     * Using read-write locks allows multiple concurrent
+     * readers while ensuring exclusive access for writers,
+     * improving performance for read-heavy workloads.
      */
-    mutable QMutex m_dataMutex;
+    mutable QReadWriteLock m_dataMutex;
 
     /**
      * @brief Map of terminal IDs to Terminal pointers

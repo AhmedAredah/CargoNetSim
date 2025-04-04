@@ -13,6 +13,8 @@ set(Backend_SOURCES
     Commons/DirectedGraph.h
     Commons/DirectedGraph.cpp
     Commons/ShortestPathResult.h
+    Commons/ThreadSafetyUtils.h
+    Commons/ThreadSafetyUtils.cpp
 
     # Models
     Models/TrainSystem.h
@@ -27,6 +29,8 @@ set(Backend_SOURCES
     Models/Path.cpp
     Models/BaseObject.h
     Models/BaseObject.cpp
+    Models/BaseNetwork.h
+    Models/BaseNetwork.cpp
 
     # Controllers
     Controllers/VehicleController.h
@@ -104,8 +108,13 @@ set(Backend_SOURCES
     Clients/TruckClient/TransportationGraph.cpp
     Clients/TruckClient/IntegrationNode.h
     Clients/TruckClient/IntegrationNode.cpp
+    Clients/TruckClient/IntegrationNodeDataReader.h
+    Clients/TruckClient/IntegrationNodeDataReader.cpp
     Clients/TruckClient/IntegrationLink.h
     Clients/TruckClient/IntegrationLink.cpp
+    Clients/TruckClient/IntegrationLinkDataReader.h
+    Clients/TruckClient/IntegrationLinkDataReader.cpp
+
 
     Utils/Utils.h
 

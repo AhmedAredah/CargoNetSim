@@ -27,7 +27,7 @@ class IntegrationLink;
 /**************** SharedIntegrationNetwork ****************/
 
 IntegrationNetwork::IntegrationNetwork(QObject *parent)
-    : BaseObject(parent)
+    : BaseNetwork(parent)
 {
 }
 
@@ -245,11 +245,13 @@ QString IntegrationNetwork::getNetworkName() const
     return m_networkName;
 }
 
-QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
-    int startNodeId, int endNodeId, int maxPaths)
+QList<ShortestPathResult>
+IntegrationNetwork::getMultiplePaths(int startNodeId,
+                                     int endNodeId,
+                                     int maxPaths)
 {
-    QMutexLocker       locker(&m_mutex);
-    QList<QJsonObject> results;
+    QMutexLocker              locker(&m_mutex);
+    QList<ShortestPathResult> results;
 
     // Find k-shortest paths
     QList<QVector<int>> paths = m_graph->findKShortestPaths(
@@ -258,41 +260,48 @@ QList<QJsonObject> IntegrationNetwork::getMultiplePaths(
     // Process each path
     for (const QVector<int> &path : paths)
     {
+        if (path.isEmpty())
+            continue;
+
+        ShortestPathResult result;
+        result.pathNodes = path;
+
         // Get links for path
-        QVector<int> links = getPathLinks(path);
+        result.pathLinks = getPathLinks(path);
 
         // Calculate metrics
-        double length = getPathLengthByLinks(links);
-        double time =
+        result.totalLength =
+            getPathLengthByLinks(result.pathLinks);
+        result.minTravelTime =
             m_graph->calculatePathMetric(path, "time");
+        result.optimizationCriterion =
+            "distance"; // Default criterion
 
-        // Build result object
-        QJsonObject pathObj;
-
-        // Add nodes
-        QJsonArray nodesArray;
-        for (int nodeId : path)
-        {
-            nodesArray.append(nodeId);
-        }
-        pathObj["path_nodes"] = nodesArray;
-
-        // Add links
-        QJsonArray linksArray;
-        for (int linkId : links)
-        {
-            linksArray.append(linkId);
-        }
-        pathObj["path_links"] = linksArray;
-
-        // Add metrics
-        pathObj["total_length"]    = length;
-        pathObj["min_travel_time"] = time;
-
-        results.append(pathObj);
+        results.append(result);
     }
 
     return results;
+}
+
+void IntegrationNetwork::setVariable(const QString  &key,
+                                     const QVariant &value)
+{
+    QMutexLocker locker(&m_mutex);
+    m_variables[key] = value;
+}
+
+QVariant
+IntegrationNetwork::getVariable(const QString &key) const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_variables.value(key);
+}
+
+QMap<QString, QVariant>
+IntegrationNetwork::getVariables() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_variables;
 }
 
 QJsonObject IntegrationNetwork::toJson() const
@@ -394,7 +403,9 @@ bool IntegrationSimulationConfig::initialize(
     const QString &configDir, const QString &title,
     double                        simTime,
     const QMap<QString, QString> &inputFiles,
-    const QMap<QString, QString> &outputFiles)
+    const QMap<QString, QString> &outputFiles,
+    const QString &inputFolder, const QString &outputFolder,
+    const QMap<QString, QVariant> &additionalVariables)
 {
     QMutexLocker locker(&m_mutex);
 
@@ -405,49 +416,56 @@ bool IntegrationSimulationConfig::initialize(
     m_inputFiles  = inputFiles;
     m_outputFiles = outputFiles;
 
-    // Set default folders if not specified
-    m_inputFolder  = ".";
-    m_outputFolder = ".";
+    // Set folders
+    m_inputFolder  = inputFolder;
+    m_outputFolder = outputFolder;
+
+    // Store additional variables
+    for (auto it = additionalVariables.constBegin();
+         it != additionalVariables.constEnd(); ++it)
+    {
+        m_variables[it.key()] = it.value();
+    }
 
     try
     {
-        // Read node data
+        // Read node data using the node reader
         QString nodeFilePath =
             getInputFilePath("node_coordinates");
-        QFile nodeFile(nodeFilePath);
-        if (!nodeFile.open(QIODevice::ReadOnly
-                           | QIODevice::Text))
+        IntegrationNodeDataReader  nodeReader;
+        QVector<IntegrationNode *> nodes =
+            nodeReader.readNodesFile(nodeFilePath);
+
+        if (nodes.isEmpty())
         {
-            return false;
+            throw std::runtime_error("No node data found");
         }
 
-        // TODO: Parse node data
-        // This would be implemented with node data parsing
-        // logic
-
-        // Read link data
+        // Read link data using the link reader
         QString linkFilePath =
             getInputFilePath("link_structure");
-        QFile linkFile(linkFilePath);
-        if (!linkFile.open(QIODevice::ReadOnly
-                           | QIODevice::Text))
+        IntegrationLinkDataReader  linkReader;
+        QVector<IntegrationLink *> links =
+            linkReader.readLinksFile(linkFilePath);
+
+        if (links.isEmpty())
         {
-            return false;
+            throw std::runtime_error("No link data found");
         }
 
-        // TODO: Parse link data
-        // This would be implemented with link data parsing
-        // logic
+        // Initialize the network with the nodes and links
+        m_network->initializeNetwork(nodes, links);
 
-        // Initialize network with parsed data
-        // This would use the parsed node and link data
+        // Set network name to the title
+        m_network->setNetworkName(m_title);
 
         emit configChanged();
         return true;
     }
     catch (const std::exception &e)
     {
-        // Log error and return failure
+        qCritical() << "Error initializing configuration:"
+                    << e.what();
         return false;
     }
 }
@@ -520,12 +538,93 @@ QJsonObject IntegrationSimulationConfig::toJson() const
     }
     result["output_files"] = outputFilesObj;
 
-    // Add variables
+    // Add variables - convert QVariant to appropriate
+    // QJsonValue
     QJsonObject varsObj;
     for (auto it = m_variables.constBegin();
          it != m_variables.constEnd(); ++it)
     {
-        varsObj[it.key()] = it.value();
+        QVariant var = it.value();
+        switch (var.typeId())
+        {
+        case QMetaType::Bool:
+            varsObj[it.key()] = var.toBool();
+            break;
+        case QMetaType::Int:
+        case QMetaType::Long:
+        case QMetaType::LongLong:
+            varsObj[it.key()] = var.toInt();
+            break;
+        case QMetaType::UInt:
+        case QMetaType::ULong:
+        case QMetaType::ULongLong:
+            varsObj[it.key()] =
+                (int)var.toUInt(); // JSON only supports
+                                   // signed integers
+            break;
+        case QMetaType::Float:
+        case QMetaType::Double:
+            varsObj[it.key()] = var.toDouble();
+            break;
+        case QMetaType::QString:
+            varsObj[it.key()] = var.toString();
+            break;
+        case QMetaType::QStringList: {
+            QJsonArray array;
+            for (const QString &str : var.toStringList())
+            {
+                array.append(str);
+            }
+            varsObj[it.key()] = array;
+        }
+        break;
+        case QMetaType::QVariantList: {
+            QJsonArray array;
+            for (const QVariant &v : var.toList())
+            {
+                if (v.typeId() == QMetaType::Int)
+                    array.append(v.toInt());
+                else if (v.typeId() == QMetaType::Double)
+                    array.append(v.toDouble());
+                else if (v.typeId() == QMetaType::Bool)
+                    array.append(v.toBool());
+                else
+                    array.append(v.toString());
+            }
+            varsObj[it.key()] = array;
+        }
+        break;
+        case QMetaType::QVariantMap: {
+            QJsonObject obj;
+            QVariantMap map = var.toMap();
+            for (auto mapIt = map.begin();
+                 mapIt != map.end(); ++mapIt)
+            {
+                if (mapIt.value().typeId()
+                    == QMetaType::Int)
+                    obj[mapIt.key()] =
+                        mapIt.value().toInt();
+                else if (mapIt.value().typeId()
+                         == QMetaType::Double)
+                    obj[mapIt.key()] =
+                        mapIt.value().toDouble();
+                else if (mapIt.value().typeId()
+                         == QMetaType::Bool)
+                    obj[mapIt.key()] =
+                        mapIt.value().toBool();
+                else
+                    obj[mapIt.key()] =
+                        mapIt.value().toString();
+            }
+            varsObj[it.key()] = obj;
+        }
+        break;
+        default:
+            // For other types, convert to string as a
+            // fallback
+            varsObj[it.key()] = var.toString();
+            break;
+        }
     }
     result["variables"] = varsObj;
 
@@ -535,49 +634,33 @@ QJsonObject IntegrationSimulationConfig::toJson() const
     return result;
 }
 
-/**************** IntegrationSimulationConfigReader
- * ****************/
+/******* IntegrationSimulationConfigReader *******/
 
 IntegrationSimulationConfigReader::
     IntegrationSimulationConfigReader(
         const QString &configFilePath, QObject *parent)
     : QObject(parent)
 {
+    // Check if the file exists
+    if (!QFile::exists(configFilePath))
+    {
+        qCritical() << "Configuration file does not exist:"
+                    << configFilePath;
+        return;
+    }
+
     // Read configuration
-    QJsonObject configJson = readConfig(configFilePath);
-
-    // Create config object
-    m_config = new IntegrationSimulationConfig(this);
-
-    // Initialize with read data
-    QString configDir =
-        QFileInfo(configFilePath).dir().absolutePath();
-    QString title   = configJson["title"].toString();
-    double  simTime = configJson["sim_time"].toDouble();
-
-    // Extract input files
-    QMap<QString, QString> inputFiles;
-    QJsonObject            inputFilesObj =
-        configJson["input_files"].toObject();
-    for (auto it = inputFilesObj.constBegin();
-         it != inputFilesObj.constEnd(); ++it)
+    m_config = readConfig(configFilePath);
+    if (!m_config)
     {
-        inputFiles[it.key()] = it.value().toString();
+        qCritical()
+            << "Failed to read valid configuration from:"
+            << configFilePath;
+        return;
     }
 
-    // Extract output files
-    QMap<QString, QString> outputFiles;
-    QJsonObject            outputFilesObj =
-        configJson["output_files"].toObject();
-    for (auto it = outputFilesObj.constBegin();
-         it != outputFilesObj.constEnd(); ++it)
-    {
-        outputFiles[it.key()] = it.value().toString();
-    }
-
-    // Initialize config
-    m_config->initialize(configDir, title, simTime,
-                         inputFiles, outputFiles);
+    // Take ownership of the config
+    m_config->setParent(this);
 }
 
 IntegrationSimulationConfigReader::
@@ -590,11 +673,10 @@ IntegrationSimulationConfigReader::
     }
 }
 
-QJsonObject IntegrationSimulationConfigReader::readConfig(
+IntegrationSimulationConfig *
+IntegrationSimulationConfigReader::readConfig(
     const QString &configFilePath)
 {
-    QJsonObject result;
-
     try
     {
         // Get config directory
@@ -617,7 +699,14 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         QStringList lines;
         while (!in.atEnd())
         {
-            lines.append(in.readLine());
+            QString line = in.readLine();
+            // Remove any control characters
+            line.remove(
+                QRegularExpression("[\\x00-\\x1F\\x7F]"));
+            if (!line.isEmpty())
+            {
+                lines.append(line.trimmed());
+            }
         }
         file.close();
 
@@ -629,7 +718,7 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         }
 
         // Parse title (line 1)
-        result["title"] = lines[0].trimmed();
+        QString title = lines[0].trimmed();
 
         // Parse simulation parameters (line 2)
         QStringList simParams = lines[1].trimmed().split(
@@ -640,30 +729,30 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
                 "Invalid simulation parameters");
         }
 
-        result["sim_time"]       = simParams[0].toDouble();
-        result["output_freq_10"] = simParams[1].toInt();
-        result["output_freq_12_14"] = simParams[2].toInt();
-        result["routing_option"]    = simParams[3].toInt();
-        result["pause_flag"]        = simParams[4].toInt();
+        double simTime = simParams[0].toDouble();
 
         // Parse folders
-        result["input_folder"]  = lines[2].trimmed();
-        result["output_folder"] = lines[3].trimmed();
+        QString inputFolder = lines[2].trimmed();
+        inputFolder =
+            inputFolder.isEmpty() ? "." : inputFolder;
+
+        QString outputFolder = lines[3].trimmed();
+        outputFolder =
+            outputFolder.isEmpty() ? "." : outputFolder;
 
         // Parse input files
-        QJsonObject inputFiles;
+        QMap<QString, QString> inputFiles;
         inputFiles["node_coordinates"] = lines[4].trimmed();
         inputFiles["link_structure"]   = lines[5].trimmed();
         inputFiles["signal_timing"]    = lines[6].trimmed();
         inputFiles["traffic_demands"]  = lines[7].trimmed();
         inputFiles["incident_descriptions"] =
             lines[8].trimmed();
-        result["input_files"] = inputFiles;
 
         // Parse output files
-        QJsonObject outputFiles;
-        int         lineIndex  = 9;
-        QStringList outputKeys = {
+        QMap<QString, QString> outputFiles;
+        int                    lineIndex  = 9;
+        QStringList            outputKeys = {
             "standard_output",
             "link_flow_microscopic",
             "link_flow_minimum_tree",
@@ -684,18 +773,45 @@ QJsonObject IntegrationSimulationConfigReader::readConfig(
         {
             if (lineIndex < lines.size())
             {
-                outputFiles[key] =
+                QString value =
                     lines[lineIndex++].trimmed();
+                outputFiles[key] = value;
             }
         }
-        result["output_files"] = outputFiles;
 
-        return result;
+        // Store additional variables
+        QMap<QString, QVariant> additionalVariables;
+        additionalVariables["output_freq_10"] =
+            simParams[1].toInt();
+        additionalVariables["output_freq_12_14"] =
+            simParams[2].toInt();
+        additionalVariables["routing_option"] =
+            simParams[3].toInt();
+        additionalVariables["pause_flag"] =
+            simParams[4].toInt();
+
+        // Create and initialize the configuration object
+        IntegrationSimulationConfig *config =
+            new IntegrationSimulationConfig();
+
+        // Initialize with all parameters
+        if (!config->initialize(configDir, title, simTime,
+                                inputFiles, outputFiles,
+                                inputFolder, outputFolder,
+                                additionalVariables))
+        {
+            delete config;
+            throw std::runtime_error(
+                "Failed to initialize configuration");
+        }
+
+        return config;
     }
     catch (const std::exception &e)
     {
-        // Return empty object on error
-        return QJsonObject();
+        qCritical() << "Error reading configuration file:"
+                    << e.what();
+        return nullptr;
     }
 }
 

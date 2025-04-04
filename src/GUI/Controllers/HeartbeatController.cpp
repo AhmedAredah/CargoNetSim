@@ -92,24 +92,23 @@ void HeartbeatController::initialize()
     // Make sure we have our server indicators set up
     if (serverIndicators.isEmpty())
     {
-        // Since server indicators weren't found in the
-        // constructor, set up manually
         QStringList serverIDs = {"TerminalSim",
                                  "NeTrainSim", "ShipNetSim",
                                  "INTEGRATION"};
-
         for (const QString &serverId : serverIDs)
         {
             QMap<QString, QVariant> indicatorData;
             indicatorData["description"] = serverId;
             serverIndicators[serverId]   = indicatorData;
-
             qDebug() << "Adding server indicator for"
                      << serverId;
         }
     }
 
-    // Create and start monitor thread for consumer checks
+    // Initial server status check
+    checkQueueConsumers();
+
+    // Create and start monitor thread for periodic checks
     monitorThread = new QThread();
 
     // Create a timer for the monitoring thread
@@ -134,11 +133,6 @@ void HeartbeatController::initialize()
 
     qDebug() << "Consumer check timer started with interval"
              << consumerCheckInterval << "seconds";
-
-    // Do an initial check of consumers
-    QTimer::singleShot(
-        2000, this,
-        &HeartbeatController::checkQueueConsumers);
 }
 
 void HeartbeatController::checkQueueConsumers()
@@ -154,19 +148,12 @@ void HeartbeatController::checkQueueConsumers()
         return;
     }
 
-    // Clear the activeConsumers map at the start of each
-    // check
-    activeConsumers.clear();
-
     // Update last check time
     lastConsumerCheck = currentTime;
 
-    bool clientsAvailable = false;
-
     try
     {
-        // Try to get the controller instance and check
-        // clients
+        // Get controller instance and check clients
         qDebug() << "Getting controller instance";
         auto &controller = CargoNetSim::
             CargoNetSimController::getInstance();
@@ -179,7 +166,7 @@ void HeartbeatController::checkQueueConsumers()
         qDebug() << "Terminal client pointer:"
                  << (terminalClient ? "valid" : "nullptr");
 
-        if (terminalClient && terminalClient->isConnected())
+        if (terminalClient)
         {
             auto *handler =
                 terminalClient->getRabbitMQHandler();
@@ -195,13 +182,17 @@ void HeartbeatController::checkQueueConsumers()
                                    hasConsumers);
                 activeConsumers["TerminalSim"] =
                     hasConsumers;
-                clientsAvailable = true;
             }
+        }
+        else
+        {
+            updateServerStatus("TerminalSim", false);
+            activeConsumers["TerminalSim"] = false;
         }
 
         // Check Train client
         auto *trainClient = controller.getTrainClient();
-        if (trainClient && trainClient->isConnected())
+        if (trainClient)
         {
             auto *handler =
                 trainClient->getRabbitMQHandler();
@@ -215,13 +206,17 @@ void HeartbeatController::checkQueueConsumers()
                                    hasConsumers);
                 activeConsumers["NeTrainSim"] =
                     hasConsumers;
-                clientsAvailable = true;
             }
+        }
+        else
+        {
+            updateServerStatus("NeTrainSim", false);
+            activeConsumers["NeTrainSim"] = false;
         }
 
         // Check Ship client
         auto *shipClient = controller.getShipClient();
-        if (shipClient && shipClient->isConnected())
+        if (shipClient)
         {
             auto *handler =
                 shipClient->getRabbitMQHandler();
@@ -235,8 +230,12 @@ void HeartbeatController::checkQueueConsumers()
                                    hasConsumers);
                 activeConsumers["ShipNetSim"] =
                     hasConsumers;
-                clientsAvailable = true;
             }
+        }
+        else
+        {
+            updateServerStatus("ShipNetSim", false);
+            activeConsumers["ShipNetSim"] = false;
         }
 
         // Check Truck client (INTEGRATION)
@@ -245,23 +244,21 @@ void HeartbeatController::checkQueueConsumers()
         {
             bool hasConsumers =
                 truckManager->hasCommandQueueConsumers();
+            qDebug() << "Truck server has consumers:"
+                     << hasConsumers;
             updateServerStatus("INTEGRATION", hasConsumers);
             activeConsumers["INTEGRATION"] = hasConsumers;
-            clientsAvailable               = true;
+        }
+        else
+        {
+            updateServerStatus("INTEGRATION", false);
+            activeConsumers["INTEGRATION"] = false;
         }
     }
     catch (const std::exception &e)
     {
         qWarning() << "Exception during client check:"
                    << e.what();
-    }
-
-    // If no clients were available, try direct queue checks
-    if (!clientsAvailable)
-    {
-        qDebug() << "No clients available - trying direct "
-                    "queue checks";
-        checkQueuesDirectly();
     }
 }
 

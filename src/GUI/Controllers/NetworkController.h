@@ -33,6 +33,14 @@ public:
                   QString             &networkName,
                   Backend::RegionData *regionData);
 
+    static CargoNetSim::Backend::ShortestPathResult
+    findNetworkShortestPath(const QString &regionName,
+                            const QString &networkName,
+                            NetworkType    networkType,
+                            int startNodeId, int endNodeId);
+
+    static bool clearAllNetworks(MainWindow *mainWindow);
+
 protected:
     static bool
     importTrainNetwork(MainWindow          *mainWindow,

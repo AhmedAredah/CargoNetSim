@@ -8,6 +8,11 @@
  * for defining simulators, managing ships and containers,
  * and retrieving simulation states.
  *
+ * Thread safety is ensured through careful use of
+ * read-write locks for shared data protection. The class
+ * leverages ThreadSafetyUtils to provide RAII-style
+ * locking.
+ *
  * @author Ahmed Aredah
  * @date March 19, 2025
  */
@@ -22,6 +27,7 @@
 #include <QMap>
 #include <QMutex>
 #include <QObject>
+#include <QReadWriteLock>
 #include <QString>
 #include <containerLib/container.h>
 
@@ -29,6 +35,7 @@
 #include "Backend/Clients/ShipClient/ShipState.h"
 #include "Backend/Clients/ShipClient/SimulationResults.h"
 #include "Backend/Commons/ClientType.h"
+#include "Backend/Commons/ThreadSafetyUtils.h"
 #include "Backend/Models/ShipSystem.h"
 
 /**
@@ -55,6 +62,21 @@ namespace ShipClient
  * simulator setup, ship and container management, and state
  * retrieval. It uses RabbitMQ for communication and ensures
  * thread-safe operations.
+ *
+ * Thread Safety:
+ * - All operations that modify shared state (m_networkData,
+ * m_shipState, etc.) are protected by appropriate read or
+ * write locks
+ * - Read operations use ScopedReadLock for concurrent
+ * access
+ * - Write operations use ScopedWriteLock for exclusive
+ * access
+ * - Event handlers that only log information do not use
+ * locks
+ * - Event handlers that modify state use appropriate
+ * locking
+ * - Messages from RabbitMQ are processed on the main Qt
+ * event loop thread
  *
  * @ingroup ShipSimulation
  */
@@ -83,7 +105,9 @@ public:
      * @brief Destroys the ShipSimulationClient instance
      *
      * Cleans up resources, including dynamically allocated
-     * objects and thread-safe data structures.
+     * objects and thread-safe data structures. This
+     * operation acquires a write lock on m_dataAccessMutex
+     * to safely clear all internal data structures.
      */
     ~ShipSimulationClient() override;
 
@@ -91,7 +115,9 @@ public:
      * @brief Resets the ship simulation server
      *
      * Sends a reset command to the server, clearing all
-     * current simulation data and state.
+     * current simulation data and state. This operation is
+     * executed with command serialization for thread
+     * safety.
      *
      * @return True if the reset command succeeds, false
      * otherwise
@@ -118,7 +144,11 @@ public:
      * @brief Defines a new ship simulator
      *
      * Configures a simulation network with specified ships
-     * and parameters, sending the setup to the server.
+     * and parameters, sending the setup to the server. Uses
+     * a write lock when updating internal data structures.
+     *
+     * Thread safety: Uses ScopedWriteLock when updating
+     * shared state.
      *
      * @param networkName Unique name for the simulation
      * network
@@ -144,6 +174,10 @@ public:
      *
      * Starts the simulation for given networks or all if
      * "*" is specified, with an optional time step limit.
+     * Uses a read lock when accessing network data.
+     *
+     * Thread safety: Uses ScopedReadLock when reading
+     * network keys.
      *
      * @param networkNames List of network names or "*" for
      * all
@@ -158,7 +192,11 @@ public:
      * @brief Ends the simulator for specified networks
      *
      * Terminates the simulation for given networks or all
-     * if "*" is specified.
+     * if "*" is specified. Uses a read lock when accessing
+     * network data.
+     *
+     * Thread safety: Uses ScopedReadLock when reading
+     * network keys.
      *
      * @param networkNames List of network names or "*" for
      * all
@@ -171,7 +209,10 @@ public:
      *
      * Incorporates additional ships into a running
      * simulation network, associating them with destination
-     * terminals.
+     * terminals. Uses a write lock when updating ship data.
+     *
+     * Thread safety: Uses ScopedWriteLock when updating
+     * ship data.
      *
      * @param networkName Target network name
      * @param ships List of Ship pointers to add
@@ -191,6 +232,9 @@ public:
      * Assigns containers to a specified ship within a
      * network, sending the command to the server.
      *
+     * Thread safety: Does not modify shared state directly,
+     * uses executeSerializedCommand for thread safety.
+     *
      * @param networkName Network containing the ship
      * @param shipId Unique identifier of the target ship
      * @param containers List of Container pointers to add
@@ -206,6 +250,9 @@ public:
      *
      * Removes containers from a ship and assigns them to
      * specified terminals within a network.
+     *
+     * Thread safety: Does not modify shared state directly,
+     * uses executeSerializedCommand for thread safety.
      *
      * @param networkName Network containing the ship
      * @param shipId Unique identifier of the target ship
@@ -223,6 +270,9 @@ public:
      * Sends a command to retrieve the terminal nodes of a
      * specified simulation network.
      *
+     * Thread safety: Does not modify shared state, only
+     * sends a command.
+     *
      * @param networkName Name of the network to query
      */
     void
@@ -233,6 +283,9 @@ public:
      *
      * Sends a command to compute the shortest path between
      * two nodes in a specified network.
+     *
+     * Thread safety: Does not modify shared state, only
+     * sends a command.
      *
      * @param networkName Network to query
      * @param startNode Starting node ID
@@ -246,6 +299,10 @@ public:
      * @brief Retrieves the state of a specific ship
      *
      * Returns the current state of a ship within a network.
+     * Uses a read lock to safely access shared state.
+     *
+     * Thread safety: Uses ScopedReadLock for concurrent
+     * read access.
      *
      * @param networkName Network containing the ship
      * @param shipId Unique identifier of the ship
@@ -259,7 +316,11 @@ public:
      * @brief Retrieves states of all ships in a network
      *
      * Returns a list of states for all ships in a specified
-     * network.
+     * network. Uses a read lock to safely access shared
+     * state.
+     *
+     * Thread safety: Uses ScopedReadLock for concurrent
+     * read access.
      *
      * @param networkName Network to query
      * @return List of ShipState pointers, empty if none
@@ -273,7 +334,11 @@ public:
      * networks
      *
      * Returns a map of network names to lists of ship
-     * states.
+     * states. Uses a read lock to safely access shared
+     * state.
+     *
+     * Thread safety: Uses ScopedReadLock for concurrent
+     * read access.
      *
      * @return Map of network names to ShipState pointer
      * lists
@@ -286,7 +351,12 @@ protected:
      * @brief Processes messages from the server
      *
      * Handles incoming server messages, dispatching them to
-     * appropriate event handlers.
+     * appropriate event handlers. This method is called on
+     * the Qt event thread via QueuedConnection from
+     * RabbitMQHandler.
+     *
+     * Thread safety: Event handlers that modify shared
+     * state use appropriate locking mechanisms internally.
      *
      * @param message JSON object containing the server
      * message
@@ -301,6 +371,9 @@ private:
      * Executes the unloading process and wait for a
      * response.
      *
+     * Thread safety: Does not modify shared state directly,
+     * only sends commands and processes responses.
+     *
      * @param networkName Network name
      * @param shipId Ship ID
      * @param terminalNames Terminal names for unloading
@@ -314,7 +387,11 @@ private:
      * @brief Handles simulation network loaded event
      *
      * Processes the event when a simulation network is
-     * loaded.
+     * loaded. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -325,6 +402,10 @@ private:
      * @brief Handles simulation created event
      *
      * Processes the event when a simulation is created.
+     * Modifies the m_networkData structure.
+     *
+     * Thread safety: Uses ScopedWriteLock to protect shared
+     * state.
      *
      * @param message Event data in JSON format
      */
@@ -334,6 +415,10 @@ private:
      * @brief Handles simulation paused event
      *
      * Processes the event when a simulation is paused.
+     * Only performs logging, no shared state is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -343,6 +428,10 @@ private:
      * @brief Handles simulation resumed event
      *
      * Processes the event when a simulation is resumed.
+     * Only performs logging, no shared state is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -352,6 +441,10 @@ private:
      * @brief Handles simulation restarted event
      *
      * Processes the event when a simulation is restarted.
+     * Only performs logging, no shared state is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -361,6 +454,10 @@ private:
      * @brief Handles simulation ended event
      *
      * Processes the event when a simulation ends.
+     * Only performs logging, no shared state is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -370,7 +467,11 @@ private:
      * @brief Handles simulation advanced event
      *
      * Processes the event when a simulation advances in
-     * time.
+     * time. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -380,6 +481,10 @@ private:
      * @brief Handles simulation progress update event
      *
      * Processes the event when simulation progress updates.
+     * Only performs logging, no shared state is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -390,7 +495,11 @@ private:
      * @brief Handles ship added to simulator event
      *
      * Processes the event when a ship is added to the
-     * simulator.
+     * simulator. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -400,7 +509,11 @@ private:
      * @brief Handles all ships reached destination event
      *
      * Processes the event when all ships reach their
-     * destinations.
+     * destinations. Only performs logging, no shared state
+     * is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -411,7 +524,11 @@ private:
      * @brief Handles ship reached destination event
      *
      * Processes the event when a ship reaches its
-     * destination.
+     * destination. Updates the m_shipState data structure.
+     *
+     * Thread safety: Uses ScopedWriteLock to protect shared
+     * state. The lock is temporarily released while calling
+     * unloadContainers to avoid potential deadlocks.
      *
      * @param message Event data in JSON format
      */
@@ -422,6 +539,10 @@ private:
      * @brief Handles ship reached seaport event
      *
      * Processes the event when a ship reaches a seaport.
+     * Calls unloadContainersFromShipAtTerminalsPrivate but
+     * doesn't directly modify shared state.
+     *
+     * Thread safety: No locks needed in this method.
      *
      * @param message Event data in JSON format
      */
@@ -431,7 +552,11 @@ private:
      * @brief Handles containers unloaded event
      *
      * Processes the event when containers are unloaded from
-     * a ship.
+     * a ship. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -441,7 +566,11 @@ private:
      * @brief Handles simulation results available event
      *
      * Processes the event when simulation results are
-     * available.
+     * available. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -452,6 +581,10 @@ private:
      * @brief Handles ship state available event
      *
      * Processes the event when a ship's state is available.
+     * Updates the m_shipState data structure.
+     *
+     * Thread safety: Uses ScopedWriteLock to protect shared
+     * state.
      *
      * @param message Event data in JSON format
      */
@@ -461,7 +594,11 @@ private:
      * @brief Handles simulator state available event
      *
      * Processes the event when the simulator state is
-     * available.
+     * available. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -472,7 +609,11 @@ private:
      * @brief Handles error occurred event
      *
      * Processes the event when an error occurs on the
-     * server.
+     * server. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -482,6 +623,10 @@ private:
      * @brief Handles server reset event
      *
      * Processes the event when the server is reset.
+     * Only performs logging, no shared state is modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      */
     void onServerReset();
 
@@ -489,7 +634,11 @@ private:
      * @brief Handles containers added event
      *
      * Processes the event when containers are added to a
-     * ship.
+     * ship. Only performs logging, no shared state is
+     * modified.
+     *
+     * Thread safety: No locks needed as this method only
+     * logs.
      *
      * @param message Event data in JSON format
      */
@@ -497,19 +646,21 @@ private:
 
     /**
      * @var m_dataAccessMutex
-     * @brief Mutex for thread-safe data access
+     * @brief Read-write lock for thread-safe data access
      *
      * Ensures synchronized access to internal data
-     * structures.
+     * structures. Use ScopedReadLock for read operations
+     * and ScopedWriteLock for write operations.
      */
-    mutable QMutex m_dataAccessMutex;
+    mutable QReadWriteLock m_dataAccessMutex;
 
     /**
      * @var m_networkData
      * @brief Stores simulation results by network
      *
      * Maps network names to lists of SimulationResults
-     * pointers.
+     * pointers. Access to this structure is protected by
+     * m_dataAccessMutex.
      */
     QMap<QString, QList<SimulationResults *>> m_networkData;
 
@@ -518,6 +669,8 @@ private:
      * @brief Stores ship states by network
      *
      * Maps network names to lists of ShipState pointers.
+     * Access to this structure is protected by
+     * m_dataAccessMutex.
      */
     QMap<QString, QList<ShipState *>> m_shipState;
 
@@ -526,6 +679,8 @@ private:
      * @brief Stores loaded ship objects
      *
      * Maps ship IDs to Ship pointers for the simulation.
+     * Access to this structure is protected by
+     * m_dataAccessMutex.
      */
     QMap<QString, Backend::Ship *> m_loadedShips;
 
@@ -534,6 +689,8 @@ private:
      * @brief Maps ship IDs to destination terminals
      *
      * Associates each ship with its target terminal IDs.
+     * Access to this structure is protected by
+     * m_dataAccessMutex.
      */
     QMap<QString, QStringList> m_shipsDestinationTerminals;
 };

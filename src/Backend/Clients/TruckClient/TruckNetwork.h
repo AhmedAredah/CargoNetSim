@@ -7,8 +7,11 @@
 
 #pragma once
 
+#include "Backend/Models/BaseNetwork.h"
 #include "IntegrationLink.h"
+#include "IntegrationLinkDataReader.h"
 #include "IntegrationNode.h"
+#include "IntegrationNodeDataReader.h"
 #include "MessageFormatter.h"
 #include "TransportationGraph.h"
 #include <QJsonObject>
@@ -36,7 +39,7 @@ namespace TruckClient
  * providing path-finding and network operations with
  * specialized transportation attributes.
  */
-class IntegrationNetwork : public BaseObject
+class IntegrationNetwork : public BaseNetwork
 {
     Q_OBJECT
 
@@ -134,9 +137,31 @@ public:
      * @param maxPaths Maximum number of paths to find
      * @return List of paths as JSON objects
      */
-    QList<QJsonObject> getMultiplePaths(int startNodeId,
-                                        int endNodeId,
-                                        int maxPaths = 3);
+    QList<ShortestPathResult>
+    getMultiplePaths(int startNodeId, int endNodeId,
+                     int maxPaths = 3);
+
+    /**
+     * @brief Adds a variable to the network
+     * @param key Variable name
+     * @param value Variable value
+     */
+    void setVariable(const QString  &key,
+                     const QVariant &value) override;
+
+    /**
+     * @brief Gets a variable from the network
+     * @param key Variable name
+     * @return Variable value as QVariant
+     */
+    QVariant getVariable(const QString &key) const override;
+
+    /**
+     * @brief Gets all variables in the network
+     * configuration
+     * @return Map of all variables
+     */
+    QMap<QString, QVariant> getVariables() const override;
 
     /**
      * @brief Format as JSON
@@ -223,13 +248,20 @@ public:
      * @param simTime Simulation duration
      * @param inputFiles Map of input file paths
      * @param outputFiles Map of output file paths
+     * @param inputFolder Input folder path
+     * @param outputFolder Output folder path
+     * @param additionalVariables Map of additional
+     * variables
      * @return True if initialization successful
      */
-    bool
-    initialize(const QString &configDir,
-               const QString &title, double simTime,
-               const QMap<QString, QString> &inputFiles,
-               const QMap<QString, QString> &outputFiles);
+    bool initialize(
+        const QString &configDir, const QString &title,
+        double                         simTime,
+        const QMap<QString, QString>  &inputFiles,
+        const QMap<QString, QString>  &outputFiles,
+        const QString                 &inputFolder,
+        const QString                 &outputFolder,
+        const QMap<QString, QVariant> &additionalVariables);
 
     /**
      * @brief Get the network object
@@ -304,7 +336,7 @@ private:
     QMap<QString, QString> m_outputFiles;
 
     // Configuration variables
-    QMap<QString, QString> m_variables;
+    QMap<QString, QVariant> m_variables;
 
     // Shared network model
     IntegrationNetwork *m_network;
@@ -350,7 +382,7 @@ public:
      * @param configFilePath Path to configuration file
      * @return Configuration as JSON object
      */
-    static QJsonObject
+    static IntegrationSimulationConfig *
     readConfig(const QString &configFilePath);
 
 private:

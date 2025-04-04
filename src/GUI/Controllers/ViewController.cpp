@@ -91,13 +91,26 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
 
     if (show)
     {
-        auto regionCenterPoint =
+        auto regionData =
             CargoNetSim::CargoNetSimController::
                 getInstance()
                     .getRegionDataController()
-                    ->getRegionData(terminal->getRegion())
-                    ->getVariableAs<RegionCenterPoint *>(
-                        "regionCenterPoint", nullptr);
+                    ->getRegionData(terminal->getRegion());
+
+        if (!regionData)
+        {
+            return;
+        }
+
+        auto regionCenterPoint =
+            regionData->getVariableAs<RegionCenterPoint *>(
+                "regionCenterPoint", nullptr);
+
+        if (!regionCenterPoint)
+        {
+            return;
+        }
+
         if (terminal->getGlobalTerminalItem())
         {
             // Update the global terminal item position
@@ -133,6 +146,10 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
                             main_window, regionCenterPoint,
                             terminal);
                 });
+
+            // Explicitly set its position
+            updateTerminalGlobalPosition(
+                main_window, regionCenterPoint, terminal);
         }
     }
     else
@@ -208,9 +225,20 @@ void CargoNetSim::GUI::ViewController::
     {
         return;
     }
-    globalITem->setPos(
+
+    // Important: Ensure we're using the correct coordinate
+    // transformation
+    QPointF globalPos =
         main_window->globalMapView_->wgs84ToScene(QPointF(
-            item_global_view_lon, item_global_view_lat)));
+            item_global_view_lon, item_global_view_lat));
+    // Set position directly to avoid any signal/slot
+    // cascading issues
+    globalITem->setPos(globalPos);
+
+    // globalITem->setPos(
+    //     main_window->globalMapView_->wgs84ToScene(QPointF(
+    //         item_global_view_lon,
+    //         item_global_view_lat)));
 }
 
 bool CargoNetSim::GUI::ViewController::
@@ -357,16 +385,176 @@ void CargoNetSim::GUI::ViewController::drawNetwork(
     }
 }
 
+void CargoNetSim::GUI::ViewController::
+    changeNetworkVisibility(MainWindow    *mainWindow,
+                            const QString &networkName,
+                            const bool     isVisible)
+{
+    if (mainWindow->regionScene_)
+    {
+        QGraphicsScene *scene = mainWindow->regionScene_;
+        for (QGraphicsItem *item : scene->items())
+        {
+            if (MapPoint *mapPoint =
+                    dynamic_cast<MapPoint *>(item))
+            {
+                Backend::TrainClient::NeTrainSimNetwork
+                    *trainNet = dynamic_cast<
+                        Backend::TrainClient::
+                            NeTrainSimNetwork *>(
+                        mapPoint->getReferenceNetwork());
+                Backend::TruckClient::IntegrationNetwork
+                    *truckNet = dynamic_cast<
+                        Backend::TruckClient::
+                            IntegrationNetwork *>(
+                        mapPoint->getReferenceNetwork());
+
+                if (trainNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapPoint->setVisible(isVisible);
+                    }
+                }
+                else if (truckNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapPoint->setVisible(isVisible);
+                    }
+                }
+            }
+            else if (MapLine *mapLine =
+                         dynamic_cast<MapLine *>(item))
+            {
+                Backend::TrainClient::NeTrainSimNetwork
+                    *trainNet = dynamic_cast<
+                        Backend::TrainClient::
+                            NeTrainSimNetwork *>(
+                        mapLine->getReferenceNetwork());
+                Backend::TruckClient::IntegrationNetwork
+                    *truckNet = dynamic_cast<
+                        Backend::TruckClient::
+                            IntegrationNetwork *>(
+                        mapLine->getReferenceNetwork());
+
+                if (trainNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapLine->setVisible(isVisible);
+                    }
+                }
+                else if (truckNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapLine->setVisible(isVisible);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CargoNetSim::GUI::ViewController::changeNetworkColor(
+    MainWindow *mainWindow, const QString &networkName,
+    const QColor newColor)
+{
+    QColor newDarkerColor =
+        newColor.darker(150); // 150% darker for MapPoints
+
+    if (mainWindow->regionScene_)
+    {
+        QGraphicsScene *scene = mainWindow->regionScene_;
+        for (QGraphicsItem *item : scene->items())
+        {
+            if (MapPoint *mapPoint =
+                    dynamic_cast<MapPoint *>(item))
+            {
+                Backend::TrainClient::NeTrainSimNetwork
+                    *trainNet = dynamic_cast<
+                        Backend::TrainClient::
+                            NeTrainSimNetwork *>(
+                        mapPoint->getReferenceNetwork());
+                Backend::TruckClient::IntegrationNetwork
+                    *truckNet = dynamic_cast<
+                        Backend::TruckClient::
+                            IntegrationNetwork *>(
+                        mapPoint->getReferenceNetwork());
+
+                if (trainNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapPoint->setColor(newDarkerColor);
+                    }
+                }
+                else if (truckNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapPoint->setColor(newDarkerColor);
+                    }
+                }
+            }
+            else if (MapLine *mapLine =
+                         dynamic_cast<MapLine *>(item))
+            {
+                Backend::TrainClient::NeTrainSimNetwork
+                    *trainNet = dynamic_cast<
+                        Backend::TrainClient::
+                            NeTrainSimNetwork *>(
+                        mapLine->getReferenceNetwork());
+                Backend::TruckClient::IntegrationNetwork
+                    *truckNet = dynamic_cast<
+                        Backend::TruckClient::
+                            IntegrationNetwork *>(
+                        mapLine->getReferenceNetwork());
+
+                if (trainNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapLine->setColor(newColor);
+                    }
+                }
+                else if (truckNet)
+                {
+                    if (trainNet->getNetworkName()
+                        == networkName)
+                    {
+                        mapLine->setColor(newColor);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void CargoNetSim::GUI::ViewController::drawTrainNetwork(
     MainWindow                              *mainWindow,
     Backend::TrainClient::NeTrainSimNetwork *network,
     QString &regionName, QColor &linksColor)
 {
+    mainWindow->regionView_->setUsingProjectedCoords(true);
+    mainWindow->updateAllCoordinates();
+    
     // Define node color
     QColor nodesColor = QColor(linksColor);
     nodesColor.setHsv(nodesColor.hue(),
                       nodesColor.saturation(),
                       nodesColor.value() * 0.7);
+
+    // set the network Color
+    network->setVariable("color", linksColor);
 
     // Draw the train network
     for (auto &node : network->getNodes())
@@ -377,12 +565,15 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
             {"Dwell_time", node->getDwellTime()},
             {"Description", node->getDescription()}};
 
+        QPointF projectedPoint =
+            QPointF(node->getX() * node->getXScale(),
+                    node->getY() * node->getYScale());
+
         MapPoint *point =
             CargoNetSim::GUI::ViewController::drawNode(
                 mainWindow, node->getInternalUniqueID(),
-                QPointF(node->getX() * node->getXScale(),
-                        node->getY() * node->getYScale()),
-                regionName, nodesColor, properties);
+                projectedPoint, regionName, nodesColor,
+                properties);
 
         point->setReferenceNetwork(network);
 
@@ -393,7 +584,7 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
                 ViewController::createTerminalAtPoint(
                     mainWindow, regionName,
                     "Intermodal Land Terminal",
-                    QPointF(point->getX(), point->getY()));
+                    point->getSceneCoordinate());
 
             point->setLinkedTerminal(terminal);
         }
@@ -407,10 +598,13 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
         auto destNode   = link->getToNode();
 
         // Create the source and destination points
-        QPointF sourcePoint =
-            QPointF(sourceNode->getX(), sourceNode->getY());
-        QPointF destPoint =
-            QPointF(destNode->getX(), destNode->getY());
+        QPointF projectedSourcePoint = QPointF(
+            sourceNode->getX() * sourceNode->getXScale(),
+            sourceNode->getY() * sourceNode->getYScale());
+
+        QPointF projectedDestPoint = QPointF(
+            destNode->getX() * destNode->getXScale(),
+            destNode->getY() * destNode->getYScale());
 
         QMap<QString, QVariant> properties = {
             {"Length", link->getLength()},
@@ -420,8 +614,8 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
         auto line =
             CargoNetSim::GUI::ViewController::drawLink(
                 mainWindow, link->getInternalUniqueID(),
-                sourcePoint, destPoint, regionName,
-                linksColor, properties);
+                projectedSourcePoint, projectedDestPoint,
+                regionName, linksColor, properties);
 
         line->setReferenceNetwork(network);
     }
@@ -441,11 +635,18 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
             *networkConfig,
     QString &regionName, QColor &linksColor)
 {
+    mainWindow->regionView_->setUsingProjectedCoords(true);
+    mainWindow->updateAllCoordinates();
+    
     // Define node color
     QColor nodesColor = QColor(linksColor);
     nodesColor.setHsv(nodesColor.hue(),
                       nodesColor.saturation(),
                       nodesColor.value() * 0.7);
+
+    // set the network Color
+    networkConfig->getNetwork()->setVariable("color",
+                                             linksColor);
 
     for (auto &node :
          networkConfig->getNetwork()->getNodes())
@@ -517,11 +718,14 @@ CargoNetSim::GUI::ViewController::drawNode(
     QPointF geodeticPoint =
         mainWindow->regionView_->convertCoordinates(
             projectedPoint, "to_geodetic");
+    QPointF scenePoint =
+        mainWindow->regionView_->wgs84ToScene(
+            geodeticPoint);
 
     // Create projected coordinate point
-    MapPoint *point = new MapPoint(
-        nodeID, geodeticPoint.x(), geodeticPoint.y(),
-        regionName, "circle", nullptr, properties);
+    MapPoint *point =
+        new MapPoint(nodeID, scenePoint, regionName,
+                     "circle", nullptr, properties);
 
     QObject::connect(
         point, &MapPoint::clicked,
@@ -563,12 +767,16 @@ CargoNetSim::GUI::ViewController::drawLink(
         QPointF destGeodetic =
             mainWindow->regionView_->convertCoordinates(
                 projectedEndPoint, "to_geodetic");
+        QPointF sourceScenePoint =
+            mainWindow->regionView_->wgs84ToScene(
+                sourceGeodetic);
+        QPointF destScenePoint =
+            mainWindow->regionView_->wgs84ToScene(
+                destGeodetic);
 
         // Create the link
-        line = new MapLine(
-            QPointF(sourceGeodetic.x(), sourceGeodetic.y()),
-            QPointF(destGeodetic.x(), destGeodetic.y()),
-            regionName, properties);
+        line = new MapLine(sourceScenePoint, destScenePoint,
+                           regionName, properties);
 
         QObject::connect(
             line, &MapLine::clicked,
@@ -1006,6 +1214,8 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                 "Cannot link a terminal to itself.", 3000);
         }
     }
+
+    return nullptr;
 }
 
 void CargoNetSim::GUI::ViewController::
@@ -1020,6 +1230,8 @@ void CargoNetSim::GUI::ViewController::
     QString                     currentRegion = "";
     QList<TerminalItem *>       terminals;
     QList<GlobalTerminalItem *> globalTerminals;
+    bool anyConnectionCreated = false;
+
     if (isGlobalView)
     {
         globalTerminals = CargoNetSim::GUI::
@@ -1044,7 +1256,7 @@ void CargoNetSim::GUI::ViewController::
     }
 
     if ((terminals.empty() && !isGlobalView)
-        || (terminals.empty() && isGlobalView))
+        || (globalTerminals.empty() && isGlobalView))
     {
         QString msgHndler =
             isGlobalView ? "view" : "region";
@@ -1055,7 +1267,8 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
     else if ((terminals.size() == 1 && !isGlobalView)
-             || (terminals.size() == 1 && isGlobalView))
+             || (globalTerminals.size() == 1
+                 && isGlobalView))
     {
         QString msgHndler =
             isGlobalView ? "view" : "region";
@@ -1066,7 +1279,8 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
 
-    // Connect terminals based on common networks
+    // Connect terminals based on common networks in the
+    // region view
     for (auto &sourceTerminal : terminals)
     {
         for (auto &targetTerminal : terminals)
@@ -1080,58 +1294,91 @@ void CargoNetSim::GUI::ViewController::
                 UtilitiesFunctions::getCommonModes(
                     sourceTerminal, targetTerminal);
 
+            // Process Rail connections in region view
             if (commonModes.contains("Rail"))
             {
-                auto sourceTerminalObj =
-                    dynamic_cast<TerminalItem *>(
-                        sourceTerminal);
-                auto targetTerminalObj =
-                    dynamic_cast<TerminalItem *>(
-                        targetTerminal);
-                auto sourceMapPoints = UtilitiesFunctions::
-                    getMapPointsOfTerminal(
-                        mainWindow->regionScene_,
-                        sourceTerminalObj, currentRegion,
-                        "*", NetworkType::Train);
-
-                auto tqrgetMapPoints = UtilitiesFunctions::
-                    getMapPointsOfTerminal(
-                        mainWindow->regionScene_,
-                        targetTerminalObj, currentRegion,
-                        "*", NetworkType::Train);
-
-                bool keepProcessing = true;
-                if (sourceMapPoints.empty())
+                bool isConnected = UtilitiesFunctions::
+                    processNetworkModeConnection(
+                        mainWindow, sourceTerminal,
+                        targetTerminal, NetworkType::Train);
+                if (isConnected)
                 {
-                    mainWindow->showStatusBarError(
-                        QString("Terminal %1 has no "
-                                "associated nodes.")
-                            .arg(sourceTerminalObj
-                                     ->getProperty("Name",
-                                                   "")
-                                     .toString()),
-                        3000);
-                    keepProcessing = false;
+                    anyConnectionCreated = true;
                 }
+            }
 
-                if (tqrgetMapPoints.empty())
+            // Process Truck connections in region view
+            if (commonModes.contains("Truck")
+                && !isGlobalView)
+            {
+                bool isConnected = UtilitiesFunctions::
+                    processNetworkModeConnection(
+                        mainWindow, sourceTerminal,
+                        targetTerminal, NetworkType::Truck);
+                if (isConnected)
                 {
-                    mainWindow->showStatusBarError(
-                        QString("Terminal %1 has no "
-                                "associated nodes.")
-                            .arg(sourceTerminalObj
-                                     ->getProperty("Name",
-                                                   "")
-                                     .toString()),
-                        3000);
-                    keepProcessing = false;
+                    anyConnectionCreated = true;
                 }
+            }
 
-                if (keepProcessing)
+            // Process Ship connections (if needed)
+            if (commonModes.contains("Ship"))
+            {
+                // TODO
+                // Similar implementation as Rail and Truck
+                // Skip for now so we do not allow skips
+                // connections between ports in the same
+                // region
+            }
+        }
+    }
+
+    // Connect terminals based on common networks in the
+    // global view
+    for (auto &sourceTerminal : globalTerminals)
+    {
+        for (auto &targetTerminal : globalTerminals)
+        {
+            if (sourceTerminal == targetTerminal)
+            {
+                continue;
+            }
+
+            QList<QString> commonModes =
+                UtilitiesFunctions::getCommonModes(
+                    sourceTerminal, targetTerminal);
+            for (const QString &mode : commonModes)
+            {
+
+                QString connectionType;
+                if (mode.toLower() == "rail")
+                    connectionType = "Rail";
+                else if (mode.toLower() == "truck")
+                    connectionType = "Truck";
+                else if (mode.toLower() == "ship")
+                    connectionType = "Ship";
+
+                if (!connectionType.isEmpty())
                 {
+                    auto connectionLine = ViewController::
+                        createConnectionLine(
+                            mainWindow, sourceTerminal,
+                            targetTerminal, connectionType);
+                    if (connectionLine)
+                    {
+
+                        anyConnectionCreated = true;
+                    }
                 }
             }
         }
+    }
+
+    if (anyConnectionCreated)
+    {
+        mainWindow->showStatusBarMessage(
+            "Terminal connections created based on "
+            "networks.");
     }
 }
 

@@ -7,6 +7,27 @@
  * managing ship simulations, including setup, control, and
  * state retrieval within the CargoNetSim framework.
  *
+ * Thread Safety Implementation Notes:
+ * - Commands to the server are executed within
+ * executeSerializedCommand to ensure thread-safe command
+ * execution.
+ * - Read operations on shared data use ScopedReadLock to
+ * allow concurrent reads.
+ * - Write operations on shared data use ScopedWriteLock for
+ * exclusive access.
+ * - Event handlers from RabbitMQ are processed on the Qt
+ * event thread via QueuedConnection.
+ * - Event handlers that only log information don't acquire
+ * locks for better performance.
+ * - Event handlers that modify shared state
+ * (onSimulationCreated, onShipReachedDestination,
+ *   onShipStateAvailable) use appropriate locking
+ * mechanisms.
+ * - In onShipReachedDestination, the lock is temporarily
+ * released with unlock()/relock() while calling
+ * unloadContainersFromShipAtTerminalsPrivate to avoid
+ * deadlocks.
+ *
  * @author Ahmed Aredah
  * @date March 19, 2025
  */
@@ -21,6 +42,7 @@
 #include <QThread>
 
 #include "Backend/Commons/LoggerInterface.h"
+#include "Backend/Commons/ThreadSafetyUtils.h"
 #include "Backend/Models/ShipSystem.h"
 // #include "TerminalGraphServer.h"
 // #include "SimulatorTimeServer.h"
@@ -65,7 +87,8 @@ ShipSimulationClient::ShipSimulationClient(
  */
 ShipSimulationClient::~ShipSimulationClient()
 {
-    QMutexLocker locker(&m_dataAccessMutex);
+    CargoNetSim::Backend::Commons::ScopedWriteLock locker(
+        m_dataAccessMutex);
     for (auto &resultsList : m_networkData)
     {
         qDeleteAll(resultsList);
@@ -207,7 +230,9 @@ bool ShipSimulationClient::defineSimulator(
                 {"simulationcreated"});
             if (success)
             {
-                QMutexLocker locker(&m_dataAccessMutex);
+                CargoNetSim::Backend::Commons::
+                    ScopedWriteLock locker(
+                        m_dataAccessMutex);
                 for (auto *ship : ships)
                 {
                     if (ship)
@@ -260,7 +285,8 @@ bool ShipSimulationClient::runSimulator(
         QStringList networks = networkNames;
         if (networks.contains("*"))
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            CargoNetSim::Backend::Commons::ScopedReadLock
+                locker(m_dataAccessMutex);
             networks = m_networkData.keys();
         }
         QJsonObject params;
@@ -310,7 +336,8 @@ bool ShipSimulationClient::endSimulator(
         QStringList networks = networkNames;
         if (networks.contains("*"))
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            CargoNetSim::Backend::Commons::ScopedReadLock
+                locker(m_dataAccessMutex);
             networks = m_networkData.keys();
         }
         QJsonObject params;
@@ -375,7 +402,8 @@ bool ShipSimulationClient::addShipsToSimulator(
             {"shipaddedtosimulator"});
         if (success)
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            CargoNetSim::Backend::Commons::ScopedWriteLock
+                locker(m_dataAccessMutex);
             for (auto *ship : ships)
             {
                 if (ship)
@@ -582,7 +610,8 @@ void ShipSimulationClient::getShortestPath(
 const ShipState *ShipSimulationClient::getShipState(
     const QString &networkName, const QString &shipId) const
 {
-    QMutexLocker locker(&m_dataAccessMutex);
+    CargoNetSim::Backend::Commons::ScopedReadLock locker(
+        m_dataAccessMutex);
     if (!m_shipState.contains(networkName))
     {
         if (m_logger)
@@ -622,7 +651,8 @@ QList<const ShipState *>
 ShipSimulationClient::getAllNetworkShipsStates(
     const QString &networkName) const
 {
-    QMutexLocker             locker(&m_dataAccessMutex);
+    CargoNetSim::Backend::Commons::ScopedReadLock locker(
+        m_dataAccessMutex);
     QList<const ShipState *> statesList;
     if (!m_shipState.contains(networkName))
     {
@@ -656,7 +686,8 @@ ShipSimulationClient::getAllNetworkShipsStates(
 QMap<QString, QList<const ShipState *>>
 ShipSimulationClient::getAllShipsStates() const
 {
-    QMutexLocker locker(&m_dataAccessMutex);
+    CargoNetSim::Backend::Commons::ScopedReadLock locker(
+        m_dataAccessMutex);
     QMap<QString, QList<const ShipState *>> allStates;
     for (auto it = m_shipState.constBegin();
          it != m_shipState.constEnd(); ++it)
@@ -814,6 +845,7 @@ void ShipSimulationClient::onSimulationNetworkLoaded(
     {
         qDebug() << "Simulation network loaded.";
     }
+    // No shared state modification, no mutex needed
 }
 
 /**
@@ -828,7 +860,9 @@ void ShipSimulationClient::onSimulationCreated(
 {
     QString networkName =
         message.value("networkName").toString();
-    QMutexLocker locker(&m_dataAccessMutex);
+    // Mutex needed because we're modifying m_networkData
+    CargoNetSim::Backend::Commons::ScopedWriteLock locker(
+        m_dataAccessMutex);
     m_networkData[networkName] =
         QList<SimulationResults *>();
     if (m_logger)
@@ -937,6 +971,7 @@ void ShipSimulationClient::onSimulationEnded(
 void ShipSimulationClient::onSimulationAdvanced(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     double newTime =
         message.value("newSimulationTime").toDouble();
     QJsonObject networkProgresses =
@@ -999,6 +1034,7 @@ void ShipSimulationClient::onSimulationAdvanced(
 void ShipSimulationClient::onSimulationProgressUpdate(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     double progress =
         message.value("newProgress").toDouble();
     if (m_logger)
@@ -1018,6 +1054,7 @@ void ShipSimulationClient::onSimulationProgressUpdate(
 void ShipSimulationClient::onShipAddedToSimulator(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QString shipId = message.value("shipID").toString();
     if (m_logger)
     {
@@ -1042,6 +1079,7 @@ void ShipSimulationClient::onShipAddedToSimulator(
 void ShipSimulationClient::onAllShipsReachedDestination(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QString networkName =
         message.value("networkName").toString();
     if (m_logger)
@@ -1069,34 +1107,76 @@ void ShipSimulationClient::onAllShipsReachedDestination(
 void ShipSimulationClient::onShipReachedDestination(
     const QJsonObject &message)
 {
-    QMutexLocker locker(&m_dataAccessMutex);
-    QJsonObject  shipStatus =
-        message.value("state").toObject();
     QStringList shipIds;
-    for (auto it = shipStatus.constBegin();
-         it != shipStatus.constEnd(); ++it)
+    QMap<QString, QStringList>
+        unloadOperations; // Store operations to perform
+                          // after releasing lock
+
+    // First critical section: Extract data and prepare
+    // operations
     {
-        QString networkName = it.key();
-        if (!m_shipState.contains(networkName))
+        // Mutex needed because we're modifying m_shipState
+        CargoNetSim::Backend::Commons::ScopedWriteLock
+                    locker(m_dataAccessMutex);
+        QJsonObject shipStatus =
+            message.value("state").toObject();
+
+        for (auto it = shipStatus.constBegin();
+             it != shipStatus.constEnd(); ++it)
         {
-            m_shipState[networkName] = QList<ShipState *>();
+            QString networkName = it.key();
+            if (!m_shipState.contains(networkName))
+            {
+                m_shipState[networkName] =
+                    QList<ShipState *>();
+            }
+
+            QJsonObject networkStatus =
+                it.value().toObject();
+            if (networkStatus.contains("shipStates"))
+            {
+                QJsonObject shipData =
+                    networkStatus.value("shipStates")
+                        .toObject();
+                QString shipId =
+                    shipData.value("shipID").toString();
+                int containersCount =
+                    shipData.value("containersCount")
+                        .toInt();
+                QStringList terminalIds =
+                    m_shipsDestinationTerminals.value(
+                        shipId);
+
+                // Create and store ship state
+                ShipState *shipState =
+                    new ShipState(shipData);
+                m_shipState[networkName].append(shipState);
+                shipIds.append(shipId);
+
+                // Store the unload operation for execution
+                // outside the lock
+                if (!terminalIds.isEmpty())
+                {
+                    unloadOperations[networkName + ":"
+                                     + shipId] =
+                        terminalIds;
+                }
+            }
         }
-        QJsonObject networkStatus = it.value().toObject();
-        if (networkStatus.contains("shipStates"))
+    }
+
+    // Second section: Perform unload operations without
+    // holding the lock
+    for (auto it = unloadOperations.constBegin();
+         it != unloadOperations.constEnd(); ++it)
+    {
+        QStringList parts = it.key().split(":");
+        if (parts.size() == 2)
         {
-            QJsonObject shipData =
-                networkStatus.value("shipStates")
-                    .toObject();
-            QString shipId =
-                shipData.value("shipID").toString();
-            int containersCount =
-                shipData.value("containersCount").toInt();
-            QStringList terminalIds =
-                m_shipsDestinationTerminals.value(shipId);
-            ShipState *shipState = new ShipState(shipData);
-            m_shipState[networkName].append(shipState);
-            shipIds.append(shipId);
-            locker.unlock();
+            QString     networkName = parts[0];
+            QString     shipId      = parts[1];
+            QStringList terminalIds = it.value();
+
             bool foundTerminal = false;
             for (const QString &terminalId : terminalIds)
             {
@@ -1105,6 +1185,7 @@ void ShipSimulationClient::onShipReachedDestination(
                     networkName, shipId,
                     QStringList{terminalId});
             }
+
             if (!foundTerminal && m_logger)
             {
                 m_logger->log(
@@ -1119,9 +1200,10 @@ void ShipSimulationClient::onShipReachedDestination(
                            << terminalIds.join(", ")
                            << "] exists!";
             }
-            locker.relock();
         }
     }
+
+    // Log the result
     if (m_logger)
     {
         m_logger->log("Ships [" + shipIds.join(", ")
@@ -1145,6 +1227,7 @@ void ShipSimulationClient::onShipReachedDestination(
 void ShipSimulationClient::onShipReachedSeaport(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QString terminalId =
         message.value("seaPortCode").toString();
     int containersCount =
@@ -1173,6 +1256,7 @@ void ShipSimulationClient::onShipReachedSeaport(
 void ShipSimulationClient::onContainersUnloaded(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QJsonArray containers =
         message.value("containers").toArray();
     QString portName = message.value("portName").toString();
@@ -1205,6 +1289,7 @@ void ShipSimulationClient::onContainersUnloaded(
 void ShipSimulationClient::onSimulationResultsAvailable(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QJsonObject results =
         message.value("results").toObject();
     if (m_logger)
@@ -1221,15 +1306,64 @@ void ShipSimulationClient::onSimulationResultsAvailable(
 /**
  * @brief Handles ship state available event
  *
- * Logs when a ship's state becomes available.
+ * Updates the ship state data structure.
  *
  * @param message Event data
  */
 void ShipSimulationClient::onShipStateAvailable(
     const QJsonObject &message)
 {
+    // Mutex needed because we're modifying m_shipState
+    CargoNetSim::Backend::Commons::ScopedWriteLock locker(
+        m_dataAccessMutex);
     QJsonObject shipState =
         message.value("state").toObject();
+
+    // Implement state handling here
+    for (auto it = shipState.constBegin();
+         it != shipState.constEnd(); ++it)
+    {
+        QString networkName = it.key();
+
+        // Ensure the network exists in our map
+        if (!m_shipState.contains(networkName))
+        {
+            m_shipState[networkName] = QList<ShipState *>();
+        }
+
+        // Process ship states in this network
+        QJsonObject networkStatus = it.value().toObject();
+        if (networkStatus.contains("shipStates"))
+        {
+            QJsonObject shipData =
+                networkStatus.value("shipStates")
+                    .toObject();
+            QString shipId =
+                shipData.value("shipID").toString();
+
+            // Check if we already have a state for this
+            // ship and remove it to avoid memory leaks
+            auto &shipStates = m_shipState[networkName];
+            for (int i = 0; i < shipStates.size(); ++i)
+            {
+                if (shipStates[i]->shipId() == shipId)
+                {
+                    // Delete the old state and remove it
+                    // from the list
+                    delete shipStates[i];
+                    shipStates.removeAt(i);
+                    break;
+                }
+            }
+
+            // Create new ship state from the received data
+            ShipState *shipState = new ShipState(shipData);
+
+            // Add to our state collection
+            shipStates.append(shipState);
+        }
+    }
+
     if (m_logger)
     {
         m_logger->log("Ship state available",
@@ -1251,6 +1385,7 @@ void ShipSimulationClient::onShipStateAvailable(
 void ShipSimulationClient::onSimulatorStateAvailable(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QJsonObject simulatorState =
         message.value("state").toObject();
     if (m_logger)
@@ -1274,6 +1409,7 @@ void ShipSimulationClient::onSimulatorStateAvailable(
 void ShipSimulationClient::onErrorOccurred(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QString errorMessage =
         message.value("errorMessage").toString();
     if (m_logger)
@@ -1295,6 +1431,7 @@ void ShipSimulationClient::onErrorOccurred(
  */
 void ShipSimulationClient::onServerReset()
 {
+    // No shared state modification, no mutex needed
     if (m_logger)
     {
         m_logger->log("Server reset successfully",
@@ -1316,6 +1453,7 @@ void ShipSimulationClient::onServerReset()
 void ShipSimulationClient::onContainersAdded(
     const QJsonObject &message)
 {
+    // No shared state modification, no mutex needed
     QString network =
         message.value("networkName").toString();
     QString shipId = message.value("shipID").toString();

@@ -182,17 +182,20 @@ bool CargoNetSimController::stopAll()
     {
         // Stop all truck instances
         QStringList networks = {"*"};
-        m_truckManager->runSimulationSync(networks);
+        // TODO: Terminate all manager clients if running
+        // m_truckManager->terminateSimulators(networks);
     }
 
     if (m_shipClient)
     {
-        m_shipClient->endSimulator({"*"});
+        // TODO: Terminate simulations if running
+        // m_shipClient->terminateSimulations({"*"});
     }
 
     if (m_trainClient)
     {
-        m_trainClient->endSimulator({"*"});
+        // TODO: Terminate simulations if running
+        // m_trainClient->terminateSimulations({"*"});
     }
 
     return true;
@@ -283,6 +286,7 @@ void CargoNetSimController::onThreadStarted()
         if (m_shipClient)
         {
             m_shipClient->initializeClient(m_logger);
+            m_shipClient->connectToServer();
         }
     }
     else if (senderThread == m_trainThread)
@@ -290,6 +294,7 @@ void CargoNetSimController::onThreadStarted()
         if (m_trainClient)
         {
             m_trainClient->initializeClient(m_logger);
+            m_trainClient->connectToServer();
         }
     }
     else if (senderThread == m_terminalThread)
@@ -297,13 +302,37 @@ void CargoNetSimController::onThreadStarted()
         if (m_terminalClient)
         {
             m_terminalClient->initializeClient(m_logger);
+            m_terminalClient->connectToServer();
         }
     }
 }
 
 void CargoNetSimController::onThreadFinished()
 {
-    // Handle thread completion if needed
+    QThread *senderThread =
+        qobject_cast<QThread *>(sender());
+
+    if (senderThread == m_shipThread)
+    {
+        if (m_shipClient)
+        {
+            m_shipClient->disconnectFromServer();
+        }
+    }
+    else if (senderThread == m_trainThread)
+    {
+        if (m_trainClient)
+        {
+            m_trainClient->disconnectFromServer();
+        }
+    }
+    else if (senderThread == m_terminalThread)
+    {
+        if (m_terminalClient)
+        {
+            m_terminalClient->disconnectFromServer();
+        }
+    }
 }
 
 bool CargoNetSimController::initializeTruckClient(
@@ -313,21 +342,10 @@ bool CargoNetSimController::initializeTruckClient(
     m_truckThread = new QThread();
     m_truckThread->setObjectName("TruckSimulationThread");
 
-    // Create truck client
-    auto truckClient =
-        new Backend::TruckClient::TruckSimulationClient(
-            exePath, nullptr);
-
     // Create truck manager
     m_truckManager =
         new Backend::TruckClient::TruckSimulationManager(
             nullptr);
-
-    // Add client to manager
-    // Ownership of the truckClient will be given to the
-    // manager
-    m_truckManager->addClient("MainTruckNetwork",
-                              truckClient, m_logger);
 
     // Move truck manager to truck thread
     m_truckManager->moveToThread(m_truckThread);

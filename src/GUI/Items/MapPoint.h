@@ -33,8 +33,8 @@ public:
      *
      * @param referencedNetworkID The network ID this point
      * references
-     * @param x The x coordinate
-     * @param y The y coordinate
+     * @param sceneCoordinates The scene coordinates of the
+     * point
      * @param region The network region this point belongs
      * to
      * @param shape The shape to draw ("circle",
@@ -43,8 +43,9 @@ public:
      * point
      * @param properties Optional additional properties
      */
-    MapPoint(const QString &referencedNetworkID, qreal x,
-             qreal y, const QString &region,
+    MapPoint(const QString &referencedNetworkID,
+             QPointF        sceneCoordinates,
+             const QString &region,
              const QString &shape    = "circle",
              TerminalItem  *terminal = nullptr,
              const QMap<QString, QVariant> &properties =
@@ -115,19 +116,11 @@ public:
     }
 
     /**
-     * @brief Get the m_x coordinate
+     * @brief Get the coordinates of the point
      */
-    qreal getX() const
+    QPointF getSceneCoordinate()
     {
-        return m_x;
-    }
-
-    /**
-     * @brief Get the m_y coordinate
-     */
-    qreal getY() const
-    {
-        return m_y;
+        return m_sceneCoordinate;
     }
 
     QString getReferencedNetworkNodeID() const
@@ -144,6 +137,34 @@ public:
         return m_properties
             .value("region", "Default Region")
             .toString();
+    }
+
+    /**
+     * @brief Sets a specific property value
+     * @param key The property key
+     * @param value The property value to set
+     */
+    void setProperty(const QString  &key,
+                     const QVariant &value)
+    {
+        if (!m_properties.contains(key)
+            || m_properties[key] != value)
+        {
+            m_properties[key] = value;
+            emit propertyChanged(key, value);
+            emit propertiesChanged();
+        }
+    }
+
+    /**
+     * @brief Gets a specific property value
+     * @param key The property key
+     * @return The property value or invalid QVariant if not
+     * found
+     */
+    QVariant getProperty(const QString &key) const
+    {
+        return m_properties.value(key, QVariant());
     }
 
     /**
@@ -218,8 +239,7 @@ private:
     static int POINT_ID;
 
     int                     m_id;
-    qreal                   m_x;
-    qreal                   m_y;
+    QPointF                 m_sceneCoordinate;
     QString                 m_shape;
     TerminalItem           *m_terminal;
     QColor                  m_color;

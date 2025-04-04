@@ -46,6 +46,16 @@ public:
                             QString    &networkName);
 
     static void
+    changeNetworkVisibility(MainWindow    *mainWindow,
+                            const QString &networkName,
+                            const bool     isVisible);
+
+    static void
+    changeNetworkColor(MainWindow    *mainWindow,
+                       const QString &networkName,
+                       const QColor   newColor);
+
+    static void
     removeNetwork(MainWindow          *mainWindow,
                   NetworkType          networkType,
                   Backend::RegionData *regionData,

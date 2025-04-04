@@ -119,6 +119,33 @@ public:
     }
 
     /**
+     * @brief Sets a specific property value
+     * @param key The property key
+     * @param value The property value to set
+     */
+    void setProperty(const QString  &key,
+                     const QVariant &value)
+    {
+        if (!properties.contains(key)
+            || properties[key] != value)
+        {
+            properties[key] = value;
+            emit propertyChanged(key, value);
+        }
+    }
+
+    /**
+     * @brief Gets a specific property value
+     * @param key The property key
+     * @return The property value or invalid QVariant if not
+     * found
+     */
+    QVariant getProperty(const QString &key) const
+    {
+        return properties.value(key, QVariant());
+    }
+
+    /**
      * @brief Serializes the line to a dictionary for
      * storage
      */

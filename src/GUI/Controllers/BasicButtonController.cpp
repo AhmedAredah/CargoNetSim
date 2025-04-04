@@ -48,13 +48,14 @@ void BasicButtonController::resetOtherButtons(
         }
 
         // Reset associated modes in the scene
-        mainWindow->regionScene_->connectMode      = false;
-        mainWindow->regionScene_->linkTerminalMode = false;
-        mainWindow->regionScene_->unlinkTerminalMode =
-            false;
-        mainWindow->regionScene_->measureMode = false;
-        mainWindow->regionScene_->connectFirstItem =
-            QVariant();
+        mainWindow->regionScene_->setIsInConnectMode(false);
+        mainWindow->regionScene_->setIsInLinkTerminalMode(
+            false);
+        mainWindow->regionScene_->setIsInUnlinkTerminalMode(
+            false);
+        mainWindow->regionScene_->setIsInMeasureMode(false);
+        mainWindow->regionScene_->setConnectedFirstItem(
+            QVariant());
         mainWindow->selectedTerminal_ = nullptr;
     }
     catch (const std::exception &e)
@@ -122,21 +123,22 @@ void BasicButtonController::toggleConnectMode(
                     ? mainWindow->regionScene_
                     : mainWindow->globalMapScene_;
 
-            currentScene->connectMode      = true;
-            currentScene->connectFirstItem = QVariant();
+            currentScene->setIsInConnectMode(true);
+            currentScene->setConnectedFirstItem(QVariant());
             mainWindow->statusBar()->showMessage(
                 "Click on two terminals to connect them...",
                 3000);
         }
         else
         {
-            mainWindow->regionScene_->connectMode = false;
-            mainWindow->regionScene_->connectFirstItem =
-                QVariant();
-            mainWindow->globalMapScene_->connectMode =
-                false;
-            mainWindow->globalMapScene_->connectFirstItem =
-                QVariant();
+            mainWindow->regionScene_->setIsInConnectMode(
+                false);
+            mainWindow->regionScene_->setConnectedFirstItem(
+                QVariant());
+            mainWindow->globalMapScene_->setIsInConnectMode(
+                false);
+            mainWindow->globalMapScene_
+                ->setConnectedFirstItem(QVariant());
             mainWindow->connectButton_->setChecked(false);
             mainWindow->statusBar()->showMessage(
                 "Connect mode disabled", 2000);
@@ -165,9 +167,10 @@ void BasicButtonController::toggleLinkTerminalMode(
                 mainWindow->linkTerminalButton_);
 
             // Disable other modes when entering link mode
-            mainWindow->regionScene_->connectMode = false;
-            mainWindow->regionScene_->linkTerminalMode =
-                true;
+            mainWindow->regionScene_->setIsInConnectMode(
+                false);
+            mainWindow->regionScene_
+                ->setIsInLinkTerminalMode(true);
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->statusBar()->showMessage(
                 "Select a terminal, then select a node to "
@@ -176,8 +179,8 @@ void BasicButtonController::toggleLinkTerminalMode(
         }
         else
         {
-            mainWindow->regionScene_->linkTerminalMode =
-                false;
+            mainWindow->regionScene_
+                ->setIsInLinkTerminalMode(false);
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->linkTerminalButton_->setChecked(
                 false);
@@ -209,11 +212,12 @@ void BasicButtonController::toggleUnlinkTerminalMode(
                 mainWindow->unlinkTerminalButton_);
 
             // Disable other modes when entering unlink mode
-            mainWindow->regionScene_->connectMode = false;
-            mainWindow->regionScene_->linkTerminalMode =
-                false;
-            mainWindow->regionScene_->unlinkTerminalMode =
-                true;
+            mainWindow->regionScene_->setIsInConnectMode(
+                false);
+            mainWindow->regionScene_
+                ->setIsInLinkTerminalMode(false);
+            mainWindow->regionScene_
+                ->setIsInUnlinkTerminalMode(true);
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->statusBar()->showMessage(
                 "Select a terminal, then select a node to "
@@ -222,8 +226,8 @@ void BasicButtonController::toggleUnlinkTerminalMode(
         }
         else
         {
-            mainWindow->regionScene_->unlinkTerminalMode =
-                false;
+            mainWindow->regionScene_
+                ->setIsInUnlinkTerminalMode(false);
             mainWindow->selectedTerminal_ = nullptr;
             mainWindow->unlinkTerminalButton_->setChecked(
                 false);
@@ -268,16 +272,17 @@ void BasicButtonController::toggleMeasureMode(
             return;
         }
 
-        currentView->measureMode  = checked;
-        currentScene->measureMode = checked;
-        currentScene->measurementTool =
-            nullptr; // Reset measurement tool
+        currentView->setMeasureMode(checked);
+        currentScene->setIsInMeasureMode(checked);
+        currentScene->setMeasurementTool(
+            nullptr); // Reset measurement tool
 
         if (!checked)
         {
-            if (currentView->measurementTool)
+            if (currentView->getMeasurementTool())
             {
-                if (currentView->measurementTool->scene())
+                if (currentView->getMeasurementTool()
+                        ->scene())
                 {
                     GraphicsScene *scene =
                         currentView->getScene();
@@ -285,11 +290,12 @@ void BasicButtonController::toggleMeasureMode(
                     {
                         scene->removeItemWithId<
                             DistanceMeasurementTool>(
-                            currentView->measurementTool
+                            currentView
+                                ->getMeasurementTool()
                                 ->getID());
                     }
                 }
-                currentView->measurementTool = nullptr;
+                currentView->setMeasurementTool(nullptr);
             }
             currentView
                 ->unsetCursor(); // Restore default cursor
@@ -329,7 +335,7 @@ void BasicButtonController::toggleMeasureMode(
 
         if (currentView)
         {
-            currentView->measureMode = false;
+            currentView->setMeasureMode(false);
 
             GraphicsScene *currentScene =
                 dynamic_cast<GraphicsScene *>(
@@ -337,11 +343,12 @@ void BasicButtonController::toggleMeasureMode(
 
             if (currentScene)
             {
-                currentScene->measureMode = false;
+                currentScene->setIsInMeasureMode(false);
             }
 
-            if (currentView->measurementTool
-                && currentView->measurementTool->scene())
+            if (currentView->getMeasurementTool()
+                && currentView->getMeasurementTool()
+                       ->scene())
             {
                 GraphicsScene *scene =
                     currentView->getScene();
@@ -349,11 +356,11 @@ void BasicButtonController::toggleMeasureMode(
                 {
                     scene->removeItemWithId<
                         DistanceMeasurementTool>(
-                        currentView->measurementTool
+                        currentView->getMeasurementTool()
                             ->getID());
                 }
 
-                currentView->measurementTool = nullptr;
+                currentView->setMeasurementTool(nullptr);
             }
 
             currentView->unsetCursor();
@@ -602,8 +609,11 @@ void BasicButtonController::disconnectAllTerminals(
                 item->getID());
         }
 
-        mainWindow->showStatusBarMessage(
-            "All terminals disconnected", 2000);
+        if (mainWindow)
+        {
+            mainWindow->showStatusBarMessage(
+                "All terminals disconnected", 2000);
+        }
     }
     catch (const std::exception &e)
     {
@@ -619,6 +629,11 @@ void BasicButtonController::disconnectAllTerminals(
 void BasicButtonController::toggleConnectionLines(
     MainWindow *mainWindow, bool checked)
 {
+    if (!mainWindow)
+    {
+        return;
+    }
+
     try
     {
         // Update button text
@@ -671,6 +686,11 @@ void BasicButtonController::toggleConnectionLines(
 void BasicButtonController::toggleTerminals(
     MainWindow *mainWindow, bool checked)
 {
+    if (!mainWindow)
+    {
+        return;
+    }
+
     try
     {
         // Update button text
@@ -900,8 +920,8 @@ void BasicButtonController::toggleSetGlobalPositionMode(
     {
         // Force reset the scene mode to match the button
         // state
-        mainWindow->globalMapScene_->setGlobalPositionMode =
-            checked;
+        mainWindow->globalMapScene_
+            ->setIsInGlobalPositionMode(checked);
 
         if (checked)
         {

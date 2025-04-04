@@ -99,10 +99,10 @@ void PropertiesPanel::displayMapProperties()
         {tr("WGS84 (Geodetic)"),
          tr("WGS84 World Mercator (Projected)")});
     coordCombo->setCurrentIndex(
-        view->useProjectedCoords ? 1 : 0);
+        view->isUsingProjectedCoords() ? 1 : 0);
     connect(
         coordCombo,
-        QOverload<int>::of(&QComboBox::currentIndexChanged),
+        &QComboBox::currentIndexChanged,
         this, &PropertiesPanel::onCoordSystemChanged);
 
     QLabel *descLabel =
@@ -257,7 +257,7 @@ void PropertiesPanel::addCoordinateField(
     QString label;
     QString valueStr;
 
-    if (view->useProjectedCoords)
+    if (view->isUsingProjectedCoords())
     {
         double lat =
             item->getProperties()["Latitude"].toDouble();
@@ -1519,7 +1519,7 @@ void PropertiesPanel::onCoordSystemChanged(int index)
         return;
     }
 
-    view->useProjectedCoords = (index == 1);
+    view->setUsingProjectedCoords(index == 1);
     mainWindow->updateAllCoordinates();
 }
 

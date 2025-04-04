@@ -248,8 +248,8 @@ void MainWindow::setupRegionMapScene()
     regionView_->setScene(regionScene_);
 
     // Add connection methods
-    regionScene_->connectMode      = false;
-    regionScene_->connectFirstItem = QVariant();
+    regionScene_->setIsInConnectMode(false);
+    regionScene_->setConnectedFirstItem(QVariant());
 }
 
 void MainWindow::setupGlobalMapScene()
@@ -258,12 +258,12 @@ void MainWindow::setupGlobalMapScene()
     globalMapView_  = new GraphicsView(globalMapScene_);
 
     // Force geodetic coordinates for global map
-    globalMapView_->useProjectedCoords = false;
+    globalMapView_->setUsingProjectedCoords(false);
     globalMapView_->setScene(globalMapScene_);
 
     // Add connection methods
-    globalMapScene_->connectMode      = false;
-    globalMapScene_->connectFirstItem = QVariant();
+    globalMapScene_->setIsInConnectMode(false);
+    globalMapScene_->setConnectedFirstItem(QVariant());
 }
 
 void MainWindow::setupDocks()
@@ -732,8 +732,8 @@ void MainWindow::handleTabChange(int index)
     bool isMainView = !(isGlobalMap || isLoggingTab);
 
     // Common state reset
-    regionScene_->connectMode    = false;
-    globalMapScene_->connectMode = false;
+    regionScene_->setIsInConnectMode(false);
+    globalMapScene_->setIsInConnectMode(false);
 
     // Reset measurement mode when changing tabs
     measureButton_->setChecked(false);
@@ -849,29 +849,25 @@ void MainWindow::updateGroupVisibility(
 
 void MainWindow::updateAllCoordinates()
 {
-    // TODO
-    // for (auto it = regionCenters_.begin(); it !=
-    // regionCenters_.end(); ++it) {
-    //     const QString& regionName = it.key();
-    //     RegionCenterPoint* center = it.value();
-    //     QPointF pos = center->pos();
+    if (!regionScene_ || !regionView_)
+        return;
 
-    //     double lat, lon;
-    //     std::tie(lat, lon) =
-    //     regionView_->sceneToWGS84(pos);
-    //     center->getProperties()["Latitude"] =
-    //     QString::number(lat, 'f', 6);
-    //     center->getProperties()["Longitude"] =
-    //     QString::number(lon, 'f', 6);
-    // }
+    // Get all items in the scene
+    QList<QGraphicsItem*> allItems = regionScene_->items();
 
-    // // If properties panel is displaying a region center,
-    // update its display if
-    // (propertiesPanel_->getCurrentItem() &&
-    // dynamic_cast<RegionCenterPoint*>(propertiesPanel_->getCurrentItem()))
-    // {
-    //     propertiesPanel_->displayProperties(propertiesPanel_->getCurrentItem());
-    // }
+    // Update the properties panel if it's showing coordinates
+    if (propertiesPanel_ && propertiesPanel_->getCurrentItem()) {
+        QGraphicsItem* currentItem = propertiesPanel_->getCurrentItem();
+        if (dynamic_cast<RegionCenterPoint*>(currentItem) ||
+            dynamic_cast<MapPoint*>(currentItem) ||
+            dynamic_cast<TerminalItem*>(currentItem) ||
+            dynamic_cast<BackgroundPhotoItem*>(currentItem)) {
+            propertiesPanel_->displayProperties(currentItem);
+        }
+    }
+
+    // Update the view
+    regionView_->viewport()->update();
 }
 
 void MainWindow::showStatusBarMessage(QString message,
@@ -920,7 +916,7 @@ void MainWindow::togglePanMode()
 void MainWindow::handleTerminalNodeLinking(
     QGraphicsItem *item)
 {
-    if (!regionScene_->linkTerminalMode)
+    if (!regionScene_->isInLinkTerminalMode())
     {
         return;
     }
@@ -940,28 +936,13 @@ void MainWindow::handleTerminalNodeLinking(
     MapPoint *mapPoint = dynamic_cast<MapPoint *>(item);
     if (mapPoint && selectedTerminal_)
     {
-        // Link the terminal to the node
-        mapPoint->setLinkedTerminal(selectedTerminal_);
-        mapPoint->getProperties()["LinkedTerminal"] =
-            selectedTerminal_->getProperties()["ID"];
-
-        // Update the properties panel if this item is
-        // currently selected
-        if (propertiesPanel_->getCurrentItem() == mapPoint)
-        {
-            propertiesPanel_->displayProperties(mapPoint);
-        }
+        UtilitiesFunctions::linkMapPointToTerminal(
+            this, mapPoint, selectedTerminal_);
 
         // Exit linking mode
         linkTerminalButton_->setChecked(false);
-        regionScene_->linkTerminalMode = false;
-        selectedTerminal_              = nullptr;
-        showStatusBarMessage(
-            "Terminal linked to node successfully", 2000);
-
-        // Force a redraw of the MapPoint to show the
-        // terminal icon
-        mapPoint->update();
+        regionScene_->setIsInLinkTerminalMode(false);
+        selectedTerminal_ = nullptr;
     }
     else if (!selectedTerminal_)
     {
@@ -973,7 +954,7 @@ void MainWindow::handleTerminalNodeLinking(
 void MainWindow::handleTerminalNodeUnlinking(
     QGraphicsItem *item)
 {
-    if (!regionScene_->unlinkTerminalMode)
+    if (!regionScene_->isInUnlinkTerminalMode())
     {
         return;
     }
@@ -993,7 +974,7 @@ void MainWindow::handleTerminalNodeUnlinking(
 
         // Exit unlinking mode
         unlinkTerminalButton_->setChecked(false);
-        regionScene_->unlinkTerminalMode = false;
+        regionScene_->setIsInUnlinkTerminalMode(false);
         selectedTerminal_                = nullptr;
         showStatusBarMessage(
             "Terminal unlinked successfully", 2000);
@@ -1195,7 +1176,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     // Handle Delete key for removing selected items
-    if (event->key() == Qt::Key_Delete)
+    if (event->key() == Qt::Key_Delete
+        || event->key() == Qt::Key_Backspace)
     {
         GraphicsScene *currentScene = getCurrentScene();
         if (!currentScene)
@@ -1246,7 +1228,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             }
         }
 
-        // Process all selected items
+        // Process terminal items first to handle their
+        // associated items
         for (QGraphicsItem *item : selectedItems)
         {
             // Handle terminal items
@@ -1255,49 +1238,56 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
             if (terminal)
             {
-                if (currentScene == regionScene_
-                    && terminal)
+                // If in main view, we need to clean up the
+                // global map as well
+                if (currentScene == regionScene_)
                 {
-                    // TODO
-                    // // If in main view, we need to clean
-                    // // up the global map as well
-                    // GlobalTerminalItem *globalItem =
-                    //     globalMapItems_.value(terminal,
-                    //                           nullptr);
+                    GlobalTerminalItem *globalItem =
+                        terminal->getGlobalTerminalItem();
 
-                    // if (globalItem)
-                    // {
-                    //     // Remove all connection lines in
-                    //     // the global scene that
-                    //     // involve this terminal
-                    //     for (QGraphicsItem *connection :
-                    //          globalMapScene_->items())
-                    //     {
-                    //         ConnectionLine *line =
-                    //             dynamic_cast<
-                    //                 ConnectionLine *>(
-                    //                 connection);
-                    //         if (line
-                    //             && (line->startItem()
-                    //                     == globalItem
-                    //                 || line->endItem()
-                    //                        ==
-                    //                        globalItem))
-                    //         {
-                    //             globalMapScene_->removeItem(
-                    //                 line);
-                    //         }
-                    //     }
+                    if (globalItem)
+                    {
+                        // Remove all connection lines in
+                        // the global scene that involve
+                        // this terminal
+                        QList<ConnectionLine *>
+                            linesToRemove;
+                        for (QGraphicsItem *connection :
+                             globalMapScene_->items())
+                        {
+                            ConnectionLine *line =
+                                dynamic_cast<
+                                    ConnectionLine *>(
+                                    connection);
+                            if (line
+                                && (line->startItem()
+                                        == globalItem
+                                    || line->endItem()
+                                           == globalItem))
+                            {
+                                linesToRemove.append(line);
+                            }
+                        }
 
-                    //     // Remove the global item
-                    //     globalMapScene_->removeItem(
-                    //         globalItem);
-                    // }
+                        // Remove the connections
+                        for (ConnectionLine *line :
+                             linesToRemove)
+                        {
+                            globalMapScene_->removeItem(
+                                line);
+                            delete line;
+                        }
+
+                        // Remove the global item
+                        globalMapScene_->removeItem(
+                            globalItem);
+                        delete globalItem;
+                    }
                 }
 
-                // Remove connection lines associated
-                // with this terminal in the current
-                // scene
+                // Remove connection lines associated with
+                // this terminal in the current scene
+                QList<ConnectionLine *> linesToRemove;
                 for (QGraphicsItem *connection :
                      currentScene->items())
                 {
@@ -1308,17 +1298,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                         && (line->startItem() == item
                             || line->endItem() == item))
                     {
-                        currentScene->removeItem(line);
+                        linesToRemove.append(line);
                     }
                 }
 
-                // Remove map point links to this
-                // terminal
-                for (QGraphicsItem *mapPoint :
+                // Remove the connections
+                for (ConnectionLine *line : linesToRemove)
+                {
+                    currentScene->removeItem(line);
+                    delete line;
+                }
+
+                // Remove map point links to this terminal
+                for (QGraphicsItem *mapPointItem :
                      currentScene->items())
                 {
                     MapPoint *point =
-                        dynamic_cast<MapPoint *>(mapPoint);
+                        dynamic_cast<MapPoint *>(
+                            mapPointItem);
                     if (point
                         && point->getLinkedTerminal()
                                == terminal)
@@ -1329,22 +1326,36 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
                 // Remove the terminal
                 currentScene->removeItem(item);
+                delete item;
             }
             // Handle connection lines
-            else if (dynamic_cast<ConnectionLine *>(item))
+            else if (ConnectionLine *line =
+                         dynamic_cast<ConnectionLine *>(
+                             item))
             {
-                currentScene->removeItem(item);
+                currentScene->removeItem(line);
+                delete line;
             }
             // Handle background photos
-            else if (dynamic_cast<BackgroundPhotoItem *>(
-                         item))
+            else if (BackgroundPhotoItem *photo =
+                         dynamic_cast<
+                             BackgroundPhotoItem *>(item))
             {
-                BackgroundPhotoItem *photo =
-                    dynamic_cast<BackgroundPhotoItem *>(
-                        item);
-                currentScene
-                    ->removeItemWithId<BackgroundPhotoItem>(
-                        photo->getID());
+                currentScene->removeItem(photo);
+                delete photo;
+            }
+            // Handle other item types as needed
+            else if (MapPoint *point =
+                         dynamic_cast<MapPoint *>(item))
+            {
+                currentScene->removeItem(point);
+                delete point;
+            }
+            else if (MapLine *line =
+                         dynamic_cast<MapLine *>(item))
+            {
+                currentScene->removeItem(line);
+                delete line;
             }
         }
 
@@ -1369,12 +1380,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         measureButton_->setChecked(false);
 
         // Reset all scene modes
-        regionScene_->connectMode        = false;
-        regionScene_->linkTerminalMode   = false;
-        regionScene_->unlinkTerminalMode = false;
-        regionScene_->measureMode        = false;
-        regionScene_->connectFirstItem   = QVariant();
-        selectedTerminal_                = nullptr;
+        regionScene_->setIsInConnectMode(false);
+        regionScene_->setIsInLinkTerminalMode(false);
+        regionScene_->setIsInUnlinkTerminalMode(false);
+        regionScene_->setIsInMeasureMode(false);
+        regionScene_->setConnectedFirstItem(QVariant());
+        selectedTerminal_ = nullptr;
 
         // Reset cursor
         unsetCursor();

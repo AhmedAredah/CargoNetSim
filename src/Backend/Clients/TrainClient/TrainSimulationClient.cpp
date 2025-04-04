@@ -54,7 +54,7 @@ TrainSimulationClient::TrainSimulationClient(
 TrainSimulationClient::~TrainSimulationClient()
 {
     // Lock mutex to safely clean up resources
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedWriteLock locker(m_dataAccessMutex);
 
     // Delete all simulation results
     for (auto &results : m_networkData)
@@ -220,7 +220,8 @@ bool TrainSimulationClient::defineSimulator(
         // If successful, store train objects
         if (success)
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            Commons::ScopedWriteLock locker(
+                m_dataAccessMutex);
             for (const auto *train : trains)
             {
                 if (train)
@@ -257,7 +258,8 @@ bool TrainSimulationClient::runSimulator(
         QStringList networks = networkNames;
         if (networks.contains("*"))
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            Commons::ScopedReadLock locker(
+                m_dataAccessMutex);
             networks = m_networkData.keys();
         }
 
@@ -308,7 +310,8 @@ bool TrainSimulationClient::endSimulator(
         QStringList networks = networkNames;
         if (networks.contains("*"))
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            Commons::ScopedReadLock locker(
+                m_dataAccessMutex);
             networks = m_networkData.keys();
         }
 
@@ -375,7 +378,8 @@ bool TrainSimulationClient::addTrainsToSimulator(
         // If successful, store train objects
         if (success)
         {
-            QMutexLocker locker(&m_dataAccessMutex);
+            Commons::ScopedWriteLock locker(
+                m_dataAccessMutex);
             for (const auto *train : trains)
             {
                 if (train)
@@ -526,7 +530,7 @@ const TrainState *TrainSimulationClient::getTrainState(
     const QString &networkName,
     const QString &trainId) const
 {
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedReadLock locker(m_dataAccessMutex);
     if (!m_trainState.contains(networkName))
     {
         if (m_logger)
@@ -559,7 +563,7 @@ QList<const TrainState *>
 TrainSimulationClient::getAllNetworkTrainStates(
     const QString &networkName) const
 {
-    QMutexLocker              locker(&m_dataAccessMutex);
+    Commons::ScopedReadLock   locker(m_dataAccessMutex);
     QList<const TrainState *> states;
 
     if (m_trainState.contains(networkName))
@@ -585,7 +589,7 @@ TrainSimulationClient::getAllNetworkTrainStates(
 QMap<QString, QList<const TrainState *>>
 TrainSimulationClient::getAllTrainsStates() const
 {
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedReadLock locker(m_dataAccessMutex);
     QMap<QString, QList<const TrainState *>> allStates;
 
     for (auto it = m_trainState.constBegin();
@@ -705,7 +709,7 @@ void TrainSimulationClient::onSimulationCreated(
     QString network = message["network"].toString();
 
     // Lock mutex for safe data access
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedWriteLock locker(m_dataAccessMutex);
 
     // Initialize new results for network
     m_networkData[network] = new SimulationResults();
@@ -743,7 +747,7 @@ void TrainSimulationClient::onTrainReachedDestination(
     const QJsonObject &message)
 {
     // Lock mutex for safe data access
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedWriteLock locker(m_dataAccessMutex);
 
     // Extract train status from message
     QJsonObject trainStatus = message["state"].toObject();
@@ -802,10 +806,29 @@ void TrainSimulationClient::onTrainReachedDestination(
             //     (TerminalGraphServer::getInstance()->terminal(terminalId)
             //             ->checkCapacityStatus(containersCount))
             //             {
-            //         locker.unlock();
-            //         unloadTrainPrivate(network,
-            //         state->m_trainUserId, aliases);
-            //         locker.relock();
+            //         // Store needed info before releasing
+            //         lock QString targetNetwork = network;
+            //         QString targetTrainId =
+            //         state->m_trainUserId; QStringList
+            //         targetAliases = aliases;
+            //
+            //         // Release lock, perform unload
+            //         operation, then acquire a new lock if
+            //         needed
+            //         {
+            //             // End the current scope to
+            //             release the lock
+            //         }
+            //
+            //         // Perform unload operation without
+            //         holding the lock
+            //         unloadTrainPrivate(targetNetwork,
+            //         targetTrainId, targetAliases);
+            //
+            //         // Re-acquire lock if needed for
+            //         further operations
+            //         // Commons::ScopedWriteLock
+            //         newLocker(m_dataAccessMutex);
             //     }
             // }
         }
@@ -852,7 +875,7 @@ void TrainSimulationClient::onSimulationResultsAvailable(
     QJsonObject results = message["results"].toObject();
 
     // Lock mutex for safe data access
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedWriteLock locker(m_dataAccessMutex);
 
     // Update results for each network
     for (auto it = results.begin(); it != results.end();
@@ -918,7 +941,7 @@ void TrainSimulationClient::onErrorOccurred(
 void TrainSimulationClient::onServerReset()
 {
     // Lock mutex for safe data access
-    QMutexLocker locker(&m_dataAccessMutex);
+    Commons::ScopedWriteLock locker(m_dataAccessMutex);
 
     // Clean up simulation results
     for (auto &results : m_networkData)
