@@ -609,8 +609,11 @@ void BasicButtonController::disconnectAllTerminals(
                 item->getID());
         }
 
-        mainWindow->showStatusBarMessage(
-            "All terminals disconnected", 2000);
+        if (mainWindow)
+        {
+            mainWindow->showStatusBarMessage(
+                "All terminals disconnected", 2000);
+        }
     }
     catch (const std::exception &e)
     {
@@ -626,6 +629,11 @@ void BasicButtonController::disconnectAllTerminals(
 void BasicButtonController::toggleConnectionLines(
     MainWindow *mainWindow, bool checked)
 {
+    if (!mainWindow)
+    {
+        return;
+    }
+
     try
     {
         // Update button text
@@ -678,6 +686,11 @@ void BasicButtonController::toggleConnectionLines(
 void BasicButtonController::toggleTerminals(
     MainWindow *mainWindow, bool checked)
 {
+    if (!mainWindow)
+    {
+        return;
+    }
+
     try
     {
         // Update button text
