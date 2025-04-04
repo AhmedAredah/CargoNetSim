@@ -79,6 +79,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     newProjectButton->setText("New\nProject");
     newProjectButton->setIcon(
         QIcon(IconFactory::createNewProjectIcon()));
+    newProjectButton->setEnabled(false);
     // QObject::connect(newProjectButton,
     // &QToolButton::clicked,
     //                  [mainWindow]() {
@@ -93,6 +94,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     openProjectButton->setText("Open\nProject");
     openProjectButton->setIcon(
         QIcon(IconFactory::createOpenProjectIcon()));
+    openProjectButton->setEnabled(false);
     // QObject::connect(openProjectButton,
     // &QToolButton::clicked,
     //                  [mainWindow]() {
@@ -107,6 +109,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     saveProjectButton->setText("Save\nProject");
     saveProjectButton->setIcon(
         QIcon(IconFactory::createSaveProjectIcon()));
+    saveProjectButton->setEnabled(false);
     // QObject::connect(saveProjectButton,
     // &QToolButton::clicked,
     //                  [mainWindow]() {
@@ -283,57 +286,63 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     networkToolsLayout->setContentsMargins(8, 12, 8, 8);
 
     // Add connect visible terminals button
-    QToolButton *connectVisibleTerminalsButton =
+    QToolButton *connectVisibleTerminalsByNetworkButton =
         new QToolButton();
-    connectVisibleTerminalsButton->setToolButtonStyle(
-        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
-    connectVisibleTerminalsButton->setText(
+    connectVisibleTerminalsByNetworkButton
+        ->setToolButtonStyle(
+            Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    connectVisibleTerminalsByNetworkButton->setText(
         "Auto Connect\nTerminals By Networks");
-    connectVisibleTerminalsButton->setIcon(QIcon(
+    connectVisibleTerminalsByNetworkButton->setIcon(QIcon(
         IconFactory::createAutoConnectTerminalsIcon()));
 
     // Create a menu for the button
     QMenu *autoConnectMenu = new QMenu();
 
     // Create a custom QToolButton for the menu
-    QToolButton *menuButton = new QToolButton();
-    menuButton->setToolButtonStyle(
-        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
-    menuButton->setText(
+    QToolButton *connectTerminalItemsByInterfaceButton =
+        new QToolButton();
+    connectTerminalItemsByInterfaceButton
+        ->setToolButtonStyle(
+            Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    connectTerminalItemsByInterfaceButton->setText(
         "Auto Connect\nTerminals By Interfaces");
-    menuButton->setIcon(
+    connectTerminalItemsByInterfaceButton->setIcon(
         QIcon(IconFactory::createConnectByInterfaceIcon()));
-    menuButton->setIconSize(
+    connectTerminalItemsByInterfaceButton->setIconSize(
         QSize(32, 32)); // Match the toolbar icon size
 
     // Create a QWidgetAction to hold the custom button
     QWidgetAction *widgetAction =
         new QWidgetAction(mainWindow);
-    widgetAction->setDefaultWidget(menuButton);
+    widgetAction->setDefaultWidget(
+        connectTerminalItemsByInterfaceButton);
 
     autoConnectMenu->addAction(widgetAction);
 
-    connectVisibleTerminalsButton->setMenu(autoConnectMenu);
-    connectVisibleTerminalsButton->setPopupMode(
+    connectVisibleTerminalsByNetworkButton->setMenu(
+        autoConnectMenu);
+    connectVisibleTerminalsByNetworkButton->setPopupMode(
         QToolButton::ToolButtonPopupMode::MenuButtonPopup);
-    // QObject::connect(
-    //     connectVisibleTerminalsButton,
-    //     &QToolButton::clicked, [mainWindow]() {
-    //         ViewController::
-    //             connectVisibleTerminalsByNetworks(
-    //                 mainWindow, mainWindow->scene_);
-    //     });
+    QObject::connect(
+        connectVisibleTerminalsByNetworkButton,
+        &QToolButton::clicked, [mainWindow]() {
+            ViewController::
+                connectVisibleTerminalsByNetworks(
+                    mainWindow);
+        });
 
     // Connect the menu button's click signal
     QObject::connect(
-        menuButton, &QToolButton::clicked, [mainWindow]() {
+        connectTerminalItemsByInterfaceButton,
+        &QToolButton::clicked, [mainWindow]() {
             ViewController::
                 connectVisibleTerminalsByInterfaces(
                     mainWindow);
         });
 
     networkToolsLayout->addWidget(
-        connectVisibleTerminalsButton);
+        connectVisibleTerminalsByNetworkButton);
 
     // Add disconnect all terminals button
     QToolButton *disconnectAllTerminalsButton =
@@ -376,7 +385,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     networkToolsLayout->addWidget(checkNetworkButton);
 
     mainWindow->networkToolsButtons_ = {
-        checkNetworkButton, connectVisibleTerminalsButton,
+        checkNetworkButton,
+        connectVisibleTerminalsByNetworkButton,
         disconnectAllTerminalsButton};
 
     homeLayout->addWidget(mainWindow->networkToolsGroup_);
@@ -514,15 +524,17 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     trainImportButton->setText("Import Train\nNetwork");
     trainImportButton->setIcon(
         QIcon(IconFactory::createFreightTrainIcon()));
-    // QObject::connect(trainImportButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                      NetworkController::importTrainNetwork(
-    //                          mainWindow,
-    //                          mainWindow->currentRegion_,
-    //                          ColorUtils::getRandomColor()
-    //                          );
-    //                  });
+    QObject::connect(
+        trainImportButton, &QToolButton::clicked,
+        [mainWindow]() {
+            auto regionData =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegionData();
+            NetworkController::importNetwork(
+                mainWindow, NetworkType::Train, regionData);
+        });
     networkImportLayout->addWidget(trainImportButton);
 
     // Truck network import button
@@ -532,15 +544,17 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     truckImportButton->setText("Import Truck\nNetwork");
     truckImportButton->setIcon(
         QIcon(IconFactory::createFreightTruckIcon()));
-    // QObject::connect(truckImportButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                      NetworkController::importTruckNetwork(
-    //                          mainWindow,
-    //                          mainWindow->currentRegion_,
-    //                          ColorUtils::getRandomColor()
-    //                          );
-    //                  });
+    QObject::connect(
+        truckImportButton, &QToolButton::clicked,
+        [mainWindow]() {
+            auto regionData =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getCurrentRegionData();
+            NetworkController::importNetwork(
+                mainWindow, NetworkType::Truck, regionData);
+        });
     networkImportLayout->addWidget(truckImportButton);
 
     mainWindow->networkImportButtons_ = {trainImportButton,
@@ -623,10 +637,11 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     gridButton->setCheckable(true);
     gridButton->setChecked(true);
     gridButton->setText("Hide\nGrid");
-    // QObject::connect(gridButton, &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleGrid(mainWindow,
-    //                  checked); });
+    QObject::connect(gridButton, &QToolButton::clicked,
+                     [mainWindow](bool checked) {
+                         BasicButtonController::toggleGrid(
+                             mainWindow, checked);
+                     });
     navigationLayout->addWidget(gridButton);
 
     // Add pan mode toggle button
@@ -778,11 +793,12 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         IconFactory::createShowHideConnectionsIcon()));
     connectionLinesButton->setCheckable(true);
     connectionLinesButton->setChecked(true);
-    // QObject::connect(connectionLinesButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleConnectionLines(mainWindow,
-    //                  checked); });
+    QObject::connect(
+        connectionLinesButton, &QToolButton::clicked,
+        [mainWindow](bool checked) {
+            BasicButtonController::toggleConnectionLines(
+                mainWindow, checked);
+        });
     visibilityLayout->addWidget(connectionLinesButton);
 
     // Add terminals visibility button
@@ -794,11 +810,12 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         QIcon(IconFactory::createShowHideTerminalsIcon()));
     terminalsButton->setCheckable(true);
     terminalsButton->setChecked(true);
-    // QObject::connect(terminalsButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow](bool checked) {
-    //                  BasicButtonController::toggleTerminals(mainWindow,
-    //                  checked); });
+    QObject::connect(
+        terminalsButton, &QToolButton::clicked,
+        [mainWindow](bool checked) {
+            BasicButtonController::toggleTerminals(
+                mainWindow, checked);
+        });
     visibilityLayout->addWidget(terminalsButton);
 
     // Store buttons for visibility management
@@ -889,9 +906,6 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     mainWindow->toolsButtonsVisibility_[bgPhotoButton] =
         QList<int>{0, 1};
 
-    // For regionWidget, if it's not a QToolButton, you'll
-    // need a different approach Perhaps store it separately
-    // or cast it if it's safe to do so
     if (QToolButton *toolButton =
             dynamic_cast<QToolButton *>(regionWidget))
     {
@@ -908,7 +922,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         ->toolsButtonsVisibility_[checkNetworkButton] =
         QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_
-        [connectVisibleTerminalsButton] = QList<int>{0, 1};
+        [connectVisibleTerminalsByNetworkButton] =
+        QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_
         [disconnectAllTerminalsButton] = QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_[panModeButton] =
