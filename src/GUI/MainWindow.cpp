@@ -743,7 +743,7 @@ void MainWindow::handleTabChange(int index)
     for (auto it = toolsButtonsVisibility_.begin();
          it != toolsButtonsVisibility_.end(); ++it)
     {
-        QToolButton *button     = it.key();
+        QWidget     *button     = it.key();
         QList<int>   tabIndices = it.value();
         button->setVisible(tabIndices.contains(index));
     }
@@ -780,7 +780,7 @@ void MainWindow::handleTabChange(int index)
     updateGroupVisibility(toolsGroup_, toolsButtons_);
     updateGroupVisibility(measurementsGroup_,
                           measurementsButtons_);
-    updateGroupVisibility(regionGroup_, regionButtons_);
+    updateGroupVisibility(regionGroup_, regionWidgets_);
     updateGroupVisibility(networkImportGroup_,
                           networkImportButtons_);
     updateGroupVisibility(navigationGroup_,
@@ -789,6 +789,7 @@ void MainWindow::handleTabChange(int index)
     updateGroupVisibility(logsGroup_, logsButtons_);
     updateGroupVisibility(networkToolsGroup_,
                           networkToolsButtons_);
+    updateGroupVisibility(projectGroup_, projectButtons_);
     updateGroupVisibility(simulationToolsGroup_,
                           simulationToolsButtons_);
     updateGroupVisibility(transportationVehiclesGroup_,
@@ -818,12 +819,12 @@ void MainWindow::handleTabChange(int index)
 }
 
 void MainWindow::updateGroupVisibility(
-    QGroupBox *group, const QList<QToolButton *> &buttons)
+    QGroupBox *group, const QList<QWidget *> &buttons)
 {
     int  currentTab         = tabWidget_->currentIndex();
     bool anyShouldBeVisible = false;
 
-    for (QToolButton *button : buttons)
+    for (QWidget *button : buttons)
     {
         // If button has tab visibility rules, check them
         if (toolsButtonsVisibility_.contains(button))
