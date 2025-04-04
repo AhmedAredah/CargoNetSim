@@ -2,6 +2,7 @@
 #import "../MainWindow.h"
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Controllers/RegionDataController.h"
+#include "GUI/Controllers/UtilityFunctions.h"
 #include "GUI/Controllers/ViewController.h"
 
 #include <QColor>
@@ -219,6 +220,52 @@ bool NetworkController::removeNetwork(
         return regionData->removeTruckNetwork(networkName);
     }
     return false;
+}
+
+CargoNetSim::Backend::ShortestPathResult CargoNetSim::GUI::
+    NetworkController::findNetworkShortestPath(
+        const QString                &regionName,
+        const QString                &networkName,
+        CargoNetSim::GUI::NetworkType networkType,
+        int startNodeId, int endNodeId)
+{
+    try
+    {
+        if (networkType
+            == CargoNetSim::GUI::NetworkType::Train)
+        {
+            auto network =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getRegionData(regionName)
+                        ->getTrainNetwork(networkName);
+
+            // Find the shortest path
+            return network->findShortestPath(startNodeId,
+                                             endNodeId);
+        }
+        else if (networkType
+                 == CargoNetSim::GUI::NetworkType::Truck)
+        {
+            auto network =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getRegionDataController()
+                        ->getRegionData(regionName)
+                        ->getTruckNetwork(networkName);
+
+            return network->findShortestPath(startNodeId,
+                                             endNodeId);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        qWarning() << "Error finding shortest path:"
+                   << e.what();
+    }
+
+    return CargoNetSim::Backend::ShortestPathResult();
 }
 
 bool NetworkController::clearAllNetworks(
