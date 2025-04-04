@@ -272,9 +272,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     regionInnerLayout->addWidget(mainWindow->regionCombo_);
     regionLayout->addWidget(regionWidget);
 
-    mainWindow->regionButtons_.clear();
-    mainWindow->regionButtons_.append(
-        dynamic_cast<QToolButton *>(regionWidget));
+    mainWindow->regionWidgets_.clear();
+    mainWindow->regionWidgets_.append(regionWidget);
 
     homeLayout->addWidget(mainWindow->regionGroup_);
 
@@ -874,13 +873,22 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         [mainWindow->shortestPathTableDock_]["tabs"] =
         QVariant::fromValue(QList<int>{0, 1});
 
-    mainWindow->networkManagerVisibility_.clear();
+    mainWindow
+        ->windowVisibility_[mainWindow->regionManagerDock_]
+                           ["button"] =
+        QVariant::fromValue(regionManagerButton);
+    mainWindow
+        ->windowVisibility_[mainWindow->regionManagerDock_]
+                           ["tabs"] =
+        QVariant::fromValue(QList<int>{0});
 
-    mainWindow->networkManagerVisibility_
-        [mainWindow->networkManagerDock_]["button"] =
+    mainWindow
+        ->windowVisibility_[mainWindow->networkManagerDock_]
+                           ["button"] =
         QVariant::fromValue(regionNetworksButton);
-    mainWindow->networkManagerVisibility_
-        [mainWindow->networkManagerDock_]["tabs"] =
+    mainWindow
+        ->windowVisibility_[mainWindow->networkManagerDock_]
+                           ["tabs"] =
         QVariant::fromValue(QList<int>{0});
 
     // Store tools button visibility configuration
@@ -905,14 +913,6 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         QList<int>{1};
     mainWindow->toolsButtonsVisibility_[bgPhotoButton] =
         QList<int>{0, 1};
-
-    if (QToolButton *toolButton =
-            dynamic_cast<QToolButton *>(regionWidget))
-    {
-        mainWindow->toolsButtonsVisibility_[toolButton] =
-            QList<int>{0};
-    }
-
     mainWindow->toolsButtonsVisibility_[measureButton] =
         QList<int>{0, 1};
     mainWindow
@@ -924,6 +924,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     mainWindow->toolsButtonsVisibility_
         [connectVisibleTerminalsByNetworkButton] =
         QList<int>{0, 1};
+    mainWindow->toolsButtonsVisibility_[regionWidget] =
+        QList<int>{0};
     mainWindow->toolsButtonsVisibility_
         [disconnectAllTerminalsButton] = QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_[panModeButton] =
