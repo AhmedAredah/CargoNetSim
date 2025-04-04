@@ -566,7 +566,8 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
 
         MapPoint *point =
             CargoNetSim::GUI::ViewController::drawNode(
-                mainWindow, node->getInternalUniqueID(),
+                mainWindow,
+                QString::number(node->getUserId()),
                 projectedPoint, regionName, nodesColor,
                 properties);
 
@@ -652,7 +653,8 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
 
         auto point =
             CargoNetSim::GUI::ViewController::drawNode(
-                mainWindow, node->getInternalUniqueID(),
+                mainWindow,
+                QString::number(node->getNodeId()),
                 QPointF(node->getXCoordinate()
                             * node->getXScale(),
                         node->getYCoordinate()
