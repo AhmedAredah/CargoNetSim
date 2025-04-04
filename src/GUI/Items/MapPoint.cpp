@@ -34,15 +34,12 @@ MapPoint::MapPoint(
     , m_color(Qt::black)
     , m_properties(properties)
 {
-    // Initialize properties if none provided
-    if (this->m_properties.isEmpty())
-    {
-        this->m_properties["x"] = m_sceneCoordinate.x();
-        this->m_properties["y"] = m_sceneCoordinate.y();
-        this->m_properties["Network_ID"] =
-            referencedNetworkID;
-        this->m_properties["region"] = region;
-    }
+    // Override properties if they were given differently
+    // or initialize them if they are missing
+    this->m_properties["x"] = m_sceneCoordinate.x();
+    this->m_properties["y"] = m_sceneCoordinate.y();
+    this->m_properties["Network_ID"] = referencedNetworkID;
+    this->m_properties["region"]     = region;
 
     // Set higher z-value to ensure points are drawn above
     // lines
