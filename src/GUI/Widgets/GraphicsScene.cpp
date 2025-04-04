@@ -4,6 +4,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QMessageBox>
+#include <QtGui/qevent.h>
 
 #include "../Controllers/UtilityFunctions.h"
 #include "../Controllers/ViewController.h"
@@ -433,6 +434,19 @@ void GraphicsScene::mousePressEvent(
         qWarning() << "Unknown exception in "
                       "GraphicsScene::mousePressEvent";
     }
+}
+
+void GraphicsScene::keyPressEvent(QKeyEvent *event)
+{
+    // For Delete key, pass it up to MainWindow
+    if (event->key() == Qt::Key_Delete
+        || event->key() == Qt::Key_Backspace)
+    {
+        event->ignore();
+        return;
+    }
+
+    QGraphicsScene::keyPressEvent(event);
 }
 
 } // namespace GUI
