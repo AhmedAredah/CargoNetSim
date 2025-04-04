@@ -787,6 +787,11 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
 
     if (sourceTerminal && targetTerminal)
     {
+        if (sourceTerminal == targetTerminal)
+        {
+            return false;
+        }
+
         if (sourceTerminal->getRegion()
             != targetTerminal->getRegion())
         {
@@ -846,25 +851,67 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
     QMap<QString, QList<CargoNetSim::GUI::MapPoint *>>
         targetNetworks;
 
-    for (auto point : sourcePoints)
+    auto getNetworkName = [](GUI::MapPoint *point) {
+        QString networkName;
+        auto    netObj = point->getReferenceNetwork();
+        if (!netObj)
+        {
+            return QString();
+        }
+        Backend::TrainClient::NeTrainSimNetwork
+            *trainNetObj = qobject_cast<
+                Backend::TrainClient::NeTrainSimNetwork *>(
+                netObj);
+        if (trainNetObj)
+        {
+            networkName = trainNetObj->getNetworkName();
+        }
+        else
+        {
+            Backend::TruckClient::IntegrationNetwork
+                *truckNetObj = qobject_cast<
+                    Backend::TruckClient::IntegrationNetwork
+                        *>(netObj);
+
+            if (truckNetObj)
+            {
+                networkName = truckNetObj->getNetworkName();
+            }
+        }
+        return networkName;
+    };
+
+    for (auto it = sourcePoints.constBegin();
+         it != sourcePoints.constEnd(); ++it)
     {
-        QString network = point->getRegion();
-        sourceNetworks[network].append(point);
+        QString network = getNetworkName(*it);
+        if (!network.isEmpty())
+            sourceNetworks[network].append(*it);
     }
 
-    for (auto point : targetPoints)
+    for (auto it = targetPoints.constBegin();
+         it != targetPoints.constEnd(); ++it)
     {
-        QString network = point->getRegion();
-        targetNetworks[network].append(point);
+        QString network = getNetworkName(*it);
+        if (!network.isEmpty())
+            targetNetworks[network].append(*it);
     }
 
     // Find common networks
-    QSet<QString> sourceNetworkNames =
-        QSet<QString>(sourceNetworks.keys().begin(),
-                      sourceNetworks.keys().end());
-    QSet<QString> targetNetworkNames =
-        QSet<QString>(targetNetworks.keys().begin(),
-                      targetNetworks.keys().end());
+    QSet<QString> sourceNetworkNames;
+    for (auto it = sourceNetworks.constBegin();
+         it != sourceNetworks.constEnd(); ++it)
+    {
+        sourceNetworkNames.insert(it.key());
+    }
+
+    QSet<QString> targetNetworkNames;
+    for (auto it = targetNetworks.constBegin();
+         it != targetNetworks.constEnd(); ++it)
+    {
+        targetNetworkNames.insert(it.key());
+    }
+
     QSet<QString> commonNetworks = sourceNetworkNames;
     commonNetworks.intersect(targetNetworkNames);
 

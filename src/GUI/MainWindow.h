@@ -301,9 +301,9 @@ private:
      * @param group The group to update
      * @param buttons The buttons in the group
      */
-    void updateGroupVisibility(
-        QGroupBox                  *group,
-        const QList<QToolButton *> &buttons);
+    void
+    updateGroupVisibility(QGroupBox              *group,
+                          const QList<QWidget *> &buttons);
 
 protected:
     // UI elements
@@ -349,12 +349,10 @@ protected:
         selectedTerminal_; // For linking terminals to nodes
 
     // State management
-    QMap<QToolButton *, QList<int>> toolsButtonsVisibility_;
+    QMap<QWidget *, QList<int>>     toolsButtonsVisibility_;
     QMap<int, QList<int>>           tabsVisibility_;
     QMap<QDockWidget *, QMap<QString, QVariant>>
         windowVisibility_;
-    QMap<NetworkManagerDialog *, QMap<QString, QVariant>>
-                 networkManagerVisibility_;
     QList<QSize> savedSplitterSizes_;
     int          previousTabIndex_;
     bool         tableWasVisible_;
@@ -380,19 +378,19 @@ protected:
     QComboBox  *regionCombo_;
 
     // Button groups
-    QList<QToolButton *> viewImportButtons_;
-    QList<QToolButton *> projectButtons_;
-    QList<QToolButton *> toolsButtons_;
-    QList<QToolButton *> measurementsButtons_;
-    QList<QToolButton *> regionButtons_;
-    QList<QToolButton *> networkImportButtons_;
-    QList<QToolButton *> navigationButtons_;
-    QList<QToolButton *> windowsButtons_;
-    QList<QToolButton *> logsButtons_;
-    QList<QToolButton *> networkToolsButtons_;
-    QList<QToolButton *> simulationToolsButtons_;
-    QList<QToolButton *> transportationVehiclesButtons_;
-    QList<QToolButton *> visibilityButtons_;
+    QList<QWidget *>     viewImportButtons_;
+    QList<QWidget *>     projectButtons_;
+    QList<QWidget *>     toolsButtons_;
+    QList<QWidget *>     measurementsButtons_;
+    QList<QWidget *>     regionWidgets_;
+    QList<QWidget *>     networkImportButtons_;
+    QList<QWidget *>     navigationButtons_;
+    QList<QWidget *>     windowsButtons_;
+    QList<QWidget *>     logsButtons_;
+    QList<QWidget *>     networkToolsButtons_;
+    QList<QWidget *>     simulationToolsButtons_;
+    QList<QWidget *>     transportationVehiclesButtons_;
+    QList<QWidget *>     visibilityButtons_;
 
     QToolButton *panModeButton_;
     QToolButton *connectButton_;

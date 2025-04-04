@@ -234,11 +234,6 @@ void CargoNetSim::GUI::ViewController::
     // Set position directly to avoid any signal/slot
     // cascading issues
     globalITem->setPos(globalPos);
-
-    // globalITem->setPos(
-    //     main_window->globalMapView_->wgs84ToScene(QPointF(
-    //         item_global_view_lon,
-    //         item_global_view_lat)));
 }
 
 bool CargoNetSim::GUI::ViewController::
@@ -571,7 +566,8 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
 
         MapPoint *point =
             CargoNetSim::GUI::ViewController::drawNode(
-                mainWindow, node->getInternalUniqueID(),
+                mainWindow,
+                QString::number(node->getUserId()),
                 projectedPoint, regionName, nodesColor,
                 properties);
 
@@ -657,7 +653,8 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
 
         auto point =
             CargoNetSim::GUI::ViewController::drawNode(
-                mainWindow, node->getInternalUniqueID(),
+                mainWindow,
+                QString::number(node->getNodeId()),
                 QPointF(node->getXCoordinate()
                             * node->getXScale(),
                         node->getYCoordinate()
