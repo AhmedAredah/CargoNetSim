@@ -96,7 +96,10 @@ void GlobalTerminalItem::updateFromLinkedTerminal()
 
 QRectF GlobalTerminalItem::boundingRect() const
 {
-    return QRectF(0, 0, scaledPixmap.width(),
+    // Center the bounds on the pos
+    return QRectF(-scaledPixmap.width() / 2,
+                  -scaledPixmap.height() / 2,
+                  scaledPixmap.width(),
                   scaledPixmap.height());
 }
 
@@ -104,8 +107,10 @@ void GlobalTerminalItem::paint(
     QPainter                       *painter,
     const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    // Draw the scaled pixmap
-    painter->drawPixmap(0, 0, scaledPixmap);
+    // Draw the scaled pixmap centered on the pos
+    painter->drawPixmap(-scaledPixmap.width() / 2,
+                        -scaledPixmap.height() / 2,
+                        scaledPixmap);
 
     // Draw selection outline if selected
     if (option->state & QStyle::State_Selected)
