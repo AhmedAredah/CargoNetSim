@@ -58,7 +58,6 @@ template <typename T> struct PriorityQueueEntry
  * directed graph with support for:
  * - Node and edge attributes stored as key-value pairs
  * - Edge weights for path calculations
- * - Thread-safe operations via mutex locking
  * - Dijkstra's shortest path algorithm with customizable
  * cost functions
  * - Serialization to and from JSON
@@ -287,9 +286,6 @@ private:
 
     /** @brief Maps edges to their weights */
     QMap<T, QMap<T, float>> m_edgeWeights;
-
-    /** @brief Mutex for thread synchronization */
-    mutable QMutex m_mutex;
 };
 
 // Include the implementation
@@ -327,8 +323,6 @@ void DirectedGraph<T>::addNode(
     const T                       &nodeId,
     const QMap<QString, QVariant> &attributes)
 {
-    QMutexLocker locker(&m_mutex);
-
     bool nodeExists = m_nodeAttributes.contains(nodeId);
     m_nodeAttributes[nodeId] = attributes;
 
@@ -349,8 +343,6 @@ void DirectedGraph<T>::addEdge(
     const T &fromNodeId, const T &toNodeId, float weight,
     const QMap<QString, QVariant> &attributes)
 {
-    QMutexLocker locker(&m_mutex);
-
     // Ensure nodes exist
     if (!m_nodeAttributes.contains(fromNodeId))
     {
@@ -388,8 +380,6 @@ void DirectedGraph<T>::addEdge(
 template <typename T>
 void DirectedGraph<T>::removeNode(const T &nodeId)
 {
-    QMutexLocker locker(&m_mutex);
-
     if (!m_nodeAttributes.contains(nodeId))
     {
         return;
@@ -439,8 +429,6 @@ template <typename T>
 void DirectedGraph<T>::removeEdge(const T &fromNodeId,
                                   const T &toNodeId)
 {
-    QMutexLocker locker(&m_mutex);
-
     if (!hasEdge(fromNodeId, toNodeId))
     {
         return;
@@ -457,7 +445,6 @@ void DirectedGraph<T>::removeEdge(const T &fromNodeId,
 template <typename T>
 bool DirectedGraph<T>::hasNode(const T &nodeId) const
 {
-    QMutexLocker locker(&m_mutex);
     return m_nodeAttributes.contains(nodeId);
 }
 
@@ -465,7 +452,6 @@ template <typename T>
 bool DirectedGraph<T>::hasEdge(const T &fromNodeId,
                                const T &toNodeId) const
 {
-    QMutexLocker locker(&m_mutex);
     return m_edgeWeights.contains(fromNodeId)
            && m_edgeWeights[fromNodeId].contains(toNodeId);
 }
@@ -474,7 +460,6 @@ template <typename T>
 QMap<QString, QVariant>
 DirectedGraph<T>::getNodeAttributes(const T &nodeId) const
 {
-    QMutexLocker locker(&m_mutex);
     return m_nodeAttributes.value(nodeId);
 }
 
@@ -483,8 +468,6 @@ void DirectedGraph<T>::setNodeAttributes(
     const T                       &nodeId,
     const QMap<QString, QVariant> &attributes)
 {
-    QMutexLocker locker(&m_mutex);
-
     if (!m_nodeAttributes.contains(nodeId))
     {
         addNode(nodeId, attributes);
@@ -501,8 +484,6 @@ QMap<QString, QVariant>
 DirectedGraph<T>::getEdgeAttributes(const T &fromNodeId,
                                     const T &toNodeId) const
 {
-    QMutexLocker locker(&m_mutex);
-
     if (hasEdge(fromNodeId, toNodeId))
     {
         return m_edgeAttributes[fromNodeId][toNodeId];
@@ -515,8 +496,6 @@ void DirectedGraph<T>::setEdgeAttributes(
     const T &fromNodeId, const T &toNodeId,
     const QMap<QString, QVariant> &attributes)
 {
-    QMutexLocker locker(&m_mutex);
-
     if (!hasEdge(fromNodeId, toNodeId))
     {
         // Default weight if edge doesn't exist
@@ -534,8 +513,6 @@ template <typename T>
 float DirectedGraph<T>::getEdgeWeight(
     const T &fromNodeId, const T &toNodeId) const
 {
-    QMutexLocker locker(&m_mutex);
-
     if (hasEdge(fromNodeId, toNodeId))
     {
         return m_edgeWeights[fromNodeId][toNodeId];
@@ -548,8 +525,6 @@ void DirectedGraph<T>::setEdgeWeight(const T &fromNodeId,
                                      const T &toNodeId,
                                      float    weight)
 {
-    QMutexLocker locker(&m_mutex);
-
     if (!hasEdge(fromNodeId, toNodeId))
     {
         addEdge(fromNodeId, toNodeId, weight);
@@ -565,7 +540,6 @@ void DirectedGraph<T>::setEdgeWeight(const T &fromNodeId,
 template <typename T>
 QVector<T> DirectedGraph<T>::getNodes() const
 {
-    QMutexLocker locker(&m_mutex);
     return m_nodeAttributes.keys().toVector();
 }
 
@@ -573,7 +547,6 @@ template <typename T>
 QVector<QPair<T, float>>
 DirectedGraph<T>::getOutgoingEdges(const T &nodeId) const
 {
-    QMutexLocker             locker(&m_mutex);
     QVector<QPair<T, float>> edges;
 
     if (m_edgeWeights.contains(nodeId))
@@ -592,7 +565,6 @@ template <typename T>
 QVector<QPair<T, float>>
 DirectedGraph<T>::getIncomingEdges(const T &nodeId) const
 {
-    QMutexLocker             locker(&m_mutex);
     QVector<QPair<T, float>> edges;
 
     for (auto sourceIt = m_edgeWeights.constBegin();
@@ -611,8 +583,6 @@ DirectedGraph<T>::getIncomingEdges(const T &nodeId) const
 template <typename T>
 int DirectedGraph<T>::getOutDegree(const T &nodeId) const
 {
-    QMutexLocker locker(&m_mutex);
-
     if (m_edgeWeights.contains(nodeId))
     {
         return m_edgeWeights[nodeId].size();
@@ -623,7 +593,6 @@ int DirectedGraph<T>::getOutDegree(const T &nodeId) const
 template <typename T>
 int DirectedGraph<T>::getInDegree(const T &nodeId) const
 {
-    QMutexLocker locker(&m_mutex);
     int          count = 0;
 
     for (auto sourceIt = m_edgeWeights.constBegin();
@@ -682,8 +651,6 @@ QVector<T> DirectedGraph<T>::findShortestPath(
     const T &startNodeId, const T &endNodeId,
     const QString &optimizeFor) const
 {
-    QMutexLocker locker(&m_mutex);
-
     // Check if nodes exist
     if (!hasNode(startNodeId) || !hasNode(endNodeId))
     {
@@ -803,8 +770,6 @@ QVector<T> DirectedGraph<T>::findShortestPath(
 
 template <typename T> void DirectedGraph<T>::clear()
 {
-    QMutexLocker locker(&m_mutex);
-
     m_nodeAttributes.clear();
     m_edgeAttributes.clear();
     m_edgeWeights.clear();
@@ -815,8 +780,6 @@ template <typename T> void DirectedGraph<T>::clear()
 template <typename T>
 QJsonObject DirectedGraph<T>::toJson() const
 {
-    QMutexLocker locker(&m_mutex);
-
     QJsonObject result;
 
     // Export nodes
@@ -886,8 +849,6 @@ QJsonObject DirectedGraph<T>::toJson() const
 template <typename T>
 void DirectedGraph<T>::fromJson(const QJsonObject &json)
 {
-    QMutexLocker locker(&m_mutex);
-
     // Clear existing data
     clear();
 
