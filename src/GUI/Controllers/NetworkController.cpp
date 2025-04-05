@@ -23,6 +23,32 @@ QString NetworkController::importNetwork(
     MainWindow *mainWindow, NetworkType networkType,
     Backend::RegionData *regionData)
 {
+    // Add validation logic to check for existing networks
+    // first
+    QStringList networkNames;
+    if (networkType == NetworkType::Train)
+    {
+        networkNames = regionData->getTrainNetworks();
+    }
+    else if (networkType == NetworkType::Truck)
+    {
+        networkNames = regionData->getTruckNetworks();
+    }
+
+    // Check for existing network - same check as in
+    // NetworkManagerDialog
+    if (!networkNames.isEmpty())
+    {
+        QString typeString =
+            getNetworkTypeString(networkType);
+        QMessageBox::warning(
+            mainWindow, "Warning",
+            QString(
+                "One %1 Network is allowed for region '%2'")
+                .arg(typeString.toLower())
+                .arg(regionData->getRegion()));
+        return QString();
+    }
 
     QString networkName;
     // Network name input loop
@@ -44,20 +70,7 @@ QString NetworkController::importNetwork(
             return QString();
         }
 
-        // Add train prefix if not already present
-        if (!networkName_user.toLower().startsWith("rail_")
-            || !networkName_user.toLower().startsWith(
-                "truck_"))
-        {
-            if (networkType == NetworkType::Train)
-            {
-                networkName = "rail_" + networkName_user;
-            }
-            else if (networkType == NetworkType::Truck)
-            {
-                networkName = "truck_" + networkName_user;
-            }
-        }
+        networkName = networkName_user;
 
         // Check for name conflicts
         try
@@ -89,6 +102,13 @@ QString NetworkController::importNetwork(
                 mainWindow, regionData, networkName)
             == true)
         {
+            // Update the network list in the Network
+            // Manager dialog
+            if (mainWindow->networkManagerDock_)
+            {
+                mainWindow->networkManagerDock_
+                    ->updateNetworkList("Rail Network");
+            }
             return networkName;
         }
     }
@@ -97,6 +117,13 @@ QString NetworkController::importNetwork(
         if (NetworkController::importTruckNetwork(
                 mainWindow, regionData, networkName))
         {
+            // Update the network list in the Network
+            // Manager dialog
+            if (mainWindow->networkManagerDock_)
+            {
+                mainWindow->networkManagerDock_
+                    ->updateNetworkList("Truck Network");
+            }
             return networkName;
         }
     }
@@ -220,6 +247,146 @@ bool NetworkController::removeNetwork(
         return regionData->removeTruckNetwork(networkName);
     }
     return false;
+}
+
+bool NetworkController::renameNetwork(
+    MainWindow *mainWindow, NetworkType networkType,
+    const QString &oldName, const QString &newName,
+    Backend::RegionData *regionData)
+{
+    if (!mainWindow || !regionData)
+        return false;
+
+    try
+    {
+        // Check if network exists
+        bool networkExists = false;
+        if (networkType == NetworkType::Train)
+        {
+            networkExists =
+                regionData->trainNetworkExists(newName);
+        }
+        else
+        {
+            networkExists =
+                regionData->truckNetworkExists(newName);
+        }
+
+        if (networkExists && newName != oldName)
+        {
+            QMessageBox::warning(
+                mainWindow, "Name Already Exists",
+                QString(
+                    "A network named '%1' already exists. "
+                    "Please choose a different name.")
+                    .arg(newName));
+            return false;
+        }
+
+        bool success = false;
+
+        try
+        {
+            // Rename network based on type
+            if (networkType == NetworkType::Train)
+            {
+                success = regionData->renameTrainNetwork(
+                    oldName, newName);
+            }
+            else if (networkType == NetworkType::Truck)
+            {
+                success = regionData->renameTruckNetwork(
+                    oldName, newName);
+            }
+        }
+        catch (std::exception &e)
+        {
+            QMessageBox::critical(
+                mainWindow, "Error",
+                QString("Failed to rename network: %1")
+                    .arg(e.what()));
+            return false;
+        }
+
+        if (success)
+        {
+
+            // Update network manager lists
+            if (mainWindow->networkManagerDock_)
+            {
+                if (networkType == NetworkType::Train)
+                {
+                    mainWindow->networkManagerDock_
+                        ->updateNetworkList("Rail Network");
+                }
+                else
+                {
+                    mainWindow->networkManagerDock_
+                        ->updateNetworkList(
+                            "Truck Network");
+                }
+            }
+        }
+
+        return success;
+    }
+    catch (const std::exception &e)
+    {
+        QMessageBox::critical(
+            mainWindow, "Error",
+            QString("Failed to rename network: %1")
+                .arg(e.what()));
+        return false;
+    }
+}
+
+bool NetworkController::changeNetworkColor(
+    MainWindow *mainWindow, NetworkType networkType,
+    const QString &networkName, const QColor &newColor,
+    Backend::RegionData *regionData)
+{
+    if (!mainWindow || !regionData || !newColor.isValid())
+        return false;
+
+    try
+    {
+        BaseNetwork *network = nullptr;
+
+        // Get network based on type
+        if (networkType == NetworkType::Train)
+        {
+            network =
+                regionData->getTrainNetwork(networkName);
+        }
+        else if (networkType == NetworkType::Truck)
+        {
+            network =
+                regionData->getTruckNetwork(networkName);
+        }
+
+        if (network)
+        {
+            // Set the color variable
+            network->setVariable("color", newColor);
+
+            // Update color of all network items in the
+            // scene
+            ViewController::changeNetworkColor(
+                mainWindow, networkName, newColor);
+
+            return true;
+        }
+
+        return false;
+    }
+    catch (const std::exception &e)
+    {
+        QMessageBox::critical(
+            mainWindow, "Error",
+            QString("Failed to change network color: %1")
+                .arg(e.what()));
+        return false;
+    }
 }
 
 CargoNetSim::Backend::ShortestPathResult CargoNetSim::GUI::
