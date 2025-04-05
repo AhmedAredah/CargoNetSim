@@ -106,20 +106,22 @@ public:
      * @brief Rename a train network.
      * @param oldName Current name of the network.
      * @param newName New name for the network.
+     * @return True if the network was renamed, false if O.W
      * @throws std::runtime_error if the old name doesn't
      *         exist or the new name already exists.
      */
-    void renameTrainNetwork(const QString &oldName,
+    bool renameTrainNetwork(const QString &oldName,
                             const QString &newName);
 
     /**
      * @brief Rename a truck network.
      * @param oldName Current name of the network.
      * @param newName New name for the network.
+     * @return True if the network was renamed, false if O.W
      * @throws std::runtime_error if the old name doesn't
      *         exist or the new name already exists.
      */
-    void renameTruckNetwork(const QString &oldName,
+    bool renameTruckNetwork(const QString &oldName,
                             const QString &newName);
 
     /**
@@ -360,12 +362,6 @@ private:
 
     /** @brief Map of custom variables for this region */
     QVariantMap m_variables;
-
-    /** @brief List of train network names in this region */
-    QStringList m_trainNetworksList;
-
-    /** @brief List of truck network names in this region */
-    QStringList m_truckNetworksList;
 
     /** @brief Store the network controller pointer */
     NetworkController *m_networkController;
@@ -698,7 +694,6 @@ signals:
                                const QVariant &value);
 
 private:
-
     /** @brief Map of region name to RegionData */
     QMap<QString, RegionData *> m_regions;
 
