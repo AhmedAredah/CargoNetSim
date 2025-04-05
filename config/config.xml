@@ -1,62 +1,54 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <!-- Configuration parameters for CargoNetSim -->
+    <!--Configuration parameters for CargoNetSim-->
     <simulation>
-        <time_step>15</time_step>
-        <time_value_of_money>45</time_value_of_money>
         <shortest_paths>3</shortest_paths>
+        <time_step>15</time_step>
+        <time_value_of_money>4.500000</time_value_of_money>
     </simulation>
-    
     <fuel_energy>
-        <HFO>11.1</HFO>
-        <diesel_1>10.7</diesel_1>
-        <diesel_2>10.0</diesel_2>
+        <HFO>11.100000</HFO>
+        <diesel_1>10.700000</diesel_1>
+        <diesel_2>10.000000</diesel_2>
     </fuel_energy>
-    
     <fuel_carbon_content>
-        <HFO>3.15</HFO>
-        <diesel_1>2.68</diesel_1>
-        <diesel_2>2.68</diesel_2>
+        <HFO>3.150000</HFO>
+        <diesel_1>2.680000</diesel_1>
+        <diesel_2>2.680000</diesel_2>
     </fuel_carbon_content>
-    
     <fuel_prices>
-        <HFO>580.0</HFO>
-        <diesel_1>1.35</diesel_1>
-        <diesel_2>1.35</diesel_2>
+        <HFO>580.000000</HFO>
+        <diesel_1>1.350000</diesel_1>
+        <diesel_2>1.350000</diesel_2>
     </fuel_prices>
-    
     <carbon_taxes>
-        <rate>65</rate>
-        <ship_multiplier>1.2</ship_multiplier>
-        <truck_multiplier>1.1</truck_multiplier>
-        <train_multiplier>1.1</train_multiplier>
+        <rate>65.000000</rate>
+        <ship_multiplier>1.200000</ship_multiplier>
+        <train_multiplier>1.100000</train_multiplier>
+        <truck_multiplier>1.100000</truck_multiplier>
     </carbon_taxes>
-    
     <transport_modes>
         <ship>
-            <average_speed>20</average_speed>
-            <average_fuel_consumption>50</average_fuel_consumption>
             <average_container_number>5000</average_container_number>
-            <risk_factor>0.025</risk_factor>
+            <average_fuel_consumption>50.000000</average_fuel_consumption>
+            <average_speed>20.000000</average_speed>
             <fuel_type>HFO</fuel_type>
+            <risk_factor>0.025000</risk_factor>
         </ship>
-        
-        <train>
-            <average_speed>40</average_speed>
-            <use_network>true</use_network>
-            <average_fuel_consumption>20</average_fuel_consumption>
+        <rail>
             <average_container_number>400</average_container_number>
-            <risk_factor>0.006</risk_factor>
+            <average_fuel_consumption>20.000000</average_fuel_consumption>
+            <average_speed>40.000000</average_speed>
             <fuel_type>diesel_1</fuel_type>
-        </train>
-        
+            <risk_factor>0.006000</risk_factor>
+            <use_network>true</use_network>
+        </rail>
         <truck>
-            <average_speed>70</average_speed>
-            <use_network>false</use_network>
-            <average_fuel_consumption>15</average_fuel_consumption>
             <average_container_number>1</average_container_number>
-            <risk_factor>0.012</risk_factor>
+            <average_fuel_consumption>15.000000</average_fuel_consumption>
+            <average_speed>70.000000</average_speed>
             <fuel_type>diesel_2</fuel_type>
+            <risk_factor>0.012000</risk_factor>
+            <use_network>true</use_network>
         </truck>
     </transport_modes>
 </config>

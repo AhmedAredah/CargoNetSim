@@ -213,7 +213,7 @@ void ConfigController::createDefaultConfig()
 
     QVariantMap transportModes;
     transportModes["ship"]      = ship;
-    transportModes["train"]     = train;
+    transportModes["rail"]      = train;
     transportModes["truck"]     = truck;
     m_config["transport_modes"] = transportModes;
 }
@@ -312,9 +312,9 @@ bool ConfigController::saveConfig()
 
         // Add train section
         QVariantMap train =
-            transportModes.value("train").toMap();
+            transportModes.value("rail").toMap();
         variantMapToXmlElement(doc, transportModesElement,
-                               train, "train");
+                               train, "rail");
 
         // Add truck section
         QVariantMap truck =
