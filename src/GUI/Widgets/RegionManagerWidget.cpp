@@ -268,41 +268,11 @@ void RegionManagerWidget::renameRegion()
             .getRegionDataController()
             ->renameRegion(oldName, newName);
 
-        // // Update region center
-        // QMap<QString, RegionCenterPoint*>& regionCenters
-        // = mainWindow->getRegionCenters(); if
-        // (regionCenters.contains(oldName)) {
-        //     RegionCenterPoint* center =
-        //     regionCenters.take(oldName);
-        //     center->setRegionName(newName);
-        //     center->getProperties()["Type"] =
-        //     QString("Region Center - %1").arg(newName);
-        //     regionCenters[newName] = center;
-        // }
-
-        // Update all items in the scene with this region
-        // for (QGraphicsItem* item :
-        // mainWindow->getScene()->items()) {
-        //     if (item->data(0).toString() == "Region" &&
-        //         item->data(1).toString() == oldName) {
-        //         item->setData(1, newName);
-        //         if (item->data(2).isValid()) {
-        //             QMap<QString, QVariant> props =
-        //             item->data(2).toMap(); if
-        //             (props.contains("Region")) {
-        //                 props["Region"] = newName;
-        //                 item->setData(2, props);
-        //             }
-        //         }
-        //     }
-        // }
+        ViewController::renameRegion(mainWindow, oldName,
+                                     newName);
 
         // Update UI
         currentItem->setText(newName);
-
-        // // Update visuals
-        // ViewController::updateSceneVisibility(mainWindow);
-        // ViewController::updateGlobalMapScene(mainWindow);
     }
 }
 
