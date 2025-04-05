@@ -50,6 +50,10 @@ public:
                             const QString &networkName,
                             const bool     isVisible);
 
+    static void renameRegion(MainWindow    *mainWindow,
+                             const QString &oldRegionName,
+                             const QString &newName);
+
     static void
     changeNetworkColor(MainWindow    *mainWindow,
                        const QString &networkName,
@@ -131,15 +135,18 @@ private:
         QString &regionName, QColor &linksColor);
 
     static CargoNetSim::GUI::MapPoint *
-    drawNode(MainWindow *mainWindow, const QString nodeID,
+    drawNode(MainWindow    *mainWindow,
+             const QString &networkNodeID,
+             const QString &nodeUniqueID,
              QPointF projectedPoint, QString &regionName,
              QColor                         color,
              const QMap<QString, QVariant> &properties =
                  QMap<QString, QVariant>());
 
     static CargoNetSim::GUI::MapLine *
-    drawLink(MainWindow *mainWindow, const QString &linkID,
-             QPointF projectedStartPoint,
+    drawLink(MainWindow    *mainWindow,
+             const QString &linkUniqueID,
+             QPointF        projectedStartPoint,
              QPointF projectedEndPoint, QString &regionName,
              QColor                         color,
              const QMap<QString, QVariant> &properties =
