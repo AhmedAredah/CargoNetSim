@@ -18,7 +18,7 @@ MapLine::MapLine(const QPointF                 &startPoint,
     : startPoint(startPoint)
     , endPoint(endPoint)
     , properties(properties)
-    , baseWidth(3)
+    , baseWidth(1)
     , pen(Qt::black, baseWidth)
 {
     // Initialize properties if none provided
@@ -82,15 +82,14 @@ void MapLine::paint(QPainter                       *painter,
         return;
     }
 
-    // QGraphicsView *view      =
-    // itemScene->views().first(); qreal          viewScale
-    // = view->transform().m11();
+    QGraphicsView *view      = itemScene->views().first();
+    qreal          viewScale = view->transform().m11();
 
     // Scale the pen width inversely to maintain constant
     // visual thickness
     QPen scaledPen(pen);
-    // scaledPen.setWidth(
-    //     qMax(1, qRound(baseWidth / viewScale)));
+    scaledPen.setWidth(
+        qMax(1, qRound(baseWidth / viewScale)));
 
     // Change pen style if selected
     if (option->state & QStyle::State_Selected)

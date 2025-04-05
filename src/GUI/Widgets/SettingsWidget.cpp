@@ -215,7 +215,7 @@ void SettingsWidget::initUI()
     shipCalcButton->setToolTip(
         tr("Calculate energy from fuel consumption"));
     connect(shipCalcButton, &QToolButton::clicked,
-            [this]() { showEnergyCalculator("Ship"); });
+            [this]() { showEnergyCalculator("ship"); });
     shipCalcButton->setMaximumWidth(30);
     shipFuelLayout->addWidget(shipCalcButton);
 
@@ -279,7 +279,7 @@ void SettingsWidget::initUI()
     trainCalcButton->setToolTip(
         tr("Calculate energy from fuel consumption"));
     connect(trainCalcButton, &QToolButton::clicked,
-            [this]() { showEnergyCalculator("Rail"); });
+            [this]() { showEnergyCalculator("rail"); });
     trainCalcButton->setMaximumWidth(30);
     trainFuelLayout->addWidget(trainCalcButton);
 
@@ -342,7 +342,7 @@ void SettingsWidget::initUI()
     truckCalcButton->setToolTip(
         tr("Calculate energy from fuel consumption"));
     connect(truckCalcButton, &QToolButton::clicked,
-            [this]() { showEnergyCalculator("Truck"); });
+            [this]() { showEnergyCalculator("truck"); });
     truckCalcButton->setMaximumWidth(30);
     truckFuelLayout->addWidget(truckCalcButton);
 
@@ -631,183 +631,81 @@ bool SettingsWidget::loadSettings()
                            .getConfigController()
                            ->getAllParams();
 
-        // Example settings
-        settings = QMap<QString, QVariant>();
-
-        // Example simulation settings
-        QMap<QString, QVariant> simulation;
-        simulation["time_step"] = timeStepSpin->value();
-        simulation["time_value_of_money"] =
-            timeValueOfMoneySpin->value();
-        simulation["shortest_paths"] =
-            shortestPathsSpin->value();
-        settings["simulation"] = simulation;
-
-        // Set simulation values from settings
-        timeStepSpin->setValue(settings["simulation"]
-                                   .toMap()["time_step"]
-                                   .toInt());
-        timeValueOfMoneySpin->setValue(
-            settings["simulation"]
-                .toMap()["time_value_of_money"]
-                .toDouble());
-        shortestPathsSpin->setValue(
-            settings["simulation"]
-                .toMap()["shortest_paths"]
-                .toInt());
-
-        // Set carbon taxes
-        QMap<QString, QVariant> carbonTaxes;
-        carbonTaxes["rate"] = carbonRateSpin->value();
-        carbonTaxes["ship_multiplier"] =
-            shipMultiplierSpin->value();
-        carbonTaxes["truck_multiplier"] =
-            truckMultiplierSpin->value();
-        carbonTaxes["train_multiplier"] =
-            trainMultiplierSpin->value();
-        settings["carbon_taxes"] = carbonTaxes;
-
-        carbonRateSpin->setValue(settings["carbon_taxes"]
-                                     .toMap()["rate"]
-                                     .toDouble());
-        shipMultiplierSpin->setValue(
-            settings["carbon_taxes"]
-                .toMap()["ship_multiplier"]
-                .toDouble());
-        truckMultiplierSpin->setValue(
-            settings["carbon_taxes"]
-                .toMap()["truck_multiplier"]
-                .toDouble());
-        trainMultiplierSpin->setValue(
-            settings["carbon_taxes"]
-                .toMap()["train_multiplier"]
-                .toDouble());
-
-        // Set transport modes
-        QMap<QString, QVariant> transportModes;
-
-        // Ship settings
-        QMap<QString, QVariant> shipSettings;
-        shipSettings["average_speed"] =
-            shipSpeedSpin->value();
-        shipSettings["average_fuel_consumption"] =
-            shipFuelSpin->value();
-        shipSettings["average_container_number"] =
-            shipContainers->value();
-        shipSettings["risk_factor"] = shipRiskSpin->value();
-        shipSettings["fuel_type"] =
-            shipFuelType->currentText();
-        transportModes["Ship"] = shipSettings;
-
-        // Train settings
-        QMap<QString, QVariant> trainSettings;
-        trainSettings["average_speed"] =
-            trainSpeedSpin->value();
-        trainSettings["use_network"] =
-            trainUseNetwork->isChecked();
-        trainSettings["average_fuel_consumption"] =
-            trainFuelSpin->value();
-        trainSettings["average_container_number"] =
-            trainContainers->value();
-        trainSettings["risk_factor"] =
-            trainRiskSpin->value();
-        trainSettings["fuel_type"] =
-            trainFuelType->currentText();
-        transportModes["Rail"] = trainSettings;
-
-        // Truck settings
-        QMap<QString, QVariant> truckSettings;
-        truckSettings["average_speed"] =
-            truckSpeedSpin->value();
-        truckSettings["use_network"] =
-            truckUseNetwork->isChecked();
-        truckSettings["average_fuel_consumption"] =
-            truckFuelSpin->value();
-        truckSettings["average_container_number"] =
-            truckContainers->value();
-        truckSettings["risk_factor"] =
-            truckRiskSpin->value();
-        truckSettings["fuel_type"] =
-            truckFuelType->currentText();
-        transportModes["Truck"] = truckSettings;
-
-        settings["transport_modes"] = transportModes;
-
         // Apply transport mode settings
         shipSpeedSpin->setValue(
             settings["transport_modes"]
-                .toMap()["Ship"]
+                .toMap()["ship"]
                 .toMap()["average_speed"]
                 .toDouble());
         shipFuelSpin->setValue(
             settings["transport_modes"]
-                .toMap()["Ship"]
+                .toMap()["ship"]
                 .toMap()["average_fuel_consumption"]
                 .toDouble());
         shipContainers->setValue(
             settings["transport_modes"]
-                .toMap()["Ship"]
+                .toMap()["ship"]
                 .toMap()["average_container_number"]
                 .toInt());
         shipRiskSpin->setValue(settings["transport_modes"]
-                                   .toMap()["Ship"]
+                                   .toMap()["ship"]
                                    .toMap()["risk_factor"]
                                    .toDouble());
 
         trainSpeedSpin->setValue(
             settings["transport_modes"]
-                .toMap()["Rail"]
+                .toMap()["rail"]
                 .toMap()["average_speed"]
                 .toDouble());
         trainUseNetwork->setChecked(
             settings["transport_modes"]
-                .toMap()["Rail"]
+                .toMap()["rail"]
                 .toMap()["use_network"]
                 .toBool());
         trainFuelSpin->setValue(
             settings["transport_modes"]
-                .toMap()["Rail"]
+                .toMap()["rail"]
                 .toMap()["average_fuel_consumption"]
                 .toDouble());
         trainContainers->setValue(
             settings["transport_modes"]
-                .toMap()["Rail"]
+                .toMap()["rail"]
                 .toMap()["average_container_number"]
                 .toInt());
         trainRiskSpin->setValue(settings["transport_modes"]
-                                    .toMap()["Rail"]
+                                    .toMap()["rail"]
                                     .toMap()["risk_factor"]
                                     .toDouble());
 
         truckSpeedSpin->setValue(
             settings["transport_modes"]
-                .toMap()["Truck"]
+                .toMap()["truck"]
                 .toMap()["average_speed"]
                 .toDouble());
         truckUseNetwork->setChecked(
             settings["transport_modes"]
-                .toMap()["Truck"]
+                .toMap()["truck"]
                 .toMap()["use_network"]
                 .toBool());
         truckFuelSpin->setValue(
             settings["transport_modes"]
-                .toMap()["Truck"]
+                .toMap()["truck"]
                 .toMap()["average_fuel_consumption"]
                 .toDouble());
         truckContainers->setValue(
             settings["transport_modes"]
-                .toMap()["Truck"]
+                .toMap()["truck"]
                 .toMap()["average_container_number"]
                 .toInt());
         truckRiskSpin->setValue(settings["transport_modes"]
-                                    .toMap()["Truck"]
+                                    .toMap()["truck"]
                                     .toMap()["risk_factor"]
                                     .toDouble());
 
         // Set fuel types from settings if available
         QString shipFuelTypeName =
             settings["transport_modes"]
-                .toMap()["Ship"]
+                .toMap()["ship"]
                 .toMap()["fuel_type"]
                 .toString();
         if (!shipFuelTypeName.isEmpty())
@@ -837,7 +735,7 @@ bool SettingsWidget::loadSettings()
 
         QString truckFuelTypeName =
             settings["transport_modes"]
-                .toMap()["Truck"]
+                .toMap()["truck"]
                 .toMap()["fuel_type"]
                 .toString();
         if (!truckFuelTypeName.isEmpty())
@@ -920,7 +818,7 @@ void SettingsWidget::applySettings()
         shipContainers->value();
     shipSettings["risk_factor"] = shipRiskSpin->value();
     shipSettings["fuel_type"] = shipFuelType->currentText();
-    transportModes["Ship"]    = shipSettings;
+    transportModes["ship"]    = shipSettings;
 
     // Train settings
     QMap<QString, QVariant> trainSettings;
@@ -935,7 +833,7 @@ void SettingsWidget::applySettings()
     trainSettings["risk_factor"] = trainRiskSpin->value();
     trainSettings["fuel_type"] =
         trainFuelType->currentText();
-    transportModes["Rail"] = trainSettings;
+    transportModes["rail"] = trainSettings;
 
     // Truck settings
     QMap<QString, QVariant> truckSettings;
@@ -950,7 +848,7 @@ void SettingsWidget::applySettings()
     truckSettings["risk_factor"] = truckRiskSpin->value();
     truckSettings["fuel_type"] =
         truckFuelType->currentText();
-    transportModes["Truck"] = truckSettings;
+    transportModes["truck"] = truckSettings;
 
     newSettings["transport_modes"] = transportModes;
 
@@ -1015,17 +913,17 @@ void SettingsWidget::showEnergyCalculator(
     QString         fuelType;
     QDoubleSpinBox *modeFuelSpin = nullptr;
 
-    if (mode == "Ship")
+    if (mode == "ship")
     {
         fuelType     = shipFuelType->currentText();
         modeFuelSpin = shipFuelSpin;
     }
-    else if (mode == "Rail")
+    else if (mode == "rail")
     {
         fuelType     = trainFuelType->currentText();
         modeFuelSpin = trainFuelSpin;
     }
-    else if (mode == "Truck")
+    else if (mode == "truck")
     {
         fuelType     = truckFuelType->currentText();
         modeFuelSpin = truckFuelSpin;

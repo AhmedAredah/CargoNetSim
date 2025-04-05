@@ -396,6 +396,7 @@ IntegrationSimulationConfig::~IntegrationSimulationConfig()
     if (m_network)
     {
         m_network->deleteLater();
+        m_network = nullptr;
     }
 }
 
@@ -455,9 +456,7 @@ bool IntegrationSimulationConfig::initialize(
 
         // Initialize the network with the nodes and links
         m_network->initializeNetwork(nodes, links);
-
-        // Set network name to the title
-        m_network->setNetworkName(m_title);
+        m_network->setParent(this);
 
         emit configChanged();
         return true;
@@ -658,19 +657,13 @@ IntegrationSimulationConfigReader::
             << configFilePath;
         return;
     }
-
-    // Take ownership of the config
-    m_config->setParent(this);
 }
 
 IntegrationSimulationConfigReader::
     ~IntegrationSimulationConfigReader()
 {
-
-    if (m_config)
-    {
-        m_config->deleteLater();
-    }
+    // Don't delete m_config, ownership has been transferred
+    m_config = nullptr;
 }
 
 IntegrationSimulationConfig *

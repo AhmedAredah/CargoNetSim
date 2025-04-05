@@ -264,7 +264,7 @@ private:
     /**
      * @brief Maximum zoom level allowed
      */
-    static constexpr int MAX_ZOOM = 9;
+    static constexpr int MAX_ZOOM = 15;
 
     /**
      * @brief Minimum zoom level allowed

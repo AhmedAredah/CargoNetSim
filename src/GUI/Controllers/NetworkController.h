@@ -33,6 +33,16 @@ public:
                   QString             &networkName,
                   Backend::RegionData *regionData);
 
+    static bool renameNetwork(
+        MainWindow *mainWindow, NetworkType networkType,
+        const QString &oldName, const QString &newName,
+        Backend::RegionData *regionData);
+
+    static bool changeNetworkColor(
+        MainWindow *mainWindow, NetworkType networkType,
+        const QString &networkName, const QColor &newColor,
+        Backend::RegionData *regionData);
+
     static CargoNetSim::Backend::ShortestPathResult
     findNetworkShortestPath(const QString &regionName,
                             const QString &networkName,

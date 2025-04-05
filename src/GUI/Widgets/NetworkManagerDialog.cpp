@@ -183,33 +183,8 @@ void NetworkManagerDialog::addNetwork(
     if (!regionData)
         return;
 
-    // Map network types to their corresponding methods
-    QStringList networkNames;
-    if (networkType == "Rail Network")
-    {
-        networkNames = regionData->getTrainNetworks();
-    }
-    else if (networkType == "Truck Network")
-    {
-        networkNames = regionData->getTruckNetworks();
-    }
-    else
-    {
-        return;
-    }
-
-    // Check for existing network
-    if (!networkNames.isEmpty())
-    {
-        QMessageBox::warning(
-            this, "Warning",
-            QString("One %1 is allowed for region '%2'")
-                .arg(networkType.toLower())
-                .arg(regionData->getRegion()));
-        return;
-    }
-
-    // Import the new network
+    // Import the new network using NetworkController which
+    // now contains the validation logic
     try
     {
         QString networkName;
@@ -218,14 +193,21 @@ void NetworkManagerDialog::addNetwork(
         {
             networkName = NetworkController::importNetwork(
                 mainWindow, NetworkType::Train, regionData);
+
+            // Network list is now updated within
+            // importNetwork if successful
         }
-        else
+        else if (networkType == "Truck Network")
         {
             networkName = NetworkController::importNetwork(
                 mainWindow, NetworkType::Truck, regionData);
+
+            // Network list is now updated within
+            // importNetwork if successful
         }
 
-        updateNetworkList(networkType);
+        // No explicit updateNetworkList call needed here
+        // since it's now handled in importNetwork
     }
     catch (const std::exception &e)
     {
@@ -326,6 +308,9 @@ void NetworkManagerDialog::renameNetwork(
                     getInstance()
                         .getRegionDataController()
                         ->getCurrentRegion());
+    NetworkType type = (networkType == "Rail Network")
+                           ? NetworkType::Train
+                           : NetworkType::Truck;
 
     while (true)
     {
@@ -339,89 +324,13 @@ void NetworkManagerDialog::renameNetwork(
         {
             return;
         }
-
-        QString prefix = (networkType == "Rail Network")
-                             ? "rail_"
-                             : "truck_";
-        QString oldNameStore = prefix + oldName;
-        QString newNameStore = prefix + newName;
-
-        // Check if network exists using appropriate method
-        bool networkExists = false;
-        if (networkType == "Rail Network")
-        {
-            networkExists = regionData->trainNetworkExists(
-                newNameStore);
-        }
-        else
-        {
-            networkExists = regionData->truckNetworkExists(
-                newNameStore);
-        }
-
-        if (networkExists && newNameStore != oldNameStore)
-        {
-            QMessageBox::warning(
-                this, "Name Already Exists",
-                QString(
-                    "A network named '%1' already exists. "
-                    "Please choose a different name.")
-                    .arg(newName));
-            continue;
-        }
-
-        try
-        {
-            // Call appropriate rename method
-            if (networkType == "Rail Network")
-            {
-                regionData->renameTrainNetwork(
-                    oldNameStore, newNameStore);
-            }
-            else
-            {
-                regionData->renameTruckNetwork(
-                    oldNameStore, newNameStore);
-            }
-
-            updateNetworkList(networkType);
-
-            // TODO
-            // Rename all scene items (MapPoints and
-            // MapLines) groups if (mainWindow->getScene())
-            // {
-            //     QGraphicsScene* scene =
-            //     mainWindow->getScene(); for
-            //     (QGraphicsItem* item : scene->items()) {
-            //         if (MapPoint* mapPoint =
-            //         dynamic_cast<MapPoint*>(item)) {
-            //             if (mapPoint->getGroup() ==
-            //             oldNameStore) {
-            //                 mapPoint->setProperty("group",
-            //                 newNameStore);
-            //                 mapPoint->setRegion(newNameStore);
-            //             }
-            //         } else if (MapLine* mapLine =
-            //         dynamic_cast<MapLine*>(item)) {
-            //             if (mapLine->getGroup() ==
-            //             oldNameStore) {
-            //                 mapLine->setProperty("group",
-            //                 newNameStore);
-            //                 mapLine->setRegion(newNameStore);
-            //             }
-            //         }
-            //     }
-            // }
+        // Call the controller method to rename the network
+        if (NetworkController::renameNetwork(
+                mainWindow, type, oldName, newName,
+                regionData))
             break;
-        }
-        catch (const std::exception &e)
-        {
-            QMessageBox::critical(
-                this, "Error",
-                QString("Failed to rename network: %1")
-                    .arg(e.what()));
-            return;
-        }
+        else
+            return; // Break out if rename failed
     }
 }
 
@@ -463,38 +372,19 @@ void NetworkManagerDialog::changeNetworkColor(
             .getRegionDataController()
             ->getCurrentRegionData();
 
-    // Store color in network properties based on network
-    // type
-    if (networkType == "Rail Network")
-    {
-        networkName = QString("rail_%1").arg(networkName);
-        auto *network =
-            regionData->getTrainNetwork(networkName);
-        if (network)
-        {
-            network->setVariable("color", newColor);
-        }
-    }
-    else
-    {
-        networkName = QString("truck_%1").arg(networkName);
-        auto *network =
-            regionData->getTruckNetwork(networkName);
-        if (network)
-        {
-            network->setVariable("color", newColor);
-        }
-    }
+    NetworkType type = (networkType == "Rail Network")
+                           ? NetworkType::Train
+                           : NetworkType::Truck;
 
-    // Update the color pixmap for the list item
-    currentItem->setIcon(
-        QIcon(createColorPixmap(newColor)));
-
-    // Update color of all network items in the scene
-    if (mainWindow)
+    // Call the controller method to change the network
+    // color
+    if (NetworkController::changeNetworkColor(
+            mainWindow, type, networkName, newColor,
+            regionData))
     {
-        ViewController::changeNetworkColor(
-            mainWindow, networkName, newColor);
+        // Update the icon in the list widget
+        currentItem->setIcon(
+            QIcon(createColorPixmap(newColor)));
     }
 }
 
@@ -512,6 +402,14 @@ void NetworkManagerDialog::updateNetworkList(
     if (!listWidget)
         return;
 
+    // Store current selection before clearing
+    QString selectedItemText;
+    if (listWidget->currentItem())
+    {
+        selectedItemText =
+            listWidget->currentItem()->text();
+    }
+
     // Store current checkbox states before clearing
     QMap<QString, Qt::CheckState> checkboxStates;
     for (int i = 0; i < listWidget->count(); ++i)
@@ -519,6 +417,12 @@ void NetworkManagerDialog::updateNetworkList(
         QListWidgetItem *item        = listWidget->item(i);
         checkboxStates[item->text()] = item->checkState();
     }
+
+    // Disconnect signals before clearing
+    listWidget->disconnect(
+        SIGNAL(itemChanged(QListWidgetItem *)));
+    listWidget->disconnect(SIGNAL(itemSelectionChanged()));
+
     listWidget->clear();
 
     // Get the current region data
@@ -531,15 +435,18 @@ void NetworkManagerDialog::updateNetworkList(
         return;
 
     // Get network names and prefix based on network type
-    const QString prefix =
-        isTrainNetwork ? "rail_" : "truck_";
+    const QString prefix = "";
+    // isTrainNetwork ? "rail_" : "truck_";
     const QStringList networkNames =
         isTrainNetwork ? regionData->getTrainNetworks()
                        : regionData->getTruckNetworks();
 
+    int selectedIndex = -1;
+
     // Process each network
-    for (const auto &networkName : networkNames)
+    for (int i = 0; i < networkNames.size(); i++)
     {
+        const auto  &networkName = networkNames[i];
         BaseNetwork *network =
             isTrainNetwork
                 ? static_cast<BaseNetwork *>(
@@ -577,15 +484,39 @@ void NetworkManagerDialog::updateNetworkList(
         }
 
         listWidget->addItem(item);
+
+        // Check if this was previously selected
+        if (displayName == selectedItemText)
+        {
+            selectedIndex = i;
+        }
     }
 
-    // Connect the item changed signal (only connect once)
-    listWidget->disconnect(
-        SIGNAL(itemChanged(QListWidgetItem *)));
+    // Restore selection if possible, or select first item
+    // if available
+    if (selectedIndex >= 0)
+    {
+        listWidget->setCurrentRow(selectedIndex);
+    }
+    else if (listWidget->count() > 0)
+    {
+        listWidget->setCurrentRow(0);
+    }
+
+    // Reconnect signals
     connect(listWidget, &QListWidget::itemChanged, this,
             [this, networkType](QListWidgetItem *item) {
                 onItemCheckedChanged(item, networkType);
             });
+
+    connect(listWidget, &QListWidget::itemSelectionChanged,
+            this, [this, networkType]() {
+                onSelectionChanged(networkType);
+            });
+
+    // Manually call onSelectionChanged to update button
+    // states
+    onSelectionChanged(networkType);
 }
 
 void NetworkManagerDialog::
@@ -604,22 +535,6 @@ void NetworkManagerDialog::onItemCheckedChanged(
 
     QString networkName = item->text();
     bool    isVisible   = item->checkState() == Qt::Checked;
-
-    // Add prefix based on network type
-    if (networkType == "Rail Network")
-    {
-        if (!networkName.startsWith("rail_"))
-        {
-            networkName = "rail_" + networkName;
-        }
-    }
-    else if (networkType == "Truck Network")
-    {
-        if (!networkName.startsWith("truck_"))
-        {
-            networkName = "truck_" + networkName;
-        }
-    }
 
     // Update visibility of scene
     // items

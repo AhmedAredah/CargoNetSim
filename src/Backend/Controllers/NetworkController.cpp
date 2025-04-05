@@ -231,6 +231,100 @@ bool NetworkController::removeTruckNetworkConfig(
     return true;
 }
 
+bool NetworkController::renameTrainNetwork(
+    const QString &oldName, const QString &newName,
+    const QString &region)
+{
+    QWriteLocker locker(&m_trainNetworksLock);
+
+    // Check if source network exists
+    if (!m_trainNetworks.contains(region)
+        || !m_trainNetworks[region].contains(oldName))
+    {
+        qWarning() << "Cannot rename train network: source"
+                   << oldName << "not found in region"
+                   << region;
+        return false;
+    }
+
+    // Check if destination name already exists
+    if (m_trainNetworks[region].contains(newName))
+    {
+        qWarning()
+            << "Cannot rename train network: destination"
+            << newName << "already exists in region"
+            << region;
+        return false;
+    }
+
+    // Get the network
+    TrainClient::NeTrainSimNetwork *network =
+        m_trainNetworks[region][oldName];
+
+    // Update internal name if network has such property
+    network->setNetworkName(newName);
+
+    // Move it to the new key
+    m_trainNetworks[region][newName] = network;
+    m_trainNetworks[region].remove(oldName);
+
+    locker.unlock();
+
+    // Emit signal
+    emit trainNetworkRenamed(oldName, newName, region);
+
+    return true;
+}
+
+bool NetworkController::renameTruckNetworkConfig(
+    const QString &oldName, const QString &newName,
+    const QString &region)
+{
+    QWriteLocker locker(&m_truckNetworkConfigsLock);
+
+    // Check if source network exists
+    if (!m_truckNetworkConfigs.contains(region)
+        || !m_truckNetworkConfigs[region].contains(oldName))
+    {
+        qWarning() << "Cannot rename truck network: source"
+                   << oldName << "not found in region"
+                   << region;
+        return false;
+    }
+
+    // Check if destination name already exists
+    if (m_truckNetworkConfigs[region].contains(newName))
+    {
+        qWarning()
+            << "Cannot rename truck network: destination"
+            << newName << "already exists in region"
+            << region;
+        return false;
+    }
+
+    // Get the config
+    TruckClient::IntegrationSimulationConfig *config =
+        m_truckNetworkConfigs[region][oldName];
+
+    // Update internal name if network has such property
+    if (config->getNetwork())
+    {
+        config->getNetwork()->setNetworkName(newName);
+    }
+
+    // Move it to the new key
+    m_truckNetworkConfigs[region][newName] = config;
+    m_truckNetworkConfigs[region].remove(oldName);
+
+    locker.unlock();
+
+    // Emit signal
+    emit truckNetworkConfigRenamed(oldName, newName,
+                                   region);
+
+    return true;
+}
+
 QMap<QString, TrainClient::NeTrainSimNetwork *>
 NetworkController::trainNetworksInRegion(
     const QString &region) const
@@ -318,6 +412,138 @@ int NetworkController::clearTruckNetworks()
         qDeleteAll(regionConfigs);
     }
     m_truckNetworkConfigs.clear();
+
+    return count;
+}
+
+// New methods implementation
+
+bool NetworkController::networkExistsInRegion(
+    const QString &name, const QString &region) const
+{
+    return trainNetworkExists(name, region)
+           || truckNetworkExists(name, region);
+}
+
+bool NetworkController::renameRegion(
+    const QString &oldRegion, const QString &newRegion)
+{
+    if (oldRegion == newRegion)
+    {
+        return true; // Nothing to do
+    }
+
+    QStringList allRegions = regions();
+    if (allRegions.contains(newRegion))
+    {
+        qWarning()
+            << "Cannot rename region: destination region"
+            << newRegion << "already exists";
+        return false;
+    }
+
+    // Move train networks
+    {
+        QWriteLocker locker(&m_trainNetworksLock);
+        if (m_trainNetworks.contains(oldRegion))
+        {
+            m_trainNetworks[newRegion] =
+                m_trainNetworks[oldRegion];
+            m_trainNetworks.remove(oldRegion);
+        }
+    }
+
+    // Move truck networks
+    {
+        QWriteLocker locker(&m_truckNetworkConfigsLock);
+        if (m_truckNetworkConfigs.contains(oldRegion))
+        {
+            m_truckNetworkConfigs[newRegion] =
+                m_truckNetworkConfigs[oldRegion];
+            m_truckNetworkConfigs.remove(oldRegion);
+        }
+    }
+
+    // Emit the signal that region was renamed
+    emit regionRenamed(oldRegion, newRegion);
+
+    return true;
+}
+
+QStringList NetworkController::trainNetworkNamesInRegion(
+    const QString &region) const
+{
+    QReadLocker locker(&m_trainNetworksLock);
+
+    if (!m_trainNetworks.contains(region))
+    {
+        return QStringList();
+    }
+
+    return m_trainNetworks[region].keys();
+}
+
+QStringList NetworkController::truckNetworkNamesInRegion(
+    const QString &region) const
+{
+    QReadLocker locker(&m_truckNetworkConfigsLock);
+
+    if (!m_truckNetworkConfigs.contains(region))
+    {
+        return QStringList();
+    }
+
+    return m_truckNetworkConfigs[region].keys();
+}
+
+bool NetworkController::trainNetworkExists(
+    const QString &name, const QString &region) const
+{
+    QReadLocker locker(&m_trainNetworksLock);
+
+    return m_trainNetworks.contains(region)
+           && m_trainNetworks[region].contains(name);
+}
+
+bool NetworkController::truckNetworkExists(
+    const QString &name, const QString &region) const
+{
+    QReadLocker locker(&m_truckNetworkConfigsLock);
+
+    return m_truckNetworkConfigs.contains(region)
+           && m_truckNetworkConfigs[region].contains(name);
+}
+
+int NetworkController::clearRegion(const QString &region)
+{
+    int count = 0;
+
+    // Clear train networks
+    {
+        QWriteLocker locker(&m_trainNetworksLock);
+        if (m_trainNetworks.contains(region))
+        {
+            count += m_trainNetworks[region].size();
+            qDeleteAll(m_trainNetworks[region]);
+            m_trainNetworks.remove(region);
+        }
+    }
+
+    // Clear truck networks
+    {
+        QWriteLocker locker(&m_truckNetworkConfigsLock);
+        if (m_truckNetworkConfigs.contains(region))
+        {
+            count += m_truckNetworkConfigs[region].size();
+            qDeleteAll(m_truckNetworkConfigs[region]);
+            m_truckNetworkConfigs.remove(region);
+        }
+    }
+
+    if (count > 0)
+    {
+        emit regionCleared(region);
+    }
 
     return count;
 }
