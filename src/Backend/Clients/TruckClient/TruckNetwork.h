@@ -339,7 +339,7 @@ private:
     QMap<QString, QVariant> m_variables;
 
     // Shared network model
-    IntegrationNetwork *m_network;
+    IntegrationNetwork *m_network = nullptr;
 
     // Mutex for thread-safety
     mutable QMutex m_mutex;
