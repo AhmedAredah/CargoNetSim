@@ -328,7 +328,8 @@ QVariant TerminalItem::itemChange(GraphicsItemChange change,
     {
         // If this is a position change and we have a drag
         // offset, adjust the position
-        if (m_dragOffset != QPointF())
+        if (m_dragOffset != QPointF()
+            && scene()->mouseGrabberItem() == this)
         {
             // Get the proposed new position
             QPointF newPos = value.toPointF();
