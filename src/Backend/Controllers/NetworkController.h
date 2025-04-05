@@ -153,6 +153,31 @@ public:
                                   const QString &region);
 
     /**
+     * @brief Rename a train network in a specific region.
+     * @param oldName Current name of the network.
+     * @param newName New name for the network.
+     * @param region Region where the network is located.
+     * @return True if renamed successfully, false if old
+     * name doesn't exist or new name already exists.
+     */
+    bool renameTrainNetwork(const QString &oldName,
+                            const QString &newName,
+                            const QString &region);
+
+    /**
+     * @brief Rename a truck network configuration in a
+     * specific region.
+     * @param oldName Current name of the network.
+     * @param newName New name for the network.
+     * @param region Region where the network is located.
+     * @return True if renamed successfully, false if old
+     * name doesn't exist or new name already exists.
+     */
+    bool renameTruckNetworkConfig(const QString &oldName,
+                                  const QString &newName,
+                                  const QString &region);
+
+    /**
      * @brief Get all train networks in a region.
      * @param region Region to query.
      * @return QMap of network names to network pointers.
@@ -208,6 +233,71 @@ public:
      */
     int clearTruckNetworks();
 
+    /**
+     * @brief Check if any network (train or truck) with the
+     * given name exists in the region.
+     * @param name The network name to check.
+     * @param region The region to check in.
+     * @return True if a network with this name exists in
+     * the region.
+     */
+    bool networkExistsInRegion(const QString &name,
+                               const QString &region) const;
+
+    /**
+     * @brief Rename a region and transfer all its networks
+     * to the new region name.
+     * @param oldRegion The current region name.
+     * @param newRegion The new region name.
+     * @return True if successful, false if newRegion
+     * already exists or operation fails.
+     */
+    bool renameRegion(const QString &oldRegion,
+                      const QString &newRegion);
+
+    /**
+     * @brief Get train network names in a region.
+     * @param region The region to query.
+     * @return QStringList containing all train network
+     * names in the region.
+     */
+    QStringList
+    trainNetworkNamesInRegion(const QString &region) const;
+
+    /**
+     * @brief Get truck network names in a region.
+     * @param region The region to query.
+     * @return QStringList containing all truck network
+     * names in the region.
+     */
+    QStringList
+    truckNetworkNamesInRegion(const QString &region) const;
+
+    /**
+     * @brief Check if a train network exists in a region.
+     * @param name The network name to check.
+     * @param region The region to check in.
+     * @return True if the train network exists.
+     */
+    bool trainNetworkExists(const QString &name,
+                            const QString &region) const;
+
+    /**
+     * @brief Check if a truck network exists in a region.
+     * @param name The network name to check.
+     * @param region The region to check in.
+     * @return True if the truck network exists.
+     */
+    bool truckNetworkExists(const QString &name,
+                            const QString &region) const;
+
+    /**
+     * @brief Clear all networks in a specific region.
+     * @param region The region to clear.
+     * @return The number of networks removed.
+     */
+    int clearRegion(const QString &region);
+
 signals:
     /**
      * @brief Emitted when a train network is added.
@@ -242,6 +332,41 @@ signals:
      */
     void truckNetworkConfigRemoved(const QString &name,
                                    const QString &region);
+
+    /**
+     * @brief Emitted when a train network is renamed.
+     * @param oldName Previous name of the network.
+     * @param newName New name of the network.
+     * @param region Region of the network.
+     */
+    void trainNetworkRenamed(const QString &oldName,
+                             const QString &newName,
+                             const QString &region);
+
+    /**
+     * @brief Emitted when a truck network configuration
+     *        is renamed.
+     * @param oldName Previous name of the network.
+     * @param newName New name of the network.
+     * @param region Region of the network.
+     */
+    void truckNetworkConfigRenamed(const QString &oldName,
+                                   const QString &newName,
+                                   const QString &region);
+
+    /**
+     * @brief Emitted when a region is renamed.
+     * @param oldRegion The previous name of the region.
+     * @param newRegion The new name of the region.
+     */
+    void regionRenamed(const QString &oldRegion,
+                       const QString &newRegion);
+
+    /**
+     * @brief Emitted when a region is cleared.
+     * @param region The name of the cleared region.
+     */
+    void regionCleared(const QString &region);
 
 private:
     /** @brief Lock for thread safety of train networks */
