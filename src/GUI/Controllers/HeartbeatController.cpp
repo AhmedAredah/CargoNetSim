@@ -60,8 +60,6 @@ HeartbeatController::HeartbeatController(
                     QVariant::fromValue<QLabel *>(label);
                 indicatorData["description"] = serverId;
                 serverIndicators[serverId] = indicatorData;
-                qDebug() << "Found indicator for server:"
-                         << serverId;
                 break;
             }
         }
@@ -87,8 +85,6 @@ HeartbeatController::~HeartbeatController()
 
 void HeartbeatController::initialize()
 {
-    qDebug() << "Initializing HeartbeatController";
-
     // Make sure we have our server indicators set up
     if (serverIndicators.isEmpty())
     {
@@ -100,8 +96,6 @@ void HeartbeatController::initialize()
             QMap<QString, QVariant> indicatorData;
             indicatorData["description"] = serverId;
             serverIndicators[serverId]   = indicatorData;
-            qDebug() << "Adding server indicator for"
-                     << serverId;
         }
     }
 
@@ -130,9 +124,6 @@ void HeartbeatController::initialize()
 
     isRunning = true;
     monitorThread->start();
-
-    qDebug() << "Consumer check timer started with interval"
-             << consumerCheckInterval << "seconds";
 }
 
 void HeartbeatController::checkQueueConsumers()
@@ -154,17 +145,12 @@ void HeartbeatController::checkQueueConsumers()
     try
     {
         // Get controller instance and check clients
-        qDebug() << "Getting controller instance";
         auto &controller = CargoNetSim::
             CargoNetSimController::getInstance();
 
         // Check Terminal client
-        qDebug()
-            << "Getting terminal client from controller";
         auto *terminalClient =
             controller.getTerminalClient();
-        qDebug() << "Terminal client pointer:"
-                 << (terminalClient ? "valid" : "nullptr");
 
         if (terminalClient)
         {
@@ -174,10 +160,6 @@ void HeartbeatController::checkQueueConsumers()
             {
                 bool hasConsumers =
                     handler->hasCommandQueueConsumers();
-                qDebug() << "Terminal command queue name:"
-                         << handler->getCommandQueueName();
-                qDebug() << "Terminal server has consumers:"
-                         << hasConsumers;
                 updateServerStatus("TerminalSim",
                                    hasConsumers);
                 activeConsumers["TerminalSim"] =
@@ -200,8 +182,6 @@ void HeartbeatController::checkQueueConsumers()
             {
                 bool hasConsumers =
                     handler->hasCommandQueueConsumers();
-                qDebug() << "Train server has consumers:"
-                         << hasConsumers;
                 updateServerStatus("NeTrainSim",
                                    hasConsumers);
                 activeConsumers["NeTrainSim"] =
@@ -224,8 +204,6 @@ void HeartbeatController::checkQueueConsumers()
             {
                 bool hasConsumers =
                     handler->hasCommandQueueConsumers();
-                qDebug() << "Ship server has consumers:"
-                         << hasConsumers;
                 updateServerStatus("ShipNetSim",
                                    hasConsumers);
                 activeConsumers["ShipNetSim"] =
@@ -244,8 +222,6 @@ void HeartbeatController::checkQueueConsumers()
         {
             bool hasConsumers =
                 truckManager->hasCommandQueueConsumers();
-            qDebug() << "Truck server has consumers:"
-                     << hasConsumers;
             updateServerStatus("INTEGRATION", hasConsumers);
             activeConsumers["INTEGRATION"] = hasConsumers;
         }
@@ -284,8 +260,6 @@ void HeartbeatController::checkQueuesDirectly()
 
         try
         {
-            qDebug() << "Directly checking queue for server"
-                     << serverId << ":" << queueName;
 
             // Create a temporary RabbitMQ handler to check
             // the consumers
@@ -297,17 +271,11 @@ void HeartbeatController::checkQueuesDirectly()
 
             bool connected =
                 tempHandler.establishConnection();
-            qDebug() << "Direct connection to RabbitMQ for"
-                     << serverId << ":"
-                     << (connected ? "success" : "failed");
 
             if (connected)
             {
                 bool hasConsumers =
                     tempHandler.hasCommandQueueConsumers();
-                qDebug()
-                    << "Direct check -" << serverId
-                    << "has consumers:" << hasConsumers;
                 updateServerStatus(serverId, hasConsumers);
                 activeConsumers[serverId] =
                     hasConsumers; // Track active consumers
@@ -315,9 +283,6 @@ void HeartbeatController::checkQueuesDirectly()
             }
             else
             {
-                qDebug() << "Could not connect to RabbitMQ "
-                            "directly for"
-                         << serverId;
                 updateServerStatus(serverId, false);
                 activeConsumers[serverId] = false;
             }
@@ -336,9 +301,6 @@ void HeartbeatController::checkQueuesDirectly()
 void HeartbeatController::updateServerStatus(
     const QString &serverId, bool connected)
 {
-    qDebug() << "Updating status for server:" << serverId
-             << "to"
-             << (connected ? "connected" : "disconnected");
 
     if (!serverIndicators.contains(serverId))
     {
@@ -354,30 +316,18 @@ void HeartbeatController::updateServerStatus(
     {
         indicator = serverIndicators[serverId]["indicator"]
                         .value<QLabel *>();
-        if (indicator)
-        {
-            qDebug() << "Using existing indicator for"
-                     << serverId;
-        }
     }
 
     if (!indicator)
     {
-        qDebug() << "Searching for indicator for"
-                 << serverId << "in status bar";
         // Try to find the indicator in the main window's
         // status bar
         QList<QLabel *> labels =
             mainWindow->statusBar()
                 ->findChildren<QLabel *>();
-        qDebug() << "Found" << labels.size()
-                 << "labels in status bar";
 
         for (QLabel *label : labels)
         {
-            qDebug() << "Checking label:" << label->text()
-                     << "size:" << label->size()
-                     << "tooltip:" << label->toolTip();
 
             if (label->size() == QSize(10, 10))
             {
@@ -393,15 +343,10 @@ void HeartbeatController::updateServerStatus(
                         parent->findChildren<QLabel *>(
                             QString(),
                             Qt::FindDirectChildrenOnly);
-                    qDebug()
-                        << "Container has"
-                        << siblingLabels.size() << "labels";
 
                     for (QLabel *siblingLabel :
                          siblingLabels)
                     {
-                        qDebug() << "Sibling label:"
-                                 << siblingLabel->text();
                         if (siblingLabel != label
                             && siblingLabel->text()
                                    == serverId)
@@ -413,9 +358,6 @@ void HeartbeatController::updateServerStatus(
                                     QVariant::fromValue<
                                         QLabel *>(
                                         indicator);
-                            qDebug()
-                                << "Found indicator for"
-                                << serverId;
                             break;
                         }
                     }
@@ -445,8 +387,6 @@ void HeartbeatController::updateServerStatus(
             serverIndicators[serverId]["description"]
                 .toString()
             + " - Connected");
-        qDebug() << "Set" << serverId
-                 << "indicator to connected (green)";
     }
     else
     {
@@ -457,8 +397,6 @@ void HeartbeatController::updateServerStatus(
             serverIndicators[serverId]["description"]
                 .toString()
             + " - Disconnected");
-        qDebug() << "Set" << serverId
-                 << "indicator to disconnected (red)";
     }
 }
 
