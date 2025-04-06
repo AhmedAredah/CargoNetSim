@@ -7,11 +7,11 @@ namespace Backend
 {
 
 // PathSegment constructor
-PathSegment::PathSegment(const QString &pathSegmentId,
-                         const QString &start,
-                         const QString &end, int mode,
-                         const QJsonObject &attributes,
-                         QObject           *parent)
+PathSegment::PathSegment(
+    const QString &pathSegmentId, const QString &start,
+    const QString                          &end,
+    TransportationTypes::TransportationMode mode,
+    const QJsonObject &attributes, QObject *parent)
     : QObject(parent)
     , m_pathSegmentId(pathSegmentId)
     , m_start(start)
@@ -41,7 +41,7 @@ QJsonObject PathSegment::toJson() const
     json["route_id"]       = m_pathSegmentId;
     json["start_terminal"] = m_start;
     json["end_terminal"]   = m_end;
-    json["mode"]           = m_mode;
+    json["mode"] = TransportationTypes::toString(m_mode);
 
     // Include attributes only if not empty
     if (!m_attributes.isEmpty())

@@ -6,6 +6,9 @@
 #include <QSet>
 #include <QStringList>
 
+#include "Backend/Commons/TerminalInterface.h"
+#include "Backend/Commons/TransportationMode.h"
+
 namespace CargoNetSim
 {
 namespace Backend
@@ -29,9 +32,12 @@ public:
      */
     explicit Terminal(
         const QStringList &names, const QJsonObject &config,
-        const QMap<int, QSet<int>> &interfaces,
-        const QString              &region = "",
-        QObject                    *parent = nullptr);
+        const QMap<
+            TerminalTypes::TerminalInterface,
+            QSet<TransportationTypes::TransportationMode>>
+                      &interfaces,
+        const QString &region = "",
+        QObject       *parent = nullptr);
 
     /**
      * @brief Get terminal names
@@ -64,7 +70,9 @@ public:
      * @brief Get interfaces
      * @return Map of interfaces to modes
      */
-    QMap<int, QSet<int>> getInterfaces() const
+    QMap<TerminalTypes::TerminalInterface,
+         QSet<TransportationTypes::TransportationMode>>
+    getInterfaces() const
     {
         return m_interfaces;
     }
@@ -87,7 +95,9 @@ public:
 private:
     QStringList          m_names;
     QJsonObject          m_config;
-    QMap<int, QSet<int>> m_interfaces;
+    QMap<TerminalTypes::TerminalInterface,
+         QSet<TransportationTypes::TransportationMode>>
+                         m_interfaces;
     QString              m_region;
 };
 

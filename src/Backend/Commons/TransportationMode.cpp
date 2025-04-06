@@ -69,5 +69,35 @@ TransportationTypes::toString(TransportationMode mode)
         metaEnum.valueToKey(static_cast<int>(mode)));
 }
 
+int TransportationTypes::toInt(TransportationMode mode)
+{
+    return static_cast<int>(mode);
+}
+
+TransportationTypes::TransportationMode
+TransportationTypes::fromString(const QString &str)
+{
+    // Convert to lowercase for case-insensitive comparison
+    QString lowerStr = str.toLower().trimmed();
+
+    if (lowerStr == "ship")
+    {
+        return TransportationMode::Ship;
+    }
+    else if (lowerStr == "truck")
+    {
+        return TransportationMode::Truck;
+    }
+    else if (lowerStr == "train" || lowerStr == "rail")
+    {
+        return TransportationMode::Train;
+    }
+    else
+    {
+        throw std::invalid_argument(
+            "Invalid transportation mode string");
+    }
+}
+
 } // namespace Backend
 } // namespace CargoNetSim

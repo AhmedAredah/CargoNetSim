@@ -406,13 +406,20 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         "Find Top Heuristic\nShortest Paths");
     shortestPathsButton->setIcon(
         QIcon(IconFactory::createShortestPathsIcon()));
-    // QObject::connect(
-    //     shortestPathsButton, &QToolButton::clicked,
-    //     [mainWindow]() {
-    //         NetworkController::getTopShortestPaths(
-    //             mainWindow, mainWindow->scene_,
-    //             mainWindow->globalMapScene_);
-    //     });
+    QObject::connect(
+        shortestPathsButton, &QToolButton::clicked,
+        [mainWindow]() {
+            QMap<QString, QVariant> simParams =
+                CargoNetSim::CargoNetSimController::
+                    getInstance()
+                        .getConfigController()
+                        ->getSimulationParams();
+            int pathsNo =
+                simParams.value("shortest_paths", 3)
+                    .toInt();
+            UtilitiesFunctions::getTopShortestPaths(
+                mainWindow, pathsNo);
+        });
     simulationToolsLayout->addWidget(shortestPathsButton);
 
     // Add verify by simulation button

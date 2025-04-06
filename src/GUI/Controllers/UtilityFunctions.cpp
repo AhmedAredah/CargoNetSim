@@ -5,8 +5,10 @@
 #include "GUI/Items/ConnectionLine.h"
 #include "GUI/Items/MapPoint.h"
 
-#include "Backend/Controllers/CargoNetSimController.h"
 #include "GUI/Widgets/PropertiesPanel.h"
+#include "GUI/Widgets/ShortestPathTable.h"
+
+#include "GUI/Utils/PathFindingWorker.h"
 
 QList<CargoNetSim::GUI::TerminalItem *>
 CargoNetSim::GUI::UtilitiesFunctions::getTerminalItems(
@@ -620,38 +622,54 @@ double CargoNetSim::GUI::UtilitiesFunctions::
     return earthRadius * sqrt(x * x + y * y);
 }
 
-QList<CargoNetSim::Backend::ShortestPathResult>
-CargoNetSim::GUI::UtilitiesFunctions::getTopShortestPaths(
-    MainWindow *mainWindow, int PathsCount)
+void CargoNetSim::GUI::UtilitiesFunctions::
+    getTopShortestPaths(MainWindow *mainWindow,
+                        int         PathsCount)
 {
     if (!mainWindow)
     {
-        return QList<Backend::ShortestPathResult>();
+        return;
     }
 
-    CargoNetSim::CargoNetSimController::getInstance()
-        .getTerminalClient()
-        ->resetServer();
+    // Create a worker and a thread
+    QThread           *thread = new QThread();
+    PathFindingWorker *worker =
+        new PathFindingWorker(mainWindow, PathsCount);
 
-    // Get the Origin and Destination terminals from the
-    // region scene
-    auto originTerminals =
-        UtilitiesFunctions::getTerminalItems(
-            mainWindow->regionScene_, "*", "Origin");
-    auto destinationTerminals =
-        UtilitiesFunctions::getTerminalItems(
-            mainWindow->regionScene_, "*", "Destination");
+    // Set up connections
+    QObject::connect(thread, &QThread::started, worker,
+                     &PathFindingWorker::process);
+    QObject::connect(worker, &PathFindingWorker::finished,
+                     thread, &QThread::quit);
+    QObject::connect(worker, &PathFindingWorker::finished,
+                     worker,
+                     &PathFindingWorker::deleteLater);
+    QObject::connect(thread, &QThread::finished, thread,
+                     &QThread::deleteLater);
 
-    if (originTerminals.isEmpty()
-        || destinationTerminals.isEmpty())
-    {
-        mainWindow->showStatusBarError(
-            "No Origin or Destination terminals found.",
-            3000);
-        return QList<Backend::ShortestPathResult>();
-    }
+    // Handle results
+    QObject::connect(
+        worker, &PathFindingWorker::resultReady,
+        [mainWindow](const QList<Backend::Path *> &paths) {
+            // Display results in the shortest paths table
+            mainWindow->shortestPathTable_->clear();
+            mainWindow->shortestPathTable_->addPaths(paths);
 
-    // TODO: Add Terminals to TerminalSim
+            // Show the table
+            mainWindow->shortestPathTableDock_->show();
+        });
+
+    // Handle errors
+    QObject::connect(
+        worker, &PathFindingWorker::error, mainWindow,
+        [mainWindow](const QString &message) {
+            mainWindow->showStatusBarError(message, 3000);
+        },
+        Qt::QueuedConnection);
+
+    // Move worker to thread and start
+    worker->moveToThread(thread);
+    thread->start();
 }
 
 void CargoNetSim::GUI::UtilitiesFunctions::

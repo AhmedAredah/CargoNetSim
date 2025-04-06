@@ -68,6 +68,15 @@ public:
         ContainerCore::Container::HaulerType hauler);
 
     /**
+     * @brief Converts a TransportationMode to its integer
+     * representation.
+     * @param mode The TransportationMode to convert.
+     * @return The integer value corresponding to the given
+     * TransportationMode.
+     */
+    static int toInt(TransportationMode mode);
+
+    /**
      * @brief Converts an integer value to the corresponding
      * TransportationMode.
      * @param value The integer value to convert.
@@ -84,6 +93,23 @@ public:
      * mode.
      */
     static QString toString(TransportationMode mode);
+
+    /**
+     * @brief Converts a string to the corresponding
+     * TransportationMode.
+     *
+     * This function is case-insensitive and will match
+     * partial strings that reasonably identify a
+     * transportation mode.
+     *
+     * @param str The string to convert.
+     * @return The TransportationMode corresponding to the
+     * given string.
+     * @throws std::invalid_argument if the string doesn't
+     * match any transportation mode.
+     */
+    static TransportationMode
+    fromString(const QString &str);
 };
 
 } // namespace Backend

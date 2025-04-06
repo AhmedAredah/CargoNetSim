@@ -6,10 +6,13 @@ namespace CargoNetSim
 namespace Backend
 {
 
-Terminal::Terminal(const QStringList          &names,
-                   const QJsonObject          &config,
-                   const QMap<int, QSet<int>> &interfaces,
-                   const QString &region, QObject *parent)
+Terminal::Terminal(
+    const QStringList &names, const QJsonObject &config,
+    const QMap<
+        TerminalTypes::TerminalInterface,
+        QSet<TransportationTypes::TransportationMode>>
+                  &interfaces,
+    const QString &region, QObject *parent)
     : QObject(parent)
     , m_names(names)
     , m_config(config)
@@ -29,18 +32,21 @@ QJsonObject Terminal::toJson() const
     json["terminal_names"] =
         QJsonArray::fromStringList(m_names);
     json["custom_config"] = m_config;
-    QJsonObject interfacesObj;
+    QJsonObject interfacesJson;
     for (auto it = m_interfaces.constBegin();
          it != m_interfaces.constEnd(); ++it)
     {
-        QJsonArray modes;
-        for (int mode : it.value())
+        QJsonArray modesArray;
+        for (TransportationTypes::TransportationMode mode :
+             it.value())
         {
-            modes.append(mode);
+            modesArray.append(static_cast<int>(mode));
         }
-        interfacesObj[QString::number(it.key())] = modes;
+        interfacesJson[QString::number(
+            static_cast<int>(it.key()))] = modesArray;
     }
-    json["terminal_interfaces"] = interfacesObj;
+    json["terminal_interfaces"] = interfacesJson;
+
     if (!m_region.isEmpty())
     {
         json["region"] = m_region;

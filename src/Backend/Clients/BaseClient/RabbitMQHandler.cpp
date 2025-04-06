@@ -1461,12 +1461,6 @@ bool RabbitMQHandler::hasConsumers(const QString &queueName)
 {
     QMutexLocker locker(&m_mutex);
 
-    qDebug() << "hasConsumers check for queue:"
-             << queueName;
-    qDebug() << "Connection status: connected ="
-             << m_connected << ", sendConnection ="
-             << (m_sendConnection ? "valid" : "nullptr");
-
     if (!m_connected || !m_sendConnection)
     {
         qWarning()
@@ -1476,8 +1470,6 @@ bool RabbitMQHandler::hasConsumers(const QString &queueName)
 
     try
     {
-        qDebug() << "Attempting to declare queue:"
-                 << queueName;
 
         // Get queue info - use amqp_queue_declare_ok_t
         // directly
@@ -1549,11 +1541,7 @@ bool RabbitMQHandler::hasConsumers(const QString &queueName)
 
 bool RabbitMQHandler::hasCommandQueueConsumers()
 {
-    qDebug() << "Checking consumers for command queue:"
-             << m_commandQueue;
     bool result = hasConsumers(m_commandQueue);
-    qDebug() << "Command queue" << m_commandQueue
-             << "has consumers:" << result;
     return result;
 }
 

@@ -41,6 +41,7 @@ class BasicButtonController;
 class NetworkController;
 class ViewController;
 class UtilitiesFunctions;
+class PathFindingWorker;
 
 /**
  * @brief Main application window for CargoNetSim
@@ -60,6 +61,7 @@ class MainWindow : public CustomMainWindow
     friend class ViewController;
     friend class NetworkController;
     friend class UtilitiesFunctions;
+    friend class PathFindingWorker;
 
 public:
     /**

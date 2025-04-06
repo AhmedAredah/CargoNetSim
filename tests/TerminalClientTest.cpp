@@ -50,11 +50,27 @@ private:
         config["longitude"] = -71.0;
         
         // Create interfaces for rail and road
-        QMap<int, QSet<int>> interfaces;
-        interfaces[1] = QSet<int>() << 1; // Rail
-        interfaces[2] = QSet<int>() << 2; // Road
-        
-        return new Terminal(names, config, interfaces, region);
+        QMap<
+            CargoNetSim::Backend::TerminalTypes::
+                TerminalInterface,
+            QSet<CargoNetSim::Backend::TransportationTypes::
+                     TransportationMode>>
+            interfaces;
+        interfaces[CargoNetSim::Backend::TerminalTypes::
+                       TerminalInterface::LAND_SIDE] =
+            QSet<CargoNetSim::Backend::TransportationTypes::
+                     TransportationMode>()
+            << CargoNetSim::Backend::TransportationTypes::
+                   TransportationMode::Train; // Rail
+        interfaces[CargoNetSim::Backend::TerminalTypes::
+                       TerminalInterface::LAND_SIDE] =
+            QSet<CargoNetSim::Backend::TransportationTypes::
+                     TransportationMode>()
+            << CargoNetSim::Backend::TransportationTypes::
+                   TransportationMode::Truck; // Truck
+
+        return new Terminal(names, config, interfaces,
+                            region);
     }
     
     /**
@@ -66,10 +82,12 @@ private:
      * @param mode Transportation mode
      * @return PathSegment* A new PathSegment instance
      */
-    PathSegment* createTestPathSegment(const QString& segmentId, 
-                                      const QString& start, 
-                                      const QString& end, 
-                                      int mode) {
+    PathSegment *createTestPathSegment(
+        const QString &segmentId, const QString &start,
+        const QString &end,
+        CargoNetSim::Backend::TransportationTypes::
+            TransportationMode mode)
+    {
         // Create attributes with distance and cost
         QJsonObject attributes;
         attributes["distance"] = 100.0;
@@ -191,11 +209,13 @@ private slots:
         
         // Create and add a test route
         std::unique_ptr<PathSegment> route(
-            createTestPathSegment("Route1", "Terminal1", "Terminal2", 1)
-        );
-        
+            createTestPathSegment(
+                "Route1", "Terminal1", "Terminal2",
+                CargoNetSim::Backend::TransportationTypes::
+                    TransportationMode::Train));
+
         QVERIFY(client->addRoute(route.get()));
-        
+
         // Test changing route weight
         QJsonObject newAttributes;
         newAttributes["distance"] = 150.0;
@@ -264,17 +284,23 @@ private slots:
         
         // Create routes forming a triangle with different costs
         std::unique_ptr<PathSegment> routeAB(
-            createTestPathSegment("RouteAB", "TerminalA", "TerminalB", 1)
-        );
-        
+            createTestPathSegment(
+                "RouteAB", "TerminalA", "TerminalB",
+                CargoNetSim::Backend::TransportationTypes::
+                    TransportationMode::Train));
+
         std::unique_ptr<PathSegment> routeBC(
-            createTestPathSegment("RouteBC", "TerminalB", "TerminalC", 1)
-        );
-        
+            createTestPathSegment(
+                "RouteBC", "TerminalB", "TerminalC",
+                CargoNetSim::Backend::TransportationTypes::
+                    TransportationMode::Train));
+
         std::unique_ptr<PathSegment> routeAC(
-            createTestPathSegment("RouteAC", "TerminalA", "TerminalC", 1)
-        );
-        
+            createTestPathSegment(
+                "RouteAC", "TerminalA", "TerminalC",
+                CargoNetSim::Backend::TransportationTypes::
+                    TransportationMode::Train));
+
         // Add routes to the server
         QVERIFY(client->addRoute(routeAB.get()));
         QVERIFY(client->addRoute(routeBC.get()));
@@ -341,10 +367,12 @@ private slots:
         
         QVERIFY(client->addTerminal(terminal1.get()));
         QVERIFY(client->addTerminal(terminal2.get()));
-        
+
         std::unique_ptr<PathSegment> route(
-            createTestPathSegment("SerialRoute", "SerialTest1", "SerialTest2", 1)
-        );
+            createTestPathSegment(
+                "SerialRoute", "SerialTest1", "SerialTest2",
+                CargoNetSim::Backend::TransportationTypes::
+                    TransportationMode::Train));
         QVERIFY(client->addRoute(route.get()));
         
         // Serialize the graph
