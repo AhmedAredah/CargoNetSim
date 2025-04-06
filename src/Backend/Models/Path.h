@@ -89,6 +89,15 @@ public:
     }
 
     /**
+     * @brief Sets the total path cost
+     * @param cost New total cost to set
+     * @throws std::invalid_argument If cost is negative
+     *
+     * Updates the total path cost with validation.
+     */
+    void setTotalPathCost(double cost);
+
+    /**
      * @brief Retrieves the total edge costs
      * @return Sum of edge costs as double
      *
@@ -100,6 +109,15 @@ public:
     }
 
     /**
+     * @brief Sets the total edge costs
+     * @param cost New edge cost to set
+     * @throws std::invalid_argument If cost is negative
+     *
+     * Updates the total edge costs with validation.
+     */
+    void setTotalEdgeCosts(double cost);
+
+    /**
      * @brief Retrieves the total terminal costs
      * @return Sum of terminal costs as double
      *
@@ -109,6 +127,15 @@ public:
     {
         return m_totalTerminalCosts;
     }
+
+    /**
+     * @brief Sets the total terminal costs
+     * @param cost New terminal cost to set
+     * @throws std::invalid_argument If cost is negative
+     *
+     * Updates the total terminal costs with validation.
+     */
+    void setTotalTerminalCosts(double cost);
 
     /**
      * @brief Retrieves terminals in the path

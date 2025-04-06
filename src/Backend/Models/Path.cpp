@@ -68,5 +68,44 @@ Path::~Path()
     m_segments.clear();
 }
 
+void Path::setTotalPathCost(double cost)
+{
+    // Validate that the cost is non-negative
+    if (cost < 0)
+    {
+        throw std::invalid_argument(
+            "Total path cost must be non-negative");
+    }
+
+    // Update the total path cost
+    m_totalPathCost = cost;
+}
+
+void Path::setTotalEdgeCosts(double cost)
+{
+    // Validate that the cost is non-negative
+    if (cost < 0)
+    {
+        throw std::invalid_argument(
+            "Edge costs must be non-negative");
+    }
+
+    // Update the total edge costs
+    m_totalEdgeCosts = cost;
+}
+
+void Path::setTotalTerminalCosts(double cost)
+{
+    // Validate that the cost is non-negative
+    if (cost < 0)
+    {
+        throw std::invalid_argument(
+            "Terminal costs must be non-negative");
+    }
+
+    // Update the total terminal costs
+    m_totalTerminalCosts = cost;
+}
+
 } // namespace Backend
 } // namespace CargoNetSim
