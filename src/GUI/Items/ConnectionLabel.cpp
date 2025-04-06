@@ -93,14 +93,14 @@ void ConnectionLabel::paint(
     painter->drawText(boundingRect(), Qt::AlignCenter,
                       m_text);
 
-    // Draw selection indicator if selected
-    if (m_isSelected)
-    {
-        painter->setPen(QPen(Qt::red, 2, Qt::DashLine));
-        painter->setBrush(Qt::NoBrush);
-        painter->drawRect(
-            boundingRect().adjusted(-2, -2, 2, 2));
-    }
+    // // Draw selection indicator if selected
+    // if (m_isSelected)
+    // {
+    //     painter->setPen(QPen(Qt::red, 2, Qt::DashLine));
+    //     painter->setBrush(Qt::NoBrush);
+    //     painter->drawRect(
+    //         boundingRect().adjusted(-2, -2, 2, 2));
+    // }
 }
 
 void ConnectionLabel::mousePressEvent(
