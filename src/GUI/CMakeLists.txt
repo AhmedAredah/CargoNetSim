@@ -59,6 +59,8 @@ set(GUI_SOURCES
     Utils/ErrorHandlers.h
     Utils/IconCreator.cpp
     Utils/IconCreator.h
+    Utils/PathFindingWorker.h
+    Utils/PathFindingWorker.cpp
     
     # Widgets
     Widgets/ColorPickerDialog.cpp
