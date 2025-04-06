@@ -14,6 +14,7 @@
  * @warning Instances should be managed by Path or caller.
  */
 
+#include "Backend/Commons/TransportationMode.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
@@ -56,7 +57,8 @@ public:
      */
     explicit PathSegment(
         const QString &pathSegmentId, const QString &start,
-        const QString &end, int mode,
+        const QString                          &end,
+        TransportationTypes::TransportationMode mode,
         const QJsonObject &attributes = QJsonObject(),
         QObject           *parent     = nullptr);
 
@@ -99,7 +101,7 @@ public:
      *
      * Returns the transportation mode used in this segment.
      */
-    int getMode() const
+    TransportationTypes::TransportationMode getMode() const
     {
         return m_mode;
     }
@@ -142,7 +144,7 @@ private:
     /**
      * @brief Transportation mode for the segment
      */
-    int m_mode;
+    TransportationTypes::TransportationMode m_mode;
 
     /**
      * @brief Additional attributes of the segment
