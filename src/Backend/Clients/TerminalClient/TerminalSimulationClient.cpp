@@ -755,7 +755,10 @@ void TerminalSimulationClient::onTerminalAdded(
     }
     Terminal *terminal =
         new Terminal(QStringList{name}, QJsonObject(),
-                     QMap<int, QSet<int>>(), "", this);
+                     QMap<TerminalTypes::TerminalInterface,
+                          QSet<TransportationTypes::
+                                   TransportationMode>>(),
+                     "", this);
     m_terminalStatus[name] = terminal;
 
     // Update aliases if present
@@ -824,7 +827,8 @@ void TerminalSimulationClient::onPathFound(
                         rand()), // Temporary ID
                     segObj["from"].toString(),
                     segObj["to"].toString(),
-                    segObj["mode"].toInt(),
+                    TransportationTypes::fromInt(
+                        segObj["mode"].toInt()),
                     segObj["attributes"].toObject(), this);
                 segments.append(segment);
             }
@@ -863,7 +867,8 @@ void TerminalSimulationClient::onPathFound(
                     rand()), // Temporary ID
                 segObj["from"].toString(),
                 segObj["to"].toString(),
-                segObj["mode"].toInt(),
+                TransportationTypes::fromInt(
+                    segObj["mode"].toInt()),
                 segObj["attributes"].toObject(), this);
             segments.append(segment);
         }
