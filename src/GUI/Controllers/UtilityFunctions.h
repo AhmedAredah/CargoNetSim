@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Backend/Commons/ShortestPathResult.h"
+#include "Backend/Controllers/CargoNetSimController.h"
 #include "GUI/Commons/NetworkType.h"
 #include "GUI/Items/RegionCenterPoint.h"
 #include "GUI/Items/TerminalItem.h"
@@ -18,9 +19,12 @@ namespace GUI
 
 class MapPoint;
 class MainWindow;
+class PathFindingWorker;
 
 class UtilitiesFunctions
 {
+    friend class PathFindingWorker;
+
 public:
     enum class ConnectionType
     {
@@ -96,9 +100,8 @@ public:
     getApproximateGeoDistance(const QPointF &point1,
                               const QPointF &point2);
 
-    static QList<Backend::ShortestPathResult>
-    getTopShortestPaths(MainWindow *mainWindow,
-                        int         PathsCount);
+    static void getTopShortestPaths(MainWindow *mainWindow,
+                                    int         PathsCount);
 
     static void setConnectionProperties(
         CargoNetSim::GUI::ConnectionLine *connection,
