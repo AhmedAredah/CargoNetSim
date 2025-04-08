@@ -92,6 +92,8 @@ public:
      */
     QJsonObject toJson() const;
 
+    static Terminal *fromJson(const QJsonObject &json);
+
 private:
     QStringList          m_names;
     QJsonObject          m_config;
