@@ -8,7 +8,7 @@ namespace Backend
 // Path constructor
 Path::Path(int id, double totalCost, double edgeCost,
            double                      termCost,
-           const QList<QJsonObject>   &terminals,
+           const QList<Terminal *>    &terminals,
            const QList<PathSegment *> &segments,
            QObject                    *parent)
     : QObject(parent)
@@ -52,7 +52,9 @@ Path::Path(int id, double totalCost, double edgeCost,
     // instance
 }
 
-Path::Path(const QJsonObject &json, QObject *parent)
+Path::Path(const QJsonObject              &json,
+           const QMap<QString, Terminal *> terminalDB,
+           QObject                        *parent)
     : QObject(parent)
     , m_pathId(0)
     , m_totalPathCost(0.0)
@@ -100,13 +102,23 @@ Path::Path(const QJsonObject &json, QObject *parent)
     {
         QJsonArray terminalsArray =
             json["terminals_in_path"].toArray();
+
         for (const QJsonValue &terminalValue :
              terminalsArray)
         {
             if (terminalValue.isObject())
             {
-                m_terminalsInPath.append(
-                    terminalValue.toObject());
+                QJsonObject terminalObj =
+                    terminalValue.toObject();
+                if (terminalDB.contains(
+                        terminalObj["terminal"].toString()))
+                {
+                    m_terminalsInPath.append(
+                        terminalDB.value(
+                            terminalObj["terminal"]
+                                .toString(),
+                            nullptr));
+                }
             }
         }
     }
@@ -192,10 +204,12 @@ void Path::setTotalTerminalCosts(double cost)
     m_totalTerminalCosts = cost;
 }
 
-Path *Path::fromJson(const QJsonObject &json,
-                     QObject           *parent)
+Path *
+Path::fromJson(const QJsonObject              &json,
+               const QMap<QString, Terminal *> terminalDB,
+               QObject                        *parent)
 {
-    return new Path(json, parent);
+    return new Path(json, terminalDB, parent);
 }
 
 QJsonObject Path::toJson() const
@@ -208,9 +222,9 @@ QJsonObject Path::toJson() const
 
     // Add terminals
     QJsonArray terminalsArray;
-    for (const QJsonObject &terminal : m_terminalsInPath)
+    for (const Terminal *terminal : m_terminalsInPath)
     {
-        terminalsArray.append(terminal);
+        terminalsArray.append(terminal->toJson());
     }
     json["terminals_in_path"] = terminalsArray;
 
