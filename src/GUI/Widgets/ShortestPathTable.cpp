@@ -700,8 +700,8 @@ void ShortestPathsTable::refreshTable()
         checkboxLayout->addWidget(checkbox);
         m_table->setCellWidget(row, 0, checkboxWidget);
 
-        // Connect checkbox state change to update compare
-        // button state
+        // Connect checkbox state change to update
+        // compare button state
         connect(checkbox, &QCheckBox::checkStateChanged,
                 this, [this, pathId](Qt::CheckState state) {
                     // Emit signal that checkbox state
@@ -709,8 +709,8 @@ void ShortestPathsTable::refreshTable()
                     emit checkboxChanged(
                         pathId, state == Qt::Checked);
 
-                    // Enable compare button if at least 2
-                    // paths are checked
+                    // Enable compare button if at least
+                    // 2 paths are checked
                     m_compareButton->setEnabled(
                         getCheckedPathIds().size() >= 2);
                 });
