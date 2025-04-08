@@ -22,6 +22,7 @@
 #include "Backend/Controllers/NetworkController.h"
 #include "Backend/Controllers/RegionDataController.h"
 #include "Backend/Controllers/VehicleController.h"
+#include "Backend/Models/SimulationTime.h"
 
 namespace CargoNetSim
 {
@@ -284,6 +285,9 @@ private:
      * @return True if initialization was successful
      */
     bool initializeTerminalClient();
+
+    // SimulationTime
+    Backend::SimulationTime *m_simulationTime;
 
     // Client threads
     QThread *m_truckThread;

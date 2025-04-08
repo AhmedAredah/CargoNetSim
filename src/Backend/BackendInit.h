@@ -29,6 +29,7 @@
 #include "Backend/Commons/ClientType.h"
 
 #include "Backend/Controllers/CargoNetSimController.h"
+#include "Backend/Models/SimulationTime.h"
 
 namespace CargoNetSim
 {
@@ -302,6 +303,11 @@ initializeBackend(const QString   &integrationExePath = "",
     qRegisterMetaType<
         CargoNetSim::Backend::ShortestPathResult *>(
         "CargoNetSim::Backend::ShortestPathResult*");
+    qRegisterMetaType<CargoNetSim::Backend::SimulationTime>(
+        "CargoNetSim::Backend::SimulationTime");
+    qRegisterMetaType<
+        CargoNetSim::Backend::SimulationTime *>(
+        "CargoNetSim::Backend::SimulationTime*");
 
     qDebug() << "Backend metatypes registered successfully";
 

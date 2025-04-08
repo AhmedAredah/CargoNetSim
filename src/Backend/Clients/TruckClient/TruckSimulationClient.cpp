@@ -68,8 +68,12 @@ TruckSimulationClient::~TruckSimulationClient()
 }
 
 void TruckSimulationClient::initializeClient(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
+    // Call base class initialization first
+    SimulationClientBase::initializeClient(simulationTime,
+                                           logger);
+
     // Create managers as children of this client
     m_tripEndCallbackManager =
         new TripEndCallbackManager(this);

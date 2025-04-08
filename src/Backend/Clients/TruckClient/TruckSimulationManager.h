@@ -43,7 +43,8 @@ public:
     ~TruckSimulationManager() override;
 
     void
-    initializeManager(LoggerInterface *logger = nullptr);
+    initializeManager(SimulationTime  *simulationTime,
+                      LoggerInterface *logger = nullptr);
 
     void addClient(const QString         &networkName,
                    TruckSimulationClient *client);
@@ -105,6 +106,7 @@ private:
      */
     mutable QReadWriteLock m_mutex;
 
+    SimulationTime  *m_defaultSimulationTime = nullptr;
     LoggerInterface *m_defaultLogger = nullptr;
 
     /** @brief Wait interval between simulation steps in

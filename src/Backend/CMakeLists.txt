@@ -31,6 +31,8 @@ set(Backend_SOURCES
     Models/BaseObject.cpp
     Models/BaseNetwork.h
     Models/BaseNetwork.cpp
+    Models/SimulationTime.h
+    Models/SimulationTime.cpp
 
     # Controllers
     Controllers/VehicleController.h

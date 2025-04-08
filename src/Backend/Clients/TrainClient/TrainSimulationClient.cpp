@@ -117,10 +117,11 @@ bool TrainSimulationClient::resetServer()
 }
 
 void TrainSimulationClient::initializeClient(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
     // Call base class initialization first
-    SimulationClientBase::initializeClient(logger);
+    SimulationClientBase::initializeClient(simulationTime,
+                                           logger);
 
     // Ensure RabbitMQ handler exists
     if (!m_rabbitMQHandler)
@@ -790,10 +791,7 @@ void TrainSimulationClient::onTrainReachedDestination(
                     .last());
 
             // Construct terminal ID
-            QString terminalId =
-                QString("__network_details_$$||||$$%1$$||||"
-                        "$$%2")
-                    .arg(network, destinationId);
+            QString terminalId = QString(destinationId);
 
             // Placeholder for TerminalGraphServer
             // if
@@ -997,9 +995,12 @@ void TrainSimulationClient::onSimulationAdvanced(
         // Compute average progress
         double average = totalProgress / networks.size();
 
-        // Update progress bar (placeholder)
-        // ProgressBarManager::getInstance()->updateProgress(
-        //     ClientType::TrainClient, average);
+        // Update progress using logger
+        if (m_logger)
+        {
+            m_logger->updateProgress(
+                average, static_cast<int>(m_clientType));
+        }
 
         // Log event using logger if available
         if (m_logger)
@@ -1105,10 +1106,7 @@ void TrainSimulationClient::onTrainReachedTerminal(
     if (containersCount > 0 && !terminalId.isEmpty())
     {
         // Construct full terminal ID
-        QString fullTerminalId =
-            QString(
-                "__network_details_$$||||$$%1$$||||$$%2")
-                .arg(network, terminalId);
+        QString fullTerminalId = QString(terminalId);
 
         // Placeholder for TerminalGraphServer
         // if
