@@ -7,7 +7,8 @@ namespace Backend
 {
 
 Terminal::Terminal(
-    const QStringList &names, const QJsonObject &config,
+    const QStringList &names, const QString &displayName,
+    const QJsonObject &config,
     const QMap<
         TerminalTypes::TerminalInterface,
         QSet<TransportationTypes::TransportationMode>>
@@ -15,6 +16,7 @@ Terminal::Terminal(
     const QString &region, QObject *parent)
     : QObject(parent)
     , m_names(names)
+    , m_displayName(displayName)
     , m_config(config)
     , m_interfaces(interfaces)
     , m_region(region)
@@ -31,6 +33,7 @@ QJsonObject Terminal::toJson() const
     QJsonObject json;
     json["terminal_names"] =
         QJsonArray::fromStringList(m_names);
+    json["display_name"]  = m_displayName;
     json["custom_config"] = m_config;
     QJsonObject interfacesJson;
     for (auto it = m_interfaces.constBegin();
@@ -83,6 +86,16 @@ Terminal *Terminal::fromJson(const QJsonObject &json)
         qWarning() << "Missing or invalid terminal name(s) "
                       "in JSON";
         return nullptr;
+    }
+
+    QString dispName;
+    if (json.contains("display_name"))
+    {
+        if (json["display_name"].isString())
+        {
+
+            dispName = json["display_name"].toString();
+        }
     }
 
     // Extract interfaces
@@ -207,8 +220,9 @@ Terminal *Terminal::fromJson(const QJsonObject &json)
     }
 
     // Create the Terminal with the extracted data
-    Terminal *terminal = new Terminal(
-        terminalNames, configJson, interfaces, region);
+    Terminal *terminal =
+        new Terminal(terminalNames, dispName, configJson,
+                     interfaces, region);
 
     return terminal;
 }

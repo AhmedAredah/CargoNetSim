@@ -31,7 +31,9 @@ public:
      * @param parent Parent QObject
      */
     explicit Terminal(
-        const QStringList &names, const QJsonObject &config,
+        const QStringList &names,
+        const QString     &displayName,
+        const QJsonObject &config,
         const QMap<
             TerminalTypes::TerminalInterface,
             QSet<TransportationTypes::TransportationMode>>
@@ -46,6 +48,15 @@ public:
     QStringList getNames() const
     {
         return m_names;
+    }
+
+    /**
+     * @brief Get display name
+     * @return Display name
+     */
+    QString getDisplayName() const
+    {
+        return m_displayName;
     }
 
     /**
@@ -96,6 +107,7 @@ public:
 
 private:
     QStringList          m_names;
+    QString              m_displayName;
     QJsonObject          m_config;
     QMap<TerminalTypes::TerminalInterface,
          QSet<TransportationTypes::TransportationMode>>
