@@ -820,7 +820,8 @@ void TerminalSimulationClient::onPathsFound(
         for (const QJsonValue &pathVal : paths)
         {
             QJsonObject pathObj = pathVal.toObject();
-            Path       *path    = Path::fromJson(pathObj);
+            Path       *path    = Path::fromJson(
+                pathObj, m_terminalStatus, this);
             m_topPaths[key].push_back(path);
         }
     }
