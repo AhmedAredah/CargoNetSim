@@ -195,6 +195,8 @@ void ShortestPathsTable::createTableWidget()
         QTableWidget::SingleSelection);
     m_table->setEditTriggers(
         QTableWidget::NoEditTriggers); // Read-only table
+    m_table->verticalHeader()->setDefaultSectionSize(
+        50); // 50 pixels high rows
 
     // Configure header appearance and behavior
     auto header = m_table->horizontalHeader();
