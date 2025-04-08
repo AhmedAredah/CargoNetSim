@@ -195,6 +195,8 @@ void ShortestPathsTable::createTableWidget()
         QTableWidget::SingleSelection);
     m_table->setEditTriggers(
         QTableWidget::NoEditTriggers); // Read-only table
+    m_table->verticalHeader()->setDefaultSectionSize(
+        50); // 50 pixels high rows
 
     // Configure header appearance and behavior
     auto header = m_table->horizontalHeader();
@@ -526,7 +528,7 @@ ShortestPathsTable::createPathRow(int             pathId,
     layout->addWidget(showButton);
 
     // Get terminals and segments from the path
-    const QList<QJsonObject> &terminals =
+    const QList<Backend::Terminal *> &terminals =
         pathData->path->getTerminalsInPath();
     const QList<Backend::PathSegment *> &segments =
         pathData->path->getSegments();
@@ -544,9 +546,14 @@ ShortestPathsTable::createPathRow(int             pathId,
     // Add terminal names and transportation mode indicators
     for (int i = 0; i < terminals.size(); ++i)
     {
+        if (!terminals[i]) {
+            qWarning() << "Null terminal in path ID"
+                       << pathId;
+            continue; // Skip null terminals
+        }
         // Extract terminal name from the JSON object
         QString terminalName =
-            terminals[i]["name"].toString();
+            terminals[i]->getDisplayName();
         if (terminalName.isEmpty())
         {
             terminalName = tr("Terminal %1")
@@ -700,8 +707,8 @@ void ShortestPathsTable::refreshTable()
         checkboxLayout->addWidget(checkbox);
         m_table->setCellWidget(row, 0, checkboxWidget);
 
-        // Connect checkbox state change to update compare
-        // button state
+        // Connect checkbox state change to update
+        // compare button state
         connect(checkbox, &QCheckBox::checkStateChanged,
                 this, [this, pathId](Qt::CheckState state) {
                     // Emit signal that checkbox state
@@ -709,8 +716,8 @@ void ShortestPathsTable::refreshTable()
                     emit checkboxChanged(
                         pathId, state == Qt::Checked);
 
-                    // Enable compare button if at least 2
-                    // paths are checked
+                    // Enable compare button if at least
+                    // 2 paths are checked
                     m_compareButton->setEnabled(
                         getCheckedPathIds().size() >= 2);
                 });

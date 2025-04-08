@@ -145,6 +145,7 @@ private:
 
     static CargoNetSim::GUI::MapLine *
     drawLink(MainWindow    *mainWindow,
+             const QString &networkNodeID,
              const QString &linkUniqueID,
              QPointF        projectedStartPoint,
              QPointF projectedEndPoint, QString &regionName,

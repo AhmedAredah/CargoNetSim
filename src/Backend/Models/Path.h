@@ -16,9 +16,12 @@
  */
 
 #include "PathSegment.h"
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
+
+#include "Terminal.h"
 
 namespace CargoNetSim
 {
@@ -55,9 +58,43 @@ public:
      */
     explicit Path(int id, double totalCost, double edgeCost,
                   double                      termCost,
-                  const QList<QJsonObject>   &terminals,
+                  const QList<Terminal *>    &terminals,
                   const QList<PathSegment *> &segments,
                   QObject *parent = nullptr);
+
+    /**
+     * @brief Constructs a Path from a JSON object
+     * @param json JSON object containing path data
+     * @param terminalDB Map of terminal IDs to Terminal
+     * pointer
+     * @param parent Parent QObject, defaults to nullptr
+     * @throws std::invalid_argument If required fields are
+     * missing
+     *
+     * Creates a Path by parsing a JSON object from the
+     * server.
+     */
+    explicit Path(
+        const QJsonObject              &json,
+        const QMap<QString, Terminal *> terminalDB,
+        QObject                        *parent = nullptr);
+
+    /**
+     * @brief Creates a Path from a JSON object
+     * @param json JSON object containing path data
+     * @param terminalDB Map of terminal IDs to Terminal
+     * pointers
+     * @param parent Parent QObject, defaults to nullptr
+     * @return New Path instance
+     * @throws std::invalid_argument If required fields are
+     * missing
+     *
+     * Static factory method to create a Path from JSON.
+     */
+    static Path *
+    fromJson(const QJsonObject              &json,
+             const QMap<QString, Terminal *> terminalDB,
+             QObject *parent = nullptr);
 
     /**
      * @brief Destroys the Path, freeing segments
@@ -139,11 +176,11 @@ public:
 
     /**
      * @brief Retrieves terminals in the path
-     * @return List of terminal details as JSON objects
+     * @return List of terminal pointer
      *
      * Returns information about terminals in the path.
      */
-    QList<QJsonObject> getTerminalsInPath() const
+    QList<Terminal *> getTerminalsInPath() const
     {
         return m_terminalsInPath;
     }
@@ -158,6 +195,32 @@ public:
     {
         return m_segments;
     }
+
+    /**
+     * @brief Retrieves the starting terminal of the path
+     * @return Starting terminal identifier as QString
+     * @throws std::runtime_error If path has no segments
+     *      * Returns the ID of the first terminal in the
+     * path.
+     */
+    QString getStartTerminal() const;
+
+    /**
+     * @brief Retrieves the ending terminal of the path
+     * @return Ending terminal identifier as QString
+     * @throws std::runtime_error If path has no segments
+     *      * Returns the ID of the last terminal in the
+     * path.
+     */
+    QString getEndTerminal() const;
+
+    /**
+     * @brief Converts the path to JSON format
+     * @return QJsonObject representing the path
+     *
+     * Serializes the path for server communication.
+     */
+    QJsonObject toJson() const;
 
 private:
     /**
@@ -183,7 +246,7 @@ private:
     /**
      * @brief List of terminal details in the path
      */
-    QList<QJsonObject> m_terminalsInPath;
+    QList<Terminal *> m_terminalsInPath;
 
     /**
      * @brief List of segments composing the path

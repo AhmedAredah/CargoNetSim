@@ -2,6 +2,7 @@
 
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "GUI/MainWindow.h"
+#include "GUI/Utils/IconCreator.h"
 #include <QDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -210,8 +211,8 @@ void SettingsWidget::initUI()
 
     QToolButton *shipCalcButton =
         new QToolButton(shipGroup);
-    shipCalcButton->setIcon(QIcon::fromTheme(
-        "settings", QIcon(":/icons/settings.png")));
+    shipCalcButton->setIcon(
+        QIcon(IconFactory::createCalculatorIcon()));
     shipCalcButton->setToolTip(
         tr("Calculate energy from fuel consumption"));
     connect(shipCalcButton, &QToolButton::clicked,
@@ -274,8 +275,8 @@ void SettingsWidget::initUI()
 
     QToolButton *trainCalcButton =
         new QToolButton(trainGroup);
-    trainCalcButton->setIcon(QIcon::fromTheme(
-        "settings", QIcon(":/icons/settings.png")));
+    trainCalcButton->setIcon(
+        QIcon(IconFactory::createCalculatorIcon()));
     trainCalcButton->setToolTip(
         tr("Calculate energy from fuel consumption"));
     connect(trainCalcButton, &QToolButton::clicked,
@@ -337,8 +338,8 @@ void SettingsWidget::initUI()
 
     QToolButton *truckCalcButton =
         new QToolButton(truckGroup);
-    truckCalcButton->setIcon(QIcon::fromTheme(
-        "settings", QIcon(":/icons/settings.png")));
+    truckCalcButton->setIcon(
+        QIcon(IconFactory::createCalculatorIcon()));
     truckCalcButton->setToolTip(
         tr("Calculate energy from fuel consumption"));
     connect(truckCalcButton, &QToolButton::clicked,
@@ -631,120 +632,261 @@ bool SettingsWidget::loadSettings()
                            .getConfigController()
                            ->getAllParams();
 
+        // Apply simulation settings
+        if (settings.contains("simulation"))
+        {
+            QMap<QString, QVariant> simSettings =
+                settings["simulation"].toMap();
+
+            if (simSettings.contains("time_step"))
+                timeStepSpin->setValue(
+                    simSettings["time_step"].toInt());
+
+            if (simSettings.contains("time_value_of_money"))
+                timeValueOfMoneySpin->setValue(
+                    simSettings["time_value_of_money"]
+                        .toDouble());
+
+            if (simSettings.contains("shortest_paths"))
+                shortestPathsSpin->setValue(
+                    simSettings["shortest_paths"].toInt());
+        }
+
+        // Apply carbon tax settings
+        if (settings.contains("carbon_taxes"))
+        {
+            QMap<QString, QVariant> carbonSettings =
+                settings["carbon_taxes"].toMap();
+
+            if (carbonSettings.contains("rate"))
+                carbonRateSpin->setValue(
+                    carbonSettings["rate"].toDouble());
+
+            if (carbonSettings.contains("ship_multiplier"))
+                shipMultiplierSpin->setValue(
+                    carbonSettings["ship_multiplier"]
+                        .toDouble());
+
+            if (carbonSettings.contains("truck_multiplier"))
+                truckMultiplierSpin->setValue(
+                    carbonSettings["truck_multiplier"]
+                        .toDouble());
+
+            if (carbonSettings.contains("train_multiplier"))
+                trainMultiplierSpin->setValue(
+                    carbonSettings["train_multiplier"]
+                        .toDouble());
+        }
+
+        // Load fuel types data from settings
+        if (settings.contains("fuel_energy")
+            && settings.contains("fuel_prices")
+            && settings.contains("fuel_carbon_content"))
+        {
+
+            QMap<QString, QVariant> fuelEnergyMap =
+                settings["fuel_energy"].toMap();
+            QMap<QString, QVariant> fuelPricesMap =
+                settings["fuel_prices"].toMap();
+            QMap<QString, QVariant> fuelCarbonMap =
+                settings["fuel_carbon_content"].toMap();
+
+            // Clear existing fuel types and reload from
+            // settings
+            fuelTypes.clear();
+
+            // Combine all fuel type keys from all three
+            // maps
+            QSet<QString> allFuelKeys;
+            for (auto it = fuelEnergyMap.begin();
+                 it != fuelEnergyMap.end(); ++it)
+                allFuelKeys.insert(it.key());
+            for (auto it = fuelPricesMap.begin();
+                 it != fuelPricesMap.end(); ++it)
+                allFuelKeys.insert(it.key());
+            for (auto it = fuelCarbonMap.begin();
+                 it != fuelCarbonMap.end(); ++it)
+                allFuelKeys.insert(it.key());
+
+            // Create fuel type entries
+            for (const QString &fuelKey : allFuelKeys)
+            {
+                QMap<QString, QVariant> fuelData;
+
+                // Set default unit if not already in the
+                // data
+                fuelData["unit"] = "L";
+
+                // Add energy content (calorific value)
+                if (fuelEnergyMap.contains(fuelKey))
+                    fuelData["calorific"] =
+                        fuelEnergyMap[fuelKey];
+
+                // Add price
+                if (fuelPricesMap.contains(fuelKey))
+                    fuelData["cost"] =
+                        fuelPricesMap[fuelKey];
+
+                // Add carbon content
+                if (fuelCarbonMap.contains(fuelKey))
+                    fuelData["carbon_content"] =
+                        fuelCarbonMap[fuelKey];
+
+                // Store the fuel type data
+                fuelTypes[fuelKey] = fuelData;
+            }
+
+            // Update the fuel table and dropdowns
+            updateFuelTable();
+            updateFuelTypeDropdowns();
+        }
+
         // Apply transport mode settings
-        shipSpeedSpin->setValue(
-            settings["transport_modes"]
-                .toMap()["ship"]
-                .toMap()["average_speed"]
-                .toDouble());
-        shipFuelSpin->setValue(
-            settings["transport_modes"]
-                .toMap()["ship"]
-                .toMap()["average_fuel_consumption"]
-                .toDouble());
-        shipContainers->setValue(
-            settings["transport_modes"]
-                .toMap()["ship"]
-                .toMap()["average_container_number"]
-                .toInt());
-        shipRiskSpin->setValue(settings["transport_modes"]
-                                   .toMap()["ship"]
-                                   .toMap()["risk_factor"]
-                                   .toDouble());
-
-        trainSpeedSpin->setValue(
-            settings["transport_modes"]
-                .toMap()["rail"]
-                .toMap()["average_speed"]
-                .toDouble());
-        trainUseNetwork->setChecked(
-            settings["transport_modes"]
-                .toMap()["rail"]
-                .toMap()["use_network"]
-                .toBool());
-        trainFuelSpin->setValue(
-            settings["transport_modes"]
-                .toMap()["rail"]
-                .toMap()["average_fuel_consumption"]
-                .toDouble());
-        trainContainers->setValue(
-            settings["transport_modes"]
-                .toMap()["rail"]
-                .toMap()["average_container_number"]
-                .toInt());
-        trainRiskSpin->setValue(settings["transport_modes"]
-                                    .toMap()["rail"]
-                                    .toMap()["risk_factor"]
-                                    .toDouble());
-
-        truckSpeedSpin->setValue(
-            settings["transport_modes"]
-                .toMap()["truck"]
-                .toMap()["average_speed"]
-                .toDouble());
-        truckUseNetwork->setChecked(
-            settings["transport_modes"]
-                .toMap()["truck"]
-                .toMap()["use_network"]
-                .toBool());
-        truckFuelSpin->setValue(
-            settings["transport_modes"]
-                .toMap()["truck"]
-                .toMap()["average_fuel_consumption"]
-                .toDouble());
-        truckContainers->setValue(
-            settings["transport_modes"]
-                .toMap()["truck"]
-                .toMap()["average_container_number"]
-                .toInt());
-        truckRiskSpin->setValue(settings["transport_modes"]
-                                    .toMap()["truck"]
-                                    .toMap()["risk_factor"]
-                                    .toDouble());
-
-        // Set fuel types from settings if available
-        QString shipFuelTypeName =
-            settings["transport_modes"]
-                .toMap()["ship"]
-                .toMap()["fuel_type"]
-                .toString();
-        if (!shipFuelTypeName.isEmpty())
+        if (settings.contains("transport_modes"))
         {
-            int idx =
-                shipFuelType->findText(shipFuelTypeName);
-            if (idx >= 0)
+            QMap<QString, QVariant> transportModes =
+                settings["transport_modes"].toMap();
+
+            // Ship settings
+            if (transportModes.contains("ship"))
             {
-                shipFuelType->setCurrentIndex(idx);
+                QMap<QString, QVariant> shipSettings =
+                    transportModes["ship"].toMap();
+
+                if (shipSettings.contains("average_speed"))
+                    shipSpeedSpin->setValue(
+                        shipSettings["average_speed"]
+                            .toDouble());
+
+                if (shipSettings.contains(
+                        "average_fuel_consumption"))
+                    shipFuelSpin->setValue(
+                        shipSettings
+                            ["average_fuel_consumption"]
+                                .toDouble());
+
+                if (shipSettings.contains(
+                        "average_container_number"))
+                    shipContainers->setValue(
+                        shipSettings
+                            ["average_container_number"]
+                                .toInt());
+
+                if (shipSettings.contains("risk_factor"))
+                    shipRiskSpin->setValue(
+                        shipSettings["risk_factor"]
+                            .toDouble());
+
+                if (shipSettings.contains("fuel_type"))
+                {
+                    QString shipFuelTypeName =
+                        shipSettings["fuel_type"]
+                            .toString();
+                    int idx = shipFuelType->findText(
+                        shipFuelTypeName);
+                    if (idx >= 0)
+                    {
+                        shipFuelType->setCurrentIndex(idx);
+                    }
+                }
             }
-        }
 
-        QString trainFuelTypeName =
-            settings["transport_modes"]
-                .toMap()["rail"]
-                .toMap()["fuel_type"]
-                .toString();
-        if (!trainFuelTypeName.isEmpty())
-        {
-            int idx =
-                trainFuelType->findText(trainFuelTypeName);
-            if (idx >= 0)
+            // Rail settings
+            if (transportModes.contains("rail"))
             {
-                trainFuelType->setCurrentIndex(idx);
+                QMap<QString, QVariant> railSettings =
+                    transportModes["rail"].toMap();
+
+                if (railSettings.contains("average_speed"))
+                    trainSpeedSpin->setValue(
+                        railSettings["average_speed"]
+                            .toDouble());
+
+                if (railSettings.contains("use_network"))
+                    trainUseNetwork->setChecked(
+                        railSettings["use_network"]
+                            .toBool());
+
+                if (railSettings.contains(
+                        "average_fuel_consumption"))
+                    trainFuelSpin->setValue(
+                        railSettings
+                            ["average_fuel_consumption"]
+                                .toDouble());
+
+                if (railSettings.contains(
+                        "average_container_number"))
+                    trainContainers->setValue(
+                        railSettings
+                            ["average_container_number"]
+                                .toInt());
+
+                if (railSettings.contains("risk_factor"))
+                    trainRiskSpin->setValue(
+                        railSettings["risk_factor"]
+                            .toDouble());
+
+                if (railSettings.contains("fuel_type"))
+                {
+                    QString trainFuelTypeName =
+                        railSettings["fuel_type"]
+                            .toString();
+                    int idx = trainFuelType->findText(
+                        trainFuelTypeName);
+                    if (idx >= 0)
+                    {
+                        trainFuelType->setCurrentIndex(idx);
+                    }
+                }
             }
-        }
 
-        QString truckFuelTypeName =
-            settings["transport_modes"]
-                .toMap()["truck"]
-                .toMap()["fuel_type"]
-                .toString();
-        if (!truckFuelTypeName.isEmpty())
-        {
-            int idx =
-                truckFuelType->findText(truckFuelTypeName);
-            if (idx >= 0)
+            // Truck settings
+            if (transportModes.contains("truck"))
             {
-                truckFuelType->setCurrentIndex(idx);
+                QMap<QString, QVariant> truckSettings =
+                    transportModes["truck"].toMap();
+
+                if (truckSettings.contains("average_speed"))
+                    truckSpeedSpin->setValue(
+                        truckSettings["average_speed"]
+                            .toDouble());
+
+                if (truckSettings.contains("use_network"))
+                    truckUseNetwork->setChecked(
+                        truckSettings["use_network"]
+                            .toBool());
+
+                if (truckSettings.contains(
+                        "average_fuel_consumption"))
+                    truckFuelSpin->setValue(
+                        truckSettings
+                            ["average_fuel_consumption"]
+                                .toDouble());
+
+                if (truckSettings.contains(
+                        "average_container_number"))
+                    truckContainers->setValue(
+                        truckSettings
+                            ["average_container_number"]
+                                .toInt());
+
+                if (truckSettings.contains("risk_factor"))
+                    truckRiskSpin->setValue(
+                        truckSettings["risk_factor"]
+                            .toDouble());
+
+                if (truckSettings.contains("fuel_type"))
+                {
+                    QString truckFuelTypeName =
+                        truckSettings["fuel_type"]
+                            .toString();
+                    int idx = truckFuelType->findText(
+                        truckFuelTypeName);
+                    if (idx >= 0)
+                    {
+                        truckFuelType->setCurrentIndex(idx);
+                    }
+                }
             }
         }
 

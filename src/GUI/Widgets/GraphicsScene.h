@@ -97,6 +97,13 @@ public:
         // Get the item
         QGraphicsItem *item = itemsByType[className][id];
 
+        // Disconnect all signals from this item to prevent
+        // callback errors
+        if (QObject *obj = dynamic_cast<QObject *>(item))
+        {
+            QObject::disconnect(obj);
+        }
+
         // Remove from type map
         itemsByType[className].remove(id);
 

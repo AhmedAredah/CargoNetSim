@@ -1,5 +1,4 @@
 #pragma once
-
 /**
  * @file PathSegment.h
  * @brief Defines the PathSegment class for path segments
@@ -13,17 +12,14 @@
  * @note Part of the CargoNetSim::Backend namespace.
  * @warning Instances should be managed by Path or caller.
  */
-
 #include "Backend/Commons/TransportationMode.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
-
 namespace CargoNetSim
 {
 namespace Backend
 {
-
 /**
  * @class PathSegment
  * @brief Represents a single segment in a transportation
@@ -39,7 +35,6 @@ namespace Backend
 class PathSegment : public QObject
 {
     Q_OBJECT
-
 public:
     /**
      * @brief Constructs a PathSegment instance
@@ -63,6 +58,33 @@ public:
         QObject           *parent     = nullptr);
 
     /**
+     * @brief Constructs a PathSegment from a JSON object
+     * @param json JSON object containing segment data
+     * @param parent Parent QObject, defaults to nullptr
+     * @throws std::invalid_argument If required fields are
+     * missing
+     *
+     * Creates a PathSegment by parsing a JSON object from
+     * the server.
+     */
+    explicit PathSegment(const QJsonObject &json,
+                         QObject *parent = nullptr);
+
+    /**
+     * @brief Creates a PathSegment from a JSON object
+     * @param json JSON object containing segment data
+     * @param parent Parent QObject, defaults to nullptr
+     * @return New PathSegment instance
+     * @throws std::invalid_argument If required fields are
+     * missing
+     *
+     * Static factory method to create a PathSegment from
+     * JSON.
+     */
+    static PathSegment *fromJson(const QJsonObject &json,
+                                 QObject *parent = nullptr);
+
+    /**
      * @brief Retrieves the path segment identifier
      * @return Unique identifier as QString
      *
@@ -72,7 +94,6 @@ public:
     {
         return m_pathSegmentId;
     }
-
     /**
      * @brief Retrieves the starting terminal
      * @return Starting terminal identifier as QString
@@ -83,7 +104,6 @@ public:
     {
         return m_start;
     }
-
     /**
      * @brief Retrieves the ending terminal
      * @return Ending terminal identifier as QString
@@ -94,7 +114,6 @@ public:
     {
         return m_end;
     }
-
     /**
      * @brief Retrieves the transportation mode
      * @return Mode as integer (enum value)
@@ -105,7 +124,6 @@ public:
     {
         return m_mode;
     }
-
     /**
      * @brief Retrieves the segment attributes
      * @return Attributes as QJsonObject
@@ -116,7 +134,6 @@ public:
     {
         return m_attributes;
     }
-
     /**
      * @brief Converts the segment to JSON format
      * @return QJsonObject representing the segment
@@ -130,27 +147,22 @@ private:
      * @brief Unique identifier for the path segment
      */
     QString m_pathSegmentId;
-
     /**
      * @brief Identifier of the starting terminal
      */
     QString m_start;
-
     /**
      * @brief Identifier of the ending terminal
      */
     QString m_end;
-
     /**
      * @brief Transportation mode for the segment
      */
     TransportationTypes::TransportationMode m_mode;
-
     /**
      * @brief Additional attributes of the segment
      */
     QJsonObject m_attributes;
 };
-
 } // namespace Backend
 } // namespace CargoNetSim

@@ -505,6 +505,8 @@ bool ConnectionLine::isSelected() const
 
 void ConnectionLine::setSelected(bool selected)
 {
+    // Set both custom and Qt selection
+    QGraphicsItem::setSelected(selected);
     m_label->setSelected(selected);
     m_label->update();
 }

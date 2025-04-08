@@ -15,7 +15,8 @@ class PathFindingWorker : public QObject
 {
     Q_OBJECT
 public:
-    PathFindingWorker(MainWindow *window, int count);
+    PathFindingWorker();
+    void initialize(MainWindow *window, int count);
 
 public slots:
     void process();

@@ -68,6 +68,8 @@ QPixmap createTransportationModePixmap(const QString &mode,
                                        int size  = 32,
                                        int width = 64);
 
+QPixmap createCalculatorIcon(int size = 128);
+
 } // namespace IconFactory
 } // namespace GUI
 } // namespace CargoNetSim

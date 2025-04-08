@@ -2104,6 +2104,111 @@ QPixmap createTransportationModePixmap(const QString &mode,
     return pixmap;
 }
 
+//------------------------------------------------------------------------------
+// Calculator Icon
+//------------------------------------------------------------------------------
+QPixmap createCalculatorIcon(int size)
+{
+    QPixmap pixmap(size, size);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QColor calc_body_color("#546E7A"); // Slate gray
+    QColor screen_color("#E0F7FA");    // Light cyan
+    QColor button_color("#B0BEC5");    // Light blue gray
+    QColor function_button_color(
+        "#FF9800"); // Orange for function buttons
+
+    // Draw calculator body with a gradient
+    QLinearGradient body_gradient(0, 0, 0, size);
+    body_gradient.setColorAt(0, calc_body_color);
+    body_gradient.setColorAt(1,
+                             calc_body_color.darker(120));
+
+    painter.setBrush(body_gradient);
+    painter.setPen(
+        QPen(Qt::black, std::max(1, int(size * 0.02))));
+    painter.drawRoundedRect(
+        int(size * 0.15), int(size * 0.1), int(size * 0.7),
+        int(size * 0.8), int(size * 0.05),
+        int(size * 0.05));
+
+    // Draw calculator screen
+    QLinearGradient screen_gradient(0, 0, 0, size * 0.2);
+    screen_gradient.setColorAt(0, screen_color.darker(105));
+    screen_gradient.setColorAt(1, screen_color);
+
+    painter.setBrush(screen_gradient);
+    painter.drawRoundedRect(
+        int(size * 0.25), int(size * 0.15), int(size * 0.5),
+        int(size * 0.15), int(size * 0.02),
+        int(size * 0.02));
+
+    // Draw some sample text/digits on screen
+    painter.setPen(QColor("#263238"));
+    QFont font("Monospace", int(size * 0.08));
+    painter.setFont(font);
+    painter.drawText(
+        QRect(int(size * 0.27), int(size * 0.17),
+              int(size * 0.46), int(size * 0.12)),
+        Qt::AlignRight | Qt::AlignVCenter, "123");
+
+    // Draw calculator buttons (4x4 grid)
+    const int    rows          = 4;
+    const int    cols          = 4;
+    const double button_size   = size * 0.12;
+    const double button_margin = size * 0.04;
+    const double start_x       = size * 0.25;
+    const double start_y       = size * 0.35;
+
+    QStringList button_labels = {
+        "7", "8", "9", "+", "4", "5", "6", "-",
+        "1", "2", "3", "×", "0", ".", "=", "÷"};
+
+    int label_index = 0;
+    for (int row = 0; row < rows; row++)
+    {
+        for (int col = 0; col < cols; col++)
+        {
+            double x =
+                start_x
+                + col * (button_size + button_margin);
+            double y =
+                start_y
+                + row * (button_size + button_margin);
+
+            // Use function button color for operators
+            if (col == 3 || (row == 3 && col == 2))
+            {
+                painter.setBrush(function_button_color);
+            }
+            else
+            {
+                painter.setBrush(button_color);
+            }
+
+            painter.drawRoundedRect(
+                int(x), int(y), int(button_size),
+                int(button_size), int(size * 0.02),
+                int(size * 0.02));
+
+            // Draw button labels
+            painter.setPen(Qt::black);
+            QFont button_font("Arial", int(size * 0.06),
+                              QFont::Bold);
+            painter.setFont(button_font);
+            painter.drawText(
+                QRectF(x, y, button_size, button_size),
+                Qt::AlignCenter,
+                button_labels[label_index++]);
+        }
+    }
+
+    painter.end();
+    return pixmap;
+}
+
 } // namespace IconFactory
 } // namespace GUI
 } // namespace CargoNetSim

@@ -244,9 +244,10 @@ public:
      *
      * Retrieves the top N shortest paths.
      */
-    Q_INVOKABLE QList<Path *>
-    findTopPaths(const QString &start, const QString &end,
-                 int n, int mode, bool skipDelays = true);
+    Q_INVOKABLE QList<Path *> findTopPaths(
+        const QString &start, const QString &end, int n,
+        TransportationTypes::TransportationMode mode,
+        bool skipDelays = true);
 
     // Container Management
     /**
@@ -444,7 +445,7 @@ private:
      * @brief Handles path found event
      * @param message Event data from server
      */
-    void onPathFound(const QJsonObject &message);
+    void onPathsFound(const QJsonObject &message);
 
     /**
      * @brief Handles containers added event

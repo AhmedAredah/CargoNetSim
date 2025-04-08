@@ -1,4 +1,5 @@
 #include "ConnectionLabel.h"
+#include "GUI/Items/ConnectionLine.h"
 
 #include <QCursor>
 #include <QGraphicsScene>
@@ -108,19 +109,29 @@ void ConnectionLabel::mousePressEvent(
 {
     if (event->button() == Qt::LeftButton)
     {
-        // Clear previous selections
-        if (scene())
+        // Set the parent ConnectionLine as selected in the
+        // Qt selection system
+        if (ConnectionLine *parentLine =
+                dynamic_cast<ConnectionLine *>(
+                    parentItem()))
         {
-            scene()->clearSelection();
+            // Clear previous selections in the scene
+            if (scene())
+            {
+                scene()->clearSelection();
+            }
+
+            // Select the parent ConnectionLine in the Qt
+            // selection system
+            parentLine->QGraphicsItem::setSelected(true);
+
+            // Update our internal selection state
+            m_isSelected = true;
+            update();
+
+            // Emit clicked signal
+            emit clicked();
         }
-
-        // Select this label
-        setSelected(true);
-        update();
-
-        // Emit clicked signal
-        emit clicked();
-
         event->accept();
     }
     else

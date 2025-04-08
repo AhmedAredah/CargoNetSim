@@ -36,7 +36,8 @@ public:
      * @param region The network region this line belongs to
      * @param properties Optional additional properties
      */
-    MapLine(const QPointF &startPoint,
+    MapLine(const QString &referenceNetworkID,
+            const QPointF &startPoint,
             const QPointF &endPoint,
             const QString &region = "Default Region",
             const QMap<QString, QVariant> &properties =
@@ -83,7 +84,7 @@ public:
      */
     void setRegion(const QString region)
     {
-        properties.value("region") = region;
+        m_properties.value("region") = region;
     }
 
     /**
@@ -107,7 +108,7 @@ public:
      */
     const QString getRegion() const
     {
-        return properties.value("region").toString();
+        return m_properties.value("region").toString();
     }
 
     /**
@@ -115,7 +116,13 @@ public:
      */
     const QMap<QString, QVariant> &getProperties() const
     {
-        return properties;
+        return m_properties;
+    }
+
+    QString getReferencedNetworkNodeID() const
+    {
+        return m_properties.value("Network_ID", "-1")
+            .toString();
     }
 
     /**
@@ -126,10 +133,10 @@ public:
     void setProperty(const QString  &key,
                      const QVariant &value)
     {
-        if (!properties.contains(key)
-            || properties[key] != value)
+        if (!m_properties.contains(key)
+            || m_properties[key] != value)
         {
-            properties[key] = value;
+            m_properties[key] = value;
             emit propertyChanged(key, value);
         }
     }
@@ -142,7 +149,7 @@ public:
      */
     QVariant getProperty(const QString &key) const
     {
-        return properties.value(key, QVariant());
+        return m_properties.value(key, QVariant());
     }
 
     /**
@@ -187,7 +194,7 @@ private:
 
     QPointF                 startPoint;
     QPointF                 endPoint;
-    QMap<QString, QVariant> properties;
+    QMap<QString, QVariant> m_properties;
     int                     baseWidth;
     QPen                    pen;
     QObject                *m_referenceNetwork;

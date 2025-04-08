@@ -1233,6 +1233,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         // associated items
         for (QGraphicsItem *item : selectedItems)
         {
+            if (!item)
+            {
+                continue;
+            }
+
             // Handle terminal items
             TerminalItem *terminal =
                 dynamic_cast<TerminalItem *>(item);
@@ -1274,49 +1279,46 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                         for (ConnectionLine *line :
                              linesToRemove)
                         {
-                            globalMapScene_->removeItem(
-                                line);
-                            delete line;
+                            if (line)
+                            {
+                                globalMapScene_
+                                    ->removeItemWithId<
+                                        ConnectionLine>(
+                                        line->getID());
+                            }
                         }
 
                         // Remove the global item
-                        globalMapScene_->removeItem(
-                            globalItem);
-                        delete globalItem;
+                        if (globalItem)
+                        {
+                            globalMapScene_
+                                ->removeItemWithId<
+                                    GlobalTerminalItem>(
+                                    globalItem->getID());
+                        }
                     }
                 }
 
                 // Remove connection lines associated with
                 // this terminal in the current scene
-                QList<ConnectionLine *> linesToRemove;
-                for (QGraphicsItem *connection :
-                     currentScene->items())
+                for (ConnectionLine *line :
+                     currentScene
+                         ->getItemsByType<ConnectionLine>())
                 {
-                    ConnectionLine *line =
-                        dynamic_cast<ConnectionLine *>(
-                            connection);
                     if (line
                         && (line->startItem() == item
                             || line->endItem() == item))
                     {
-                        linesToRemove.append(line);
+                        currentScene->removeItemWithId<
+                            ConnectionLine>(line->getID());
                     }
                 }
 
-                // Remove the connections
-                for (ConnectionLine *line : linesToRemove)
-                {
-                    currentScene->removeItem(line);
-                    delete line;
-                }
-
                 // Remove map point links to this terminal
-                for (QGraphicsItem *mapPointItem :
-                     currentScene->items())
+                for (MapPoint *point :
+                     currentScene
+                         ->getItemsByType<MapPoint>())
                 {
-                    MapPoint *point =
-                        dynamic_cast<MapPoint *>(
-                            mapPointItem);
                     if (point
                         && point->getLinkedTerminal()
                                == terminal)
@@ -1326,38 +1328,63 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                 }
 
                 // Remove the terminal
-                currentScene->removeItem(item);
-                delete item;
+                if (terminal)
+                {
+                    currentScene
+                        ->removeItemWithId<TerminalItem>(
+                            terminal->getID());
+                }
             }
             // Handle connection lines
             else if (ConnectionLine *line =
                          dynamic_cast<ConnectionLine *>(
                              item))
             {
-                currentScene->removeItem(line);
-                delete line;
+                if (line)
+                {
+                    currentScene
+                        ->removeItemWithId<ConnectionLine>(
+                            line->getID());
+                }
             }
             // Handle background photos
             else if (BackgroundPhotoItem *photo =
                          dynamic_cast<
                              BackgroundPhotoItem *>(item))
             {
-                currentScene->removeItem(photo);
-                delete photo;
+                if (photo)
+                {
+                    currentScene->removeItemWithId<
+                        BackgroundPhotoItem>(
+                        photo->getID());
+                }
             }
             // Handle other item types as needed
             else if (MapPoint *point =
                          dynamic_cast<MapPoint *>(item))
             {
-                currentScene->removeItem(point);
-                delete point;
+                if (point)
+                {
+                    QString id =
+                        point->getProperty("NodeID")
+                            .toString();
+                    currentScene
+                        ->removeItemWithId<MapPoint>(id);
+                }
             }
             else if (MapLine *line =
                          dynamic_cast<MapLine *>(item))
             {
-                currentScene->removeItem(line);
-                delete line;
+                if (line)
+                {
+                    QString id = line->getProperty("LinkID")
+                                     .toString();
+                    currentScene->removeItemWithId<MapLine>(
+                        id);
+                }
             }
+
+            selectedItems.removeAll(nullptr);
         }
 
         showStatusBarMessage("Selected items deleted.",

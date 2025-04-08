@@ -8,7 +8,7 @@ namespace Backend
 // Path constructor
 Path::Path(int id, double totalCost, double edgeCost,
            double                      termCost,
-           const QList<QJsonObject>   &terminals,
+           const QList<Terminal *>    &terminals,
            const QList<PathSegment *> &segments,
            QObject                    *parent)
     : QObject(parent)
@@ -50,6 +50,103 @@ Path::Path(int id, double totalCost, double edgeCost,
 
     // No ownership transfer; segments managed by this
     // instance
+}
+
+Path::Path(const QJsonObject              &json,
+           const QMap<QString, Terminal *> terminalDB,
+           QObject                        *parent)
+    : QObject(parent)
+    , m_pathId(0)
+    , m_totalPathCost(0.0)
+    , m_totalEdgeCosts(0.0)
+    , m_totalTerminalCosts(0.0)
+{
+    // Extract path ID
+    if (json.contains("path_id")
+        && json["path_id"].isDouble())
+    {
+        m_pathId = json["path_id"].toInt();
+    }
+    else
+    {
+        throw std::invalid_argument(
+            "Missing or invalid 'path_id' field in Path "
+            "JSON");
+    }
+
+    // Extract costs
+    if (json.contains("total_path_cost")
+        && json["total_path_cost"].isDouble())
+    {
+        m_totalPathCost =
+            json["total_path_cost"].toDouble();
+    }
+
+    if (json.contains("total_edge_costs")
+        && json["total_edge_costs"].isDouble())
+    {
+        m_totalEdgeCosts =
+            json["total_edge_costs"].toDouble();
+    }
+
+    if (json.contains("total_terminal_costs")
+        && json["total_terminal_costs"].isDouble())
+    {
+        m_totalTerminalCosts =
+            json["total_terminal_costs"].toDouble();
+    }
+
+    // Extract terminals in path
+    if (json.contains("terminals_in_path")
+        && json["terminals_in_path"].isArray())
+    {
+        QJsonArray terminalsArray =
+            json["terminals_in_path"].toArray();
+
+        for (const QJsonValue &terminalValue :
+             terminalsArray)
+        {
+            if (terminalValue.isObject())
+            {
+                QJsonObject terminalObj =
+                    terminalValue.toObject();
+                if (terminalDB.contains(
+                        terminalObj["terminal"].toString()))
+                {
+                    m_terminalsInPath.append(
+                        terminalDB.value(
+                            terminalObj["terminal"]
+                                .toString(),
+                            nullptr));
+                }
+            }
+        }
+    }
+
+    // Extract segments
+    if (json.contains("segments")
+        && json["segments"].isArray())
+    {
+        QJsonArray segmentsArray =
+            json["segments"].toArray();
+        for (const QJsonValue &segmentValue : segmentsArray)
+        {
+            if (segmentValue.isObject())
+            {
+                QJsonObject segmentObj =
+                    segmentValue.toObject();
+                PathSegment *segment =
+                    PathSegment::fromJson(segmentObj, this);
+                m_segments.append(segment);
+            }
+        }
+    }
+    else
+    {
+        throw std::invalid_argument(
+            "Missing or invalid 'segments' field in Path "
+            "JSON");
+    }
 }
 
 // Path destructor
@@ -105,6 +202,59 @@ void Path::setTotalTerminalCosts(double cost)
 
     // Update the total terminal costs
     m_totalTerminalCosts = cost;
+}
+
+Path *
+Path::fromJson(const QJsonObject              &json,
+               const QMap<QString, Terminal *> terminalDB,
+               QObject                        *parent)
+{
+    return new Path(json, terminalDB, parent);
+}
+
+QJsonObject Path::toJson() const
+{
+    QJsonObject json;
+    json["path_id"]              = m_pathId;
+    json["total_path_cost"]      = m_totalPathCost;
+    json["total_edge_costs"]     = m_totalEdgeCosts;
+    json["total_terminal_costs"] = m_totalTerminalCosts;
+
+    // Add terminals
+    QJsonArray terminalsArray;
+    for (const Terminal *terminal : m_terminalsInPath)
+    {
+        terminalsArray.append(terminal->toJson());
+    }
+    json["terminals_in_path"] = terminalsArray;
+
+    // Add segments
+    QJsonArray segmentsArray;
+    for (const PathSegment *segment : m_segments)
+    {
+        segmentsArray.append(segment->toJson());
+    }
+    json["segments"] = segmentsArray;
+
+    return json;
+}
+
+QString Path::getStartTerminal() const
+{
+    if (m_segments.isEmpty())
+    {
+        throw std::runtime_error("Path has no segments");
+    }
+    return m_segments.first()->getStart();
+}
+
+QString Path::getEndTerminal() const
+{
+    if (m_segments.isEmpty())
+    {
+        throw std::runtime_error("Path has no segments");
+    }
+    return m_segments.last()->getEnd();
 }
 
 } // namespace Backend

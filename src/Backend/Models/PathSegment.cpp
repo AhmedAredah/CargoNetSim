@@ -31,6 +31,68 @@ PathSegment::PathSegment(
     // needed
 }
 
+PathSegment::PathSegment(const QJsonObject &json,
+                         QObject           *parent)
+    : QObject(parent)
+    , m_pathSegmentId("")
+{
+    // Extract fields from JSON
+    if (json.contains("from") && json["from"].isString())
+    {
+        m_start = json["from"].toString();
+    }
+    else
+    {
+        throw std::invalid_argument(
+            "Missing or invalid 'from' field in "
+            "PathSegment JSON");
+    }
+
+    if (json.contains("to") && json["to"].isString())
+    {
+        m_end = json["to"].toString();
+    }
+    else
+    {
+        throw std::invalid_argument(
+            "Missing or invalid 'to' field in PathSegment "
+            "JSON");
+    }
+
+    if (json.contains("mode") && json["mode"].isDouble())
+    {
+        m_mode = static_cast<
+            TransportationTypes::TransportationMode>(
+            json["mode"].toInt());
+    }
+    else
+    {
+        throw std::invalid_argument(
+            "Missing or invalid 'mode' field in "
+            "PathSegment JSON");
+    }
+
+    // Construct an ID from endpoints and mode
+    m_pathSegmentId =
+        QString("%1_%2_%3")
+            .arg(m_start, m_end,
+                 QString::number(static_cast<int>(m_mode)));
+
+    // Extract optional attributes
+    if (json.contains("attributes")
+        && json["attributes"].isObject())
+    {
+        m_attributes = json["attributes"].toObject();
+    }
+
+    // Extract weight if available
+    if (json.contains("weight")
+        && json["weight"].isDouble())
+    {
+        m_attributes["weight"] = json["weight"].toDouble();
+    }
+}
+
 // Convert PathSegment to JSON
 QJsonObject PathSegment::toJson() const
 {
@@ -41,7 +103,7 @@ QJsonObject PathSegment::toJson() const
     json["route_id"]       = m_pathSegmentId;
     json["start_terminal"] = m_start;
     json["end_terminal"]   = m_end;
-    json["mode"] = TransportationTypes::toString(m_mode);
+    json["mode"] = TransportationTypes::toInt(m_mode);
 
     // Include attributes only if not empty
     if (!m_attributes.isEmpty())
@@ -51,6 +113,12 @@ QJsonObject PathSegment::toJson() const
 
     // Return constructed JSON object
     return json;
+}
+
+PathSegment *PathSegment::fromJson(const QJsonObject &json,
+                                   QObject *parent)
+{
+    return new PathSegment(json, parent);
 }
 
 } // namespace Backend
