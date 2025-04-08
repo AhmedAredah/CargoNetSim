@@ -336,10 +336,9 @@ bool PathFindingWorker::addTerminalToServer(
 
     // Create Terminal object using the full constructor
     Backend::Terminal *terminalObj = new Backend::Terminal(
-        QStringList{
-            terminalId,
-            terminalName}, // Include both ID and name
-        config, interfaces, regionName, nullptr);
+        QStringList{terminalId}, // Include both ID and name
+        terminalName, config, interfaces, regionName,
+        nullptr);
 
     // Add terminal to server
     bool success = terminalClient->addTerminal(terminalObj);
