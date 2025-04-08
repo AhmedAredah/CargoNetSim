@@ -633,12 +633,16 @@ void CargoNetSim::GUI::UtilitiesFunctions::
 
     // Create a worker and a thread
     QThread           *thread = new QThread();
-    PathFindingWorker *worker =
-        new PathFindingWorker(mainWindow, PathsCount);
+    PathFindingWorker *worker = new PathFindingWorker();
 
     // Set up connections
     QObject::connect(thread, &QThread::started, worker,
-                     &PathFindingWorker::process);
+                     [mainWindow, PathsCount, worker]() {
+                         worker->initialize(mainWindow,
+                                            PathsCount);
+                         worker->process();
+                     });
+    // &PathFindingWorker::process);
     QObject::connect(worker, &PathFindingWorker::finished,
                      thread, &QThread::quit);
     QObject::connect(worker, &PathFindingWorker::finished,
@@ -649,15 +653,15 @@ void CargoNetSim::GUI::UtilitiesFunctions::
 
     // Handle results
     QObject::connect(
-        worker, &PathFindingWorker::resultReady,
+        worker, &PathFindingWorker::resultReady, mainWindow,
         [mainWindow](const QList<Backend::Path *> &paths) {
             // Display results in the shortest paths table
             mainWindow->shortestPathTable_->clear();
             mainWindow->shortestPathTable_->addPaths(paths);
-
             // Show the table
             mainWindow->shortestPathTableDock_->show();
-        });
+        },
+        Qt::QueuedConnection);
 
     // Handle errors
     QObject::connect(
