@@ -421,6 +421,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
                 mainWindow, pathsNo);
         });
     simulationToolsLayout->addWidget(shortestPathsButton);
+    mainWindow->findShortestPathButton_ =
+        shortestPathsButton;
 
     // Add verify by simulation button
     QToolButton *verifySimulationButton = new QToolButton();

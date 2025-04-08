@@ -660,6 +660,8 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             mainWindow->shortestPathTable_->addPaths(paths);
             // Show the table
             mainWindow->shortestPathTableDock_->show();
+            mainWindow->findShortestPathButton_->setEnabled(
+                true);
         },
         Qt::QueuedConnection);
 
@@ -668,11 +670,15 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         worker, &PathFindingWorker::error, mainWindow,
         [mainWindow](const QString &message) {
             mainWindow->showStatusBarError(message, 3000);
+            mainWindow->findShortestPathButton_->setEnabled(
+                true);
         },
         Qt::QueuedConnection);
 
     // Move worker to thread and start
     worker->moveToThread(thread);
+    // turn off the find shortest path button
+    mainWindow->findShortestPathButton_->setEnabled(false);
     thread->start();
 }
 

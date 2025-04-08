@@ -379,6 +379,8 @@ protected:
     QGroupBox  *visibilityGroup_;
     QComboBox  *regionCombo_;
 
+    QToolButton *findShortestPathButton_;
+
     // Button groups
     QList<QWidget *>     viewImportButtons_;
     QList<QWidget *>     projectButtons_;
