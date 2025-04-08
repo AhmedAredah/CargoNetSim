@@ -11,21 +11,19 @@ namespace CargoNetSim
 namespace GUI
 {
 
-MapLine::MapLine(const QPointF                 &startPoint,
-                 const QPointF                 &endPoint,
-                 const QString                 &region,
+MapLine::MapLine(const QString &referenceNetworkID,
+                 const QPointF &startPoint,
+                 const QPointF &endPoint,
+                 const QString &region,
                  const QMap<QString, QVariant> &properties)
     : startPoint(startPoint)
     , endPoint(endPoint)
-    , properties(properties)
+    , m_properties(properties)
     , baseWidth(1)
     , pen(Qt::black, baseWidth)
 {
-    // Initialize properties if none provided
-    if (this->properties.isEmpty())
-    {
-        this->properties["region"] = region;
-    }
+    this->m_properties["Network_ID"] = referenceNetworkID;
+    this->m_properties["region"]     = region;
 
     // Set higher z-value to ensure lines are drawn above
     // the background but below points
@@ -128,7 +126,8 @@ void MapLine::selectNetworkLines()
         MapLine *line = dynamic_cast<MapLine *>(item);
         if (line
             && line->getRegion()
-                   == properties.value("region").toString())
+                   == m_properties.value("region")
+                          .toString())
         {
             line->setSelected(true);
         }
@@ -138,6 +137,8 @@ void MapLine::selectNetworkLines()
 QMap<QString, QVariant> MapLine::toDict() const
 {
     QMap<QString, QVariant> data;
+    data["referenced_network_ID"] =
+        m_properties.value("Network_ID");
 
     // Convert points to dictionaries
     QMap<QString, QVariant> startPointDict;
@@ -150,7 +151,7 @@ QMap<QString, QVariant> MapLine::toDict() const
 
     data["start_point"] = startPointDict;
     data["end_point"]   = endPointDict;
-    data["properties"]  = properties;
+    data["properties"]  = m_properties;
     data["color"]       = pen.color().name();
     data["selected"]    = isSelected();
     data["z_value"]     = zValue();
@@ -174,6 +175,7 @@ MapLine::fromDict(const QMap<QString, QVariant> &data)
     qreal endY   = endPointDict["y"].toDouble();
 
     MapLine *instance = new MapLine(
+        data.value("referenced_network_ID").toString(),
         QPointF(startX, startY), QPointF(endX, endY),
         data.value("region", "default").toString(),
         data.value("properties").toMap());
