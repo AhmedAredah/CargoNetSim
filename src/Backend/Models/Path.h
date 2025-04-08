@@ -16,6 +16,7 @@
  */
 
 #include "PathSegment.h"
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
@@ -58,6 +59,32 @@ public:
                   const QList<QJsonObject>   &terminals,
                   const QList<PathSegment *> &segments,
                   QObject *parent = nullptr);
+
+    /**
+     * @brief Constructs a Path from a JSON object
+     * @param json JSON object containing path data
+     * @param parent Parent QObject, defaults to nullptr
+     * @throws std::invalid_argument If required fields are
+     * missing
+     *
+     * Creates a Path by parsing a JSON object from the
+     * server.
+     */
+    explicit Path(const QJsonObject &json,
+                  QObject           *parent = nullptr);
+
+    /**
+     * @brief Creates a Path from a JSON object
+     * @param json JSON object containing path data
+     * @param parent Parent QObject, defaults to nullptr
+     * @return New Path instance
+     * @throws std::invalid_argument If required fields are
+     * missing
+     *
+     * Static factory method to create a Path from JSON.
+     */
+    static Path *fromJson(const QJsonObject &json,
+                          QObject *parent = nullptr);
 
     /**
      * @brief Destroys the Path, freeing segments
@@ -158,6 +185,32 @@ public:
     {
         return m_segments;
     }
+
+    /**
+     * @brief Retrieves the starting terminal of the path
+     * @return Starting terminal identifier as QString
+     * @throws std::runtime_error If path has no segments
+     *      * Returns the ID of the first terminal in the
+     * path.
+     */
+    QString getStartTerminal() const;
+
+    /**
+     * @brief Retrieves the ending terminal of the path
+     * @return Ending terminal identifier as QString
+     * @throws std::runtime_error If path has no segments
+     *      * Returns the ID of the last terminal in the
+     * path.
+     */
+    QString getEndTerminal() const;
+
+    /**
+     * @brief Converts the path to JSON format
+     * @return QJsonObject representing the path
+     *
+     * Serializes the path for server communication.
+     */
+    QJsonObject toJson() const;
 
 private:
     /**
