@@ -69,8 +69,8 @@ private:
             << CargoNetSim::Backend::TransportationTypes::
                    TransportationMode::Truck; // Truck
 
-        return new Terminal(names, config, interfaces,
-                            region);
+        return new Terminal(names, "test", config,
+                            interfaces, region);
     }
     
     /**
