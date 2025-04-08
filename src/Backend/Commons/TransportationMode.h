@@ -41,9 +41,10 @@ public:
      */
     enum class TransportationMode
     {
-        Ship  = 0, /**< Maritime vessel transportation */
-        Truck = 1, /**< Road-based truck transportation */
-        Train = 2  /**< Rail-based train transportation */
+        Any   = -1, /**< Any transportation mode */
+        Ship  = 0,  /**< Maritime vessel transportation */
+        Truck = 1,  /**< Road-based truck transportation */
+        Train = 2   /**< Rail-based train transportation */
     };
     Q_ENUM(TransportationMode)
 
