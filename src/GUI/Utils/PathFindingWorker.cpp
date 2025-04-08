@@ -10,12 +10,16 @@ namespace CargoNetSim
 namespace GUI
 {
 
-PathFindingWorker::PathFindingWorker(MainWindow *window,
-                                     int         count)
+PathFindingWorker::PathFindingWorker()
     : QObject(nullptr)
-    , mainWindow(window)
-    , pathsCount(count)
 {
+}
+
+void PathFindingWorker::initialize(MainWindow *window,
+                                   int         count)
+{
+    mainWindow = window;
+    pathsCount = count;
 }
 
 void PathFindingWorker::process()
@@ -113,7 +117,10 @@ void PathFindingWorker::process()
         // Find the top N shortest paths
         QList<Backend::Path *> paths =
             terminalClient->findTopPaths(
-                originId, destId, pathsCount, -1, false);
+                originId, destId, pathsCount,
+                Backend::TransportationTypes::
+                    TransportationMode::Any,
+                false);
 
         if (paths.isEmpty())
         {
@@ -498,11 +505,11 @@ bool PathFindingWorker::processConnectionAndTerminals(
     }
 
     // Create a unique ID for the route segment
-    QString segmentId =
-        QString("segment_%1_%2_%3")
-            .arg(startId)
-            .arg(endId)
-            .arg(Backend::TransportationTypes::toInt(mode));
+    QString segmentId = connection->getID();
+    // QString("segment_%1_%2_%3")
+    //     .arg(startId)
+    //     .arg(endId)
+    //     .arg(Backend::TransportationTypes::toInt(mode));
 
     // Create and add the route
     Backend::PathSegment *segment =
