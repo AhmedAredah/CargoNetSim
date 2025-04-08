@@ -677,7 +677,9 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
 
         auto line =
             CargoNetSim::GUI::ViewController::drawLink(
-                mainWindow, link->getInternalUniqueID(),
+                mainWindow,
+                QString::number(link->getUserId()),
+                link->getInternalUniqueID(),
                 projectedSourcePoint, projectedDestPoint,
                 regionName, linksColor, properties);
 
@@ -739,6 +741,7 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
     for (auto &link : network->getLinks())
     {
         QMap<QString, QVariant> properties = {
+            {"ReferenceNetworkID", link->getLinkId()},
             {"Length", link->getLength()
                            * link->getLengthScale()
                            * 1000.0}, // km to m
@@ -771,7 +774,9 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
 
         auto line =
             CargoNetSim::GUI::ViewController::drawLink(
-                mainWindow, link->getInternalUniqueID(),
+                mainWindow,
+                QString::number(link->getLinkId()),
+                link->getInternalUniqueID(),
                 projectedSourcePoint, projectedDestPoint,
                 regionName, linksColor, properties);
 
@@ -822,6 +827,7 @@ CargoNetSim::GUI::ViewController::drawNode(
         point, &MapPoint::clicked, mainWindow,
         &MainWindow::handleTerminalNodeUnlinking);
 
+    point->setProperty("NodeID", nodeUniqueID);
     point->setColor(color); // Set node color
 
     mainWindow->regionScene_->addItemWithId(
@@ -832,7 +838,8 @@ CargoNetSim::GUI::ViewController::drawNode(
 
 CargoNetSim::GUI::MapLine *
 CargoNetSim::GUI::ViewController::drawLink(
-    MainWindow *mainWindow, const QString &linkUniqueID,
+    MainWindow *mainWindow, const QString &networkNodeID,
+    const QString &linkUniqueID,
     QPointF projectedStartPoint, QPointF projectedEndPoint,
     QString &regionName, QColor color,
     const QMap<QString, QVariant> &properties)
@@ -855,8 +862,9 @@ CargoNetSim::GUI::ViewController::drawLink(
                 destGeodetic);
 
         // Create the link
-        line = new MapLine(sourceScenePoint, destScenePoint,
-                           regionName, properties);
+        line = new MapLine(networkNodeID, sourceScenePoint,
+                           destScenePoint, regionName,
+                           properties);
 
         QObject::connect(
             line, &MapLine::clicked,
@@ -864,6 +872,8 @@ CargoNetSim::GUI::ViewController::drawLink(
                 UtilitiesFunctions::updatePropertiesPanel(
                     mainWindow, line);
             });
+
+        line->setProperty("LinkID", linkUniqueID);
 
         line->setColor(color); // Set link color
 
