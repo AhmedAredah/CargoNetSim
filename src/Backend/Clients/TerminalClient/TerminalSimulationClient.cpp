@@ -338,8 +338,10 @@ TerminalSimulationClient::findShortestPath(
 // Find top paths
 QList<Path *> TerminalSimulationClient::findTopPaths(
     const QString &start, const QString &end, int n,
-    int mode, bool skipDelays)
+    TransportationTypes::TransportationMode mode,
+    bool                                    skipDelays)
 {
+    int modeInt = TransportationTypes::toInt(mode);
     // Execute top paths finding serially
     executeSerializedCommand([&]() {
         // Prepare parameters for top paths
@@ -347,7 +349,7 @@ QList<Path *> TerminalSimulationClient::findTopPaths(
         params["start_terminal"] = start;
         params["end_terminal"]   = end;
         params["n"]              = n;
-        params["mode"]           = mode;
+        params["mode"]           = modeInt;
         params["skip_same_mode_terminal_delays_and_costs"] =
             skipDelays;
         // Send top paths command
@@ -356,8 +358,7 @@ QList<Path *> TerminalSimulationClient::findTopPaths(
     });
     // Access paths thread-safely
     Commons::ScopedReadLock locker(m_dataMutex);
-    QString                 key =
-        start + "-" + end + "-" + QString::number(mode);
+    QString                 key = start + "-" + end;
     return m_topPaths.value(key, QList<Path *>());
 }
 
@@ -679,7 +680,7 @@ void TerminalSimulationClient::processMessage(
     }
     else if (normEvent == "pathfound")
     {
-        onPathFound(message);
+        onPathsFound(message);
     }
     else if (normEvent == "containersadded")
     {
@@ -753,12 +754,9 @@ void TerminalSimulationClient::onTerminalAdded(
     {
         delete existing;
     }
-    Terminal *terminal =
-        new Terminal(QStringList{name}, QJsonObject(),
-                     QMap<TerminalTypes::TerminalInterface,
-                          QSet<TransportationTypes::
-                                   TransportationMode>>(),
-                     "", this);
+    Terminal *terminal = Terminal::fromJson(result);
+    terminal->setParent(this);
+
     m_terminalStatus[name] = terminal;
 
     // Update aliases if present
@@ -780,7 +778,7 @@ void TerminalSimulationClient::onRouteAdded(
     const QJsonObject &message)
 {
     // Extract parameters and results
-    QJsonObject params = message["params"].toObject();
+    QJsonObject params = message["result"].toObject();
     QString     startTerminal =
         params["start_terminal"].toString();
     QString endTerminal = params["end_terminal"].toString();
@@ -794,93 +792,39 @@ void TerminalSimulationClient::onRouteAdded(
 }
 
 // Handle path found event
-void TerminalSimulationClient::onPathFound(
+void TerminalSimulationClient::onPathsFound(
     const QJsonObject &message)
 {
     // Extract result and parameters from message
-    QJsonArray  result = message["result"].toArray();
-    QJsonObject params = message["params"].toObject();
-    QString     start = params["start_terminal"].toString();
-    QString     end   = params["end_terminal"].toString();
-    int         mode  = params["mode"].toInt();
-    QString     key =
-        start + "-" + end + "-" + QString::number(mode);
+    QJsonObject result = message["result"].toObject();
+    QString     start = result["start_terminal"].toString();
+    QString     end   = result["end_terminal"].toString();
+    QJsonArray  paths = result["paths"].toArray();
+    QString     key   = start + "-" + end;
 
     // Lock mutex for thread-safe update
     Commons::ScopedWriteLock locker(m_dataMutex);
 
-    // Handle top paths if 'n' is present
-    if (params.contains("n"))
+    // Clean up old top paths
+    QList<Path *> oldPaths = m_topPaths.value(key);
+    for (Path *oldPath : oldPaths)
     {
-        QList<Path *> paths;
-        for (const QJsonValue &pathVal : result)
+        delete oldPath;
+    }
+    m_topPaths[key]
+        .clear(); // Clear the list after deleting
+
+    // Handle top paths
+    if (paths.size() > 0)
+    {
+        for (const QJsonValue &pathVal : paths)
         {
             QJsonObject pathObj = pathVal.toObject();
-            QList<PathSegment *> segments;
-            QJsonArray           segArray =
-                pathObj["segments"].toArray();
-            for (const QJsonValue &segVal : segArray)
-            {
-                QJsonObject  segObj  = segVal.toObject();
-                PathSegment *segment = new PathSegment(
-                    QString("seg_%1").arg(
-                        rand()), // Temporary ID
-                    segObj["from"].toString(),
-                    segObj["to"].toString(),
-                    TransportationTypes::fromInt(
-                        segObj["mode"].toInt()),
-                    segObj["attributes"].toObject(), this);
-                segments.append(segment);
-            }
-            QList<QJsonObject> terminals;
-            QJsonArray         termArray =
-                pathObj["terminalsInPath"].toArray();
-            for (const QJsonValue &termVal : termArray)
-            {
-                terminals.append(termVal.toObject());
-            }
-            Path *path = new Path(
-                pathObj["pathId"].toInt(),
-                pathObj["totalPathCost"].toDouble(),
-                pathObj["totalEdgeCosts"].toDouble(),
-                pathObj["totalTerminalCosts"].toDouble(),
-                terminals, segments, this);
-            paths.append(path);
+            Path       *path    = Path::fromJson(pathObj);
+            m_topPaths[key].push_back(path);
         }
-        // Clean up old top paths
-        QList<Path *> oldPaths = m_topPaths.value(key);
-        for (Path *oldPath : oldPaths)
-        {
-            delete oldPath;
-        }
-        m_topPaths[key] = paths;
     }
-    else
-    {
-        // Handle shortest path
-        QList<PathSegment *> segments;
-        for (const QJsonValue &segVal : result)
-        {
-            QJsonObject  segObj  = segVal.toObject();
-            PathSegment *segment = new PathSegment(
-                QString("seg_%1").arg(
-                    rand()), // Temporary ID
-                segObj["from"].toString(),
-                segObj["to"].toString(),
-                TransportationTypes::fromInt(
-                    segObj["mode"].toInt()),
-                segObj["attributes"].toObject(), this);
-            segments.append(segment);
-        }
-        // Clean up old shortest paths
-        QList<PathSegment *> oldSegments =
-            m_shortestPaths.value(key);
-        for (PathSegment *oldSeg : oldSegments)
-        {
-            delete oldSeg;
-        }
-        m_shortestPaths[key] = segments;
-    }
+
     // Log event for auditing
     qDebug() << "Path found from" << start << "to" << end;
 }
