@@ -2,10 +2,10 @@
 
 #include <QComboBox>
 #include <QDialog>
-#include <QMap>
 #include <QSpinBox>
 #include <QTableWidget>
-#include <QVariant>
+#include <QtWidgets/qlistwidget.h>
+#include <containerLib/container.h>
 #include <memory>
 
 namespace CargoNetSim
@@ -13,23 +13,7 @@ namespace CargoNetSim
 namespace GUI
 {
 
-/**
- * @brief Enum representing standard container sizes
- */
-enum class ContainerSize
-{
-    TwentyFT,
-    TwentyFT_HighCube,
-    FourtyFT,
-    FourtyFT_HighCube,
-    FortyFiveFT,
-    FortyFiveFT_HighCube,
-    TenFT,
-    ThirtyFT,
-    FortyEightFT,
-    FiftyThreeFT,
-    SixtyFT
-};
+class TerminalItem;
 
 /**
  * @brief Widget for managing container data
@@ -45,46 +29,19 @@ class ContainerManagerWidget : public QDialog
 public:
     /**
      * @brief Constructor
-     * @param containers Map of container data to edit
+     * @param terminalItem The terminal that owns the
+     * containers
      * @param parent Parent widget
      */
     explicit ContainerManagerWidget(
-        const QMap<QString, QVariant> &containers,
-        QWidget                       *parent = nullptr);
+        TerminalItem *terminalItem,
+        QWidget      *parent = nullptr);
 
     /**
-     * @brief Get the modified containers data
-     * @return Updated container data map
+     * @brief Get the modified containers
+     * @return List of container objects
      */
-    QMap<QString, QVariant> getContainers() const;
-
-    /**
-     * @brief Convert custom ContainerSize enum to
-     * containerlib size enum
-     * @param customSize Size value from ContainerSize enum
-     * @return Corresponding containerlib size value
-     */
-    static int
-    convertToContainerlibSize(ContainerSize customSize);
-
-    /**
-     * @brief Convert string representation of container
-     * size to enum value
-     * @param sizeStr String representation of container
-     * size
-     * @return Corresponding ContainerSize enum value
-     */
-    static ContainerSize
-    containerSizeFromString(const QString &sizeStr);
-
-    /**
-     * @brief Convert ContainerSize enum to string
-     * representation
-     * @param size ContainerSize enum value
-     * @return String representation of container size
-     */
-    static QString
-    containerSizeToString(ContainerSize size);
+    QList<ContainerCore::Container *> getContainers() const;
 
 private slots:
     /**
@@ -110,13 +67,19 @@ private slots:
 
 private:
     /**
+     * @brief Update the container list UI
+     */
+    void updateContainerList();
+
+    /**
      * @brief Create a combo box for container size
      * selection
-     * @param currentSize Current container size
+     * @param currentSize Current container size value
      * @return Configured combo box
      */
-    QComboBox *
-    createSizeComboBox(const QString &currentSize);
+    QComboBox *createSizeComboBox(
+        ContainerCore::Container::ContainerSize
+            currentSize);
 
     /**
      * @brief Handle container size change in the UI
@@ -124,14 +87,12 @@ private:
      */
     void onSizeChanged(QComboBox *combo);
 
-    /**
-     * @brief Update the container list UI
-     */
-    void updateContainerList();
-
     QTableWidget
         *containerList; ///< Table widget for container list
-    QMap<QString, QVariant> containers; ///< Container data
+    QList<ContainerCore::Container *>
+                  m_containers;   ///< Container data
+    TerminalItem *m_terminalItem; ///< The terminal that
+                                  ///< owns these containers
 };
 
 /**
@@ -144,41 +105,61 @@ class ContainerEditDialog : public QDialog
 public:
     /**
      * @brief Constructor
-     * @param containerData Container data to edit
+     * @param container Container to edit
      * @param parent Parent widget
      */
     explicit ContainerEditDialog(
-        const QMap<QString, QVariant> &containerData =
-            QMap<QString, QVariant>(),
-        QWidget *parent = nullptr);
+        ContainerCore::Container *container,
+        QWidget                  *parent = nullptr);
 
     /**
-     * @brief Get the modified container data
-     * @return Updated container data
+     * @brief Get the container with modified data
+     * @param parent Parent Item (TerminalItem)
+     * @return Container with updated properties
      */
-    QMap<QString, QVariant> getContainerData() const;
+    ContainerCore::Container *
+    getContainer(TerminalItem *parent) const;
 
 private slots:
     /**
-     * @brief Add a new property to the container
+     * @brief Add a new custom variable to the container
      */
-    void addProperty();
+    void addCustomVariable();
 
     /**
-     * @brief Delete selected property from the container
+     * @brief Delete selected custom variable from the
+     * container
      */
-    void deleteProperty();
+    void deleteCustomVariable();
+
+    /**
+     * @brief Add a new destination to the container
+     */
+    void addDestination();
+
+    /**
+     * @brief Remove selected destination from the container
+     */
+    void removeDestination();
 
 private:
     /**
      * @brief Load container properties into the UI
-     * @param props Container properties to load
      */
-    void
-    loadProperties(const QMap<QString, QVariant> &props);
+    void loadProperties();
 
-    QTableWidget
-        *propTable; ///< Table widget for properties
+    QTableWidget *customVarsTable; ///< Table widget for
+                                   ///< custom variables
+    QListWidget
+        *destinationsList; ///< List widget for destinations
+    QLineEdit *idEdit;     ///< Line edit for container ID
+    QComboBox *sizeCombo;  ///< Combo box for container size
+
+    ContainerCore::Container
+        *m_container; ///< Container being edited
+    ContainerCore::Container
+        *m_originalContainer; ///< Original container for
+                              ///< reference
 };
 
 /**
@@ -197,11 +178,11 @@ public:
         QWidget *parent = nullptr);
 
     /**
-     * @brief Get the generation parameters
-     * @return Map containing count and size for container
-     * generation
+     * @brief Get the generated containers
+     * @return List of newly generated containers
      */
-    QMap<QString, QVariant> getGenerationData() const;
+    QList<ContainerCore::Container *>
+    getGeneratedContainers(TerminalItem *parent) const;
 
 private:
     QSpinBox  *numberSpin; ///< Spin box for container count
