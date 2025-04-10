@@ -43,6 +43,8 @@ namespace Backend
 namespace TrainClient
 {
 
+class NeTrainSimNetwork;
+
 /**
  * @class TrainSimulationClient
  * @brief Manages train simulation server interactions
@@ -109,6 +111,7 @@ public:
      * RabbitMQ heartbeat, after moving to its thread.
      * Called automatically via QThread::started signal.
      *
+     * @param simulationTime Pointer to SimulationTime
      * @param logger Optional logger for initialization
      * logging
      * @throws std::runtime_error If RabbitMQ handler setup
@@ -117,6 +120,7 @@ public:
      * @warning Call only once after thread start
      */
     void initializeClient(
+        SimulationTime  *simulationTime,
         LoggerInterface *logger = nullptr) override;
 
     /**
@@ -132,10 +136,9 @@ public:
      * empty
      * @return True if simulator definition succeeds
      */
-    bool defineSimulatorByNetworkName(
-        const QString        &networkName,
-        const double          timeStep = 1.0,
-        const QList<Train *> &trains   = {});
+    bool defineSimulator(const NeTrainSimNetwork *network,
+                         const double timeStep        = 1.0,
+                         const QList<Train *> &trains = {});
 
     /**
      * @brief Defines a new simulator with custom topology

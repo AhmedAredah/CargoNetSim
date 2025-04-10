@@ -29,6 +29,7 @@
 #include "Backend/Commons/ClientType.h"
 
 #include "Backend/Controllers/CargoNetSimController.h"
+#include "Backend/Models/SimulationTime.h"
 
 namespace CargoNetSim
 {
@@ -47,6 +48,20 @@ inline void
 initializeBackend(const QString   &integrationExePath = "",
                   LoggerInterface *logger = nullptr)
 {
+    // Container class
+    qRegisterMetaType<ContainerCore::Package>(
+        "ContainerCore::Package");
+    qRegisterMetaType<ContainerCore::Package *>(
+        "ContainerCore::Package *");
+    qRegisterMetaType<ContainerCore::Container>(
+        "ContainerCore::Container");
+    qRegisterMetaType<ContainerCore::Container *>(
+        "ContainerCore::Container*");
+    qRegisterMetaType<QList<ContainerCore::Container>>(
+        "QList<ContainerCore::Container>");
+    qRegisterMetaType<QList<ContainerCore::Container *>>(
+        "QList<ContainerCore::Container*>");
+
     // Base classes
     qRegisterMetaType<RabbitMQHandler>(
         "CargoNetSim::Backend::RabbitMQHandler");
@@ -302,6 +317,11 @@ initializeBackend(const QString   &integrationExePath = "",
     qRegisterMetaType<
         CargoNetSim::Backend::ShortestPathResult *>(
         "CargoNetSim::Backend::ShortestPathResult*");
+    qRegisterMetaType<CargoNetSim::Backend::SimulationTime>(
+        "CargoNetSim::Backend::SimulationTime");
+    qRegisterMetaType<
+        CargoNetSim::Backend::SimulationTime *>(
+        "CargoNetSim::Backend::SimulationTime*");
 
     qDebug() << "Backend metatypes registered successfully";
 

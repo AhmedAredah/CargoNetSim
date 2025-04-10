@@ -31,6 +31,7 @@ class TerminalSimulationClientTest : public QObject
 private:
     // Test objects
     TerminalSimulationClient* client = nullptr;
+    SimulationTime           *timer        = nullptr;
     QThread* clientThread = nullptr;
     
     /**
@@ -113,8 +114,9 @@ private slots:
         client = nullptr;
         QMetaObject::invokeMethod(clientThread, [this]() {
             client = new TerminalSimulationClient();
-            client->initializeClient();
-            
+            timer  = new SimulationTime();
+            client->initializeClient(timer);
+
             // Emit a signal to continue the test
             QMetaObject::invokeMethod(this, "continueInitialization", Qt::QueuedConnection);
 
@@ -151,6 +153,8 @@ private slots:
         QMetaObject::invokeMethod(clientThread, [this]() {
             delete client;
             client = nullptr;
+            delete timer;
+            timer = nullptr;
         }, Qt::BlockingQueuedConnection);
         
         // Stop and clean up thread

@@ -24,6 +24,7 @@ namespace CargoNetSim
 namespace Backend
 {
 class CargoNetSimController;
+class SimulationTime;
 } // namespace Backend
 } // namespace CargoNetSim
 
@@ -94,6 +95,10 @@ public:
      * - Configures any necessary thread-safe callbacks or
      * event handlers.
      *
+     * @param simulationTime Pointer to the simulation time
+     * object. This object is used to synchronize the
+     * simulation time across different clients.
+     *
      * @param logger Optional logger interface for logging
      * messages (default is nullptr). If provided, it will
      * be used for logging during initialization. If not
@@ -120,7 +125,8 @@ public:
      * @see QThread::started
      */
     virtual void
-    initializeClient(LoggerInterface *logger = nullptr);
+    initializeClient(SimulationTime  *simulationTime,
+                     LoggerInterface *logger = nullptr);
 
     /**
      * @brief Sets the controller reference
@@ -376,6 +382,9 @@ protected:
 
     // Logging interface
     LoggerInterface *m_logger;
+
+    // SimulationTime interface
+    SimulationTime *m_simulationTime;
 
     // Controller
     CargoNetSimController *m_controller = nullptr;

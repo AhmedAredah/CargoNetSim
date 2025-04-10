@@ -97,10 +97,11 @@ bool TerminalSimulationClient::resetServer()
 
 // Initialize client in thread
 void TerminalSimulationClient::initializeClient(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
     // Call base class initialization first
-    SimulationClientBase::initializeClient(logger);
+    SimulationClientBase::initializeClient(simulationTime,
+                                           logger);
 
     // Validate RabbitMQ handler presence
     if (!m_rabbitMQHandler)

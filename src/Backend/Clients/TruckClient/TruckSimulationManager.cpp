@@ -31,8 +31,9 @@ TruckSimulationManager::~TruckSimulationManager()
 }
 
 void TruckSimulationManager::initializeManager(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
+    m_defaultSimulationTime = simulationTime;
     m_defaultLogger = logger;
 }
 
@@ -95,7 +96,8 @@ void TruckSimulationManager::moveClientToThread(
     if (m_clients.contains(networkName))
     {
         m_clients[networkName]->moveToThread(thread);
-        m_clients[networkName]->initializeClient(logger);
+        m_clients[networkName]->initializeClient(
+            m_defaultSimulationTime, logger);
         m_clients[networkName]->connectToServer();
     }
 }

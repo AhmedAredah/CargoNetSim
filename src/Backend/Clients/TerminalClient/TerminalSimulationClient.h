@@ -94,6 +94,7 @@ public:
 
     /**
      * @brief Initializes client in its thread
+     * @param simulationTime Simulation time object
      * @param logger Optional logger, defaults to nullptr
      * @throws std::runtime_error If initialization fails
      *
@@ -101,6 +102,7 @@ public:
      * heartbeat.
      */
     void initializeClient(
+        SimulationTime  *simulationTime,
         LoggerInterface *logger = nullptr) override;
 
     // Terminal Management

@@ -49,6 +49,9 @@ namespace CargoNetSim
 {
 namespace Backend
 {
+
+class SimulationTime;
+
 namespace ShipClient
 {
 
@@ -131,6 +134,7 @@ public:
      * moved to its thread. Automatically invoked via
      * QThread::started.
      *
+     * @param simulationTime Pointer to the simulation time
      * @param logger Optional logger for initialization
      * logging
      * @throws std::runtime_error If RabbitMQ setup fails
@@ -138,6 +142,7 @@ public:
      * @warning Call only once after thread start
      */
     void initializeClient(
+        SimulationTime  *simulationTime,
         LoggerInterface *logger = nullptr) override;
 
     /**

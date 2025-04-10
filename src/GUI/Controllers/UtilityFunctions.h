@@ -62,10 +62,10 @@ public:
         NetworkType    networkType = NetworkType::Train);
 
     static CargoNetSim::GUI::TerminalItem *
-    getOriginTerminal(GraphicsScene *scene);
+    getOriginTerminal(MainWindow *mainWindow);
 
     static CargoNetSim::GUI::TerminalItem *
-    getDestinationTerminal(GraphicsScene *scene);
+    getDestinationTerminal(MainWindow *mainWindow);
 
     /**
      * @brief Updates the properties panel with the selected
@@ -96,6 +96,10 @@ public:
     getCommonModes(QGraphicsItem *sourceItem,
                    QGraphicsItem *targetItem);
 
+    static QList<QPair<MapPoint *, MapPoint *>>
+    getCommonNetworks(QList<MapPoint *> firstEntries,
+                      QList<MapPoint *> secondEntries);
+
     static double
     getApproximateGeoDistance(const QPointF &point1,
                               const QPointF &point2);
@@ -119,6 +123,9 @@ public:
     linkMapPointToTerminal(MainWindow   *mainWindow,
                            MapPoint     *mapPoint,
                            TerminalItem *terminal);
+
+    static void
+    validateSelectedSimulation(MainWindow *mainWindow);
 };
 
 } // namespace GUI

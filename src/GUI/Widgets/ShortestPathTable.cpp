@@ -797,6 +797,28 @@ ShortestPathsTable::getDataByPathId(int pathId) const
     return it.value();
 }
 
+const QList<const ShortestPathsTable::PathData *>
+ShortestPathsTable::getCheckedPathData() const
+{
+    QList<const ShortestPathsTable::PathData *> result;
+    auto checkedpaths = getCheckedPathIds();
+    if (checkedpaths.isEmpty())
+    {
+        return QList<const PathData *>();
+    }
+
+    for (auto pathId : std::as_const(checkedpaths))
+    {
+        auto pathData = getDataByPathId(pathId);
+        if (pathData)
+        {
+            result.append(pathData);
+        }
+    }
+    result.removeAll(nullptr);
+    return result;
+}
+
 /**
  * @brief Gets the currently selected path ID
  * @return The selected path ID or -1 if none selected

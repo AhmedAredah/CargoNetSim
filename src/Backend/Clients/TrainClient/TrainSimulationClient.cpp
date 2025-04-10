@@ -1,4 +1,5 @@
 #include "TrainSimulationClient.h"
+#include "Backend/Clients/TrainClient/TrainNetwork.h"
 #include "Backend/Models/TrainSystem.h"
 #include <QDebug>
 #include <QJsonDocument>
@@ -117,10 +118,11 @@ bool TrainSimulationClient::resetServer()
 }
 
 void TrainSimulationClient::initializeClient(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
     // Call base class initialization first
-    SimulationClientBase::initializeClient(logger);
+    SimulationClientBase::initializeClient(simulationTime,
+                                           logger);
 
     // Ensure RabbitMQ handler exists
     if (!m_rabbitMQHandler)
@@ -164,21 +166,13 @@ void TrainSimulationClient::initializeClient(
     }
 }
 
-bool TrainSimulationClient::defineSimulatorByNetworkName(
-    const QString &networkName, const double timeStep,
+bool TrainSimulationClient::defineSimulator(
+    const NeTrainSimNetwork *network, const double timeStep,
     const QList<Train *> &trains)
 {
-    // Placeholder for network registry (uncomment if
-    // available) Network* network =
-    // getNeTrainSimNetworkRegistry().getNetwork(networkName);
-    // if (!network) {
-    //     qCritical() << "Network" << networkName << "not
-    //     found"; return false;
-    // }
-    // QJsonArray nodesJson = network->nodesToJson();
-    // QJsonArray linksJson = network->linksToJson();
-    QJsonArray nodesJson;
-    QJsonArray linksJson;
+    QJsonArray nodesJson   = network->getNodesAsJson();
+    QJsonArray linksJson   = network->getLinksAsJson();
+    QString    networkName = network->getNetworkName();
 
     // Delegate to full defineSimulator method
     return defineSimulator(nodesJson, linksJson,
@@ -790,10 +784,7 @@ void TrainSimulationClient::onTrainReachedDestination(
                     .last());
 
             // Construct terminal ID
-            QString terminalId =
-                QString("__network_details_$$||||$$%1$$||||"
-                        "$$%2")
-                    .arg(network, destinationId);
+            QString terminalId = QString(destinationId);
 
             // Placeholder for TerminalGraphServer
             // if
@@ -997,9 +988,12 @@ void TrainSimulationClient::onSimulationAdvanced(
         // Compute average progress
         double average = totalProgress / networks.size();
 
-        // Update progress bar (placeholder)
-        // ProgressBarManager::getInstance()->updateProgress(
-        //     ClientType::TrainClient, average);
+        // Update progress using logger
+        if (m_logger)
+        {
+            m_logger->updateProgress(
+                average, static_cast<int>(m_clientType));
+        }
 
         // Log event using logger if available
         if (m_logger)
@@ -1105,10 +1099,7 @@ void TrainSimulationClient::onTrainReachedTerminal(
     if (containersCount > 0 && !terminalId.isEmpty())
     {
         // Construct full terminal ID
-        QString fullTerminalId =
-            QString(
-                "__network_details_$$||||$$%1$$||||$$%2")
-                .arg(network, terminalId);
+        QString fullTerminalId = QString(terminalId);
 
         // Placeholder for TerminalGraphServer
         // if

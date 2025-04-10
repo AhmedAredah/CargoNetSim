@@ -1,12 +1,18 @@
 #include "ContainerManagerWidget.h"
 
+#include "GUI/Controllers/UtilityFunctions.h"
+#include "GUI/Items/TerminalItem.h"
+#include "GUI/MainWindow.h"
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSpinBox>
@@ -20,28 +26,42 @@ namespace GUI
 // Implementation of ContainerManagerWidget
 
 ContainerManagerWidget::ContainerManagerWidget(
-    const QMap<QString, QVariant> &containers,
-    QWidget                       *parent)
+    TerminalItem *terminalItem, QWidget *parent)
     : QDialog(parent)
-    , containers(containers)
+    , m_terminalItem(terminalItem)
 {
     setWindowTitle(tr("Container Management"));
-    setMinimumWidth(400);
+    setMinimumWidth(600);
+
+    // Get existing containers from the terminal
+    QVariant containersVar =
+        terminalItem->getProperty("Containers");
+
+    // If property exists and is a container list
+    if (containersVar.canConvert<
+            QList<ContainerCore::Container *>>())
+    {
+        m_containers =
+            containersVar
+                .value<QList<ContainerCore::Container *>>();
+    }
 
     // Main layout
     QVBoxLayout *layout = new QVBoxLayout(this);
 
     // Container list
     containerList = new QTableWidget;
-    containerList->setColumnCount(2);
+    containerList->setColumnCount(3);
     containerList->setHorizontalHeaderLabels(
-        {tr("Container ID"), tr("Size")});
+        {tr("Container ID"), tr("Size"), tr("Packages")});
 
     // Make columns stretch to fill the space
     containerList->horizontalHeader()->setSectionResizeMode(
         0, QHeaderView::Stretch);
     containerList->horizontalHeader()->setSectionResizeMode(
         1, QHeaderView::Stretch);
+    containerList->horizontalHeader()->setSectionResizeMode(
+        2, QHeaderView::Stretch);
 
     // Populate container list
     updateContainerList();
@@ -86,128 +106,43 @@ ContainerManagerWidget::ContainerManagerWidget(
     layout->addWidget(dialogButtons);
 }
 
-QMap<QString, QVariant>
+QList<ContainerCore::Container *>
 ContainerManagerWidget::getContainers() const
 {
-    return containers;
-}
-
-int ContainerManagerWidget::convertToContainerlibSize(
-    ContainerSize customSize)
-{
-    // Mapping to containerlib size constants
-    // These values should match the ones defined in the
-    // containerlib library
-    switch (customSize)
-    {
-    case ContainerSize::TwentyFT:
-        return 0;
-    case ContainerSize::TwentyFT_HighCube:
-        return 1;
-    case ContainerSize::FourtyFT:
-        return 2;
-    case ContainerSize::FourtyFT_HighCube:
-        return 3;
-    case ContainerSize::FortyFiveFT:
-        return 4;
-    case ContainerSize::FortyFiveFT_HighCube:
-        return 5;
-    case ContainerSize::TenFT:
-        return 6;
-    case ContainerSize::ThirtyFT:
-        return 7;
-    case ContainerSize::FortyEightFT:
-        return 8;
-    case ContainerSize::FiftyThreeFT:
-        return 9;
-    case ContainerSize::SixtyFT:
-        return 10;
-    default:
-        return 0; // Default to TwentyFT
-    }
-}
-
-ContainerSize
-ContainerManagerWidget::containerSizeFromString(
-    const QString &sizeStr)
-{
-    if (sizeStr == "TwentyFT")
-        return ContainerSize::TwentyFT;
-    if (sizeStr == "TwentyFT_HighCube")
-        return ContainerSize::TwentyFT_HighCube;
-    if (sizeStr == "FourtyFT")
-        return ContainerSize::FourtyFT;
-    if (sizeStr == "FourtyFT_HighCube")
-        return ContainerSize::FourtyFT_HighCube;
-    if (sizeStr == "FortyFiveFT")
-        return ContainerSize::FortyFiveFT;
-    if (sizeStr == "FortyFiveFT_HighCube")
-        return ContainerSize::FortyFiveFT_HighCube;
-    if (sizeStr == "TenFT")
-        return ContainerSize::TenFT;
-    if (sizeStr == "ThirtyFT")
-        return ContainerSize::ThirtyFT;
-    if (sizeStr == "FortyEightFT")
-        return ContainerSize::FortyEightFT;
-    if (sizeStr == "FiftyThreeFT")
-        return ContainerSize::FiftyThreeFT;
-    if (sizeStr == "SixtyFT")
-        return ContainerSize::SixtyFT;
-    return ContainerSize::TwentyFT; // Default
-}
-
-QString ContainerManagerWidget::containerSizeToString(
-    ContainerSize size)
-{
-    switch (size)
-    {
-    case ContainerSize::TwentyFT:
-        return "TwentyFT";
-    case ContainerSize::TwentyFT_HighCube:
-        return "TwentyFT_HighCube";
-    case ContainerSize::FourtyFT:
-        return "FourtyFT";
-    case ContainerSize::FourtyFT_HighCube:
-        return "FourtyFT_HighCube";
-    case ContainerSize::FortyFiveFT:
-        return "FortyFiveFT";
-    case ContainerSize::FortyFiveFT_HighCube:
-        return "FortyFiveFT_HighCube";
-    case ContainerSize::TenFT:
-        return "TenFT";
-    case ContainerSize::ThirtyFT:
-        return "ThirtyFT";
-    case ContainerSize::FortyEightFT:
-        return "FortyEightFT";
-    case ContainerSize::FiftyThreeFT:
-        return "FiftyThreeFT";
-    case ContainerSize::SixtyFT:
-        return "SixtyFT";
-    default:
-        return "TwentyFT"; // Default
-    }
+    return m_containers;
 }
 
 QComboBox *ContainerManagerWidget::createSizeComboBox(
-    const QString &currentSize)
+    ContainerCore::Container::ContainerSize currentSize)
 {
     QComboBox *combo = new QComboBox();
 
     // Add all container sizes with their display names
-    combo->addItem(tr("20ft Standard"), "TwentyFT");
-    combo->addItem(tr("20ft High Cube"),
-                   "TwentyFT_HighCube");
-    combo->addItem(tr("40ft Standard"), "FourtyFT");
-    combo->addItem(tr("40ft High Cube"),
-                   "FourtyFT_HighCube");
-    combo->addItem(tr("45ft Standard"), "FortyFiveFT");
-    combo->addItem(tr("45ft High Cube"),
-                   "FortyFiveFT_HighCube");
-    combo->addItem(tr("10ft Standard"), "TenFT");
-    combo->addItem(tr("30ft Standard"), "ThirtyFT");
-    combo->addItem(tr("48ft Standard"), "FortyEightFT");
-    combo->addItem(tr("53ft Standard"), "FiftyThreeFT");
-    combo->addItem(tr("60ft Standard"), "SixtyFT");
+    combo->addItem(tr("20ft Standard"),
+                   ContainerCore::Container::twentyFT);
+    combo->addItem(
+        tr("20ft High Cube"),
+        ContainerCore::Container::twentyFT_HighCube);
+    combo->addItem(tr("40ft Standard"),
+                   ContainerCore::Container::fourtyFT);
+    combo->addItem(
+        tr("40ft High Cube"),
+        ContainerCore::Container::fourtyFT_HighCube);
+    combo->addItem(tr("45ft Standard"),
+                   ContainerCore::Container::fortyFiveFT);
+    combo->addItem(
+        tr("45ft High Cube"),
+        ContainerCore::Container::fortyFiveFT_HighCube);
+    combo->addItem(tr("10ft Standard"),
+                   ContainerCore::Container::tenFT);
+    combo->addItem(tr("30ft Standard"),
+                   ContainerCore::Container::thirtyFT);
+    combo->addItem(tr("48ft Standard"),
+                   ContainerCore::Container::fortyEightFT);
+    combo->addItem(tr("53ft Standard"),
+                   ContainerCore::Container::fiftyThreeFT);
+    combo->addItem(tr("60ft Standard"),
+                   ContainerCore::Container::sixtyFT);
 
     // Set current selection
     int sizeIndex = combo->findData(currentSize);
@@ -216,104 +151,136 @@ QComboBox *ContainerManagerWidget::createSizeComboBox(
         combo->setCurrentIndex(sizeIndex);
     }
 
-    // Connect signal
-    connect(
-        combo,
-        QOverload<int>::of(&QComboBox::currentIndexChanged),
-        [this, combo]() { this->onSizeChanged(combo); });
-
     return combo;
 }
 
 void ContainerManagerWidget::onSizeChanged(QComboBox *combo)
 {
     int row = containerList->indexAt(combo->pos()).row();
-    if (row >= 0)
+    if (row >= 0 && row < m_containers.size())
     {
-        QString containerId =
-            containerList->item(row, 0)->text();
-        QMap<QString, QVariant> containerData =
-            containers[containerId].toMap();
-        containerData["size"] =
-            combo->currentData().toString();
-        containers[containerId] = containerData;
+        ContainerCore::Container::ContainerSize newSize =
+            static_cast<
+                ContainerCore::Container::ContainerSize>(
+                combo->currentData().toInt());
+        m_containers[row]->setContainerSize(newSize);
     }
 }
 
 void ContainerManagerWidget::updateContainerList()
 {
-    containerList->setRowCount(containers.size());
-    int row = 0;
+    containerList->setRowCount(m_containers.size());
 
-    for (auto it = containers.begin();
-         it != containers.end(); ++it, ++row)
+    for (int row = 0; row < m_containers.size(); ++row)
     {
-        const QString          &containerId = it.key();
-        QMap<QString, QVariant> containerData =
-            it.value().toMap();
+        ContainerCore::Container *container =
+            m_containers[row];
 
         // Container ID
-        QTableWidgetItem *idItem =
-            new QTableWidgetItem(containerId);
+        QTableWidgetItem *idItem = new QTableWidgetItem(
+            container->getContainerID());
         containerList->setItem(row, 0, idItem);
 
         // Size (ComboBox)
-        QString size =
-            containerData.value("size", "TwentyFT")
-                .toString();
-        QComboBox *sizeCombo = createSizeComboBox(size);
+        QComboBox *sizeCombo = createSizeComboBox(
+            container->getContainerSize());
+        connect(sizeCombo,
+                QOverload<int>::of(
+                    &QComboBox::currentIndexChanged),
+                [this, sizeCombo]() {
+                    this->onSizeChanged(sizeCombo);
+                });
         containerList->setCellWidget(row, 1, sizeCombo);
+
+        // Package Count
+        QTableWidgetItem *packagesItem =
+            new QTableWidgetItem(QString::number(
+                container->getPackages().size()));
+        containerList->setItem(row, 2, packagesItem);
     }
 }
 
 void ContainerManagerWidget::addContainer()
 {
-    QString containerId =
-        QString::number(containers.size() + 1);
+    QString containerId = QString("CONT-%1").arg(
+        m_containers.size() + 1, 4, 10, QChar('0'));
 
-    QMap<QString, QVariant> containerData;
-    containerData["size"] = "TwentyFT"; // Default size
+    // Create a new container with the terminal as parent
+    ContainerCore::Container *container =
+        new ContainerCore::Container(
+            containerId, ContainerCore::Container::twentyFT,
+            m_terminalItem);
 
-    containers[containerId] = containerData;
+    // Set initial location to terminal name
+    container->setContainerCurrentLocation(
+        m_terminalItem->getProperty("Name").toString());
+
+    // Add to our list
+    m_containers.append(container);
+
+    // Update UI
     updateContainerList();
 
-    // Select the new container and open properties dialog
-    containerList->selectRow(containers.size() - 1);
-}
-
-void ContainerManagerWidget::editContainer()
-{
-    int currentRow = containerList->currentRow();
-    if (currentRow >= 0)
-    {
-        QString containerId =
-            containerList->item(currentRow, 0)->text();
-        QMap<QString, QVariant> containerData =
-            containers[containerId].toMap();
-
-        ContainerEditDialog dialog(containerData, this);
-        if (dialog.exec() == QDialog::Accepted)
-        {
-            // Preserve the size while updating other
-            // properties
-            QString size = containerData["size"].toString();
-            containerData = dialog.getContainerData();
-            containerData["size"]   = size;
-            containers[containerId] = containerData;
-            updateContainerList();
-        }
-    }
+    // Select and edit the new container
+    containerList->selectRow(m_containers.size() - 1);
+    editContainer();
 }
 
 void ContainerManagerWidget::deleteContainer()
 {
     int currentRow = containerList->currentRow();
-    if (currentRow >= 0)
+    if (currentRow >= 0 && currentRow < m_containers.size())
     {
-        QString containerId =
-            containerList->item(currentRow, 0)->text();
-        containers.remove(containerId);
-        updateContainerList();
+        // Ask for confirmation
+        QMessageBox::StandardButton reply =
+            QMessageBox::question(
+                this, tr("Delete Container"),
+                tr("Are you sure you want to delete this "
+                   "container?"),
+                QMessageBox::Yes | QMessageBox::No);
+
+        if (reply == QMessageBox::Yes)
+        {
+            // Remove the container
+            ContainerCore::Container *container =
+                m_containers.takeAt(currentRow);
+            delete container;
+            updateContainerList();
+        }
+    }
+}
+
+void ContainerManagerWidget::editContainer()
+{
+    int currentRow = containerList->currentRow();
+    if (currentRow >= 0 && currentRow < m_containers.size())
+    {
+        ContainerCore::Container *container =
+            m_containers[currentRow];
+
+        // Create a deep copy for editing
+        ContainerCore::Container *editCopy =
+            container->copy();
+
+        ContainerEditDialog dialog(editCopy, this);
+        if (dialog.exec() == QDialog::Accepted)
+        {
+            // Get the edited container
+            ContainerCore::Container *editedContainer =
+                dialog.getContainer(m_terminalItem);
+
+            // Replace the old container with the edited one
+            delete container;
+            m_containers[currentRow] = editedContainer;
+            editedContainer->setParent(m_terminalItem);
+
+            updateContainerList();
+        }
+        else
+        {
+            // Dialog was cancelled, delete the copy
+            delete editCopy;
+        }
     }
 }
 
@@ -322,29 +289,20 @@ void ContainerManagerWidget::generateContainers()
     GenerateContainersDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted)
     {
-        QMap<QString, QVariant> data =
-            dialog.getGenerationData();
-        int     count = data["count"].toInt();
-        QString size  = data["size"].toString();
+        QList<ContainerCore::Container *> newContainers =
+            dialog.getGeneratedContainers(m_terminalItem);
 
-        int startId = containers.size() + 1;
+        // Add all new containers to our list
+        m_containers.append(newContainers);
 
-        // Generate the containers
-        for (int i = 0; i < count; ++i)
-        {
-            QString containerId =
-                QString::number(startId + i);
-            QMap<QString, QVariant> containerData;
-            containerData["size"]   = size;
-            containers[containerId] = containerData;
-        }
-
+        // Update UI
         updateContainerList();
 
         // Select the first new container
-        if (count > 0)
+        if (!newContainers.isEmpty())
         {
-            containerList->selectRow(startId - 1);
+            containerList->selectRow(
+                m_containers.size() - newContainers.size());
         }
     }
 }
@@ -352,37 +310,135 @@ void ContainerManagerWidget::generateContainers()
 // Implementation of ContainerEditDialog
 
 ContainerEditDialog::ContainerEditDialog(
-    const QMap<QString, QVariant> &containerData,
-    QWidget                       *parent)
+    ContainerCore::Container *container, QWidget *parent)
     : QDialog(parent)
+    , m_container(container)
+    , m_originalContainer(container)
 {
     setWindowTitle(tr("Edit Container Properties"));
-    setMinimumWidth(400);
+    setMinimumWidth(600);
+    setMinimumHeight(500);
 
-    QVBoxLayout *layout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
-    // Property table
-    propTable = new QTableWidget();
-    propTable->setColumnCount(2);
-    propTable->setHorizontalHeaderLabels(
-        {tr("Property"), tr("Value")});
-    propTable->horizontalHeader()->setSectionResizeMode(
-        QHeaderView::Stretch);
+    // Basic Properties Group
+    QGroupBox *basicPropsGroup =
+        new QGroupBox(tr("Basic Properties"));
+    QFormLayout *basicPropsLayout =
+        new QFormLayout(basicPropsGroup);
 
-    // Add/Delete buttons
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    QPushButton *addPropButton =
-        new QPushButton(tr("Add Property"));
-    connect(addPropButton, &QPushButton::clicked, this,
-            &ContainerEditDialog::addProperty);
+    // Container ID
+    idEdit = new QLineEdit(container->getContainerID());
+    basicPropsLayout->addRow(tr("Container ID:"), idEdit);
 
-    QPushButton *deletePropButton =
-        new QPushButton(tr("Delete Property"));
-    connect(deletePropButton, &QPushButton::clicked, this,
-            &ContainerEditDialog::deleteProperty);
+    // Container Size
+    sizeCombo = new QComboBox();
+    sizeCombo->addItem(tr("20ft Standard"),
+                       ContainerCore::Container::twentyFT);
+    sizeCombo->addItem(
+        tr("20ft High Cube"),
+        ContainerCore::Container::twentyFT_HighCube);
+    sizeCombo->addItem(tr("40ft Standard"),
+                       ContainerCore::Container::fourtyFT);
+    sizeCombo->addItem(
+        tr("40ft High Cube"),
+        ContainerCore::Container::fourtyFT_HighCube);
+    sizeCombo->addItem(
+        tr("45ft Standard"),
+        ContainerCore::Container::fortyFiveFT);
+    sizeCombo->addItem(
+        tr("45ft High Cube"),
+        ContainerCore::Container::fortyFiveFT_HighCube);
+    sizeCombo->addItem(tr("10ft Standard"),
+                       ContainerCore::Container::tenFT);
+    sizeCombo->addItem(tr("30ft Standard"),
+                       ContainerCore::Container::thirtyFT);
+    sizeCombo->addItem(
+        tr("48ft Standard"),
+        ContainerCore::Container::fortyEightFT);
+    sizeCombo->addItem(
+        tr("53ft Standard"),
+        ContainerCore::Container::fiftyThreeFT);
+    sizeCombo->addItem(tr("60ft Standard"),
+                       ContainerCore::Container::sixtyFT);
 
-    buttonLayout->addWidget(addPropButton);
-    buttonLayout->addWidget(deletePropButton);
+    int sizeIndex =
+        sizeCombo->findData(container->getContainerSize());
+    if (sizeIndex >= 0)
+    {
+        sizeCombo->setCurrentIndex(sizeIndex);
+    }
+
+    basicPropsLayout->addRow(tr("Container Size:"),
+                             sizeCombo);
+
+    // Next Destinations Group
+    QGroupBox *destGroup =
+        new QGroupBox(tr("Next Destinations"));
+    QVBoxLayout *destLayout = new QVBoxLayout(destGroup);
+
+    destinationsList = new QListWidget();
+
+    // Add existing destinations
+    QVector<QString> destinations =
+        container->getContainerNextDestinations();
+    for (const QString &dest : destinations)
+    {
+        destinationsList->addItem(dest);
+    }
+
+    // Add buttons for destinations
+    QHBoxLayout *destButtonLayout = new QHBoxLayout();
+    QPushButton *addDestBtn =
+        new QPushButton(tr("Add Destination"));
+    QPushButton *removeDestBtn =
+        new QPushButton(tr("Remove Destination"));
+
+    connect(addDestBtn, &QPushButton::clicked, this,
+            &ContainerEditDialog::addDestination);
+    connect(removeDestBtn, &QPushButton::clicked, this,
+            &ContainerEditDialog::removeDestination);
+
+    destButtonLayout->addWidget(addDestBtn);
+    destButtonLayout->addWidget(removeDestBtn);
+
+    destLayout->addWidget(destinationsList);
+    destLayout->addLayout(destButtonLayout);
+
+    // Custom Variables Group
+    QGroupBox *varsGroup =
+        new QGroupBox(tr("Custom Variables"));
+    QVBoxLayout *varsLayout = new QVBoxLayout(varsGroup);
+
+    // Custom Variables Table
+    customVarsTable = new QTableWidget();
+    customVarsTable->setColumnCount(2);
+    customVarsTable->setHorizontalHeaderLabels(
+        {tr("Key"), tr("Value")});
+    customVarsTable->horizontalHeader()
+        ->setSectionResizeMode(QHeaderView::Stretch);
+
+    // Load initial variables for the default hauler
+    loadProperties();
+
+    // Add/Remove buttons for custom variables
+    QHBoxLayout *varsButtonLayout = new QHBoxLayout();
+    QPushButton *addVarBtn =
+        new QPushButton(tr("Add Variable"));
+    QPushButton *deleteVarBtn =
+        new QPushButton(tr("Delete Variable"));
+
+    connect(addVarBtn, &QPushButton::clicked, this,
+            &ContainerEditDialog::addCustomVariable);
+    connect(deleteVarBtn, &QPushButton::clicked, this,
+            &ContainerEditDialog::deleteCustomVariable);
+
+    varsButtonLayout->addWidget(addVarBtn);
+    varsButtonLayout->addWidget(deleteVarBtn);
+
+    // varsLayout->addLayout(haulerLayout);
+    varsLayout->addWidget(customVarsTable);
+    varsLayout->addLayout(varsButtonLayout);
 
     // Dialog buttons
     QDialogButtonBox *dialogButtons = new QDialogButtonBox(
@@ -392,81 +448,132 @@ ContainerEditDialog::ContainerEditDialog(
     connect(dialogButtons, &QDialogButtonBox::rejected,
             this, &QDialog::reject);
 
-    // Populate properties, excluding 'size' which is
-    // handled separately
-    QMap<QString, QVariant> props;
-    for (auto it = containerData.begin();
-         it != containerData.end(); ++it)
-    {
-        if (it.key() != "size")
-        {
-            props[it.key()] = it.value();
-        }
-    }
-    loadProperties(props);
-
-    // Add widgets to layout
-    layout->addWidget(propTable);
-    layout->addLayout(buttonLayout);
-    layout->addWidget(dialogButtons);
+    // Add all groups to main layout
+    mainLayout->addWidget(basicPropsGroup);
+    mainLayout->addWidget(destGroup);
+    mainLayout->addWidget(varsGroup);
+    mainLayout->addWidget(dialogButtons);
 }
 
-void ContainerEditDialog::loadProperties(
-    const QMap<QString, QVariant> &props)
+void ContainerEditDialog::loadProperties()
 {
-    propTable->setRowCount(props.size());
+
+    ContainerCore::Container::HaulerType haulerType =
+        ContainerCore::Container::noHauler;
+
+    // Get variables for this hauler
+    QVariantMap variables =
+        m_container->getCustomVariablesForHauler(
+            haulerType);
+
+    // Clear and populate the table
+    customVarsTable->setRowCount(variables.size());
     int row = 0;
 
-    for (auto it = props.begin(); it != props.end();
+    for (auto it = variables.begin(); it != variables.end();
          ++it, ++row)
     {
-        propTable->setItem(row, 0,
-                           new QTableWidgetItem(it.key()));
-        propTable->setItem(
+        customVarsTable->setItem(
+            row, 0, new QTableWidgetItem(it.key()));
+        customVarsTable->setItem(
             row, 1,
             new QTableWidgetItem(it.value().toString()));
     }
 }
 
-void ContainerEditDialog::addProperty()
+void ContainerEditDialog::addCustomVariable()
 {
-    int currentRow = propTable->rowCount();
-    propTable->setRowCount(currentRow + 1);
-    propTable->setItem(currentRow, 0,
-                       new QTableWidgetItem(""));
-    propTable->setItem(currentRow, 1,
-                       new QTableWidgetItem(""));
+    int currentRow = customVarsTable->rowCount();
+    customVarsTable->setRowCount(currentRow + 1);
+    customVarsTable->setItem(currentRow, 0,
+                             new QTableWidgetItem(""));
+    customVarsTable->setItem(currentRow, 1,
+                             new QTableWidgetItem(""));
 }
 
-void ContainerEditDialog::deleteProperty()
+void ContainerEditDialog::deleteCustomVariable()
 {
-    int currentRow = propTable->currentRow();
+    int currentRow = customVarsTable->currentRow();
     if (currentRow >= 0)
     {
-        propTable->removeRow(currentRow);
+        customVarsTable->removeRow(currentRow);
     }
 }
 
-QMap<QString, QVariant>
-ContainerEditDialog::getContainerData() const
+void ContainerEditDialog::addDestination()
 {
-    QMap<QString, QVariant> data;
-
-    for (int row = 0; row < propTable->rowCount(); ++row)
+    bool    ok;
+    QString destination = QInputDialog::getText(
+        this, tr("Add Destination"), tr("Destination:"),
+        QLineEdit::Normal, "", &ok);
+    if (ok && !destination.isEmpty())
     {
-        QTableWidgetItem *keyItem = propTable->item(row, 0);
+        destinationsList->addItem(destination);
+    }
+}
+
+void ContainerEditDialog::removeDestination()
+{
+    QListWidgetItem *current =
+        destinationsList->currentItem();
+    if (current)
+    {
+        delete destinationsList->takeItem(
+            destinationsList->row(current));
+    }
+}
+
+ContainerCore::Container *ContainerEditDialog::getContainer(
+    TerminalItem *parent) const
+{
+    // Apply all changes to the container
+
+    // Basic properties
+    m_container->setContainerID(idEdit->text());
+    m_container->setContainerSize(
+        static_cast<
+            ContainerCore::Container::ContainerSize>(
+            sizeCombo->currentData().toInt()));
+    m_container->setContainerCurrentLocation(
+        parent->getID());
+
+    // Next destinations
+    QVector<QString> destinations;
+    for (int i = 0; i < destinationsList->count(); ++i)
+    {
+        destinations.append(
+            destinationsList->item(i)->text());
+    }
+    m_container->setContainerNextDestinations(destinations);
+
+    ContainerCore::Container::HaulerType haulerType =
+        ContainerCore::Container::noHauler;
+
+    // Create new variables map
+    QVariantMap variables;
+    for (int row = 0; row < customVarsTable->rowCount();
+         ++row)
+    {
+        QTableWidgetItem *keyItem =
+            customVarsTable->item(row, 0);
         QTableWidgetItem *valueItem =
-            propTable->item(row, 1);
+            customVarsTable->item(row, 1);
 
         if (keyItem && valueItem
             && !keyItem->text().trimmed().isEmpty())
         {
-            data[keyItem->text().trimmed()] =
+            variables[keyItem->text().trimmed()] =
                 valueItem->text().trimmed();
         }
     }
 
-    return data;
+    // Replace variables for this hauler type
+    QMap<ContainerCore::Container::HaulerType, QVariantMap>
+        allVariables = m_container->getCustomVariables();
+    allVariables[haulerType] = variables;
+    m_container->setCustomVariables(allVariables);
+
+    return m_container;
 }
 
 // Implementation of GenerateContainersDialog
@@ -496,20 +603,34 @@ GenerateContainersDialog::GenerateContainersDialog(
     sizeCombo         = new QComboBox();
 
     // Add container sizes
-    sizeCombo->addItem(tr("20ft Standard"), "TwentyFT");
-    sizeCombo->addItem(tr("20ft High Cube"),
-                       "TwentyFT_HighCube");
-    sizeCombo->addItem(tr("40ft Standard"), "FourtyFT");
-    sizeCombo->addItem(tr("40ft High Cube"),
-                       "FourtyFT_HighCube");
-    sizeCombo->addItem(tr("45ft Standard"), "FortyFiveFT");
-    sizeCombo->addItem(tr("45ft High Cube"),
-                       "FortyFiveFT_HighCube");
-    sizeCombo->addItem(tr("10ft Standard"), "TenFT");
-    sizeCombo->addItem(tr("30ft Standard"), "ThirtyFT");
-    sizeCombo->addItem(tr("48ft Standard"), "FortyEightFT");
-    sizeCombo->addItem(tr("53ft Standard"), "FiftyThreeFT");
-    sizeCombo->addItem(tr("60ft Standard"), "SixtyFT");
+    sizeCombo->addItem(tr("20ft Standard"),
+                       ContainerCore::Container::twentyFT);
+    sizeCombo->addItem(
+        tr("20ft High Cube"),
+        ContainerCore::Container::twentyFT_HighCube);
+    sizeCombo->addItem(tr("40ft Standard"),
+                       ContainerCore::Container::fourtyFT);
+    sizeCombo->addItem(
+        tr("40ft High Cube"),
+        ContainerCore::Container::fourtyFT_HighCube);
+    sizeCombo->addItem(
+        tr("45ft Standard"),
+        ContainerCore::Container::fortyFiveFT);
+    sizeCombo->addItem(
+        tr("45ft High Cube"),
+        ContainerCore::Container::fortyFiveFT_HighCube);
+    sizeCombo->addItem(tr("10ft Standard"),
+                       ContainerCore::Container::tenFT);
+    sizeCombo->addItem(tr("30ft Standard"),
+                       ContainerCore::Container::thirtyFT);
+    sizeCombo->addItem(
+        tr("48ft Standard"),
+        ContainerCore::Container::fortyEightFT);
+    sizeCombo->addItem(
+        tr("53ft Standard"),
+        ContainerCore::Container::fiftyThreeFT);
+    sizeCombo->addItem(tr("60ft Standard"),
+                       ContainerCore::Container::sixtyFT);
 
     sizeLayout->addWidget(sizeLabel);
     sizeLayout->addWidget(sizeCombo);
@@ -525,16 +646,48 @@ GenerateContainersDialog::GenerateContainersDialog(
     // Add all layouts
     layout->addLayout(numberLayout);
     layout->addLayout(sizeLayout);
+    // layout->addLayout(locationLayout);
     layout->addWidget(buttons);
 }
 
-QMap<QString, QVariant>
-GenerateContainersDialog::getGenerationData() const
+QList<ContainerCore::Container *>
+GenerateContainersDialog::getGeneratedContainers(
+    TerminalItem *parent) const
 {
-    QMap<QString, QVariant> data;
-    data["count"] = numberSpin->value();
-    data["size"]  = sizeCombo->currentData().toString();
-    return data;
+    QList<ContainerCore::Container *> containers;
+    int count = numberSpin->value();
+    ContainerCore::Container::ContainerSize size =
+        static_cast<
+            ContainerCore::Container::ContainerSize>(
+            sizeCombo->currentData().toInt());
+
+    if (!parent)
+    {
+        return QList<ContainerCore::Container *>();
+    }
+    QString location = parent->getID();
+
+    for (int i = 0; i < count; ++i)
+    {
+        QString containerId = QString("CONT-%1").arg(
+            i + 1, 4, 10, QChar('0'));
+
+        // Create new container
+        ContainerCore::Container *container =
+            new ContainerCore::Container(containerId, size,
+                                         parent);
+
+        // Set location if provided
+        if (!location.isEmpty())
+        {
+            container->setContainerCurrentLocation(
+                location);
+        }
+
+        containers.append(container);
+    }
+
+    return containers;
 }
 
 } // namespace GUI

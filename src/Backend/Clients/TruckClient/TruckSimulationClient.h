@@ -73,6 +73,7 @@ public:
      * RabbitMQ heartbeat, after moving to its thread.
      * Called automatically via QThread::started signal.
      *
+     * @param simulationTime Simulation time object
      * @param logger Optional logger for initialization
      * logging
      * @throws std::runtime_error If RabbitMQ handler setup
@@ -81,6 +82,7 @@ public:
      * @warning Call only once after thread start
      */
     void initializeClient(
+        SimulationTime  *simulationTime,
         LoggerInterface *logger = nullptr) override;
 
     /**

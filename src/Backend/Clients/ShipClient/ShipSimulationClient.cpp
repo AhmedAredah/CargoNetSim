@@ -44,6 +44,7 @@
 #include "Backend/Commons/LoggerInterface.h"
 #include "Backend/Commons/ThreadSafetyUtils.h"
 #include "Backend/Models/ShipSystem.h"
+#include "Backend/Models/SimulationTime.h"
 // #include "TerminalGraphServer.h"
 // #include "SimulatorTimeServer.h"
 // #include "ProgressBarManager.h"
@@ -154,9 +155,10 @@ bool ShipSimulationClient::resetServer()
  * @throws std::runtime_error If RabbitMQ handler is not set
  */
 void ShipSimulationClient::initializeClient(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
-    SimulationClientBase::initializeClient(logger);
+    SimulationClientBase::initializeClient(simulationTime,
+                                           logger);
     if (m_rabbitMQHandler == nullptr)
     {
         if (m_logger)

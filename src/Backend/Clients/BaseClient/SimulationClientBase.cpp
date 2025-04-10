@@ -8,6 +8,7 @@
 #include <QUuid>
 
 #include "Backend/Controllers/CargoNetSimController.h"
+#include "Backend/Models/SimulationTime.h"
 
 namespace CargoNetSim
 {
@@ -65,11 +66,12 @@ SimulationClientBase::~SimulationClientBase()
 }
 
 void SimulationClientBase::initializeClient(
-    LoggerInterface *logger)
+    SimulationTime *simulationTime, LoggerInterface *logger)
 {
 
-    // Set the logger interface
+    // Set the SimulationTime and logger interface
     m_logger = logger;
+    m_simulationTime = simulationTime;
 
     // Create RabbitMQ handler
     m_rabbitMQHandler = new RabbitMQHandler(
