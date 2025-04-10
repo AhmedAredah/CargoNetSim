@@ -1483,21 +1483,20 @@ void PropertiesPanel::openContainerManager(
         return;
     }
 
-    QMap<QString, QVariant> containers =
-        item->getProperties().value("Containers").toMap();
-    ContainerManagerWidget dialog(containers, this);
-
+    ContainerManagerWidget dialog(item, parentWidget());
     if (dialog.exec() == QDialog::Accepted)
     {
-        QMap<QString, QVariant> updatedContainers =
-            dialog.getContainers();
-        QMap<QString, QVariant> props =
-            item->getProperties();
-        props["Containers"] = updatedContainers;
-        item->updateProperties(props);
+        QList<ContainerCore::Container *>
+            updatedContainers = dialog.getContainers();
+
+        // Store the container list directly in the
+        // terminal's properties
+        item->setProperty(
+            "Containers",
+            QVariant::fromValue(updatedContainers));
 
         // Emit the properties changed signal
-        emit propertiesChanged(item, props);
+        emit propertiesChanged(item, item->getProperties());
     }
 }
 
