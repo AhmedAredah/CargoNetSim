@@ -48,6 +48,20 @@ inline void
 initializeBackend(const QString   &integrationExePath = "",
                   LoggerInterface *logger = nullptr)
 {
+    // Container class
+    qRegisterMetaType<ContainerCore::Package>(
+        "ContainerCore::Package");
+    qRegisterMetaType<ContainerCore::Package *>(
+        "ContainerCore::Package *");
+    qRegisterMetaType<ContainerCore::Container>(
+        "ContainerCore::Container");
+    qRegisterMetaType<ContainerCore::Container *>(
+        "ContainerCore::Container*");
+    qRegisterMetaType<QList<ContainerCore::Container>>(
+        "QList<ContainerCore::Container>");
+    qRegisterMetaType<QList<ContainerCore::Container *>>(
+        "QList<ContainerCore::Container*>");
+
     // Base classes
     qRegisterMetaType<RabbitMQHandler>(
         "CargoNetSim::Backend::RabbitMQHandler");
