@@ -761,11 +761,10 @@ void NeTrainSimNetwork::loadNetwork(
     }
 }
 
-QVector<QJsonObject>
-NeTrainSimNetwork::getNodesAsJson() const
+QJsonArray NeTrainSimNetwork::getNodesAsJson() const
 {
     QMutexLocker         locker(&m_mutex);
-    QVector<QJsonObject> nodeJsons;
+    QJsonArray           nodeJsons;
 
     for (NeTrainSimNode *node : m_nodes)
     {
@@ -775,11 +774,10 @@ NeTrainSimNetwork::getNodesAsJson() const
     return nodeJsons;
 }
 
-QVector<QJsonObject>
-NeTrainSimNetwork::getLinksAsJson() const
+QJsonArray NeTrainSimNetwork::getLinksAsJson() const
 {
     QMutexLocker         locker(&m_mutex);
-    QVector<QJsonObject> linkJsons;
+    QJsonArray           linkJsons;
 
     for (NeTrainSimLink *link : m_links)
     {

@@ -719,15 +719,15 @@ public:
 
     /**
      * @brief Gets all nodes in the network as JSON objects
-     * @return Vector of node data as JSON objects
+     * @return QJsonArray of node data as JSON objects
      */
-    QVector<QJsonObject> getNodesAsJson() const;
+    QJsonArray getNodesAsJson() const;
 
     /**
      * @brief Gets all links in the network as JSON objects
-     * @return Vector of link data as JSON objects
+     * @return QJsonArray of link data as JSON objects
      */
-    QVector<QJsonObject> getLinksAsJson() const;
+    QJsonArray getLinksAsJson() const;
 
     /**
      * @brief Gets all nodes in the network
