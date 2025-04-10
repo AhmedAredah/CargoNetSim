@@ -325,15 +325,17 @@ QList<CargoNetSim::GUI::MapPoint *> CargoNetSim::GUI::
 
 CargoNetSim::GUI::TerminalItem *
 CargoNetSim::GUI::UtilitiesFunctions::getOriginTerminal(
-    GraphicsScene *scene)
+    MainWindow *mainWindow)
 {
 
     CargoNetSim::GUI::TerminalItem *result = nullptr;
 
-    if (!scene)
+    if (!mainWindow)
     {
         return result;
     }
+
+    auto scene = mainWindow->regionScene_;
 
     for (auto &terminal :
          scene->getItemsByType<TerminalItem>())
@@ -350,14 +352,16 @@ CargoNetSim::GUI::UtilitiesFunctions::getOriginTerminal(
 
 CargoNetSim::GUI::TerminalItem *
 CargoNetSim::GUI::UtilitiesFunctions::
-    getDestinationTerminal(GraphicsScene *scene)
+    getDestinationTerminal(MainWindow *mainWindow)
 {
     CargoNetSim::GUI::TerminalItem *result = nullptr;
 
-    if (!scene)
+    if (!mainWindow)
     {
         return result;
     }
+
+    auto scene = mainWindow->regionScene_;
 
     for (auto &terminal :
          scene->getItemsByType<TerminalItem>())
@@ -590,6 +594,63 @@ CargoNetSim::GUI::UtilitiesFunctions::getCommonModes(
                           commonModes.end());
 }
 
+QList<QPair<CargoNetSim::GUI::MapPoint *,
+            CargoNetSim::GUI::MapPoint *>>
+CargoNetSim::GUI::UtilitiesFunctions::getCommonNetworks(
+    QList<CargoNetSim::GUI::MapPoint *> firstEntries,
+    QList<CargoNetSim::GUI::MapPoint *> secondEntries)
+{
+    QList<QPair<MapPoint *, MapPoint *>> commonNetworkPairs;
+
+    // Early return if either list is empty
+    if (firstEntries.isEmpty() || secondEntries.isEmpty())
+    {
+        return commonNetworkPairs;
+    }
+
+    // Group the first list by network reference
+    QMap<QObject *, QList<MapPoint *>> networkToPointsMap;
+    for (MapPoint *point : firstEntries)
+    {
+        if (!point)
+            continue;
+
+        QObject *network = point->getReferenceNetwork();
+        if (network)
+        {
+            networkToPointsMap[network].append(point);
+        }
+    }
+
+    // Find matches in the second list
+    for (MapPoint *secondPoint : secondEntries)
+    {
+        if (!secondPoint)
+            continue;
+
+        QObject *network =
+            secondPoint->getReferenceNetwork();
+        if (!network
+            || !networkToPointsMap.contains(network))
+        {
+            continue;
+        }
+
+        // For each point in first list with matching
+        // network, create a pair
+        const QList<MapPoint *> &matchingFirstPoints =
+            networkToPointsMap[network];
+        for (MapPoint *firstPoint : matchingFirstPoints)
+        {
+            commonNetworkPairs.append(
+                QPair<MapPoint *, MapPoint *>(firstPoint,
+                                              secondPoint));
+        }
+    }
+
+    return commonNetworkPairs;
+}
+
 double CargoNetSim::GUI::UtilitiesFunctions::
     getApproximateGeoDistance(const QPointF &point1,
                               const QPointF &point2)
@@ -712,21 +773,56 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         configController->getTransportModes();
 
     QVariantMap modeProperties;
+    int         containersPerVehicle = 1;
+
     if (networkType == CargoNetSim::GUI::NetworkType::Train)
     {
         modeProperties =
             transportModes.value("Rail").toMap();
+        containersPerVehicle =
+            modeProperties
+                .value("average_container_number", 400)
+                .toInt();
     }
     else if (networkType
              == CargoNetSim::GUI::NetworkType::Truck)
     {
         modeProperties =
             transportModes.value("Truck").toMap();
+        containersPerVehicle =
+            modeProperties
+                .value("average_container_number", 1)
+                .toInt();
     }
     else
     {
         return;
     }
+
+    // Get containers from origin terminal
+    auto          mainWindow = MainWindow::getInstance();
+    TerminalItem *originTerminal =
+        getOriginTerminal(mainWindow);
+    int containerCount = 0;
+
+    if (originTerminal)
+    {
+        QVariant containersVar =
+            originTerminal->getProperty("Containers");
+        if (containersVar.canConvert<
+                QList<ContainerCore::Container *>>())
+        {
+            QList<ContainerCore::Container *> containers =
+                containersVar.value<
+                    QList<ContainerCore::Container *>>();
+            containerCount = containers.size();
+        }
+    }
+
+    // Calculate number of vehicles needed (at least 1)
+    int vehiclesNeeded =
+        qMax(1, (int)std::ceil((double)containerCount
+                               / containersPerVehicle));
 
     // Calculate travel time
     bool useNetwork =
@@ -753,15 +849,21 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             QString::number(travelTimeHours, 'f', 2));
     }
 
-    // Set risk factor
-    connection->setProperty(
-        "risk", modeProperties.value("risk_factor"));
-
-    // Calculate energy consumption and carbon emissions
-    double fuelConsumption =
+    // Adjust risk factor based on number of vehicles
+    double baseFuelConsumption =
         modeProperties
             .value("average_fuel_consumption", 0.0)
             .toDouble();
+    double baseRiskFactor =
+        modeProperties.value("risk_factor", 0.01)
+            .toDouble();
+
+    // Scale risk with vehicle count (more vehicles = more
+    // risk)
+    double scaledRisk = baseRiskFactor * vehiclesNeeded;
+    connection->setProperty("risk", scaledRisk);
+
+    // Calculate fuel type properties
     QString fuelType =
         modeProperties
             .value("fuel_type",
@@ -782,15 +884,19 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             .value(fuelType, 2.68)
             .toDouble();
 
-    // Calculate energy consumption
-    double energyConsumption =
-        fuelConsumption * totalDistanceKm * calorificValue;
+    // Calculate energy consumption for all vehicles
+    double totalFuelConsumption =
+        baseFuelConsumption * vehiclesNeeded;
+    double energyConsumption = totalFuelConsumption
+                               * totalDistanceKm
+                               * calorificValue;
     connection->setProperty(
         "energyConsumption",
         QString::number(energyConsumption, 'f', 2));
 
-    // Calculate carbon emissions (convert to tons)
-    double carbonEmissions = fuelConsumption
+    // Calculate carbon emissions (convert to tons) for all
+    // vehicles
+    double carbonEmissions = totalFuelConsumption
                              * totalDistanceKm
                              * carbonContent / 1000.0;
     connection->setProperty(
@@ -1057,4 +1163,194 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     // Show status message
     mainWindow->showStatusBarMessage(
         "Terminal linked to node successfully", 2000);
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    validateSelectedSimulation(MainWindow *mainWindow)
+{
+    if (!mainWindow)
+    {
+        return;
+    }
+
+    Backend::ConfigController *configController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getConfigController();
+
+    QMap<QString, QVariant> transModes =
+        configController->getTransportModes();
+
+    int shipContainerCount =
+        transModes.value("ship")
+            .toMap()
+            .value("average_container_number", -1)
+            .toInt();
+    int trainContainerCount =
+        transModes.value("rail")
+            .toMap()
+            .value("average_container_number", -1)
+            .toInt();
+    int truckContainerCount =
+        transModes.value("truck")
+            .toMap()
+            .value("average_container_number", -1)
+            .toInt();
+
+    // check if we have valid container count
+    if (shipContainerCount < 0 || trainContainerCount < 0
+        || truckContainerCount < 0)
+    {
+        mainWindow->showStatusBarError(
+            "Container count cannot be less than 0!");
+        return;
+    }
+
+    auto originTerminal = getOriginTerminal(mainWindow);
+    if (!originTerminal)
+    {
+        mainWindow->showStatusBarError(
+            "There is no origin in the region map", 3000);
+        return;
+    }
+
+    QVariant containersVar =
+        originTerminal->getProperty("Containers");
+    QList<ContainerCore::Container *> containers;
+    if (containersVar.canConvert<
+            QList<ContainerCore::Container *>>())
+    {
+        // Convert the QVariant to a list of Container
+        // pointers
+        containers =
+            containersVar
+                .value<QList<ContainerCore::Container *>>();
+    }
+    if (containers.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No containers in the origin terminal", 3000);
+        return;
+    }
+
+    // get the selected paths for simulation validation
+    auto selectedPathsData = mainWindow->shortestPathTable_
+                                 ->getCheckedPathData();
+
+    if (selectedPathsData.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No paths selected for simulation.");
+        return;
+    }
+
+    auto shipClient =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getShipClient();
+    auto trainClient =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getTrainClient();
+    auto truckClient =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getTruckManager();
+
+    shipClient->resetServer();
+    trainClient->resetServer();
+
+    for (auto pathData : selectedPathsData)
+    {
+        Backend::Path *path = pathData->path;
+        if (!path)
+        {
+            continue;
+        }
+        for (auto segment : path->getSegments())
+        {
+            if (!segment)
+            {
+                continue;
+            }
+            QString       startID = segment->getStart();
+            QString       endID   = segment->getEnd();
+            TerminalItem *startTerminal =
+                mainWindow->regionScene_
+                    ->getItemById<TerminalItem>(startID);
+            TerminalItem *endTerminal =
+                mainWindow->regionScene_
+                    ->getItemById<TerminalItem>(endID);
+
+            if (!startTerminal)
+            {
+                GlobalTerminalItem *startglobalTerminal =
+                    mainWindow->globalMapScene_
+                        ->getItemById<GlobalTerminalItem>(
+                            startID);
+                if (startglobalTerminal)
+                {
+                    startTerminal =
+                        startglobalTerminal
+                            ->getLinkedTerminalItem();
+                }
+            }
+            if (!endTerminal)
+            {
+                GlobalTerminalItem *endglobalTerminal =
+                    mainWindow->globalMapScene_
+                        ->getItemById<GlobalTerminalItem>(
+                            endID);
+                if (endglobalTerminal)
+                {
+                    endTerminal =
+                        endglobalTerminal
+                            ->getLinkedTerminalItem();
+                }
+            }
+
+            if (!startTerminal || !endTerminal)
+            {
+                continue;
+            }
+
+            QList<QString> commonModes =
+                getCommonModes(startTerminal, endTerminal);
+            QList<MapPoint *> startNetworkPoints;
+            QList<MapPoint *> endNetworkPoints;
+
+            if (commonModes.contains("Rail"))
+            {
+                startNetworkPoints = getMapPointsOfTerminal(
+                    mainWindow->regionScene_, startTerminal,
+                    "*", "*", NetworkType::Train);
+                endNetworkPoints = getMapPointsOfTerminal(
+                    mainWindow->regionScene_, endTerminal,
+                    "*", "*", NetworkType::Train);
+            }
+            else if (commonModes.contains("Truck"))
+            {
+                startNetworkPoints = getMapPointsOfTerminal(
+                    mainWindow->regionScene_, startTerminal,
+                    "*", "*", NetworkType::Truck);
+                endNetworkPoints = getMapPointsOfTerminal(
+                    mainWindow->regionScene_, endTerminal,
+                    "*", "*", NetworkType::Truck);
+            }
+            QList<QPair<MapPoint *, MapPoint *>>
+                commonNetworkPairs = getCommonNetworks(
+                    startNetworkPoints, endNetworkPoints);
+
+            for (auto pair : commonNetworkPairs)
+            {
+                auto originPoint      = pair.first;
+                auto destinationPoint = pair.second;
+
+                if (auto trainNetwork = dynamic_cast<
+                        Backend::TrainClient::
+                            NeTrainSimNetwork *>(
+                        originPoint->getReferenceNetwork()))
+                {
+                    // trainClient->defineSimulator(
+                    //     trainNetwork, 1.0, )
+                }
+            }
+        }
+    }
 }
