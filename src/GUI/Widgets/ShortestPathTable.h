@@ -300,6 +300,14 @@ public:
     const PathData *getDataByPathId(int pathId) const;
 
     /**
+     * @brief Gets all path IDs cooresponding data that are
+     * currently checked
+     * @return List of checked path data pointers
+     */
+    const QList<const ShortestPathsTable::PathData *>
+    getCheckedPathData() const;
+
+    /**
      * @brief Gets the currently selected path ID
      * @return The selected path ID or -1 if none selected
      *
