@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QPropertyAnimation>
 #include <QStyleOptionGraphicsItem>
+#include <containerLib/container.h>
 
 namespace CargoNetSim
 {
@@ -172,7 +173,8 @@ void TerminalItem::initializeDefaultProperties()
     if (m_terminalType == "Origin")
     {
         this->m_properties["Containers"] =
-            QMap<QString, QVariant>();
+            QVariant::fromValue(
+                QList<ContainerCore::Container *>());
     }
 }
 
