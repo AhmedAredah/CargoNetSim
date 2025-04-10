@@ -98,6 +98,15 @@ void PathFindingWorker::process()
             }
         }
 
+        if (regionConnections.isEmpty()
+            && globalConnections.isEmpty())
+        {
+            emit error("No connections found in the region "
+                       "scene.");
+            emit finished();
+            return;
+        }
+
         // Get terminal IDs for origin and destination
         QString originId = originTerminals.first()->getID();
         QString destId =
@@ -505,10 +514,6 @@ bool PathFindingWorker::processConnectionAndTerminals(
 
     // Create a unique ID for the route segment
     QString segmentId = connection->getID();
-    // QString("segment_%1_%2_%3")
-    //     .arg(startId)
-    //     .arg(endId)
-    //     .arg(Backend::TransportationTypes::toInt(mode));
 
     // Create and add the route
     Backend::PathSegment *segment =
