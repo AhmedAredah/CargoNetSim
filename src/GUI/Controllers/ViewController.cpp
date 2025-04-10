@@ -1339,6 +1339,31 @@ void CargoNetSim::GUI::ViewController::
     QList<GlobalTerminalItem *> globalTerminals;
     bool anyConnectionCreated = false;
 
+    TerminalItem *originTerminal =
+        UtilitiesFunctions::getOriginTerminal(mainWindow);
+    if (!originTerminal)
+    {
+        mainWindow->showStatusBarError(
+            "Origin is not present in the region view!",
+            3000);
+        return;
+    }
+
+    QVariant containersVar =
+        originTerminal->getProperty("Containers");
+    if (containersVar.canConvert<
+            QList<ContainerCore::Container *>>())
+    {
+        QList<ContainerCore::Container *> containers =
+            containersVar
+                .value<QList<ContainerCore::Container *>>();
+        if (containers.empty())
+        {
+            mainWindow->showStatusBarError(
+                "No containers at origin!", 3000);
+        }
+    }
+
     if (isGlobalView)
     {
         globalTerminals = CargoNetSim::GUI::
