@@ -1,4 +1,5 @@
 #include "TrainSimulationClient.h"
+#include "Backend/Clients/TrainClient/TrainNetwork.h"
 #include "Backend/Models/TrainSystem.h"
 #include <QDebug>
 #include <QJsonDocument>
@@ -165,21 +166,13 @@ void TrainSimulationClient::initializeClient(
     }
 }
 
-bool TrainSimulationClient::defineSimulatorByNetworkName(
-    const QString &networkName, const double timeStep,
+bool TrainSimulationClient::defineSimulator(
+    const NeTrainSimNetwork *network, const double timeStep,
     const QList<Train *> &trains)
 {
-    // Placeholder for network registry (uncomment if
-    // available) Network* network =
-    // getNeTrainSimNetworkRegistry().getNetwork(networkName);
-    // if (!network) {
-    //     qCritical() << "Network" << networkName << "not
-    //     found"; return false;
-    // }
-    // QJsonArray nodesJson = network->nodesToJson();
-    // QJsonArray linksJson = network->linksToJson();
-    QJsonArray nodesJson;
-    QJsonArray linksJson;
+    QJsonArray nodesJson   = network->getNodesAsJson();
+    QJsonArray linksJson   = network->getLinksAsJson();
+    QString    networkName = network->getNetworkName();
 
     // Delegate to full defineSimulator method
     return defineSimulator(nodesJson, linksJson,

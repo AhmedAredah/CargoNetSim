@@ -43,6 +43,8 @@ namespace Backend
 namespace TrainClient
 {
 
+class NeTrainSimNetwork;
+
 /**
  * @class TrainSimulationClient
  * @brief Manages train simulation server interactions
@@ -134,10 +136,9 @@ public:
      * empty
      * @return True if simulator definition succeeds
      */
-    bool defineSimulatorByNetworkName(
-        const QString        &networkName,
-        const double          timeStep = 1.0,
-        const QList<Train *> &trains   = {});
+    bool defineSimulator(const NeTrainSimNetwork *network,
+                         const double timeStep        = 1.0,
+                         const QList<Train *> &trains = {});
 
     /**
      * @brief Defines a new simulator with custom topology
