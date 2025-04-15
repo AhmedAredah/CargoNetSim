@@ -742,6 +742,13 @@ public:
     QVector<NeTrainSimLink *> getLinks() const;
 
     /**
+     * @brief Gets a node by its user ID
+     * @param id User-defined node identifier
+     * @return Pointer to the node or nullptr if not found
+     */
+    const NeTrainSimNode *getNodeByID(int id) const;
+
+    /**
      * @brief Sets the network name
      * @param networkName Network name
      */
