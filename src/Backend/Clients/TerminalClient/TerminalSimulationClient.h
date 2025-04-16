@@ -454,10 +454,22 @@ private:
     void onTerminalAdded(const QJsonObject &message);
 
     /**
+     * @brief Handles terminals added event
+     * @param message Event data from server
+     */
+    void onTerminalsAdded(const QJsonObject &message);
+
+    /**
      * @brief Handles route added event
      * @param message Event data from server
      */
     void onRouteAdded(const QJsonObject &message);
+
+    /**
+     * @brief Handles routes added event
+     * @param message Event data from server
+     */
+    void onRoutesAdded(const QJsonObject &message);
 
     /**
      * @brief Handles path found event

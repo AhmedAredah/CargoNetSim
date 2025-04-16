@@ -176,7 +176,7 @@ bool TerminalSimulationClient::addTerminals(
 
         // Send command to server
         return sendCommandAndWait("add_terminals", params,
-                                  {"terminalAdded"});
+                                  {"terminalsAdded"});
     });
 }
 
@@ -330,7 +330,7 @@ bool TerminalSimulationClient::addRoutes(
 
         // Send command to server
         return sendCommandAndWait("add_routes", params,
-                                  {"routeAdded"});
+                                  {"routesAdded"});
     });
 }
 
@@ -760,9 +760,17 @@ void TerminalSimulationClient::processMessage(
     {
         onTerminalAdded(message);
     }
+    else if (normEvent == "terminalsadded")
+    {
+        onTerminalsAdded(message);
+    }
     else if (normEvent == "routeadded")
     {
         onRouteAdded(message);
+    }
+    else if (normEvent == "routesadded")
+    {
+        onRoutesAdded(message);
     }
     else if (normEvent == "pathfound")
     {
@@ -859,6 +867,59 @@ void TerminalSimulationClient::onTerminalAdded(
     qDebug() << "Terminal added:" << name;
 }
 
+void TerminalSimulationClient::onTerminalsAdded(
+    const QJsonObject &message)
+{
+    // Extract array of terminal results
+    QJsonArray terminalsArray = message["result"].toArray();
+
+    // Lock mutex for thread-safe update
+    Commons::ScopedWriteLock locker(m_dataMutex);
+
+    // Process each terminal in the array
+    for (const QJsonValue &terminalValue : terminalsArray)
+    {
+        QJsonObject terminalJson = terminalValue.toObject();
+        QString     name =
+            terminalJson["terminal_name"].toString();
+
+        // Clean up existing terminal if present
+        Terminal *existing =
+            m_terminalStatus.value(name, nullptr);
+        if (existing)
+        {
+            delete existing;
+        }
+
+        // Create new terminal from JSON
+        Terminal *terminal =
+            Terminal::fromJson(terminalJson);
+        terminal->setParent(this);
+
+        // Store in map
+        m_terminalStatus[name] = terminal;
+
+        // Update aliases if present
+        if (terminalJson.contains("aliases"))
+        {
+            QJsonArray aliases =
+                terminalJson["aliases"].toArray();
+            QStringList aliasList;
+            for (const QJsonValue &val : aliases)
+            {
+                aliasList.append(val.toString());
+            }
+            m_terminalAliases[name] = aliasList;
+        }
+
+        qDebug() << "Terminal added from bulk operation:"
+                 << name;
+    }
+
+    qDebug() << "Bulk terminal addition completed with"
+             << terminalsArray.size() << "terminals";
+}
+
 // Handle route added event
 void TerminalSimulationClient::onRouteAdded(
     const QJsonObject &message)
@@ -875,6 +936,32 @@ void TerminalSimulationClient::onRouteAdded(
     // Log event for auditing
     qDebug() << "Route added from" << startTerminal << "to"
              << endTerminal;
+}
+
+void TerminalSimulationClient::onRoutesAdded(
+    const QJsonObject &message)
+{
+    // Extract array of route results
+    QJsonArray routesArray = message["result"].toArray();
+
+    // Lock mutex for thread-safe update
+    Commons::ScopedWriteLock locker(m_dataMutex);
+
+    // Process each route in the array
+    for (const QJsonValue &routeValue : routesArray)
+    {
+        QJsonObject routeJson = routeValue.toObject();
+        QString     startTerminal =
+            routeJson["start_terminal"].toString();
+        QString endTerminal =
+            routeJson["end_terminal"].toString();
+
+        qDebug() << "Route added from bulk operation:"
+                 << startTerminal << "to" << endTerminal;
+    }
+
+    qDebug() << "Bulk route addition completed with"
+             << routesArray.size() << "routes";
 }
 
 // Handle path found event
