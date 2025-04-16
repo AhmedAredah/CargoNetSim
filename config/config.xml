@@ -3,7 +3,7 @@
     <simulation>
         <shortest_paths>5</shortest_paths>
         <time_step>15</time_step>
-        <time_value_of_money>20.000000</time_value_of_money>
+        <time_value_of_money>35.000000</time_value_of_money>
     </simulation>
     <fuel_energy>
         <HFO>11.100000</HFO>
