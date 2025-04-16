@@ -137,6 +137,49 @@ bool TerminalSimulationClient::addTerminal(
     });
 }
 
+bool TerminalSimulationClient::addTerminals(
+    const QList<Terminal *> &terminals)
+{
+    // Execute command with serialization
+    return executeSerializedCommand([&]() {
+        // Validate input
+        if (terminals.isEmpty())
+        {
+            qCritical() << "Empty terminals list";
+            return false;
+        }
+
+        // Prepare parameters for bulk addition
+        QJsonObject params;
+        QJsonArray  terminalsArray;
+
+        // Convert each terminal to JSON
+        for (const Terminal *terminal : terminals)
+        {
+            if (!terminal)
+            {
+                qWarning()
+                    << "Skipping null terminal pointer";
+                continue;
+            }
+            terminalsArray.append(terminal->toJson());
+        }
+
+        // Skip if no valid terminals
+        if (terminalsArray.isEmpty())
+        {
+            qCritical() << "No valid terminals to add";
+            return false;
+        }
+
+        params["terminals"] = terminalsArray;
+
+        // Send command to server
+        return sendCommandAndWait("add_terminals", params,
+                                  {"terminalAdded"});
+    });
+}
+
 // Add terminal alias
 bool TerminalSimulationClient::addTerminalAlias(
     const QString &terminalId, const QString &alias)
@@ -246,6 +289,48 @@ bool TerminalSimulationClient::addRoute(
         // Send route addition command
         return sendCommandAndWait(
             "add_route", route->toJson(), {"routeAdded"});
+    });
+}
+
+bool TerminalSimulationClient::addRoutes(
+    const QList<PathSegment *> &routes)
+{
+    // Execute command with serialization
+    return executeSerializedCommand([&]() {
+        // Validate input
+        if (routes.isEmpty())
+        {
+            qCritical() << "Empty routes list";
+            return false;
+        }
+
+        // Prepare parameters for bulk addition
+        QJsonObject params;
+        QJsonArray  routesArray;
+
+        // Convert each route to JSON
+        for (const PathSegment *route : routes)
+        {
+            if (!route)
+            {
+                qWarning() << "Skipping null route pointer";
+                continue;
+            }
+            routesArray.append(route->toJson());
+        }
+
+        // Skip if no valid routes
+        if (routesArray.isEmpty())
+        {
+            qCritical() << "No valid routes to add";
+            return false;
+        }
+
+        params["routes"] = routesArray;
+
+        // Send command to server
+        return sendCommandAndWait("add_routes", params,
+                                  {"routeAdded"});
     });
 }
 

@@ -116,6 +116,14 @@ public:
     Q_INVOKABLE bool addTerminal(const Terminal *terminal);
 
     /**
+     * @brief Add multiple terminals at once
+     * @param terminals List of terminals to add
+     * @return True if the operation was successful
+     */
+    Q_INVOKABLE bool
+    addTerminals(const QList<Terminal *> &terminals);
+
+    /**
      * @brief Adds an alias to a terminal
      * @param terminalId Terminal identifier
      * @param alias Alias to associate
@@ -175,6 +183,14 @@ public:
      * Sends a route segment for server-side addition.
      */
     Q_INVOKABLE bool addRoute(const PathSegment *route);
+
+    /**
+     * @brief Add multiple routes at once
+     * @param routes List of routes to add
+     * @return True if the operation was successful
+     */
+    Q_INVOKABLE bool
+    addRoutes(const QList<PathSegment *> &routes);
 
     /**
      * @brief Updates route weight attributes
