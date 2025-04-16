@@ -238,66 +238,6 @@ void HeartbeatController::checkQueueConsumers()
     }
 }
 
-void HeartbeatController::checkQueuesDirectly()
-{
-    // Map of server IDs to their command queue names
-    QMap<QString, QString> serverToQueueMap;
-    serverToQueueMap["TerminalSim"] =
-        "CargoNetSim.CommandQueue.TerminalSim";
-    serverToQueueMap["NeTrainSim"] =
-        "CargoNetSim.CommandQueue.TrainSim";
-    serverToQueueMap["ShipNetSim"] =
-        "CargoNetSim.CommandQueue.ShipSim";
-    serverToQueueMap["INTEGRATION"] =
-        "CargoNetSim.CommandQueue.TruckSim";
-
-    // Check each queue directly
-    for (auto it = serverToQueueMap.begin();
-         it != serverToQueueMap.end(); ++it)
-    {
-        QString serverId  = it.key();
-        QString queueName = it.value();
-
-        try
-        {
-
-            // Create a temporary RabbitMQ handler to check
-            // the consumers
-            Backend::RabbitMQHandler tempHandler(
-                nullptr, "localhost", 5672,
-                "CargoNetSim.Exchange", queueName,
-                "CargoNetSim.ResponseQueue.Temp",
-                "CargoNetSim.Temp", QStringList());
-
-            bool connected =
-                tempHandler.establishConnection();
-
-            if (connected)
-            {
-                bool hasConsumers =
-                    tempHandler.hasCommandQueueConsumers();
-                updateServerStatus(serverId, hasConsumers);
-                activeConsumers[serverId] =
-                    hasConsumers; // Track active consumers
-                tempHandler.disconnect();
-            }
-            else
-            {
-                updateServerStatus(serverId, false);
-                activeConsumers[serverId] = false;
-            }
-        }
-        catch (const std::exception &e)
-        {
-            qWarning()
-                << "Exception during direct queue check for"
-                << serverId << ":" << e.what();
-            updateServerStatus(serverId, false);
-            activeConsumers[serverId] = false;
-        }
-    }
-}
-
 void HeartbeatController::updateServerStatus(
     const QString &serverId, bool connected)
 {
