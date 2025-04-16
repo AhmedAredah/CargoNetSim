@@ -57,50 +57,124 @@ void PathFindingWorker::process()
             return;
         }
 
-        // Keep track of terminals we've already added to
-        // avoid duplicates
-        QSet<QString> addedTerminalIds;
+        // Keep track of terminals we've already collected
+        // to avoid duplicates
+        QSet<QString>         terminalIds;
+        QList<TerminalItem *> terminalsToAdd;
 
-        // Add connections and their terminals to the server
-        // First process region scene connections
+        // First process region scene connections to collect
+        // terminals
         auto regionConnections =
             mainWindow->regionScene_
                 ->getItemsByType<ConnectionLine>();
-        for (auto connection : regionConnections)
-        {
-            if (!processConnectionAndTerminals(
-                    connection, terminalClient,
-                    addedTerminalIds, mainWindow))
-            {
-                emit error("Failed to add region "
-                           "connection to server.");
-                emit finished();
-                return;
-            }
-        }
 
-        // Then process global scene connections
+        // Then process global scene connections to collect
+        // terminals
         auto globalConnections =
             mainWindow->globalMapScene_
                 ->getItemsByType<ConnectionLine>();
-        for (auto connection : globalConnections)
-        {
-            if (!processConnectionAndTerminals(
-                    connection, terminalClient,
-                    addedTerminalIds, mainWindow))
-            {
-                emit error("Failed to add global "
-                           "connection to server.");
-                emit finished();
-                return;
-            }
-        }
 
         if (regionConnections.isEmpty()
             && globalConnections.isEmpty())
         {
-            emit error("No connections found in the region "
-                       "scene.");
+            emit error(
+                "No connections found in the scenes.");
+            emit finished();
+            return;
+        }
+
+        // Collect all terminals from connections
+        for (auto connection : regionConnections)
+        {
+            if (!collectTerminals(connection,
+                                  terminalsToAdd,
+                                  terminalIds))
+            {
+                emit error("Failed to process region "
+                           "connection terminals.");
+                emit finished();
+                return;
+            }
+        }
+
+        for (auto connection : globalConnections)
+        {
+            if (!collectTerminals(connection,
+                                  terminalsToAdd,
+                                  terminalIds))
+            {
+                emit error("Failed to process global "
+                           "connection terminals.");
+                emit finished();
+                return;
+            }
+        }
+
+        // Convert TerminalItems to Terminal objects for
+        // bulk addition
+        QList<Backend::Terminal *> terminals;
+        for (auto terminal : terminalsToAdd)
+        {
+            Backend::Terminal *terminalObj =
+                createTerminalObject(terminal);
+            terminals.append(terminalObj);
+        }
+
+        // Add all terminals at once
+        bool terminalsAdded =
+            terminalClient->addTerminals(terminals);
+
+        // Clean up Terminal objects
+        for (auto terminal : terminals)
+        {
+            delete terminal;
+        }
+
+        if (!terminalsAdded)
+        {
+            emit error(
+                "Failed to add terminals to server.");
+            emit finished();
+            return;
+        }
+
+        // Now collect all route segments for bulk addition
+        QList<Backend::PathSegment *> routes;
+        QSet<QString> processedConnectionIds;
+
+        // Process region connections to collect routes
+        if (!processConnections(regionConnections, routes,
+                                processedConnectionIds))
+        {
+            emit error("Failed to process region "
+                       "connection routes.");
+            emit finished();
+            return;
+        }
+
+        // Process global connections to collect routes
+        if (!processConnections(globalConnections, routes,
+                                processedConnectionIds))
+        {
+            emit error("Failed to process global "
+                       "connection routes.");
+            emit finished();
+            return;
+        }
+
+        // Add all routes at once
+        bool routesAdded =
+            terminalClient->addRoutes(routes);
+
+        // Clean up PathSegment objects
+        for (auto route : routes)
+        {
+            delete route;
+        }
+
+        if (!routesAdded)
+        {
+            emit error("Failed to add routes to server.");
             emit finished();
             return;
         }
@@ -149,16 +223,85 @@ void PathFindingWorker::process()
     emit finished();
 }
 
-bool PathFindingWorker::addTerminalToServer(
-    TerminalItem *terminal,
-    CargoNetSim::Backend::TerminalSimulationClient
-        *terminalClient)
+bool PathFindingWorker::collectTerminals(
+    ConnectionLine        *connection,
+    QList<TerminalItem *> &terminals,
+    QSet<QString>         &terminalIds)
+{
+    // Extract terminal items from the connection
+    TerminalItem *startTerminal = nullptr;
+    TerminalItem *endTerminal   = nullptr;
+    QString       startId, endId;
+
+    // Handle different item types (TerminalItem or
+    // GlobalTerminalItem)
+    if (auto terminal = dynamic_cast<TerminalItem *>(
+            connection->startItem()))
+    {
+        startTerminal = terminal;
+        startId       = terminal->getID();
+    }
+    else if (auto globalTerminal =
+                 dynamic_cast<GlobalTerminalItem *>(
+                     connection->startItem()))
+    {
+        if (globalTerminal->getLinkedTerminalItem())
+        {
+            startTerminal =
+                globalTerminal->getLinkedTerminalItem();
+            startId = startTerminal->getID();
+        }
+    }
+
+    if (auto terminal = dynamic_cast<TerminalItem *>(
+            connection->endItem()))
+    {
+        endTerminal = terminal;
+        endId       = terminal->getID();
+    }
+    else if (auto globalTerminal =
+                 dynamic_cast<GlobalTerminalItem *>(
+                     connection->endItem()))
+    {
+        if (globalTerminal->getLinkedTerminalItem())
+        {
+            endTerminal =
+                globalTerminal->getLinkedTerminalItem();
+            endId = endTerminal->getID();
+        }
+    }
+
+    if (startId.isEmpty() || endId.isEmpty()
+        || !startTerminal || !endTerminal)
+    {
+        return false;
+    }
+
+    // Add terminals to the list if they haven't been added
+    // yet
+    if (!terminalIds.contains(startId))
+    {
+        terminals.append(startTerminal);
+        terminalIds.insert(startId);
+    }
+
+    if (!terminalIds.contains(endId))
+    {
+        terminals.append(endTerminal);
+        terminalIds.insert(endId);
+    }
+
+    return true;
+}
+
+Backend::Terminal *PathFindingWorker::createTerminalObject(
+    TerminalItem *terminal)
 {
     auto    props      = terminal->getProperties();
     QString terminalId = terminal->getID();
     QString terminalName =
         terminal->getProperties().value("Name").toString();
-    QString regionName   = terminal->getRegion();
+    QString regionName = terminal->getRegion();
 
     // Create interfaces map for the Terminal object
     QMap<Backend::TerminalTypes::TerminalInterface,
@@ -341,197 +484,146 @@ bool PathFindingWorker::addTerminalToServer(
     }
 
     // Create Terminal object using the full constructor
-    Backend::Terminal *terminalObj = new Backend::Terminal(
+    return new Backend::Terminal(
         QStringList{terminalId}, // Include both ID and name
         terminalName, config, interfaces, regionName,
         nullptr);
-
-    // Add terminal to server
-    bool success = terminalClient->addTerminal(terminalObj);
-    delete terminalObj; // Client makes a copy
-
-    return success;
 }
 
-bool PathFindingWorker::processConnectionAndTerminals(
-    ConnectionLine *connection,
-    CargoNetSim::Backend::TerminalSimulationClient
-                  *terminalClient,
-    QSet<QString> &addedTerminalIds, MainWindow *mainWindow)
+bool PathFindingWorker::processConnections(
+    const QList<ConnectionLine *> &connections,
+    QList<Backend::PathSegment *> &routes,
+    QSet<QString>                 &processedConnectionIds)
 {
-    // Get the connection type
-    QString connType = connection->connectionType();
-    Backend::TransportationTypes::TransportationMode mode;
-
-    // Convert string connection type to numeric mode ID
-    if (connType == "Truck")
-        mode = Backend::TransportationTypes::
-            TransportationMode::Truck;
-    else if (connType == "Rail")
-        mode = Backend::TransportationTypes::
-            TransportationMode::Train;
-    else if (connType == "Ship")
-        mode = Backend::TransportationTypes::
-            TransportationMode::Ship;
-    else
+    for (auto connection : connections)
     {
-        mainWindow->showStatusBarError(
-            QString("Unknown connection type: %1")
-                .arg(connType),
-            3000);
-        return false;
-    }
-
-    // Extract terminal items and IDs from the connection
-    TerminalItem *startTerminal = nullptr;
-    TerminalItem *endTerminal   = nullptr;
-    QString       startId, endId;
-
-    // Handle different item types (TerminalItem or
-    // GlobalTerminalItem)
-    if (auto terminal = dynamic_cast<TerminalItem *>(
-            connection->startItem()))
-    {
-        startTerminal = terminal;
-        startId       = terminal->getID();
-    }
-    else if (auto globalTerminal =
-                 dynamic_cast<GlobalTerminalItem *>(
-                     connection->startItem()))
-    {
-        if (globalTerminal->getLinkedTerminalItem())
+        // Skip if we've already processed this connection
+        QString connectionId = connection->getID();
+        if (processedConnectionIds.contains(connectionId))
         {
-            startTerminal =
-                globalTerminal->getLinkedTerminalItem();
-            startId = startTerminal->getID();
+            continue;
         }
-    }
 
-    if (auto terminal = dynamic_cast<TerminalItem *>(
-            connection->endItem()))
-    {
-        endTerminal = terminal;
-        endId       = terminal->getID();
-    }
-    else if (auto globalTerminal =
-                 dynamic_cast<GlobalTerminalItem *>(
-                     connection->endItem()))
-    {
-        if (globalTerminal->getLinkedTerminalItem())
+        // Get the connection type
+        QString connType = connection->connectionType();
+        Backend::TransportationTypes::TransportationMode
+            mode;
+
+        // Convert string connection type to numeric mode ID
+        if (connType == "Truck")
+            mode = Backend::TransportationTypes::
+                TransportationMode::Truck;
+        else if (connType == "Rail")
+            mode = Backend::TransportationTypes::
+                TransportationMode::Train;
+        else if (connType == "Ship")
+            mode = Backend::TransportationTypes::
+                TransportationMode::Ship;
+        else
         {
-            endTerminal =
-                globalTerminal->getLinkedTerminalItem();
-            endId = endTerminal->getID();
-        }
-    }
-
-    if (startId.isEmpty() || endId.isEmpty()
-        || !startTerminal || !endTerminal)
-    {
-        mainWindow->showStatusBarError(
-            "Connection has invalid terminal endpoints",
-            3000);
-        return false;
-    }
-
-    // Add terminals to server if they haven't been added
-    // yet
-    if (!addedTerminalIds.contains(startId))
-    {
-        if (!addTerminalToServer(startTerminal,
-                                 terminalClient))
-        {
-            mainWindow->showStatusBarError(
-                QString(
-                    "Failed to add terminal %1 to server")
-                    .arg(startTerminal->getProperties()
-                             .value("Name")
-                             .toString()),
-                3000);
             return false;
         }
-        addedTerminalIds.insert(startId);
-    }
 
-    if (!addedTerminalIds.contains(endId))
-    {
-        if (!addTerminalToServer(endTerminal,
-                                 terminalClient))
+        // Extract terminal items and IDs from the
+        // connection
+        TerminalItem *startTerminal = nullptr;
+        TerminalItem *endTerminal   = nullptr;
+        QString       startId, endId;
+
+        // Handle different item types (TerminalItem or
+        // GlobalTerminalItem)
+        if (auto terminal = dynamic_cast<TerminalItem *>(
+                connection->startItem()))
         {
-            mainWindow->showStatusBarError(
-                QString(
-                    "Failed to add terminal %1 to server")
-                    .arg(endTerminal->getProperties()
-                             .value("Name")
-                             .toString()),
-                3000);
+            startTerminal = terminal;
+            startId       = terminal->getID();
+        }
+        else if (auto globalTerminal =
+                     dynamic_cast<GlobalTerminalItem *>(
+                         connection->startItem()))
+        {
+            if (globalTerminal->getLinkedTerminalItem())
+            {
+                startTerminal =
+                    globalTerminal->getLinkedTerminalItem();
+                startId = startTerminal->getID();
+            }
+        }
+
+        if (auto terminal = dynamic_cast<TerminalItem *>(
+                connection->endItem()))
+        {
+            endTerminal = terminal;
+            endId       = terminal->getID();
+        }
+        else if (auto globalTerminal =
+                     dynamic_cast<GlobalTerminalItem *>(
+                         connection->endItem()))
+        {
+            if (globalTerminal->getLinkedTerminalItem())
+            {
+                endTerminal =
+                    globalTerminal->getLinkedTerminalItem();
+                endId = endTerminal->getID();
+            }
+        }
+
+        if (startId.isEmpty() || endId.isEmpty()
+            || !startTerminal || !endTerminal)
+        {
             return false;
         }
-        addedTerminalIds.insert(endId);
-    }
 
-    // Create attributes for the connection
-    QJsonObject attributes;
-    auto        props = connection->getProperties();
+        // Create attributes for the connection
+        QJsonObject attributes;
+        auto        props = connection->getProperties();
 
-    // Convert properties to JSON attributes
-    if (props.contains("distance"))
-    {
-        attributes["distance"] =
-            props["distance"].toDouble();
-    }
+        // Convert properties to JSON attributes
+        if (props.contains("distance"))
+        {
+            attributes["distance"] =
+                props["distance"].toDouble();
+        }
 
-    if (props.contains("travelTime"))
-    {
-        attributes["travelTime"] =
-            props["travelTime"].toDouble();
-    }
+        if (props.contains("travelTime"))
+        {
+            attributes["travelTime"] =
+                props["travelTime"].toDouble();
+        }
 
-    if (props.contains("cost"))
-    {
-        attributes["cost"] = props["cost"].toDouble();
-    }
+        if (props.contains("cost"))
+        {
+            attributes["cost"] = props["cost"].toDouble();
+        }
 
-    if (props.contains("carbonEmissions"))
-    {
-        attributes["carbonEmissions"] =
-            props["carbonEmissions"].toDouble();
-    }
+        if (props.contains("carbonEmissions"))
+        {
+            attributes["carbonEmissions"] =
+                props["carbonEmissions"].toDouble();
+        }
 
-    if (props.contains("energyConsumption"))
-    {
-        attributes["energyConsumption"] =
-            props["energyConsumption"].toDouble();
-    }
+        if (props.contains("energyConsumption"))
+        {
+            attributes["energyConsumption"] =
+                props["energyConsumption"].toDouble();
+        }
 
-    if (props.contains("risk"))
-    {
-        attributes["risk"] = props["risk"].toDouble();
-    }
+        if (props.contains("risk"))
+        {
+            attributes["risk"] = props["risk"].toDouble();
+        }
 
-    // Create a unique ID for the route segment
-    QString segmentId = connection->getID();
+        // Create a PathSegment object for the route
+        Backend::PathSegment *segment =
+            new Backend::PathSegment(connectionId, startId,
+                                     endId, mode,
+                                     attributes, nullptr);
 
-    // Create and add the route
-    Backend::PathSegment *segment =
-        new Backend::PathSegment(segmentId, startId, endId,
-                                 mode, attributes, nullptr);
+        // Add to routes list
+        routes.append(segment);
 
-    bool success = terminalClient->addRoute(segment);
-    delete segment; // Client makes a copy
-
-    if (!success)
-    {
-        mainWindow->showStatusBarError(
-            QString("Failed to add route from %1 to %2")
-                .arg(startTerminal->getProperties()
-                         .value("Name")
-                         .toString())
-                .arg(endTerminal->getProperties()
-                         .value("Name")
-                         .toString()),
-            3000);
-        return false;
+        // Mark as processed
+        processedConnectionIds.insert(connectionId);
     }
 
     return true;
