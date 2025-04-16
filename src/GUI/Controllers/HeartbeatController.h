@@ -50,12 +50,6 @@ private:
     void updateServerStatus(const QString &serverId,
                             bool connected = false);
 
-    /**
-     * @brief Check all queues directly using RabbitMQ
-     * connections
-     */
-    void checkQueuesDirectly();
-
     MainWindow                            *mainWindow;
     QMap<QString, QMap<QString, QVariant>> serverIndicators;
     QMap<QString, bool>

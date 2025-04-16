@@ -1,4 +1,5 @@
 #include "VehicleController.h"
+#include <QRandomGenerator>
 
 namespace CargoNetSim
 {
@@ -331,6 +332,44 @@ void VehicleController::clear()
     qDeleteAll(m_trains);
     m_trains.clear();
     emit trainsCleared();
+}
+
+Ship *VehicleController::getRandomShip() const
+{
+    if (m_ships.isEmpty())
+    {
+        return nullptr;
+    }
+
+    // Get all ships as a vector
+    QVector<Ship *> ships = m_ships.values().toVector();
+
+    // Generate a random index
+    QRandomGenerator generator =
+        QRandomGenerator::securelySeeded();
+    int randomIndex = generator.bounded(ships.size());
+
+    // Return the ship at the random index
+    return ships.at(randomIndex);
+}
+
+Train *VehicleController::getRandomTrain() const
+{
+    if (m_trains.isEmpty())
+    {
+        return nullptr;
+    }
+
+    // Get all trains as a vector
+    QVector<Train *> trains = m_trains.values().toVector();
+
+    // Generate a random index
+    QRandomGenerator generator =
+        QRandomGenerator::securelySeeded();
+    int randomIndex = generator.bounded(trains.size());
+
+    // Return the train at the random index
+    return trains.at(randomIndex);
 }
 
 } // namespace Backend

@@ -432,17 +432,17 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         "Verify by\nSimulation");
     verifySimulationButton->setIcon(
         QIcon(IconFactory::createVerifySimulationIcon()));
-    // QObject::connect(verifySimulationButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                      NetworkController::validatePath(
-    //                          mainWindow,
-    //                          mainWindow->scene_,
-    //                          mainWindow->globalMapScene_
-    //                          );
-    //                  });
+    QObject::connect(
+        verifySimulationButton, &QToolButton::clicked,
+        [mainWindow]() {
+            UtilitiesFunctions::validateSelectedSimulation(
+                mainWindow);
+        });
     simulationToolsLayout->addWidget(
         verifySimulationButton);
+
+    mainWindow->validatePathsButton_ =
+        verifySimulationButton;
 
     // Store the simulation tools buttons
     mainWindow->simulationToolsButtons_ = {

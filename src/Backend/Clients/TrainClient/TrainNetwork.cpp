@@ -801,6 +801,20 @@ NeTrainSimNetwork::getLinks() const
     return m_links;
 }
 
+const NeTrainSimNode *
+NeTrainSimNetwork::getNodeByID(int id) const
+{
+    for (auto node : m_nodes)
+    {
+        if (node->getUserId() == id)
+        {
+            return node;
+        }
+    }
+
+    return nullptr;
+}
+
 void NeTrainSimNetwork::setNetworkName(QString networkName)
 {
     QMutexLocker locker(&m_mutex);

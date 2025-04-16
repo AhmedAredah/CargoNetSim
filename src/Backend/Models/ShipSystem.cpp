@@ -1,5 +1,6 @@
 // ship_system.cpp
 #include "ShipSystem.h"
+#include <QtCore/qpoint.h>
 
 namespace CargoNetSim
 {
@@ -1044,11 +1045,22 @@ void Ship::setUserId(const QString &shipId)
 }
 
 void Ship::setPathCoordinates(
-    const QVector<QVector<float>> &pathCoordinates)
+    const QVector<QPointF> &pathCoordinates)
 {
-    if (m_pathCoordinates != pathCoordinates)
+    // Convert QVector<QPointF> to our internal
+    // QVector<QVector<float>> format
+    QVector<QVector<float>> convertedPath;
+    for (const QPointF &point : pathCoordinates)
     {
-        m_pathCoordinates = pathCoordinates;
+        QVector<float> pointVector;
+        pointVector.append(point.x());
+        pointVector.append(point.y());
+        convertedPath.append(pointVector);
+    }
+
+    if (m_pathCoordinates != convertedPath)
+    {
+        m_pathCoordinates = convertedPath;
         emit pathChanged();
         emit shipChanged();
     }

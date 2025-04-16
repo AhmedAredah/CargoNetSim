@@ -100,6 +100,13 @@ public:
     getCommonNetworks(QList<MapPoint *> firstEntries,
                       QList<MapPoint *> secondEntries);
 
+    static QList<QPair<CargoNetSim::GUI::MapPoint *,
+                       CargoNetSim::GUI::MapPoint *>>
+    getCommonNetworksOfNetworkType(
+        QList<CargoNetSim::GUI::MapPoint *> firstEntries,
+        QList<CargoNetSim::GUI::MapPoint *> secondEntries,
+        NetworkType                         networkType);
+
     static double
     getApproximateGeoDistance(const QPointF &point1,
                               const QPointF &point2);

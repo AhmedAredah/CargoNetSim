@@ -195,6 +195,20 @@ public:
      */
     void clear();
 
+    /**
+     * @brief Get a random ship from the system.
+     * @return Pointer to a random ship, or nullptr if no
+     * ships exist.
+     */
+    Ship *getRandomShip() const;
+
+    /**
+     * @brief Get a random train from the system.
+     * @return Pointer to a random train, or nullptr if no
+     * trains exist.
+     */
+    Train *getRandomTrain() const;
+
 signals:
     /**
      * @brief Signal emitted when a ship is added.
