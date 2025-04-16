@@ -1253,8 +1253,8 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
 
     if (SP && EP && SP->getRegion() == EP->getRegion())
     {
-        auto line =
-            new ConnectionLine(SP, EP, connectionType);
+        auto line = new ConnectionLine(
+            SP, EP, connectionType, {}, SP->getRegion());
         mainWindow->regionScene_->addItemWithId(
             line, line->getID());
 
@@ -1298,8 +1298,8 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
             }
 
             // Create the connection line
-            auto line = new ConnectionLine(SPG, EPG,
-                                           connectionType);
+            auto line = new ConnectionLine(
+                SPG, EPG, connectionType, {}, "Global");
             mainWindow->globalMapView_->getScene()
                 ->addItemWithId(line, line->getID());
 
@@ -1644,6 +1644,14 @@ CargoNetSim::GUI::ViewController::createRegionCenter(
                 mainWindow, regionName);
             propertiesPanel->updateCoordinateFields(
                 newGeopoint);
+        });
+
+    QObject::connect(
+        centerPoint,
+        &RegionCenterPoint::sharedCoordinatesChanged,
+        [regionName, mainWindow](QPointF newGeoPoint) {
+            UtilitiesFunctions::updateGlobalMapForRegion(
+                mainWindow, regionName);
         });
 
     centerPoint->setPos(pos);
