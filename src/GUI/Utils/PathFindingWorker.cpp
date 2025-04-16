@@ -42,16 +42,14 @@ void PathFindingWorker::process()
 
         // Get the Origin and Destination terminals from the
         // region scene
-        auto originTerminals =
-            UtilitiesFunctions::getTerminalItems(
-                mainWindow->regionScene_, "*", "Origin");
-        auto destinationTerminals =
-            UtilitiesFunctions::getTerminalItems(
-                mainWindow->regionScene_, "*",
-                "Destination");
+        auto originTerminal =
+            UtilitiesFunctions::getOriginTerminal(
+                mainWindow);
+        auto destinationTerminal =
+            UtilitiesFunctions::getDestinationTerminal(
+                mainWindow);
 
-        if (originTerminals.isEmpty()
-            || destinationTerminals.isEmpty())
+        if (!originTerminal || !destinationTerminal)
         {
             emit error("No Origin or Destination terminals "
                        "found.");
@@ -108,9 +106,8 @@ void PathFindingWorker::process()
         }
 
         // Get terminal IDs for origin and destination
-        QString originId = originTerminals.first()->getID();
-        QString destId =
-            destinationTerminals.first()->getID();
+        QString originId = originTerminal->getID();
+        QString destId   = destinationTerminal->getID();
 
         // Check if origin and destination terminals exist
         // in the server
