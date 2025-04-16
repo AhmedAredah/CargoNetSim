@@ -669,7 +669,7 @@ public:
      * @param pathCoordinates New vector of coordinates.
      */
     void setPathCoordinates(
-        const QVector<QVector<float>> &pathCoordinates);
+        const QVector<QPointF> &pathCoordinates);
 
     /**
      * @brief Set the ship's maximum speed.
