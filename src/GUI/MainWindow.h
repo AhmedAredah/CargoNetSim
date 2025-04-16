@@ -42,6 +42,7 @@ class NetworkController;
 class ViewController;
 class UtilitiesFunctions;
 class PathFindingWorker;
+class SimulationValidationWorker;
 
 /**
  * @brief Main application window for CargoNetSim
@@ -62,6 +63,7 @@ class MainWindow : public CustomMainWindow
     friend class NetworkController;
     friend class UtilitiesFunctions;
     friend class PathFindingWorker;
+    friend class SimulationValidationWorker;
 
 public:
     /**
@@ -380,6 +382,7 @@ protected:
     QComboBox  *regionCombo_;
 
     QToolButton *findShortestPathButton_;
+    QToolButton *validatePathsButton_;
 
     // Button groups
     QList<QWidget *>     viewImportButtons_;

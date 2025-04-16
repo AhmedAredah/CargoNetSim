@@ -83,7 +83,7 @@ void SettingsWidget::initUI()
 
     timeValueOfMoneySpin =
         new QDoubleSpinBox(simulationGroup);
-    timeValueOfMoneySpin->setRange(0, 20.0);
+    timeValueOfMoneySpin->setRange(0, 1000.0);
     timeValueOfMoneySpin->setValue(4.5);
     timeValueOfMoneySpin->setSuffix(tr(" USD/h"));
     simLayout->addRow(tr("Time Value of Money:"),

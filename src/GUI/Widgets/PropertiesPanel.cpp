@@ -1200,7 +1200,7 @@ void PropertiesPanel::saveRegionCenterProperties(
     }
 
     // Update the item properties
-    // regionCenter->updateProperties(newProperties);
+    regionCenter->updateProperties(newProperties);
 
     // Emit the properties changed signal
     emit propertiesChanged(regionCenter, newProperties);
