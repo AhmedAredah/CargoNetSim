@@ -61,6 +61,8 @@ set(GUI_SOURCES
     Utils/IconCreator.h
     Utils/PathFindingWorker.h
     Utils/PathFindingWorker.cpp
+    Utils/SimulationValidationWorker.h
+    Utils/SimulationValidationWorker.cpp
     
     # Widgets
     Widgets/ColorPickerDialog.cpp
@@ -94,8 +96,7 @@ set(GUI_SOURCES
 )
 
 # Create the GUI library
-add_library(CargoNetSimGUI STATIC ${GUI_SOURCES}
-    )
+add_library(CargoNetSimGUI STATIC ${GUI_SOURCES})
 
 # Link against dependencies
 target_link_libraries(CargoNetSimGUI
