@@ -95,6 +95,8 @@ set(GUI_SOURCES
     Widgets/TrainManagerDialog.h
     Widgets/InterfaceSelectionDialog.h
     Widgets/InterfaceSelectionDialog.cpp
+    Widgets/CustomProgressBar.h
+    Widgets/CustomProgressBar.cpp
 )
 
 # Create the GUI library
