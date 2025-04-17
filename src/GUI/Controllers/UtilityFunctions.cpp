@@ -791,22 +791,28 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     thread->start();
 }
 
-void CargoNetSim::GUI::UtilitiesFunctions::
+bool CargoNetSim::GUI::UtilitiesFunctions::
     setConnectionProperties(
+        MainWindow                       *mainWindow,
         CargoNetSim::GUI::ConnectionLine *connection,
         const CargoNetSim::Backend::ShortestPathResult
                                       &pathResult,
         CargoNetSim::GUI::NetworkType &networkType)
 {
     // Early check
-    if (!connection)
+    if (!connection || !mainWindow)
     {
-        return;
+        return false;
     }
+
+    auto vehicleController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController();
 
     // Convert distance from meters to kilometers
     double totalDistanceKm =
         pathResult.totalLength / 1000.0;
+    double energyConsumptionMultiplier = 1.0;
 
     // Set basic properties
     connection->setProperty(
@@ -831,6 +837,19 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             modeProperties
                 .value("average_container_number", 400)
                 .toInt();
+        if (vehicleController->getAllTrains().isEmpty())
+        {
+            mainWindow->showStatusBarError(
+                "No trains available!", 3000);
+            return false;
+        }
+        else
+        {
+            energyConsumptionMultiplier =
+                vehicleController->getRandomTrain()
+                    ->getLocomotives()
+                    .count();
+        }
     }
     else if (networkType
              == CargoNetSim::GUI::NetworkType::Truck)
@@ -853,7 +872,6 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     }
 
     // Get containers from origin terminal
-    auto          mainWindow = MainWindow::getInstance();
     TerminalItem *originTerminal =
         getOriginTerminal(mainWindow);
     int containerCount = 0;
@@ -876,14 +894,14 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         mainWindow->showStatusBarError(
             "Origin is not present in the region view!",
             3000);
-        return;
+        return false;
     }
 
     if (containerCount == 0)
     {
         mainWindow->showStatusBarError(
             "No containers at origin!", 3000);
-        return;
+        return false;
     }
 
     // Calculate number of vehicles needed (at least 1)
@@ -896,6 +914,8 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         modeProperties.value("use_network", false).toBool();
 
     // Calculate travel time
+    // We do not have a network to estimate the changes of
+    // the ship speed
     if (networkType == NetworkType::Ship)
     {
         // For ships, always use the average speed directly
@@ -908,8 +928,12 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             "travelTime",
             QString::number(travelTime, 'f', 2));
     }
+    // For Trains and Trucks, we can rely on the networks to
+    // calculate the speed if the user wants that
     else
     {
+        // The user does not want us to use the network to
+        // estimate the vehicle speed / travel time
         if (!useNetwork)
         {
             double averageSpeed =
@@ -921,6 +945,8 @@ void CargoNetSim::GUI::UtilitiesFunctions::
                 "travelTime",
                 QString::number(travelTime, 'f', 2));
         }
+        // The user wants us to estimate the speed / travel
+        // time using the network limits
         else
         {
             // Use network-calculated travel time (convert
@@ -933,21 +959,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         }
     }
 
-    // Adjust risk factor based on number of vehicles
-    double baseFuelConsumption =
-        modeProperties
-            .value("average_fuel_consumption", 0.0)
-            .toDouble();
-    double baseRiskFactor =
-        modeProperties.value("risk_factor", 0.01)
-            .toDouble();
-
-    // Scale risk with vehicle count (more vehicles = more
-    // risk)
-    double scaledRisk = baseRiskFactor * vehiclesNeeded;
-    connection->setProperty("risk", scaledRisk);
-
-    // Calculate fuel type properties
+    // Get fuel properties
     QString fuelType =
         modeProperties.value("fuel_type", "").toString();
     // Set default fuel type based on network type if not
@@ -978,24 +990,49 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             .value(fuelType, 2.68)
             .toDouble();
 
-    // Calculate energy consumption for all vehicles
-    double totalFuelConsumption =
-        baseFuelConsumption * vehiclesNeeded;
-    double energyConsumption = totalFuelConsumption
-                               * totalDistanceKm
-                               * calorificValue;
+    // Base values per vehicle
+    double baseFuelConsumption =
+        modeProperties
+            .value("average_fuel_consumption", 0.0)
+            .toDouble();
+    double baseRiskFactor =
+        modeProperties.value("risk_factor", 0.01)
+            .toDouble();
+
+    // Calculate per-container values (share for each
+    // container) Adjust risk factor based on the ratio of
+    // containers to vehicle capacity
+    double containerToVehicleRatio =
+        (double)containerCount
+        / (vehiclesNeeded * containersPerVehicle);
+
+    // Calculate the risk per container
+    double riskPerContainer =
+        baseRiskFactor * containerToVehicleRatio;
+    connection->setProperty("risk", riskPerContainer);
+
+    // Calculate energy consumption per container
+    double fuelConsumptionPerContainer =
+        baseFuelConsumption * containerToVehicleRatio;
+    double energyConsumptionPerContainer =
+        fuelConsumptionPerContainer * totalDistanceKm
+        * calorificValue * energyConsumptionMultiplier;
     connection->setProperty(
         "energyConsumption",
-        QString::number(energyConsumption, 'f', 2));
+        QString::number(energyConsumptionPerContainer, 'f',
+                        2));
 
-    // Calculate carbon emissions (convert to tons) for all
-    // vehicles
-    double carbonEmissions = totalFuelConsumption
-                             * totalDistanceKm
-                             * carbonContent / 1000.0;
+    // Calculate carbon emissions (convert to tons) per
+    // container
+    double carbonEmissionsPerContainer =
+        fuelConsumptionPerContainer * totalDistanceKm
+        * carbonContent / 1000.0;
     connection->setProperty(
         "carbonEmissions",
-        QString::number(carbonEmissions, 'f', 2));
+        QString::number(carbonEmissionsPerContainer, 'f',
+                        2));
+
+    return true;
 }
 
 bool CargoNetSim::GUI::UtilitiesFunctions::
@@ -1010,7 +1047,7 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
 
     if (networkType == NetworkType::Train)
     {
-        networkTypeStr = "Train";
+        networkTypeStr = "Rail";
     }
     else if (networkType == NetworkType::Truck)
     {
@@ -1216,9 +1253,19 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
                         }
 
                         // Set connection properties
-                        setConnectionProperties(
-                            connection, result,
-                            networkType);
+                        bool propertiesSet =
+                            setConnectionProperties(
+                                mainWindow, connection,
+                                result, networkType);
+                        if (!propertiesSet)
+                        {
+                            CargoNetSim::GUI::
+                                ViewController::
+                                    removeConnectionLine(
+                                        mainWindow,
+                                        connection);
+                            return false;
+                        }
 
                         // We found a valid path, so break
                         // out of the inner loops

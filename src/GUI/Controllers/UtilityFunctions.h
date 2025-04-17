@@ -114,7 +114,8 @@ public:
     static void getTopShortestPaths(MainWindow *mainWindow,
                                     int         PathsCount);
 
-    static void setConnectionProperties(
+    static bool setConnectionProperties(
+        MainWindow                       *mainWindow,
         CargoNetSim::GUI::ConnectionLine *connection,
         const CargoNetSim::Backend::ShortestPathResult
                                       &pathResult,
