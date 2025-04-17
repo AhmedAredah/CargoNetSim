@@ -200,7 +200,7 @@ void PathFindingWorker::process()
                 originId, destId, pathsCount,
                 Backend::TransportationTypes::
                     TransportationMode::Any,
-                false);
+                true);
 
         if (paths.isEmpty())
         {
