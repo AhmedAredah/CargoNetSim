@@ -34,6 +34,12 @@ QString NetworkController::importNetwork(
     {
         networkNames = regionData->getTruckNetworks();
     }
+    else if (networkType == NetworkType::Ship)
+    {
+        throw std::runtime_error(
+            "Ship network import is not supported yet.");
+        return "";
+    }
 
     // Check for existing network - same check as in
     // NetworkManagerDialog
@@ -246,6 +252,11 @@ bool NetworkController::removeNetwork(
     {
         return regionData->removeTruckNetwork(networkName);
     }
+    else if (networkType == NetworkType::Ship)
+    {
+        throw std::runtime_error(
+            "Ship network removal is not supported yet.");
+    }
     return false;
 }
 
@@ -266,10 +277,16 @@ bool NetworkController::renameNetwork(
             networkExists =
                 regionData->trainNetworkExists(newName);
         }
-        else
+        else if (networkType == NetworkType::Truck)
         {
             networkExists =
                 regionData->truckNetworkExists(newName);
+        }
+        else if (networkType == NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network rename is not supported "
+                "yet.");
         }
 
         if (networkExists && newName != oldName)
@@ -298,6 +315,12 @@ bool NetworkController::renameNetwork(
                 success = regionData->renameTruckNetwork(
                     oldName, newName);
             }
+            else if (networkType == NetworkType::Ship)
+            {
+                throw std::runtime_error(
+                    "Ship network rename is not supported "
+                    "yet.");
+            }
         }
         catch (std::exception &e)
         {
@@ -319,11 +342,17 @@ bool NetworkController::renameNetwork(
                     mainWindow->networkManagerDock_
                         ->updateNetworkList("Rail Network");
                 }
-                else
+                else if (networkType == NetworkType::Truck)
                 {
                     mainWindow->networkManagerDock_
                         ->updateNetworkList(
                             "Truck Network");
+                }
+                else if (networkType == NetworkType::Ship)
+                {
+                    throw std::runtime_error(
+                        "Ship network rename is not "
+                        "supported yet.");
                 }
             }
         }
@@ -362,6 +391,12 @@ bool NetworkController::changeNetworkColor(
         {
             network =
                 regionData->getTruckNetwork(networkName);
+        }
+        else if (networkType == NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network color is not "
+                "supported yet.");
         }
 
         if (network)
@@ -424,6 +459,13 @@ CargoNetSim::Backend::ShortestPathResult CargoNetSim::GUI::
 
             return network->findShortestPath(startNodeId,
                                              endNodeId);
+        }
+        else if (networkType
+                 == CargoNetSim::GUI::NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network shortest path is not "
+                "supported yet.");
         }
     }
     catch (const std::exception &e)
