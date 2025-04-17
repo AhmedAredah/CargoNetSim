@@ -93,6 +93,8 @@ set(GUI_SOURCES
     Widgets/SplashScreen.h
     Widgets/TrainManagerDialog.cpp
     Widgets/TrainManagerDialog.h
+    Widgets/InterfaceSelectionDialog.h
+    Widgets/InterfaceSelectionDialog.cpp
 )
 
 # Create the GUI library
