@@ -91,6 +91,10 @@ public:
                          QGraphicsItem *endItem,
                          const QString &connectionType);
 
+    static bool removeConnectionLine(
+        MainWindow                       *mainWindow,
+        CargoNetSim::GUI::ConnectionLine *connectionLine);
+
     static void connectVisibleTerminalsByNetworks(
         MainWindow *mainWindow);
 

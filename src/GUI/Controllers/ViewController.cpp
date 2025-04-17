@@ -1244,9 +1244,9 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                                     endItem,
                                     connectionType))
     {
-        mainWindow->showStatusBarError(
-            "A connection of this type already exists.",
-            3000);
+        // mainWindow->showStatusBarError(
+        //     "A connection of this type already exists.",
+        //     3000);
         return nullptr;
     }
 
@@ -1299,11 +1299,12 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
                 return nullptr;
             }
 
-            // Create the connection line
+            // Create the connection line and add it to the
+            // scene
             auto line = new ConnectionLine(
                 SPG, EPG, connectionType, {}, "Global");
-            mainWindow->globalMapView_->getScene()
-                ->addItemWithId(line, line->getID());
+            mainWindow->globalMapScene_->addItemWithId(
+                line, line->getID());
 
             // Connect the clicked signal to update
             // properties panel
@@ -1327,10 +1328,111 @@ CargoNetSim::GUI::ViewController::createConnectionLine(
     return nullptr;
 }
 
+bool CargoNetSim::GUI::ViewController::removeConnectionLine(
+    MainWindow                       *mainWindow,
+    CargoNetSim::GUI::ConnectionLine *connectionLine)
+{
+    // Early validation check
+    if (!mainWindow || !connectionLine)
+    {
+        return false;
+    }
+
+    try
+    {
+        // Determine which scene the connection belongs to
+        GraphicsScene *scene = nullptr;
+
+        // Check if it's a connection in the region view
+        if (connectionLine->getRegion() != "Global")
+        {
+            scene = mainWindow->regionScene_;
+        }
+        else
+        {
+            // It's a global connection
+            scene = mainWindow->globalMapScene_;
+        }
+
+        if (!scene)
+        {
+            return false;
+        }
+
+        // Get the connection ID
+        QString connectionID = connectionLine->getID();
+
+        // Remove the item from the scene
+        if (scene->removeItemWithId<ConnectionLine>(
+                connectionID))
+        {
+            // Show success message
+            mainWindow->showStatusBarMessage(
+                QString("Connection removed successfully."),
+                2000);
+
+            // If the connection was being displayed in the
+            // properties panel, clear it
+            if (mainWindow->propertiesPanel_
+                    ->getCurrentItem()
+                == connectionLine)
+            {
+                UtilitiesFunctions::hidePropertiesPanel(
+                    mainWindow);
+            }
+
+            return true;
+        }
+        else
+        {
+            // If removal failed, show error
+            mainWindow->showStatusBarError(
+                QString("Failed to remove connection."),
+                3000);
+            return false;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        // Handle any exceptions that might occur
+        qWarning() << "Error removing connection line:"
+                   << e.what();
+        mainWindow->showStatusBarError(
+            QString("Error removing connection: %1")
+                .arg(e.what()),
+            3000);
+        return false;
+    }
+}
+
 void CargoNetSim::GUI::ViewController::
     connectVisibleTerminalsByNetworks(
         MainWindow *mainWindow)
 {
+    if (!mainWindow)
+    {
+        return;
+    }
+
+    auto vehicleController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController();
+
+    if (vehicleController->getAllShips().isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No ships available! Load ships first!", 3000);
+        return;
+    }
+    if (vehicleController->getAllTrains().isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No trains available! Load trains first!",
+            3000);
+        return;
+    }
+
+    // Check if the region view is active
     bool isGlobalView = mainWindow->isGlobalViewActive();
     GraphicsScene *currentScene =
         isGlobalView ? mainWindow->globalMapScene_
@@ -1363,7 +1465,16 @@ void CargoNetSim::GUI::ViewController::
         {
             mainWindow->showStatusBarError(
                 "No containers at origin!", 3000);
+            return; // Early return if no containers
         }
+    }
+    else
+    {
+        // Early return if container property doesn't
+        // convert
+        mainWindow->showStatusBarError(
+            "Invalid container format at origin!", 3000);
+        return;
     }
 
     if (isGlobalView)
@@ -1376,7 +1487,6 @@ void CargoNetSim::GUI::ViewController::
     }
     else
     {
-
         currentRegion = CargoNetSim::CargoNetSimController::
                             getInstance()
                                 .getRegionDataController()
@@ -1415,124 +1525,172 @@ void CargoNetSim::GUI::ViewController::
 
     // Connect terminals based on common networks in the
     // region view
-    for (auto &sourceTerminal : terminals)
+    bool errorOccurred = false;
+
+    if (!isGlobalView)
     {
-        for (auto &targetTerminal : terminals)
+        for (auto &sourceTerminal : terminals)
         {
-            if (sourceTerminal == targetTerminal)
+            for (auto &targetTerminal : terminals)
             {
-                continue;
-            }
-
-            QList<QString> commonModes =
-                UtilitiesFunctions::getCommonModes(
-                    sourceTerminal, targetTerminal);
-
-            // Process Rail connections in region view
-            if (commonModes.contains("Rail"))
-            {
-                bool isConnected = UtilitiesFunctions::
-                    processNetworkModeConnection(
-                        mainWindow, sourceTerminal,
-                        targetTerminal, NetworkType::Train);
-                if (isConnected)
+                if (sourceTerminal == targetTerminal)
                 {
-                    anyConnectionCreated = true;
+                    continue;
                 }
-            }
 
-            // Process Truck connections in region view
-            if (commonModes.contains("Truck")
-                && !isGlobalView)
-            {
-                bool isConnected = UtilitiesFunctions::
-                    processNetworkModeConnection(
-                        mainWindow, sourceTerminal,
-                        targetTerminal, NetworkType::Truck);
-                if (isConnected)
+                QList<QString> commonModes =
+                    UtilitiesFunctions::getCommonModes(
+                        sourceTerminal, targetTerminal);
+
+                // Process Rail connections in region view
+                if (commonModes.contains("Rail")
+                    && !CargoNetSim::CargoNetSimController::
+                            getInstance()
+                                .getRegionDataController()
+                                ->getCurrentRegionData()
+                                ->getTrainNetworks()
+                                .isEmpty())
                 {
-                    anyConnectionCreated = true;
+                    bool isConnected = UtilitiesFunctions::
+                        processNetworkModeConnection(
+                            mainWindow, sourceTerminal,
+                            targetTerminal, NetworkType::Train);
+                    if (isConnected)
+                    {
+                        anyConnectionCreated = true;
+                    }
                 }
-            }
 
-            // Process Ship connections (if needed)
-            if (commonModes.contains("Ship"))
-            {
-                // TODO
-                // Similar implementation as Rail and Truck
-                // Skip for now so we do not allow skips
-                // connections between ports in the same
-                // region
+                // Process Truck connections in region view
+                if (commonModes.contains("Truck")
+                    && !CargoNetSim::CargoNetSimController::
+                            getInstance()
+                                .getRegionDataController()
+                                ->getCurrentRegionData()
+                                ->getTruckNetworks()
+                                .isEmpty())
+                {
+                    bool isConnected = UtilitiesFunctions::
+                        processNetworkModeConnection(
+                            mainWindow, sourceTerminal,
+                            targetTerminal, NetworkType::Truck);
+                    if (isConnected)
+                    {
+                        anyConnectionCreated = true;
+                    }
+                }
+
+                // Process Ship connections (if needed)
+                if (commonModes.contains("Ship"))
+                {
+                    // TODO
+                    // Similar implementation as Rail and Truck
+                    // Skip for now so we do not allow skips
+                    // connections between ports in the same
+                    // region
+                }
             }
         }
-    }
-
-    // Connect terminals based on common networks in the
-    // global view
-    for (auto &sourceTerminal : globalTerminals)
+        }
+    else // Global view
     {
-        for (auto &targetTerminal : globalTerminals)
+        for (auto &sourceTerminal : globalTerminals)
         {
-            if (sourceTerminal == targetTerminal)
+            // Break outer loop if error occurred
+            if (errorOccurred)
+                break;
+
+            for (auto &targetTerminal : globalTerminals)
             {
-                continue;
-            }
+                // Break inner loop if error occurred
+                if (errorOccurred)
+                    break;
 
-            QList<QString> commonModes =
-                UtilitiesFunctions::getCommonModes(
-                    sourceTerminal, targetTerminal);
-            for (const QString &mode : commonModes)
-            {
-
-                QString connectionType;
-                if (mode.toLower() == "ship")
-                    connectionType = "Ship";
-
-                if (!connectionType.isEmpty())
+                if (sourceTerminal == targetTerminal)
                 {
-                    auto connectionLine = ViewController::
-                        createConnectionLine(
-                            mainWindow, sourceTerminal,
-                            targetTerminal, connectionType);
-                    if (connectionLine)
+                    continue;
+                }
+
+                QList<QString> commonModes =
+                    UtilitiesFunctions::getCommonModes(
+                        sourceTerminal, targetTerminal);
+
+                for (const QString &mode : commonModes)
+                {
+                    // Break mode loop if error occurred
+                    if (errorOccurred)
+                        break;
+
+                    QString connectionType;
+                    if (mode.toLower() == "ship")
+                        connectionType = "Ship";
+
+                    if (!connectionType.isEmpty())
                     {
-                        // Set connection properties
-                        // calculate them on the fly as if
-                        // there is a shortest path between
-                        // the terminals
-                        CargoNetSim::Backend::
-                            ShortestPathResult result;
+                        auto connectionLine =
+                            ViewController::
+                                createConnectionLine(
+                                    mainWindow,
+                                    sourceTerminal,
+                                    targetTerminal,
+                                    connectionType);
+                        if (connectionLine)
+                        {
+                            // Set connection properties
+                            // calculate them on the fly as
+                            // if there is a shortest path
+                            // between the terminals
+                            CargoNetSim::Backend::
+                                ShortestPathResult result;
 
-                        // Get geographic coordinates for
-                        // both terminals
-                        QPointF sourceGeoPoint =
-                            mainWindow->globalMapView_
-                                ->sceneToWGS84(
-                                    sourceTerminal->pos());
-                        QPointF targetGeoPoint =
-                            mainWindow->globalMapView_
-                                ->sceneToWGS84(
-                                    targetTerminal->pos());
+                            // Get geographic coordinates
+                            // for both terminals
+                            QPointF sourceGeoPoint =
+                                mainWindow->globalMapView_
+                                    ->sceneToWGS84(
+                                        sourceTerminal
+                                            ->pos());
+                            QPointF targetGeoPoint =
+                                mainWindow->globalMapView_
+                                    ->sceneToWGS84(
+                                        targetTerminal
+                                            ->pos());
 
-                        // Calculate the distance using
-                        // geographic coordinates
-                        result.totalLength =
-                            UtilitiesFunctions::
-                                getApproximateGeoDistance(
-                                    sourceGeoPoint,
-                                    targetGeoPoint);
-                        result.optimizationCriterion =
-                            "distance";
+                            // Calculate the distance using
+                            // geographic coordinates
+                            result.totalLength =
+                                UtilitiesFunctions::
+                                    getApproximateGeoDistance(
+                                        sourceGeoPoint,
+                                        targetGeoPoint);
+                            result.optimizationCriterion =
+                                "distance";
 
-                        NetworkType networkType =
-                            NetworkType::Ship;
+                            NetworkType networkType =
+                                NetworkType::Ship;
 
-                        UtilitiesFunctions::
-                            setConnectionProperties(
-                                connectionLine, result,
-                                networkType);
+                            bool propertiesSet =
+                                UtilitiesFunctions::
+                                    setConnectionProperties(
+                                        mainWindow,
+                                        connectionLine,
+                                        result,
+                                        networkType);
+                            if (!propertiesSet)
+                            {
+                                CargoNetSim::GUI::
+                                    ViewController::
+                                        removeConnectionLine(
+                                            mainWindow,
+                                            connectionLine);
+                                // Set flag to exit all
+                                // loops
+                                errorOccurred = true;
+                                break;
+                            }
 
-                        anyConnectionCreated = true;
+                            anyConnectionCreated = true;
+                        }
                     }
                 }
             }
