@@ -9,6 +9,7 @@
 #include "GUI/Utils/IconCreator.h"
 #include "GUI/Widgets/GraphicsScene.h"
 #include "GUI/Widgets/GraphicsView.h"
+#include "GUI/Widgets/InterfaceSelectionDialog.h"
 #include "GUI/Widgets/PropertiesPanel.h"
 #include "UtilityFunctions.h"
 #include <QtWidgets/qfiledialog.h>
@@ -161,13 +162,14 @@ void CargoNetSim::GUI::ViewController::updateGlobalMapItem(
         // Remove the global terminal item
         if (terminal->getGlobalTerminalItem())
         {
+            GlobalTerminalItem *item =
+                terminal->getGlobalTerminalItem();
+            terminal->setGlobalTerminalItem(
+                nullptr); // First detach from terminal
             main_window->globalMapView_->getScene()
                 ->removeItemWithId<GlobalTerminalItem>(
-                    terminal->getGlobalTerminalItem()
-                        ->getID());
-            terminal->getGlobalTerminalItem()
-                ->deleteLater();
-            terminal->setGlobalTerminalItem(nullptr);
+                    item->getID()); // Then remove from
+                                    // scene
         }
     }
 }
@@ -1483,11 +1485,7 @@ void CargoNetSim::GUI::ViewController::
             {
 
                 QString connectionType;
-                if (mode.toLower() == "rail")
-                    connectionType = "Rail";
-                else if (mode.toLower() == "truck")
-                    connectionType = "Truck";
-                else if (mode.toLower() == "ship")
+                if (mode.toLower() == "ship")
                     connectionType = "Ship";
 
                 if (!connectionType.isEmpty())
@@ -1498,6 +1496,41 @@ void CargoNetSim::GUI::ViewController::
                             targetTerminal, connectionType);
                     if (connectionLine)
                     {
+                        // Set connection properties
+                        // calculate them on the fly as if
+                        // there is a shortest path between
+                        // the terminals
+                        CargoNetSim::Backend::
+                            ShortestPathResult result;
+
+                        // Get geographic coordinates for
+                        // both terminals
+                        QPointF sourceGeoPoint =
+                            mainWindow->globalMapView_
+                                ->sceneToWGS84(
+                                    sourceTerminal->pos());
+                        QPointF targetGeoPoint =
+                            mainWindow->globalMapView_
+                                ->sceneToWGS84(
+                                    targetTerminal->pos());
+
+                        // Calculate the distance using
+                        // geographic coordinates
+                        result.totalLength =
+                            UtilitiesFunctions::
+                                getApproximateGeoDistance(
+                                    sourceGeoPoint,
+                                    targetGeoPoint);
+                        result.optimizationCriterion =
+                            "distance";
+
+                        NetworkType networkType =
+                            NetworkType::Ship;
+
+                        UtilitiesFunctions::
+                            setConnectionProperties(
+                                connectionLine, result,
+                                networkType);
 
                         anyConnectionCreated = true;
                     }
@@ -1535,6 +1568,10 @@ void CargoNetSim::GUI::ViewController::
     // Get all visible terminals in the current view
     QList<QGraphicsItem *> visibleTerminals;
 
+    // Track which terminal types are present in the current
+    // view
+    QSet<QString> visibleTerminalTypes;
+
     if (isGlobalView)
     {
         QList<GlobalTerminalItem *> allTerminals =
@@ -1546,6 +1583,15 @@ void CargoNetSim::GUI::ViewController::
             if (terminal && terminal->isVisible())
             {
                 visibleTerminals.append(terminal);
+
+                // Get the terminal type
+                TerminalItem *linkedTerminal =
+                    terminal->getLinkedTerminalItem();
+                if (linkedTerminal)
+                {
+                    visibleTerminalTypes.insert(
+                        linkedTerminal->getTerminalType());
+                }
             }
         }
     }
@@ -1566,6 +1612,8 @@ void CargoNetSim::GUI::ViewController::
                 && terminal->getRegion() == currentRegion)
             {
                 visibleTerminals.append(terminal);
+                visibleTerminalTypes.insert(
+                    terminal->getTerminalType());
             }
         }
     }
@@ -1579,7 +1627,87 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
 
-    // Connect terminals based on common interfaces
+    // Find all available common interfaces
+    QSet<QString> availableInterfaces;
+    for (int i = 0; i < visibleTerminals.size(); ++i)
+    {
+        for (int j = i + 1; j < visibleTerminals.size();
+             ++j)
+        {
+            // Get the source and target terminals
+            QGraphicsItem *sourceItem = visibleTerminals[i];
+            QGraphicsItem *targetItem = visibleTerminals[j];
+
+            // Get common modes
+            QList<QString> commonModes =
+                UtilitiesFunctions::getCommonModes(
+                    sourceItem, targetItem);
+            for (const QString &mode : commonModes)
+            {
+                if (!mode.isEmpty())
+                {
+                    availableInterfaces.insert(mode);
+                }
+            }
+        }
+    }
+
+    // If no common interfaces, show error and return
+    if (availableInterfaces.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No common interfaces found between terminals.",
+            3000);
+        return;
+    }
+
+    // Show interface selection dialog with only visible
+    // terminal types
+    InterfaceSelectionDialog dialog(availableInterfaces,
+                                    visibleTerminalTypes,
+                                    mainWindow);
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return; // User cancelled
+    }
+
+    // Get selected interfaces
+    QList<QString> selectedInterfaces =
+        dialog.getSelectedInterfaces();
+
+    // Get included terminal types
+    QMap<QString, bool> includedTerminalTypes =
+        dialog.getIncludedTerminalTypes();
+
+    if (selectedInterfaces.isEmpty())
+    {
+        mainWindow->showStatusBarMessage(
+            "No interfaces selected for connection.", 3000);
+        return;
+    }
+
+    // Check if any terminal types are selected
+    bool anyTerminalTypeSelected = false;
+    for (auto it = includedTerminalTypes.begin();
+         it != includedTerminalTypes.end(); ++it)
+    {
+        if (it.value())
+        {
+            anyTerminalTypeSelected = true;
+            break;
+        }
+    }
+
+    if (!anyTerminalTypeSelected)
+    {
+        mainWindow->showStatusBarMessage(
+            "No terminal types selected for connection.",
+            3000);
+        return;
+    }
+
+    // Connect terminals based on selected interfaces
+    int connectionsCreated = 0;
     for (int i = 0; i < visibleTerminals.size(); ++i)
     {
         for (int j = i + 1; j < visibleTerminals.size();
@@ -1599,24 +1727,102 @@ void CargoNetSim::GUI::ViewController::
                 UtilitiesFunctions::getCommonModes(
                     sourceItem, targetItem);
 
-            // Create connections for each common mode
-            for (const QString &mode : commonModes)
-            {
+            // Check if the terminal types are included
+            bool    skipConnection = false;
+            QString sourceType;
+            QString targetType;
 
-                if (!mode.isEmpty())
+            // Get source terminal type
+            if (TerminalItem *source =
+                    qgraphicsitem_cast<TerminalItem *>(
+                        sourceItem))
+            {
+                sourceType = source->getTerminalType();
+            }
+            else if (GlobalTerminalItem *globalSource =
+                         qgraphicsitem_cast<
+                             GlobalTerminalItem *>(
+                             sourceItem))
+            {
+                TerminalItem *linkedSource =
+                    globalSource->getLinkedTerminalItem();
+                if (linkedSource)
                 {
-                    createConnectionLine(mainWindow,
-                                         sourceItem,
-                                         targetItem, mode);
+                    sourceType =
+                        linkedSource->getTerminalType();
+                }
+            }
+
+            // Get target terminal type
+            if (TerminalItem *target =
+                    qgraphicsitem_cast<TerminalItem *>(
+                        targetItem))
+            {
+                targetType = target->getTerminalType();
+            }
+            else if (GlobalTerminalItem *globalTarget =
+                         qgraphicsitem_cast<
+                             GlobalTerminalItem *>(
+                             targetItem))
+            {
+                TerminalItem *linkedTarget =
+                    globalTarget->getLinkedTerminalItem();
+                if (linkedTarget)
+                {
+                    targetType =
+                        linkedTarget->getTerminalType();
+                }
+            }
+
+            // Skip if either terminal type is not included
+            if ((!sourceType.isEmpty()
+                 && !includedTerminalTypes.value(sourceType,
+                                                 true))
+                || (!targetType.isEmpty()
+                    && !includedTerminalTypes.value(
+                        targetType, true)))
+            {
+                skipConnection = true;
+            }
+
+            if (!skipConnection)
+            {
+                // Create connections for each selected
+                // common mode
+                for (const QString &mode : commonModes)
+                {
+                    if (!mode.isEmpty()
+                        && selectedInterfaces.contains(
+                            mode))
+                    {
+                        ConnectionLine *connection =
+                            ViewController::
+                                createConnectionLine(
+                                    mainWindow, sourceItem,
+                                    targetItem, mode);
+                        if (connection)
+                        {
+                            connectionsCreated++;
+                        }
+                    }
                 }
             }
         }
     }
 
-    mainWindow->showStatusBarMessage(
-        "Terminal connections created by common "
-        "interfaces.",
-        3000);
+    if (connectionsCreated > 0)
+    {
+        mainWindow->showStatusBarMessage(
+            QString("Created %1 terminal connections based "
+                    "on selected interfaces.")
+                .arg(connectionsCreated),
+            3000);
+    }
+    else
+    {
+        mainWindow->showStatusBarMessage(
+            "No new connections were created.", 3000);
+    }
 }
 
 CargoNetSim::GUI::RegionCenterPoint *
