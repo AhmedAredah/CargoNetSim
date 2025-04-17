@@ -304,6 +304,11 @@ QList<CargoNetSim::GUI::MapPoint *> CargoNetSim::GUI::
                 refNetworkName = network->getNetworkName();
             }
         }
+        else if (networkType == NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network is not supported yet.");
+        }
 
         // Skip if network type doesn't match
         if (!networkTypeMatches)
@@ -837,9 +842,14 @@ void CargoNetSim::GUI::UtilitiesFunctions::
                 .value("average_container_number", 1)
                 .toInt();
     }
-    else
+    else if (networkType == NetworkType::Ship)
     {
-        return;
+        modeProperties =
+            transportModes.value("ship").toMap();
+        containersPerVehicle =
+            modeProperties
+                .value("average_container_number", 10000)
+                .toInt();
     }
 
     // Get containers from origin terminal
@@ -861,6 +871,20 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             containerCount = containers.size();
         }
     }
+    else
+    {
+        mainWindow->showStatusBarError(
+            "Origin is not present in the region view!",
+            3000);
+        return;
+    }
+
+    if (containerCount == 0)
+    {
+        mainWindow->showStatusBarError(
+            "No containers at origin!", 3000);
+        return;
+    }
 
     // Calculate number of vehicles needed (at least 1)
     int vehiclesNeeded =
@@ -870,10 +894,13 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     // Calculate travel time
     bool useNetwork =
         modeProperties.value("use_network", false).toBool();
-    if (!useNetwork)
+
+    // Calculate travel time
+    if (networkType == NetworkType::Ship)
     {
+        // For ships, always use the average speed directly
         double averageSpeed =
-            modeProperties.value("average_speed", 60.0)
+            modeProperties.value("average_speed", 30.0)
                 .toDouble();
         double travelTime =
             totalDistanceKm / qMax(averageSpeed, 0.01);
@@ -883,13 +910,27 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     }
     else
     {
-        // Use network-calculated travel time (convert from
-        // seconds to hours)
-        double travelTimeHours =
-            pathResult.minTravelTime / (60.0 * 60.0);
-        connection->setProperty(
-            "travelTime",
-            QString::number(travelTimeHours, 'f', 2));
+        if (!useNetwork)
+        {
+            double averageSpeed =
+                modeProperties.value("average_speed", 60.0)
+                    .toDouble();
+            double travelTime =
+                totalDistanceKm / qMax(averageSpeed, 0.01);
+            connection->setProperty(
+                "travelTime",
+                QString::number(travelTime, 'f', 2));
+        }
+        else
+        {
+            // Use network-calculated travel time (convert
+            // from seconds to hours)
+            double travelTimeHours =
+                pathResult.minTravelTime / (60.0 * 60.0);
+            connection->setProperty(
+                "travelTime",
+                QString::number(travelTimeHours, 'f', 2));
+        }
     }
 
     // Adjust risk factor based on number of vehicles
@@ -908,14 +949,24 @@ void CargoNetSim::GUI::UtilitiesFunctions::
 
     // Calculate fuel type properties
     QString fuelType =
-        modeProperties
-            .value("fuel_type",
-                   networkType
-                           == CargoNetSim::GUI::
-                               NetworkType::Train
-                       ? "diesel_1"
-                       : "diesel_2")
-            .toString();
+        modeProperties.value("fuel_type", "").toString();
+    // Set default fuel type based on network type if not
+    // specified
+    if (fuelType.isEmpty())
+    {
+        if (networkType == NetworkType::Train)
+        {
+            fuelType = "diesel_1";
+        }
+        else if (networkType == NetworkType::Truck)
+        {
+            fuelType = "diesel_2";
+        }
+        else if (networkType == NetworkType::Ship)
+        {
+            fuelType = "HFO";
+        }
+    }
 
     // Get fuel properties
     double calorificValue =
@@ -955,10 +1006,20 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
         CargoNetSim::GUI::NetworkType   networkType)
 {
 
-    QString networkTypeStr =
-        networkType == CargoNetSim::GUI::NetworkType::Train
-            ? "Rail"
-            : "Truck";
+    QString networkTypeStr;
+
+    if (networkType == NetworkType::Train)
+    {
+        networkTypeStr = "Train";
+    }
+    else if (networkType == NetworkType::Truck)
+    {
+        networkTypeStr = "Truck";
+    }
+    else
+    {
+        return false;
+    }
 
     QString regionName;
 
