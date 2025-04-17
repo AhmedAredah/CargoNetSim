@@ -1853,9 +1853,8 @@ CargoNetSim::GUI::ViewController::createRegionCenter(
         });
 
     QObject::connect(
-        centerPoint,
-        &RegionCenterPoint::sharedCoordinatesChanged,
-        [regionName, mainWindow](QPointF newGeoPoint) {
+        centerPoint, &RegionCenterPoint::propertiesChanged,
+        [regionName, mainWindow]() {
             UtilitiesFunctions::updateGlobalMapForRegion(
                 mainWindow, regionName);
         });
