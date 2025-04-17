@@ -27,6 +27,8 @@
 #include <QVBoxLayout>
 #include <QVector>
 #include <QWidget>
+#include <QtCore/qcoreevent.h>
+#include <QtGui/qevent.h>
 
 namespace CargoNetSim
 {
@@ -445,6 +447,38 @@ private slots:
     void onExportAllButtonClicked();
 
 private:
+    class PathScrollEventFilter : public QObject
+    {
+    protected:
+        bool eventFilter(QObject *watched,
+                         QEvent  *event) override
+        {
+            if (event->type() == QEvent::Wheel)
+            {
+                // Convert to wheel event
+                QWheelEvent *wheelEvent =
+                    static_cast<QWheelEvent *>(event);
+
+                // Check if shift is pressed or if this is a
+                // horizontal wheel event
+                if (wheelEvent->modifiers()
+                        & Qt::ShiftModifier
+                    || wheelEvent->angleDelta().x() != 0)
+                {
+                    // Let the scroll area handle horizontal
+                    // scrolling
+                    return false;
+                }
+
+                // Ignore vertical wheel events to allow the
+                // table to scroll
+                return true;
+            }
+
+            return QObject::eventFilter(watched, event);
+        }
+    };
+
     /**
      * @brief Initializes the UI components
      *
@@ -567,6 +601,8 @@ private:
      * updates.
      */
     bool m_updatingUI;
+
+    PathScrollEventFilter *m_scrollEventFilter;
 };
 
 } // namespace GUI
