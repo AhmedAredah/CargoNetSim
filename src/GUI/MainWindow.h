@@ -16,8 +16,10 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QToolButton>
+#include <QtCore/qdatetime.h>
 
 #include "Controllers/HeartbeatController.h"
+#include "GUI/Widgets/CustomProgressBar.h"
 #include "Items/GlobalTerminalItem.h"
 #include "Items/RegionCenterPoint.h"
 #include "Items/TerminalItem.h"
@@ -133,6 +135,9 @@ public:
     void showStatusBarError(QString message,
                             int     timeout = 0);
 
+    void startStatusProgress();
+    void stopStatusProgress();
+
     /**
      * @brief Gets the connection type
      * @return The current connection type
@@ -205,6 +210,23 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private:
+    // Message queue system
+    struct StatusMessage
+    {
+        QString   message;
+        int       timeout;
+        QDateTime timestamp;
+        bool      isError;
+    };
+    QList<StatusMessage> messageQueue_;
+    bool                 isProcessingMessageQueue_;
+
+    // Progress bar for status messages
+    CustomProgressBar *statusProgressBar_;
+
+    // New private method to process the queue
+    void processMessageQueue();
+
     /**
      * @brief Private constructor for singleton pattern
      */

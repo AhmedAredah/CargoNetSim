@@ -543,13 +543,41 @@ void MainWindow::setupStatusBar()
     mainLayout->setContentsMargins(4, 0, 4, 0);
     mainLayout->setSpacing(6);
 
-    // 1. LEFT SECTION - Status messages (fixed width)
+    // 1. LEFT SECTION - Status messages and progress bar
+    QWidget     *leftContainer = new QWidget();
+    QVBoxLayout *leftLayout =
+        new QVBoxLayout(leftContainer);
+    leftLayout->setContentsMargins(0, 0, 0, 0);
+    leftLayout->setSpacing(2);
+
+    // Status label
     statusLabel_ = new QLabel("Ready.");
     statusLabel_->setMinimumWidth(300);
-    statusLabel_->setMaximumWidth(
-        400); // Limit the width to prevent pushing center
-              // section
-    mainLayout->addWidget(statusLabel_);
+    statusLabel_->setMaximumWidth(400);
+    leftLayout->addWidget(statusLabel_);
+
+    // Progress bar
+    statusProgressBar_ = new CustomProgressBar();
+    statusProgressBar_->setMaximumHeight(3); // Make it thin
+    statusProgressBar_->setTextVisible(false);
+    leftLayout->addWidget(statusProgressBar_);
+
+    // Connect progress bar signals
+    connect(statusProgressBar_,
+            &CustomProgressBar::progressStarted, this,
+            [this]() {
+                // You can add code here if needed when
+                // progress starts
+            });
+
+    connect(statusProgressBar_,
+            &CustomProgressBar::progressStopped, this,
+            [this]() {
+                // You can add code here if needed when
+                // progress stops
+            });
+
+    mainLayout->addWidget(leftContainer);
 
     // 2. CENTER SECTION - Server indicators
     // Use a separate layout to ensure proper centering
@@ -667,6 +695,15 @@ void MainWindow::setupStatusBar()
     statusBar->addWidget(
         mainContainer,
         1); // Stretch factor 1 makes it fill the bar
+
+    // Initialize message queue
+    isProcessingMessageQueue_ = false;
+
+    QTimer *messageQueueTimer_ = new QTimer(this);
+    connect(messageQueueTimer_, &QTimer::timeout, this,
+            &MainWindow::processMessageQueue);
+    messageQueueTimer_->start(
+        100); // Check queue every 100ms
 }
 
 void MainWindow::setConnectionType(
@@ -874,13 +911,107 @@ void MainWindow::updateAllCoordinates()
 void MainWindow::showStatusBarMessage(QString message,
                                       int     timeout)
 {
-    statusBar()->showMessage(message, timeout);
+    // Add message to queue
+    StatusMessage newMessage;
+    newMessage.message = message;
+    newMessage.timeout =
+        timeout > 0
+            ? timeout
+            : 5000; // Default 5 seconds if not specified
+    newMessage.timestamp = QDateTime::currentDateTime();
+    newMessage.isError   = false;
+
+    messageQueue_.append(newMessage);
 }
 
 void MainWindow::showStatusBarError(QString message,
                                     int     timeout)
 {
-    statusBar()->showMessage(message, timeout);
+    // Add error message to queue
+    StatusMessage newMessage;
+    newMessage.message = message;
+    newMessage.timeout =
+        timeout > 0
+            ? timeout
+            : 5000; // Default 5 seconds if not specified
+    newMessage.timestamp = QDateTime::currentDateTime();
+    newMessage.isError   = true;
+
+    messageQueue_.append(newMessage);
+}
+
+void MainWindow::startStatusProgress()
+{
+    // Only start if we have a progress bar
+    if (statusProgressBar_)
+    {
+        statusProgressBar_->setValue(0);
+        statusProgressBar_->start();
+    }
+}
+
+void MainWindow::stopStatusProgress()
+{
+    // Only stop if we have a progress bar
+    if (statusProgressBar_)
+    {
+        statusProgressBar_->stop();
+    }
+}
+
+void MainWindow::processMessageQueue()
+{
+    // If already processing a message, do nothing
+    if (isProcessingMessageQueue_)
+    {
+        return;
+    }
+
+    // If queue is empty, set default message
+    if (messageQueue_.isEmpty())
+    {
+        statusLabel_->setText("Ready.");
+        statusLabel_->setStyleSheet("");
+        return;
+    }
+
+    // Mark as processing
+    isProcessingMessageQueue_ = true;
+
+    // Get the next message
+    StatusMessage currentMessage = messageQueue_.first();
+
+    // Display the message
+    statusLabel_->setText(currentMessage.message);
+
+    // Apply styling if it's an error message
+    if (currentMessage.isError)
+    {
+        statusLabel_->setStyleSheet("color: red;");
+    }
+    else
+    {
+        statusLabel_->setStyleSheet("");
+    }
+
+    // Schedule message removal after timeout
+    QTimer::singleShot(
+        currentMessage.timeout, this, [this]() {
+            // Remove the message from the queue
+            if (!messageQueue_.isEmpty())
+            {
+                messageQueue_.removeFirst();
+            }
+
+            // Reset processing flag
+            isProcessingMessageQueue_ = false;
+
+            // Process next message immediately if available
+            if (!messageQueue_.isEmpty())
+            {
+                processMessageQueue();
+            }
+        });
 }
 
 void MainWindow::togglePanMode()
