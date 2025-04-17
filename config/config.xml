@@ -28,14 +28,14 @@
     </carbon_taxes>
     <transport_modes>
         <ship>
-            <average_container_number>5000</average_container_number>
+            <average_container_number>9000</average_container_number>
             <average_fuel_consumption>141.130000</average_fuel_consumption>
             <average_speed>20.000000</average_speed>
             <fuel_type>HFO</fuel_type>
             <risk_factor>0.025000</risk_factor>
         </ship>
         <rail>
-            <average_container_number>400</average_container_number>
+            <average_container_number>180</average_container_number>
             <average_fuel_consumption>0.940000</average_fuel_consumption>
             <average_speed>40.000000</average_speed>
             <fuel_type>diesel_1</fuel_type>
