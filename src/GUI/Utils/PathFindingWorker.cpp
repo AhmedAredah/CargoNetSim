@@ -28,6 +28,21 @@ void PathFindingWorker::process()
     auto &controller = CargoNetSimController::getInstance();
     auto  terminalClient = controller.getTerminalClient();
 
+    auto handler = terminalClient->getRabbitMQHandler();
+    if (!handler)
+    {
+        emit error("RabbitMQ handler not found");
+        emit finished();
+        return;
+    }
+    if (!handler->isConnected()
+        || !handler->hasCommandQueueConsumers())
+    {
+        emit error("TerminalSim is not connected");
+        emit finished();
+        return;
+    }
+
     try
     {
         // Reset the terminal server to start with a clean
