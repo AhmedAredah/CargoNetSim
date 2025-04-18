@@ -203,6 +203,20 @@ void MapLine::flash(bool evenIfHidden, const QColor &color)
         setVisible(true);
     }
 
+    // If a flash is already running, stop and clean it up
+    if (m_animation)
+    {
+        m_animation->stop();
+        m_animation->deleteLater();
+        m_animation = nullptr;
+    }
+
+    if (m_animObject)
+    {
+        m_animObject->deleteLater();
+        m_animObject = nullptr;
+    }
+
     // Create a path item as an overlay to follow the line
     QPainterPath path;
     QGraphicsView *view = scene()->views().isEmpty()

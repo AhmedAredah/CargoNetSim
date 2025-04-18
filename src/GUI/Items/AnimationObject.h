@@ -31,13 +31,15 @@ public:
 
     void setOpacity(qreal value)
     {
-        if (!qFuzzyCompare(_opacity, value))
-        {
-            _opacity = value;
-            if (_overlay)
-                _overlay->setOpacity(value);
-            emit opacityChanged(); // notify change
-        }
+        _opacity = value;
+
+        if (_overlay)
+            _overlay->setOpacity(value);
+
+        if (_rect)
+            _rect->setOpacity(value);
+
+        emit opacityChanged();
     }
 
     void setOverlay(QGraphicsPathItem *overlay)
