@@ -522,5 +522,52 @@ bool NetworkController::clearAllNetworks(
     return true;
 }
 
+QList<MapLine *> NetworkController::getShortestPathMapLines(
+    MainWindow *mainWindow, const QString &regionName,
+    const QString &networkName, NetworkType networkType,
+    int startNodeId, int endNodeId)
+{
+    QList<MapLine *> pathMapLines;
+    if (!mainWindow || !mainWindow->regionScene_)
+    {
+        return pathMapLines;
+    }
+
+    // Get shortest path result
+    Backend::ShortestPathResult result =
+        findNetworkShortestPath(regionName, networkName,
+                                networkType, startNodeId,
+                                endNodeId);
+
+    if (result.pathLinks.empty()
+        || result.pathLinks.size() < 1)
+    {
+        return pathMapLines;
+    }
+
+    // Get all map lines in the scene
+    QList<MapLine *> allMapLines =
+        mainWindow->regionScene_->getItemsByType<MapLine>();
+
+    // Find map lines that correspond to segments in the
+    // shortest path
+    for (int linkID : result.pathLinks)
+    {
+
+        for (MapLine *mapLine : allMapLines)
+        {
+            if (mapLine->getReferencedNetworkLinkID()
+                == QString::number(linkID))
+            {
+                pathMapLines.append(mapLine);
+                break; // Found the line for this segment,
+                       // move to next
+            }
+        }
+    }
+
+    return pathMapLines;
+}
+
 } // namespace GUI
 } // namespace CargoNetSim
