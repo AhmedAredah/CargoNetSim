@@ -767,6 +767,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             mainWindow->shortestPathTableDock_->show();
             mainWindow->findShortestPathButton_->setEnabled(
                 true);
+            mainWindow->stopStatusProgress();
         },
         Qt::QueuedConnection);
 
@@ -777,6 +778,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             mainWindow->showStatusBarError(message, 3000);
             mainWindow->findShortestPathButton_->setEnabled(
                 true);
+            mainWindow->stopStatusProgress();
         },
         Qt::QueuedConnection);
 
@@ -784,6 +786,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     worker->moveToThread(thread);
     // turn off the find shortest path button
     mainWindow->findShortestPathButton_->setEnabled(false);
+    mainWindow->startStatusProgress();
 
     // Start the thread
     mainWindow->showStatusBarMessage(
