@@ -551,6 +551,10 @@ private:
      */
     QPixmap createArrowPixmap(const QString &mode) const;
 
+    // Function to handle the showPath signal and flash path
+    // map lines
+    void flashPathMapLines(int pathId);
+
     /**
      * @brief Table widget for displaying path data
      *

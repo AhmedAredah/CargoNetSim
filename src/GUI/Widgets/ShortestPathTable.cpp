@@ -13,6 +13,8 @@
 
 #include "ShortestPathTable.h"
 #include "../Utils/IconCreator.h" // For icon creation utilities
+#include "GUI/Controllers/ViewController.h"
+#include "GUI/MainWindow.h"
 #include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -156,6 +158,19 @@ ShortestPathsTable::ShortestPathsTable(QWidget *parent)
 {
     // Set up the user interface components
     initUI();
+
+    MainWindow *mainWindow =
+        qobject_cast<MainWindow *>(parent);
+
+    if (mainWindow)
+    {
+
+        connect(this, &ShortestPathsTable::showPathSignal,
+                [this, mainWindow](int pathId) {
+                    ViewController::flashPathLines(
+                        mainWindow, pathId);
+                });
+    }
 }
 
 ShortestPathsTable::~ShortestPathsTable()
