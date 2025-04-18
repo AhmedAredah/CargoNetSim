@@ -1,4 +1,5 @@
 #pragma once
+#include "GUI/Items/AnimationObject.h"
 #include <QBrush>
 #include <QGraphicsObject>
 #include <QGraphicsRectItem>
@@ -12,47 +13,6 @@ namespace CargoNetSim
 {
 namespace GUI
 {
-/**
- * @brief Helper class for animations with proper property support
- * 
- * This class provides a way to animate opacity that is properly
- * registered with Qt's property system.
- */
-class AnimationObject : public QObject
-{
-    Q_OBJECT
-    Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity)
-
-public:
-    AnimationObject(QObject *parent = nullptr)
-        : QObject(parent)
-        , _opacity(1.0)
-        , _rect(nullptr)
-    {
-    }
-
-    qreal opacity() const
-    {
-        return _opacity;
-    }
-    
-    void setOpacity(qreal opacity)
-    {
-        _opacity = opacity;
-        if (_rect)
-            _rect->setOpacity(opacity);
-    }
-
-    void setRect(QGraphicsRectItem *rect)
-    {
-        _rect = rect;
-    }
-
-private:
-    qreal _opacity;
-    QGraphicsRectItem *_rect;
-};
-
 /**
  * @brief Base class for all graphics objects in the
  * CargoNetSim application

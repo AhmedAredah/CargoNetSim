@@ -43,6 +43,7 @@ set(GUI_SOURCES
     Items/TerminalItem.h
     Items/GraphicsObjectBase.h
     Items/GraphicsObjectBase.cpp
+    Items/AnimationObject.h
     
     # Serializers
     Serializers/ProjectSerializer.cpp

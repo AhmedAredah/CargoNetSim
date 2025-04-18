@@ -3,6 +3,7 @@
 #include "../Items/TerminalItem.h"
 #include "ConnectionLabel.h"
 
+#include "AnimationObject.h"
 #include <QGraphicsPathItem>
 #include <QGraphicsScene>
 #include <QGraphicsSceneHoverEvent>
@@ -567,37 +568,6 @@ void ConnectionLine::flash(bool          evenIfHidden,
         new QGraphicsPathItem(path, this);
     overlay->setPen(pen);
     overlay->setZValue(100);
-
-    // Create animation object to hold opacity value
-    class AnimationObject : public QObject
-    {
-    public:
-        AnimationObject(QObject *parent = nullptr)
-            : QObject(parent)
-            , _opacity(1.0)
-        {
-        }
-
-        qreal opacity() const
-        {
-            return _opacity;
-        }
-        void setOpacity(qreal value)
-        {
-            _opacity = value;
-            if (_overlay)
-                _overlay->setOpacity(value);
-        }
-
-        void setOverlay(QGraphicsPathItem *overlay)
-        {
-            _overlay = overlay;
-        }
-
-    private:
-        qreal              _opacity;
-        QGraphicsPathItem *_overlay = nullptr;
-    };
 
     // Store animation objects as instance variables
     m_animObject = new AnimationObject(this);
