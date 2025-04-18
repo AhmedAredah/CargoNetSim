@@ -1,5 +1,6 @@
 #include "GUI/Controllers/ViewController.h"
 #include "Backend/Controllers/CargoNetSimController.h"
+#include "GUI/Controllers/NetworkController.h"
 #include "GUI/Items/BackgroundPhotoItem.h"
 #include "GUI/Items/ConnectionLine.h"
 #include "GUI/Items/MapLine.h"
@@ -11,6 +12,7 @@
 #include "GUI/Widgets/GraphicsView.h"
 #include "GUI/Widgets/InterfaceSelectionDialog.h"
 #include "GUI/Widgets/PropertiesPanel.h"
+#include "GUI/Widgets/ShortestPathTable.h"
 #include "UtilityFunctions.h"
 #include <QtWidgets/qfiledialog.h>
 
@@ -303,6 +305,276 @@ bool CargoNetSim::GUI::ViewController::
         updateGlobalMapForRegion(mainWindow, currentRegion);
 
     return true;
+}
+
+void CargoNetSim::GUI::ViewController::flashPathLines(
+    MainWindow *mainWindow, int pathId)
+{
+    if (!mainWindow || !mainWindow->shortestPathTable_)
+    {
+        return;
+    }
+
+    // Get the selected path data
+    const ShortestPathsTable::PathData *pathData =
+        mainWindow->shortestPathTable_->getDataByPathId(
+            pathId);
+
+    if (!pathData || !pathData->path)
+    {
+        qWarning()
+            << "Cannot flash path: Invalid path data for ID"
+            << pathId;
+        return;
+    }
+
+    // Get segments and terminals from the path
+    const QList<Backend::PathSegment *> &segments =
+        pathData->path->getSegments();
+    const QList<Backend::Terminal *> &terminals =
+        pathData->path->getTerminalsInPath();
+
+    // Process each segment
+    for (int i = 0; i < segments.size(); ++i)
+    {
+        Backend::PathSegment *segment = segments[i];
+        if (!segment)
+            continue;
+
+        // Get terminals for this segment
+        Backend::Terminal *startTerminal = terminals[i];
+        Backend::Terminal *endTerminal   = terminals[i + 1];
+
+        if (!startTerminal || !endTerminal)
+        {
+            qWarning() << "Cannot flash path: Missing "
+                          "terminals for segment"
+                       << i;
+            continue;
+        }
+
+        // Find corresponding terminal items in the scene
+        TerminalItem *startTerminalItem = nullptr;
+        TerminalItem *endTerminalItem   = nullptr;
+
+        for (auto terminal :
+             mainWindow->regionScene_
+                 ->getItemsByType<TerminalItem>())
+        {
+            QString terminalName =
+                terminal->getProperty("Name").toString();
+
+            if (terminalName
+                == startTerminal->getDisplayName())
+            {
+                startTerminalItem = terminal;
+            }
+            else if (terminalName
+                     == endTerminal->getDisplayName())
+            {
+                endTerminalItem = terminal;
+            }
+
+            if (startTerminalItem && endTerminalItem)
+                break;
+        }
+
+        if (!startTerminalItem || !endTerminalItem)
+        {
+            qWarning() << "Cannot flash path: Unable to "
+                          "find terminal items for segment"
+                       << i;
+            continue;
+        }
+
+        // Get transportation mode
+        Backend::TransportationTypes::TransportationMode
+                mode = segment->getMode();
+        QString segmentModeText =
+            Backend::TransportationTypes::toString(mode);
+        segmentModeText = segmentModeText == "Train"
+                              ? "Rail"
+                              : segmentModeText;
+
+        // Find connection line between these terminals
+        ConnectionLine *connection = nullptr;
+        for (auto line :
+             mainWindow->regionScene_
+                 ->getItemsByType<ConnectionLine>())
+        {
+            if (((line->startItem() == startTerminalItem
+                  && line->endItem() == endTerminalItem)
+                 || (line->startItem() == endTerminalItem
+                     && line->endItem()
+                            == startTerminalItem))
+                && line->connectionType()
+                       == segmentModeText)
+            {
+                connection = line;
+                break;
+            }
+        }
+
+        if (!connection)
+        {
+            qWarning() << "Cannot flash path: Unable to "
+                          "find connection line for segment"
+                       << i;
+            continue;
+        }
+
+        // If ship mode, flash the connection line only
+        if (mode
+            == Backend::TransportationTypes::
+                TransportationMode::Ship)
+        {
+            // Flash the connection line
+            connection->flash(
+                true,
+                QColor(Qt::blue)); // Blue for ship
+        }
+        // For train or truck, flash the network map lines
+        else
+        {
+            // Determine network type
+            NetworkType networkType;
+            if (mode
+                == Backend::TransportationTypes::
+                    TransportationMode::Train)
+            {
+                networkType = NetworkType::Train;
+                // Choose dark gray for train
+                QColor flashColor = QColor(80, 80, 80);
+            }
+            else if (mode
+                     == Backend::TransportationTypes::
+                         TransportationMode::Truck)
+            {
+                networkType = NetworkType::Truck;
+                // Choose magenta for truck
+                QColor flashColor = QColor(255, 0, 255);
+            }
+
+            QString regionName =
+                startTerminalItem->getRegion();
+
+            // Get map points for both terminals
+            QList<MapPoint *> sourcePoints =
+                UtilitiesFunctions::getMapPointsOfTerminal(
+                    mainWindow->regionScene_,
+                    startTerminalItem, regionName, "*",
+                    networkType);
+
+            QList<MapPoint *> targetPoints =
+                UtilitiesFunctions::getMapPointsOfTerminal(
+                    mainWindow->regionScene_,
+                    endTerminalItem, regionName, "*",
+                    networkType);
+
+            // Find matching network points
+            auto networkPairs = UtilitiesFunctions::
+                getCommonNetworksOfNetworkType(sourcePoints,
+                                               targetPoints,
+                                               networkType);
+
+            if (networkPairs.isEmpty())
+            {
+                qWarning()
+                    << "Cannot flash path: No common "
+                       "network points found for segment"
+                    << i;
+                continue;
+            }
+
+            // Take the first pair
+            MapPoint *sourcePoint =
+                networkPairs.first().first;
+            MapPoint *targetPoint =
+                networkPairs.first().second;
+
+            if (!sourcePoint || !targetPoint)
+            {
+                qWarning() << "Cannot flash path: Invalid "
+                              "network points";
+                continue;
+            }
+
+            // Get network information
+            QObject *networkObj =
+                sourcePoint->getReferenceNetwork();
+            if (!networkObj)
+            {
+                qWarning() << "Cannot flash path: Unable "
+                              "to get reference network";
+                continue;
+            }
+
+            QString networkName;
+            if (networkType == NetworkType::Train)
+            {
+                auto trainNet = qobject_cast<
+                    Backend::TrainClient::NeTrainSimNetwork
+                        *>(networkObj);
+                if (trainNet)
+                    networkName =
+                        trainNet->getNetworkName();
+            }
+            else
+            {
+                auto truckNet = qobject_cast<
+                    Backend::TruckClient::IntegrationNetwork
+                        *>(networkObj);
+                if (truckNet)
+                    networkName =
+                        truckNet->getNetworkName();
+            }
+
+            if (networkName.isEmpty())
+            {
+                qWarning() << "Cannot flash path: Unable "
+                              "to determine network name";
+                continue;
+            }
+
+            // Get node IDs
+            QString sourceNodeId =
+                sourcePoint->getReferencedNetworkNodeID();
+            QString targetNodeId =
+                targetPoint->getReferencedNetworkNodeID();
+
+            bool validSourceID, validTargetID;
+            int  sourceID =
+                sourceNodeId.toInt(&validSourceID);
+            int targetID =
+                targetNodeId.toInt(&validTargetID);
+
+            if (!validSourceID || !validTargetID)
+            {
+                qWarning() << "Cannot flash path: Invalid "
+                              "node IDs";
+                continue;
+            }
+
+            // Get map lines for the shortest path
+            QList<MapLine *> pathMapLines =
+                NetworkController::getShortestPathMapLines(
+                    mainWindow, regionName, networkName,
+                    networkType, sourceID, targetID);
+
+            // Flash each map line with appropriate color
+            QColor flashColor =
+                (networkType == NetworkType::Train)
+                    ? QColor(Qt::darkGray) // Dark gray for
+                                           // train
+                    : QColor(
+                          Qt::magenta); // Magenta for truck
+
+            for (MapLine *mapLine : pathMapLines)
+            {
+                mapLine->flash(false, flashColor);
+            }
+        }
+    }
 }
 
 void CargoNetSim::GUI::ViewController::flashTerminalItems(
