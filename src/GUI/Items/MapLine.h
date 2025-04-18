@@ -119,7 +119,7 @@ public:
         return m_properties;
     }
 
-    QString getReferencedNetworkNodeID() const
+    QString getReferencedNetworkLinkID() const
     {
         return m_properties.value("Network_ID", "-1")
             .toString();
@@ -164,6 +164,11 @@ public:
     static MapLine *
     fromDict(const QMap<QString, QVariant> &data);
 
+    // Flash effect for highlighting
+    void flash(bool          evenIfHidden = false,
+               const QColor &color = QColor(255, 0, 0,
+                                            180)) override;
+
 signals:
     /**
      * @brief Signal emitted when the line is clicked
@@ -198,6 +203,10 @@ private:
     int                     baseWidth;
     QPen                    pen;
     QObject                *m_referenceNetwork;
+
+    // Animation
+    QObject            *m_animObject;
+    QPropertyAnimation *m_animation;
 };
 
 } // namespace GUI

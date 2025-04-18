@@ -21,6 +21,8 @@ MapLine::MapLine(const QString &referenceNetworkID,
     , m_properties(properties)
     , baseWidth(1)
     , pen(Qt::black, baseWidth)
+    , m_animObject(nullptr)
+    , m_animation(nullptr)
 {
     this->m_properties["Network_ID"] = referenceNetworkID;
     this->m_properties["region"]     = region;
@@ -191,6 +193,68 @@ MapLine::fromDict(const QMap<QString, QVariant> &data)
         data.value("z_value", 3).toDouble());
 
     return instance;
+}
+
+void MapLine::flash(bool evenIfHidden, const QColor &color)
+{
+    bool wasHidden = !isVisible();
+    if (evenIfHidden && wasHidden)
+    {
+        setVisible(true);
+    }
+
+    // Create a path item as an overlay to follow the line
+    QPainterPath path;
+    QGraphicsView *view = scene()->views().isEmpty()
+                              ? nullptr
+                              : scene()->views().first();
+
+    qreal viewScale = view ? view->transform().m11() : 1.0;
+    qreal penWidth  = qMax(5.0, 6.0 / viewScale);
+
+    QPen pen(color, penWidth, Qt::SolidLine);
+    path.moveTo(startPoint);
+    path.lineTo(endPoint);
+
+    QGraphicsPathItem *overlay =
+        new QGraphicsPathItem(path, this);
+    overlay->setPen(pen);
+    overlay->setZValue(100);
+
+    // Store animation objects as instance variables
+    m_animObject = new AnimationObject(this);
+    static_cast<AnimationObject *>(m_animObject)
+        ->setOverlay(overlay);
+
+    m_animation = new QPropertyAnimation(m_animObject,
+                                         "opacity", this);
+    m_animation->setDuration(1000);
+    m_animation->setLoopCount(3);
+    m_animation->setStartValue(1.0);
+    m_animation->setKeyValueAt(0.5, 0.0);
+    m_animation->setEndValue(1.0);
+
+    // Set up cleanup on animation completion
+    connect(m_animation, &QPropertyAnimation::finished,
+            [=]() {
+                if (overlay && scene())
+                {
+                    scene()->removeItem(overlay);
+                }
+
+                if (evenIfHidden && wasHidden)
+                {
+                    setVisible(false);
+                }
+
+                // Clean up
+                m_animation->deleteLater();
+                m_animation = nullptr;
+                m_animObject->deleteLater();
+                m_animObject = nullptr;
+            });
+
+    m_animation->start();
 }
 
 } // namespace GUI
