@@ -19,7 +19,7 @@
 #include <QtCore/qdatetime.h>
 
 #include "Controllers/HeartbeatController.h"
-#include "GUI/Widgets/CustomProgressBar.h"
+#include "GUI/Widgets/SpinnerWidget.h"
 #include "Items/GlobalTerminalItem.h"
 #include "Items/RegionCenterPoint.h"
 #include "Items/TerminalItem.h"
@@ -222,7 +222,7 @@ private:
     bool                 isProcessingMessageQueue_;
 
     // Progress bar for status messages
-    CustomProgressBar *statusProgressBar_;
+    SpinnerWidget *statusSpinner_;
 
     // New private method to process the queue
     void processMessageQueue();

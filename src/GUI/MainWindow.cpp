@@ -543,39 +543,29 @@ void MainWindow::setupStatusBar()
     mainLayout->setContentsMargins(4, 0, 4, 0);
     mainLayout->setSpacing(6);
 
-    // 1. LEFT SECTION - Status messages and progress bar
+    // 1. LEFT SECTION - Status messages and spinner
     QWidget     *leftContainer = new QWidget();
-    QVBoxLayout *leftLayout =
-        new QVBoxLayout(leftContainer);
+    QHBoxLayout *leftLayout =
+        new QHBoxLayout(leftContainer);
     leftLayout->setContentsMargins(0, 0, 0, 0);
-    leftLayout->setSpacing(2);
+    leftLayout->setSpacing(6);
 
-    // Status label
+    // Add the spinner BEFORE the status label
+    // Spinner widget
+    statusSpinner_ = new SpinnerWidget();
+    statusSpinner_->setFixedSize(16, 16);
+    // Get the application palette's text color
+    QColor textColor = palette().color(QPalette::Text);
+    // Use that color for the spinner
+    statusSpinner_->setSpinnerColor(textColor);
+    statusSpinner_->setVisibleWhenIdle(false);
+    leftLayout->addWidget(statusSpinner_);
+
+    // Status label - add AFTER the spinner
     statusLabel_ = new QLabel("Ready.");
     statusLabel_->setMinimumWidth(300);
     statusLabel_->setMaximumWidth(400);
     leftLayout->addWidget(statusLabel_);
-
-    // Progress bar
-    statusProgressBar_ = new CustomProgressBar();
-    statusProgressBar_->setMaximumHeight(3); // Make it thin
-    statusProgressBar_->setTextVisible(false);
-    leftLayout->addWidget(statusProgressBar_);
-
-    // Connect progress bar signals
-    connect(statusProgressBar_,
-            &CustomProgressBar::progressStarted, this,
-            [this]() {
-                // You can add code here if needed when
-                // progress starts
-            });
-
-    connect(statusProgressBar_,
-            &CustomProgressBar::progressStopped, this,
-            [this]() {
-                // You can add code here if needed when
-                // progress stops
-            });
 
     mainLayout->addWidget(leftContainer);
 
@@ -942,20 +932,19 @@ void MainWindow::showStatusBarError(QString message,
 
 void MainWindow::startStatusProgress()
 {
-    // Only start if we have a progress bar
-    if (statusProgressBar_)
+    // Only start if we have a spinner
+    if (statusSpinner_)
     {
-        statusProgressBar_->setValue(0);
-        statusProgressBar_->start();
+        statusSpinner_->startSpinning();
     }
 }
 
 void MainWindow::stopStatusProgress()
 {
-    // Only stop if we have a progress bar
-    if (statusProgressBar_)
+    // Only stop if we have a spinner
+    if (statusSpinner_)
     {
-        statusProgressBar_->stop();
+        statusSpinner_->stopSpinning();
     }
 }
 
