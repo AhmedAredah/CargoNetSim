@@ -6,12 +6,46 @@
 #include "GUI/Widgets/SplashScreen.h"
 #include <QApplication>
 #include <QElapsedTimer>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QMessageBox>
 #include <QObject>
 #include <QSplashScreen>
 #include <QThread>
 #include <QTimer>
 #include <signal.h>
+
 using namespace CargoNetSim::GUI;
+
+bool isAnotherInstanceRunning(const QString &serverName)
+{
+    QLocalSocket socket;
+    socket.connectToServer(serverName);
+    if (socket.waitForConnected(100))
+    {
+        return true; // Another instance is already running
+    }
+    return false; // No instance running
+}
+
+void createLocalServer(const QString &serverName)
+{
+    QLocalServer *localServer = new QLocalServer();
+    localServer->setSocketOptions(
+        QLocalServer::WorldAccessOption);
+    if (!localServer->listen(serverName))
+    {
+        QMessageBox errorBox;
+        errorBox.setIcon(QMessageBox::Critical);
+        errorBox.setWindowTitle("CargoNetSim Error");
+        errorBox.setText("Failed to create local server.");
+        errorBox.setDetailedText(
+            localServer->errorString());
+        errorBox.setStandardButtons(QMessageBox::Ok);
+        errorBox.exec();
+        exit(EXIT_FAILURE);
+    }
+}
 
 // Signal handler for SIGINT (Ctrl+C)
 void signalHandler(int signal)
@@ -42,6 +76,27 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
+
+    // Unique name for the local server
+    const QString uniqueServerName =
+        "CargoNetSimServerInstance";
+
+    // Check if another instance is already running
+    if (isAnotherInstanceRunning(uniqueServerName))
+    {
+        QMessageBox errorBox;
+        errorBox.setIcon(QMessageBox::Critical);
+        errorBox.setWindowTitle("CargoNetSim Error");
+        errorBox.setText("Another instance of CargoNetSim "
+                         "is already running.");
+        errorBox.setStandardButtons(QMessageBox::Ok);
+        errorBox.exec();
+        return EXIT_FAILURE;
+    }
+
+    // Create the local server to mark this instance as the
+    // active one
+    createLocalServer(uniqueServerName);
 
     // Track initialization time
     QElapsedTimer initTimer;

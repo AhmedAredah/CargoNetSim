@@ -58,6 +58,9 @@ void SimulationValidationWorker::process()
             return;
         }
 
+        // Extract results
+        extractResults();
+
         emit statusMessage(
             "Simulation validation completed successfully");
     }
@@ -426,9 +429,9 @@ bool SimulationValidationWorker::setupSimulationData(
                                 .arg(path->getPathId())
                                 .arg(i + 1);
                         Backend::Train *train =
-                            new Backend::Train(
-                                vehicleController
-                                    ->getRandomTrain());
+                            vehicleController
+                                ->getRandomTrain()
+                                ->copy();
                         train->setUserId(trainId);
 
                         // Set the train's path
@@ -465,9 +468,8 @@ bool SimulationValidationWorker::setupSimulationData(
                                             .takeFirst();
                                 ContainerCore::Container
                                     *containerCopy =
-                                        new ContainerCore::
-                                            Container(
-                                                *originalContainer);
+                                        originalContainer
+                                            ->copy();
 
                                 // Update the container's ID
                                 // to make it unique
@@ -624,9 +626,8 @@ bool SimulationValidationWorker::setupSimulationData(
                                             .takeFirst();
                                 ContainerCore::Container
                                     *containerCopy =
-                                        new ContainerCore::
-                                            Container(
-                                                *originalContainer);
+                                        originalContainer
+                                            ->copy();
 
                                 // Update the container's ID
                                 // to make it unique
@@ -750,9 +751,9 @@ bool SimulationValidationWorker::setupSimulationData(
                                 .arg(path->getPathId())
                                 .arg(i + 1);
                         Backend::Ship *ship =
-                            new Backend::Ship(
-                                vehicleController
-                                    ->getRandomShip());
+                            vehicleController
+                                ->getRandomShip()
+                                ->copy();
                         ship->setUserId(shipId);
 
                         // Set the ship's path
@@ -781,9 +782,8 @@ bool SimulationValidationWorker::setupSimulationData(
                                             .takeFirst();
                                 ContainerCore::Container
                                     *containerCopy =
-                                        new ContainerCore::
-                                            Container(
-                                                *originalContainer);
+                                        originalContainer
+                                            ->copy();
 
                                 // Update the container's ID
                                 // to make it unique
@@ -867,13 +867,47 @@ bool SimulationValidationWorker::runSimulations(
             .getTruckManager();
 
     // Reset the simulation servers
-    shipClient->resetServer();
-    trainClient->resetServer();
-    truckClient
-        ->resetServer(); // Reset all truck client instances
+    if (!shipSimulationData.isEmpty())
+    {
+        if (shipClient->getRabbitMQHandler()
+                ->hasCommandQueueConsumers())
+        {
+            shipClient->resetServer();
+            emit statusMessage(
+                "Setting up ship simulations...");
+        }
+        else
+        {
+            emit errorMessage(
+                "Ship client is not connected to RabbitMQ");
+            return false;
+        }
+    }
+    if (!trainSimulationData.isEmpty())
+    {
+        if (trainClient->getRabbitMQHandler()
+                ->hasCommandQueueConsumers())
+        {
+            trainClient->resetServer();
+            emit statusMessage(
+                "Setting up train simulations...");
+        }
+        else
+        {
+            emit errorMessage("Train client is not "
+                              "connected to RabbitMQ");
+            return false;
+        }
+    }
+    if (!truckSimulationData.isEmpty())
+    {
+        truckClient->resetServer(); // Reset all truck
+                                    // client instances
+        emit statusMessage(
+            "Setting up truck simulations...");
+    }
 
     // Setup train simulations
-    emit statusMessage("Setting up train simulations...");
     for (auto networkName : trainSimulationData.keys())
     {
         auto trainNetwork = trainNetworks[networkName];
@@ -888,8 +922,10 @@ bool SimulationValidationWorker::runSimulations(
         }
 
         // Define the simulator with all trains
-        trainClient->defineSimulator(trainNetwork, 1.0,
-                                     trains);
+        trainClient->defineSimulator(trainNetwork, 1.0);
+
+        trainClient->addTrainsToSimulator(
+            trainNetwork->getNetworkName(), trains);
 
         // Add containers to each train
         for (const auto &trainData : trainDataList)
@@ -905,7 +941,6 @@ bool SimulationValidationWorker::runSimulations(
     }
 
     // Setup ship simulations
-    emit statusMessage("Setting up ship simulations...");
     for (auto networkName : shipSimulationData.keys())
     {
         auto shipDataList = shipSimulationData[networkName];
@@ -943,7 +978,6 @@ bool SimulationValidationWorker::runSimulations(
     }
 
     // Setup truck simulations
-    emit statusMessage("Setting up truck simulations...");
     for (auto networkName : truckSimulationData.keys())
     {
         auto truckDataList =
@@ -1009,6 +1043,748 @@ bool SimulationValidationWorker::runSimulations(
     emit statusMessage(
         "All simulations started successfully!");
     return true;
+}
+
+void SimulationValidationWorker::extractResults()
+{
+    // Get the simulation clients and configuration
+    auto shipClient =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getShipClient();
+    auto trainClient =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getTrainClient();
+    auto truckClient =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getTruckManager();
+    auto configController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getConfigController();
+
+    // Get cost function weights and transport modes
+    QVariantMap costFunctionWeights =
+        configController->getCostFunctionWeights();
+    QVariantMap transportModes =
+        configController->getTransportModes();
+
+    // Get the selected paths for simulation validation
+    auto selectedPathsData = mainWindow->shortestPathTable_
+                                 ->getCheckedPathData();
+
+    emit statusMessage("Extracting simulation results...");
+
+    // Process each selected path
+    for (auto pathData : selectedPathsData)
+    {
+        Backend::Path *path = pathData->path;
+        if (!path)
+        {
+            continue;
+        }
+
+        // Storage for accumulated costs
+        double totalPathCost      = 0.0;
+        double totalEdgeCosts     = 0.0;
+        double totalTerminalCosts = 0.0;
+
+        // Get segments from the path
+        QList<Backend::PathSegment *> segments =
+            path->getSegments();
+        QList<Backend::Terminal *> terminals =
+            path->getTerminalsInPath();
+
+        // Get container count
+        int containerCount = getContainerCount(mainWindow);
+        if (containerCount == 0)
+        {
+            emit errorMessage(
+                "No containers at origin terminal!");
+            continue;
+        }
+
+        // Process edge costs for each segment
+        totalEdgeCosts = calculateEdgeCosts(
+            path, segments, costFunctionWeights,
+            transportModes, shipClient, trainClient,
+            truckClient, containerCount);
+
+        // Process terminal costs
+        totalTerminalCosts = calculateTerminalCosts(
+            segments, terminals, costFunctionWeights,
+            containerCount);
+
+        // Calculate total path cost
+        totalPathCost = totalEdgeCosts + totalTerminalCosts;
+
+        // Update the path with simulation costs
+        int pathId = path->getPathId();
+        mainWindow->shortestPathTable_
+            ->updateSimulationCosts(pathId, totalPathCost,
+                                    totalEdgeCosts,
+                                    totalTerminalCosts);
+
+        emit statusMessage(
+            QString("Path %1 simulation cost: $%2 (edges: "
+                    "$%3, terminals: $%4)")
+                .arg(pathId)
+                .arg(totalPathCost, 0, 'f', 2)
+                .arg(totalEdgeCosts, 0, 'f', 2)
+                .arg(totalTerminalCosts, 0, 'f', 2));
+    }
+
+    emit statusMessage(
+        "Results extraction completed successfully");
+}
+
+int SimulationValidationWorker::getContainerCount(
+    MainWindow *mainWindow)
+{
+    // Get containers from origin terminal to determine
+    // count
+    auto originTerminal =
+        UtilitiesFunctions::getOriginTerminal(mainWindow);
+    int containerCount = 0;
+
+    if (originTerminal)
+    {
+        QVariant containersVar =
+            originTerminal->getProperty("Containers");
+        if (containersVar.canConvert<
+                QList<ContainerCore::Container *>>())
+        {
+            QList<ContainerCore::Container *> containers =
+                containersVar.value<
+                    QList<ContainerCore::Container *>>();
+            containerCount = containers.size();
+        }
+    }
+
+    return containerCount;
+}
+
+double SimulationValidationWorker::calculateEdgeCosts(
+    Backend::Path                       *path,
+    const QList<Backend::PathSegment *> &segments,
+    const QVariantMap &costFunctionWeights,
+    const QVariantMap &transportModes,
+    Backend::ShipClient::ShipSimulationClient *shipClient,
+    Backend::TrainClient::TrainSimulationClient
+        *trainClient,
+    Backend::TruckClient::TruckSimulationManager
+        *truckClient,
+    int  containerCount)
+{
+    double totalEdgeCosts = 0.0;
+
+    // Process each segment in the path
+    for (auto segment : segments)
+    {
+        if (!segment)
+        {
+            continue;
+        }
+
+        QString startID = segment->getStart();
+        QString endID   = segment->getEnd();
+        Backend::TransportationTypes::TransportationMode
+            mode = segment->getMode();
+
+        // Get the mode-specific weights
+        QVariantMap modeWeights;
+        QString     modeKey =
+            QString::number(static_cast<int>(mode));
+        if (costFunctionWeights.contains(modeKey))
+        {
+            modeWeights =
+                costFunctionWeights[modeKey].toMap();
+        }
+        else
+        {
+            // Fallback to default weights
+            modeWeights =
+                costFunctionWeights["default"].toMap();
+        }
+
+        // Calculate costs based on mode
+        double segmentCost = 0.0;
+
+        if (mode
+            == Backend::TransportationTypes::
+                TransportationMode::Ship)
+        {
+            segmentCost = calculateShipSegmentCost(
+                path, shipClient, modeWeights,
+                transportModes, containerCount);
+        }
+        else if (mode
+                 == Backend::TransportationTypes::
+                     TransportationMode::Train)
+        {
+            segmentCost = calculateTrainSegmentCost(
+                path, trainClient, modeWeights,
+                transportModes, containerCount);
+        }
+        else if (mode
+                 == Backend::TransportationTypes::
+                     TransportationMode::Truck)
+        {
+            segmentCost = calculateTruckSegmentCost(
+                path, truckClient, modeWeights,
+                transportModes, containerCount);
+        }
+
+        // Add to total edge costs
+        totalEdgeCosts += segmentCost;
+    }
+
+    return totalEdgeCosts;
+}
+
+double SimulationValidationWorker::calculateShipSegmentCost(
+    Backend::Path                             *path,
+    Backend::ShipClient::ShipSimulationClient *shipClient,
+    const QVariantMap                         &modeWeights,
+    const QVariantMap &transportModes, int containerCount)
+{
+    // Extract ship simulation results
+    double travelTime        = 0.0;
+    double distance          = 0.0;
+    double carbonEmissions   = 0.0;
+    double energyConsumption = 0.0;
+    double risk              = 0.0;
+    int    shipCount         = 0;
+
+    // Get all ship states from the client
+    auto shipStates = shipClient->getAllShipsStates();
+
+    // Find ships for this path segment
+    for (auto networkName : shipStates.keys())
+    {
+        for (auto shipState : shipStates[networkName])
+        {
+            if (shipState)
+            {
+                // Check if this ship is part of our path
+                QString shipId = shipState->shipId();
+                if (shipId.startsWith(QString("%1_").arg(
+                        path->getPathId())))
+                {
+                    // Count this ship
+                    shipCount++;
+
+                    // Extract metrics
+                    travelTime += shipState->tripTime();
+                    distance +=
+                        shipState->travelledDistance();
+                    carbonEmissions +=
+                        shipState->carbonEmissions();
+                    energyConsumption +=
+                        shipState->energyConsumption();
+
+                    // Use risk factor from transportModes
+                    // config
+                    QVariantMap shipData =
+                        transportModes.value("ship")
+                            .toMap();
+                    risk +=
+                        shipData.value("risk_factor", 0.025)
+                            .toDouble();
+                }
+            }
+        }
+    }
+
+    // If no ships found, return 0 cost
+    if (shipCount == 0)
+    {
+        return 0.0;
+    }
+
+    // Calculate containers per ship
+    double containersPerShip =
+        (double)containerCount / shipCount;
+
+    // Get ship capacity from transport modes
+    QVariantMap shipData =
+        transportModes.value("ship").toMap();
+    int shipCapacity =
+        shipData.value("average_container_number", 10000)
+            .toInt();
+
+    // Calculate container-to-capacity ratio (how full is
+    // each ship)
+    double containerToCapacityRatio =
+        containersPerShip / shipCapacity;
+
+    // Adjust metrics by ratio
+    carbonEmissions *= containerToCapacityRatio;
+    energyConsumption *= containerToCapacityRatio;
+    risk *= containerToCapacityRatio;
+
+    // Apply weights to metrics
+    double segmentCost = 0.0;
+    segmentCost +=
+        travelTime * modeWeights["travelTime"].toDouble();
+    segmentCost +=
+        distance * modeWeights["distance"].toDouble();
+    segmentCost +=
+        carbonEmissions
+        * modeWeights["carbonEmissions"].toDouble();
+    segmentCost +=
+        energyConsumption
+        * modeWeights["energyConsumption"].toDouble();
+    segmentCost += risk * modeWeights["risk"].toDouble();
+
+    return segmentCost;
+}
+
+double
+SimulationValidationWorker::calculateTrainSegmentCost(
+    Backend::Path *path,
+    Backend::TrainClient::TrainSimulationClient
+                      *trainClient,
+    const QVariantMap &modeWeights,
+    const QVariantMap &transportModes, int containerCount)
+{
+    // Extract train simulation results
+    double travelTime        = 0.0;
+    double distance          = 0.0;
+    double carbonEmissions   = 0.0;
+    double energyConsumption = 0.0;
+    double risk              = 0.0;
+    int    trainCount        = 0;
+
+    // Get all train states from the client
+    auto trainStates = trainClient->getAllTrainsStates();
+
+    // Find trains for this path segment
+    for (auto networkName : trainStates.keys())
+    {
+        for (auto trainState : trainStates[networkName])
+        {
+            if (trainState)
+            {
+                // Check if this train is part of our path
+                QString trainId = trainState->m_trainUserId;
+                if (trainId.startsWith(QString("%1_").arg(
+                        path->getPathId())))
+                {
+                    // Count this train
+                    trainCount++;
+
+                    // Extract metrics
+                    travelTime += trainState->m_tripTime;
+                    distance +=
+                        trainState->m_travelledDistance;
+                    carbonEmissions +=
+                        trainState
+                            ->m_totalCarbonDioxideEmitted;
+                    energyConsumption +=
+                        trainState->m_totalEnergyConsumed;
+
+                    // Use risk factor from transportModes
+                    // config
+                    QVariantMap trainData =
+                        transportModes.value("rail")
+                            .toMap();
+                    risk += trainData
+                                .value("risk_factor", 0.006)
+                                .toDouble();
+                }
+            }
+        }
+    }
+
+    // If no trains found, return 0 cost
+    if (trainCount == 0)
+    {
+        return 0.0;
+    }
+
+    // Calculate containers per train
+    double containersPerTrain =
+        (double)containerCount / trainCount;
+
+    // Get train capacity from transport modes
+    QVariantMap trainData =
+        transportModes.value("rail").toMap();
+    int trainCapacity =
+        trainData.value("average_container_number", 400)
+            .toInt();
+
+    // Calculate container-to-capacity ratio (how full is
+    // each train)
+    double containerToCapacityRatio =
+        containersPerTrain / trainCapacity;
+
+    // Adjust metrics by ratio
+    carbonEmissions *= containerToCapacityRatio;
+    energyConsumption *= containerToCapacityRatio;
+    risk *= containerToCapacityRatio;
+
+    // Apply weights to metrics
+    double segmentCost = 0.0;
+    segmentCost += travelTime
+                   * modeWeights["travelTime"].toDouble()
+                   / 3600.0; // sec to hr
+    segmentCost += distance
+                   * modeWeights["distance"].toDouble()
+                   / 1000.0; // m to km
+    segmentCost +=
+        carbonEmissions
+        * modeWeights["carbonEmissions"].toDouble(); // kg
+    segmentCost += energyConsumption
+                   * modeWeights["energyConsumption"]
+                         .toDouble(); // kWh
+    segmentCost += risk * modeWeights["risk"].toDouble();
+
+    return segmentCost;
+}
+
+double
+SimulationValidationWorker::calculateTruckSegmentCost(
+    Backend::Path *path,
+    Backend::TruckClient::TruckSimulationManager
+                      *truckClient,
+    const QVariantMap &modeWeights,
+    const QVariantMap &transportModes, int containerCount)
+{
+    // Extract truck simulation results
+    double travelTime        = 0.0;
+    double distance          = 0.0;
+    double carbonEmissions   = 0.0;
+    double energyConsumption = 0.0;
+    double risk              = 0.0;
+    int    truckCount        = 0;
+
+    // Get truck simulation data - this would be implemented
+    // based on truck client API For now, we'll use a
+    // placeholder approach
+
+    // If you had actual truck simulation results, you would
+    // count them like this: for (auto networkName :
+    // truckClient->getNetworkNames())
+    // {
+    //     auto client =
+    //     truckClient->getClient(networkName); if (client)
+    //     {
+    //         auto results = client->getResults();
+    //         for (auto tripId : results.keys())
+    //         {
+    //             if
+    //             (tripId.startsWith(QString("%1_").arg(path->getPathId())))
+    //             {
+    //                 truckCount++;
+    //                 auto tripResult = results[tripId];
+    //                 travelTime += tripResult.travelTime;
+    //                 distance += tripResult.distance;
+    //                 carbonEmissions +=
+    //                 tripResult.carbonEmissions;
+    //                 energyConsumption +=
+    //                 tripResult.energyConsumption;
+    //             }
+    //         }
+    //     }
+    // }
+
+    // For now, estimate truck count based on container
+    // count and capacity
+    QVariantMap truckData =
+        transportModes.value("truck").toMap();
+    int truckCapacity =
+        truckData.value("average_container_number", 1)
+            .toInt();
+    truckCount = (containerCount + truckCapacity - 1)
+                 / truckCapacity; // Ceiling division
+
+    // Get truck risk factor
+    risk = truckData.value("risk_factor", 0.012).toDouble();
+
+    // Calculate container-to-capacity ratio (usually 1.0
+    // for trucks)
+    double containerToCapacityRatio = 1.0;
+    if (truckCount > 0)
+    {
+        double containersPerTruck =
+            (double)containerCount / truckCount;
+        containerToCapacityRatio =
+            containersPerTruck / truckCapacity;
+    }
+
+    // Adjust risk by container-to-capacity ratio
+    risk *= containerToCapacityRatio;
+
+    // Apply weights to metrics
+    double segmentCost = 0.0;
+    segmentCost +=
+        travelTime * modeWeights["travelTime"].toDouble();
+    segmentCost +=
+        distance * modeWeights["distance"].toDouble();
+    segmentCost +=
+        carbonEmissions
+        * modeWeights["carbonEmissions"].toDouble();
+    segmentCost +=
+        energyConsumption
+        * modeWeights["energyConsumption"].toDouble();
+    segmentCost += risk * modeWeights["risk"].toDouble();
+
+    return segmentCost;
+}
+
+double SimulationValidationWorker::calculateTerminalCosts(
+    const QList<Backend::PathSegment *> &segments,
+    const QList<Backend::Terminal *>    &terminals,
+    const QVariantMap &costFunctionWeights,
+    int                containerCount)
+{
+    double totalTerminalCosts = 0.0;
+
+    // Process terminal costs - only for intermediate
+    // terminals where mode changes Skip first (origin) and
+    // last (destination) terminals
+    for (int i = 1; i < terminals.size() - 1; i++)
+    {
+        // Check if this terminal represents a mode change
+        if (i > 0 && i < segments.size())
+        {
+            Backend::TransportationTypes::TransportationMode
+                prevMode = segments[i - 1]->getMode();
+            Backend::TransportationTypes::TransportationMode
+                nextMode = segments[i]->getMode();
+
+            // If modes are different, include terminal
+            // costs
+            if (prevMode != nextMode)
+            {
+                double terminalCost =
+                    calculateSingleTerminalCost(
+                        terminals[i], costFunctionWeights,
+                        containerCount);
+                totalTerminalCosts += terminalCost;
+            }
+        }
+    }
+
+    return totalTerminalCosts;
+}
+
+double
+SimulationValidationWorker::calculateSingleTerminalCost(
+    Backend::Terminal *terminal,
+    const QVariantMap &costFunctionWeights,
+    int                containerCount)
+{
+    if (!terminal)
+    {
+        return 0.0;
+    }
+
+    // Get terminal properties from the terminal object
+    QJsonObject config = terminal->getConfig();
+
+    // Get default weights
+    QVariantMap defaultWeights =
+        costFunctionWeights["default"].toMap();
+
+    // Process terminal costs - per container
+    double terminalDelayPerContainer = 0.0; // Hours
+    double terminalCostPerContainer  = 0.0; // Direct cost
+    bool   customsApplied            = false;
+
+    // Calculate dwell time
+    terminalDelayPerContainer =
+        calculateTerminalDwellTime(config);
+
+    // Calculate customs costs and delays
+    double customsDelay = 0.0;
+    double customsCost  = 0.0;
+    customsApplied      = calculateTerminalCustoms(
+        config, customsDelay, customsCost);
+
+    terminalDelayPerContainer += customsDelay;
+    terminalCostPerContainer += customsCost;
+
+    // Extract cost configuration
+    terminalCostPerContainer +=
+        calculateTerminalDirectCosts(config,
+                                     customsApplied);
+
+    // Calculate total terminal costs for all containers
+    double totalTerminalDelay =
+        terminalDelayPerContainer * containerCount;
+    double totalTerminalDirectCost =
+        terminalCostPerContainer * containerCount;
+
+    // Apply weights to get the final terminal cost
+    double terminalTotalCost =
+        (totalTerminalDelay
+         * defaultWeights["terminal_delay"].toDouble())
+        + (totalTerminalDirectCost
+           * defaultWeights["terminal_cost"].toDouble());
+
+    return terminalTotalCost;
+}
+
+double
+SimulationValidationWorker::calculateTerminalDwellTime(
+    const QJsonObject &config)
+{
+    double terminalDelay = 0.0;
+
+    // Extract dwell time configuration
+    if (config.contains("dwell_time"))
+    {
+        QJsonObject dwellTimeObj =
+            config["dwell_time"].toObject();
+        QString method =
+            dwellTimeObj["method"].toString("gamma");
+        QJsonObject paramsObj =
+            dwellTimeObj["parameters"].toObject();
+
+        // Convert JSON parameters to QVariantMap
+        QVariantMap dwellParams;
+        for (auto it = paramsObj.constBegin();
+             it != paramsObj.constEnd(); ++it)
+        {
+            dwellParams[it.key()] = it.value().toDouble();
+        }
+
+        // Use the mean/expected value for each distribution
+        if (method.compare("gamma", Qt::CaseInsensitive)
+            == 0)
+        {
+            double shape =
+                dwellParams.value("shape", 2.0).toDouble();
+            double scale =
+                dwellParams.value("scale", 24.0 * 3600.0)
+                    .toDouble();
+            terminalDelay =
+                shape * scale
+                / 3600.0; // Convert seconds to hours
+        }
+        else if (method.compare("exponential",
+                                Qt::CaseInsensitive)
+                 == 0)
+        {
+            double scale =
+                dwellParams
+                    .value("scale", 2.0 * 24.0 * 3600.0)
+                    .toDouble();
+            terminalDelay =
+                scale / 3600.0; // Convert seconds to hours
+        }
+        else if (method.compare("normal",
+                                Qt::CaseInsensitive)
+                 == 0)
+        {
+            double mean =
+                dwellParams
+                    .value("mean", 2.0 * 24.0 * 3600.0)
+                    .toDouble();
+            terminalDelay =
+                mean / 3600.0; // Convert seconds to hours
+        }
+        else if (method.compare("lognormal",
+                                Qt::CaseInsensitive)
+                 == 0)
+        {
+            double mean =
+                dwellParams
+                    .value("mean",
+                           std::log(2.0 * 24.0 * 3600.0))
+                    .toDouble();
+            double sigma =
+                dwellParams.value("sigma", 0.25).toDouble();
+            terminalDelay =
+                std::exp(mean + sigma * sigma / 2.0)
+                / 3600.0; // Convert seconds to hours
+        }
+        else
+        {
+            // Default to gamma distribution's expected
+            // value
+            double shape = 2.0;
+            double scale = 24.0 * 3600.0;
+            terminalDelay =
+                shape * scale
+                / 3600.0; // Convert seconds to hours
+        }
+    }
+
+    return terminalDelay;
+}
+
+bool SimulationValidationWorker::calculateTerminalCustoms(
+    const QJsonObject &config, double &customsDelay,
+    double &customsCost)
+{
+    bool customsApplied = false;
+
+    // Extract customs processing parameters
+    if (config.contains("customs"))
+    {
+        QJsonObject customsObj =
+            config["customs"].toObject();
+
+        double probability =
+            customsObj["probability"].toDouble(0.0);
+        double delayMean =
+            customsObj["delay_mean"].toDouble(0.0);
+
+        // Apply expected customs delay (probability * mean
+        // delay)
+        if (probability > 0.0 && delayMean > 0.0)
+        {
+            customsDelay   = probability * delayMean;
+            customsApplied = true;
+        }
+    }
+
+    return customsApplied;
+}
+
+double
+SimulationValidationWorker::calculateTerminalDirectCosts(
+    const QJsonObject &config, bool customsApplied)
+{
+    double terminalCost = 0.0;
+
+    // Extract cost configuration
+    if (config.contains("cost"))
+    {
+        QJsonObject costObj = config["cost"].toObject();
+
+        // Add fixed cost
+        if (costObj.contains("fixed_fees"))
+        {
+            terminalCost +=
+                costObj["fixed_fees"].toDouble(0.0);
+        }
+
+        // Add customs cost if applicable based on
+        // probability
+        if (customsApplied
+            && costObj.contains("customs_fees"))
+        {
+            terminalCost +=
+                costObj["customs_fees"].toDouble(0.0);
+        }
+
+        // Risk factor calculation would require container
+        // value For simplicity, we'll use a nominal
+        // container value of $1
+        if (costObj.contains("risk_factor"))
+        {
+            double riskFactor =
+                costObj["risk_factor"].toDouble(0.0);
+            double nominalContainerValue =
+                1.0; // Placeholder value
+            terminalCost +=
+                nominalContainerValue * riskFactor;
+        }
+    }
+
+    return terminalCost;
 }
 
 } // namespace GUI

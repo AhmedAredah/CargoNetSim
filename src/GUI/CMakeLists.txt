@@ -43,6 +43,7 @@ set(GUI_SOURCES
     Items/TerminalItem.h
     Items/GraphicsObjectBase.h
     Items/GraphicsObjectBase.cpp
+    Items/AnimationObject.h
     
     # Serializers
     Serializers/ProjectSerializer.cpp
@@ -93,6 +94,12 @@ set(GUI_SOURCES
     Widgets/SplashScreen.h
     Widgets/TrainManagerDialog.cpp
     Widgets/TrainManagerDialog.h
+    Widgets/InterfaceSelectionDialog.h
+    Widgets/InterfaceSelectionDialog.cpp
+    Widgets/SpinnerWidget.h
+    Widgets/SpinnerWidget.cpp
+    Widgets/PathComparisonDialog.h
+    Widgets/PathComparisonDialog.cpp
 )
 
 # Create the GUI library

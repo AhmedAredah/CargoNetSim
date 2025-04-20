@@ -93,6 +93,21 @@ public:
     Q_INVOKABLE bool resetServer();
 
     /**
+     * @brief Sets cost function parameters for path finding
+     * @param parameters Cost parameters as a QVariantMap
+     * @return True if parameters were successfully set
+     *
+     * Updates the cost weights used by the graph for path
+     * finding operations. Must include entries for default
+     * and all transportation modes (Ship, Train, Truck)
+     * with appropriate weight attributes (cost,
+     * travellTime, distance, carbonEmissions, risk,
+     * energyConsumption, terminal_delay, terminal_cost).
+     */
+    Q_INVOKABLE bool setCostFunctionParameters(
+        const QVariantMap &parameters);
+
+    /**
      * @brief Initializes client in its thread
      * @param simulationTime Simulation time object
      * @param logger Optional logger, defaults to nullptr
@@ -102,7 +117,8 @@ public:
      * heartbeat.
      */
     void initializeClient(
-        SimulationTime  *simulationTime,
+        SimulationTime           *simulationTime,
+        TerminalSimulationClient *terminalClient = nullptr,
         LoggerInterface *logger = nullptr) override;
 
     // Terminal Management
@@ -114,6 +130,14 @@ public:
      * Sends terminal data for server-side addition.
      */
     Q_INVOKABLE bool addTerminal(const Terminal *terminal);
+
+    /**
+     * @brief Add multiple terminals at once
+     * @param terminals List of terminals to add
+     * @return True if the operation was successful
+     */
+    Q_INVOKABLE bool
+    addTerminals(const QList<Terminal *> &terminals);
 
     /**
      * @brief Adds an alias to a terminal
@@ -175,6 +199,14 @@ public:
      * Sends a route segment for server-side addition.
      */
     Q_INVOKABLE bool addRoute(const PathSegment *route);
+
+    /**
+     * @brief Add multiple routes at once
+     * @param routes List of routes to add
+     * @return True if the operation was successful
+     */
+    Q_INVOKABLE bool
+    addRoutes(const QList<PathSegment *> &routes);
 
     /**
      * @brief Updates route weight attributes
@@ -265,6 +297,19 @@ public:
     addContainer(const QString                  &terminalId,
                  const ContainerCore::Container *container,
                  double addTime = -1.0);
+
+    /**
+     * @brief Adds multiple containers to a terminal
+     * @param terminalId Terminal identifier
+     * @param containers QString of Json of the containers
+     * @param addTime Addition time, default -1.0
+     * @return True if addition succeeds
+     *
+     * Adds multiple containers to the terminal.
+     */
+    Q_INVOKABLE bool
+    addContainers(const QString &terminalId,
+                  QString &containers, double addTime);
 
     /**
      * @brief Adds multiple containers to a terminal
@@ -438,10 +483,22 @@ private:
     void onTerminalAdded(const QJsonObject &message);
 
     /**
+     * @brief Handles terminals added event
+     * @param message Event data from server
+     */
+    void onTerminalsAdded(const QJsonObject &message);
+
+    /**
      * @brief Handles route added event
      * @param message Event data from server
      */
     void onRouteAdded(const QJsonObject &message);
+
+    /**
+     * @brief Handles routes added event
+     * @param message Event data from server
+     */
+    void onRoutesAdded(const QJsonObject &message);
 
     /**
      * @brief Handles path found event

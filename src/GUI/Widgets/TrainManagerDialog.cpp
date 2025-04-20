@@ -108,7 +108,7 @@ void TrainManagerDialog::initUI()
     // Connect selection change to update details and enable
     // delete button
     connect(m_table, &QTableWidget::itemSelectionChanged,
-            this, [this]() {
+            [this]() {
                 bool hasSelection =
                     !m_table->selectedItems().isEmpty();
                 m_deleteButton->setEnabled(hasSelection);

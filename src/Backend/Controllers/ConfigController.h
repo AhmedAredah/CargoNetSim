@@ -73,6 +73,26 @@ public:
     QVariantMap getTransportModes() const;
 
     /**
+     * @brief Get cost function weights for different
+     * transportation modes
+     * @return QVariantMap containing weights for all
+     * transportation modes
+     *
+     * Each weight represents the cost factor for the
+     * corresponding parameter:
+     * - cost: USD per USD (multiplier = 1.0)
+     * - travellTime: USD per hour
+     * - distance: USD per km (set to 0.0 as this cost is
+     * accounted for elsewhere)
+     * - carbonEmissions: USD per kg of CO2
+     * - risk: USD per unit of risk (percentage * 100)
+     * - energyConsumption: USD per kWh
+     * - terminal_delay: USD per hour
+     * - terminal_cost: USD per USD (multiplier = 1.0)
+     */
+    QVariantMap getCostFunctionWeights() const;
+
+    /**
      * @brief Update configuration in memory
      * @param newConfig New configuration to replace the
      * current one

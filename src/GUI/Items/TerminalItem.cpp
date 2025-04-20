@@ -28,8 +28,6 @@ TerminalItem::TerminalItem(
     , m_region(region)
     , m_terminalType(terminalType)
     , m_properties(properties)
-    , animObject(nullptr)
-    , animation(nullptr)
     , m_wasSelected(false)
 {
     // Set a higher Z-value for terminals (will be drawn on
@@ -61,22 +59,11 @@ TerminalItem::TerminalItem(
 
 TerminalItem::~TerminalItem()
 {
-    // Clean up any active animations
-    if (animation)
-    {
-        animation->stop();
-        animation->deleteLater();
-    }
-
-    if (animObject)
-    {
-        animObject->deleteLater();
-    }
 }
 
 void TerminalItem::initializeDefaultProperties()
 {
-    QString typeId    = getNewTerminalID(m_terminalType);
+    QString typeId = getNewTerminalID(m_terminalType);
 
     if (m_terminalType == "Origin"
         || m_terminalType == "Destination")
@@ -102,26 +89,26 @@ void TerminalItem::initializeDefaultProperties()
         this->m_properties["Show on Global Map"] = true;
 
         QMap<QString, QVariant> cost;
-        cost["fixed_fees"]       = "400";
-        cost["customs_fees"]     = "100";
-        cost["risk_factor"]      = "0.015";
+        cost["fixed_fees"]         = "400";
+        cost["customs_fees"]       = "100";
+        cost["risk_factor"]        = "0.015";
         this->m_properties["cost"] = cost;
 
         QMap<QString, QVariant> dwellTime;
         QMap<QString, QVariant> parameters;
-        parameters["mean"]             = "2880";
-        parameters["std_dev"]          = "720";
-        dwellTime["method"]            = "normal";
-        dwellTime["parameters"]        = parameters;
+        parameters["mean"]               = "2880";
+        parameters["std_dev"]            = "720";
+        dwellTime["method"]              = "normal";
+        dwellTime["parameters"]          = parameters;
         this->m_properties["dwell_time"] = dwellTime;
 
         if (m_terminalType == "Sea Port Terminal"
             || m_terminalType == "Intermodal Land Terminal")
         {
             QMap<QString, QVariant> customs;
-            customs["probability"]      = "0.08";
-            customs["delay_mean"]       = "48";
-            customs["delay_variance"]   = "24";
+            customs["probability"]        = "0.08";
+            customs["delay_mean"]         = "48";
+            customs["delay_variance"]     = "24";
             this->m_properties["customs"] = customs;
 
             QMap<QString, QVariant> capacity;

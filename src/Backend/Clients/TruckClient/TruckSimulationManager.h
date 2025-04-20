@@ -82,8 +82,10 @@ public:
      * @param simulationTime Global simulation time
      * @param logger Logger interface
      */
-    void initializeManager(SimulationTime  *simulationTime,
-                           LoggerInterface *logger);
+    void initializeManager(
+        SimulationTime           *simulationTime,
+        TerminalSimulationClient *terminalClient,
+        LoggerInterface          *logger);
 
     /**
      * @brief Forcefully resets all clients and their
@@ -250,6 +252,10 @@ private:
 
     /** Global logger reference */
     LoggerInterface *m_defaultLogger = nullptr;
+
+    /** Global terminal client reference */
+    TerminalSimulationClient *m_defaultTerminalClient =
+        nullptr;
 
     /** Map of network names to client instances */
     QMap<QString, TruckSimulationClient *> m_clients;

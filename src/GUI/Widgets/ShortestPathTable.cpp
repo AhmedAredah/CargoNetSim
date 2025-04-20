@@ -12,7 +12,10 @@
  */
 
 #include "ShortestPathTable.h"
-#include "../Utils/IconCreator.h" // For icon creation utilities
+#include "GUI/Controllers/ViewController.h"
+#include "GUI/MainWindow.h"
+#include "GUI/Utils/IconCreator.h" // For icon creation utilities
+#include "GUI/Widgets/PathComparisonDialog.h"
 #include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -20,6 +23,7 @@
 #include <QPainterPath>
 #include <QScrollBar>
 #include <QVariant>
+#include <QtWidgets/qscrollarea.h>
 #include <stdexcept>
 
 // Register meta-type for storing widgets in QVariant
@@ -56,12 +60,34 @@ void TerminalPathDelegate::paint(
 
         if (widget)
         {
-            // Render the widget directly to the cell
-            QPixmap pixmap(widget->size());
-            widget->render(&pixmap);
-            painter->drawPixmap(option.rect.topLeft(),
-                                pixmap);
-            return;
+            // Calculate paint rect to avoid scrollbars
+            // overlapping other cells
+            QRect paintRect = option.rect;
+
+            // Check if the widget is a QScrollArea
+            QScrollArea *scrollArea =
+                qobject_cast<QScrollArea *>(widget);
+            if (scrollArea)
+            {
+                // Render the scroll area widget
+                scrollArea->setFixedHeight(
+                    option.rect.height());
+                QPixmap pixmap(scrollArea->size());
+                pixmap.fill(Qt::transparent);
+                scrollArea->render(&pixmap);
+                painter->drawPixmap(paintRect.topLeft(),
+                                    pixmap);
+                return;
+            }
+            else
+            {
+                // Render the widget directly to the cell
+                QPixmap pixmap(widget->size());
+                widget->render(&pixmap);
+                painter->drawPixmap(paintRect.topLeft(),
+                                    pixmap);
+                return;
+            }
         }
     }
 
@@ -91,6 +117,20 @@ QSize TerminalPathDelegate::sizeHint(
 
         if (widget)
         {
+            // For QScrollArea, use the widget's viewport
+            // width
+            QScrollArea *scrollArea =
+                qobject_cast<QScrollArea *>(widget);
+            if (scrollArea && scrollArea->widget())
+            {
+                // Return size that accounts for the scroll
+                // area's content
+                return QSize(scrollArea->widget()
+                                 ->sizeHint()
+                                 .width(),
+                             option.rect.height());
+            }
+
             // Use the widget's size for the cell
             return widget->size();
         }
@@ -115,9 +155,23 @@ ShortestPathsTable::ShortestPathsTable(QWidget *parent)
     : QWidget(parent)
     , m_updatingUI(false) // Initialize to prevent recursive
                           // UI updates during setup
+    , m_scrollEventFilter(new PathScrollEventFilter())
 {
     // Set up the user interface components
     initUI();
+
+    MainWindow *mainWindow =
+        qobject_cast<MainWindow *>(parent);
+
+    if (mainWindow)
+    {
+
+        connect(this, &ShortestPathsTable::showPathSignal,
+                [this, mainWindow](int pathId) {
+                    ViewController::flashPathLines(
+                        mainWindow, pathId);
+                });
+    }
 }
 
 ShortestPathsTable::~ShortestPathsTable()
@@ -128,6 +182,12 @@ ShortestPathsTable::~ShortestPathsTable()
         delete pathDataPtr;
     }
     m_pathData.clear();
+
+    // Clean up event filter
+    if (m_scrollEventFilter)
+    {
+        delete m_scrollEventFilter;
+    }
 }
 
 /**
@@ -508,10 +568,10 @@ ShortestPathsTable::createPathRow(int             pathId,
     }
 
     // Create container widget for the path visualization
-    auto widget = new QWidget();
-    auto layout = new QHBoxLayout(widget);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(
+    auto contentWidget = new QWidget();
+    auto contentLayout = new QHBoxLayout(contentWidget);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->setSpacing(
         4); // Compact spacing between elements
 
     // Create show button to visualize the path on the map
@@ -525,7 +585,7 @@ ShortestPathsTable::createPathRow(int             pathId,
         showButton, &QPushButton::clicked, this,
         [this, pathId]() { emit showPathSignal(pathId); });
 
-    layout->addWidget(showButton);
+    contentLayout->addWidget(showButton);
 
     // Get terminals and segments from the path
     const QList<Backend::Terminal *> &terminals =
@@ -537,20 +597,36 @@ ShortestPathsTable::createPathRow(int             pathId,
     if (terminals.isEmpty())
     {
         qWarning() << "No terminals for path ID" << pathId;
-        layout->addWidget(
+        contentLayout->addWidget(
             new QLabel(tr("No terminal data")));
-        layout->addStretch();
-        return widget;
+        contentLayout->addStretch();
+
+        // Create and configure scroll area
+        auto scrollArea = new QScrollArea();
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setHorizontalScrollBarPolicy(
+            Qt::ScrollBarAsNeeded);
+        scrollArea->setVerticalScrollBarPolicy(
+            Qt::ScrollBarAlwaysOff);
+        scrollArea->setFrameShape(
+            QFrame::NoFrame); // Hide the frame
+        scrollArea->setWidget(contentWidget);
+        scrollArea->viewport()->installEventFilter(
+            m_scrollEventFilter);
+
+        return scrollArea;
     }
 
     // Add terminal names and transportation mode indicators
     for (int i = 0; i < terminals.size(); ++i)
     {
-        if (!terminals[i]) {
-            qWarning() << "Null terminal in path ID"
-                       << pathId;
+        if (!terminals[i])
+        {
+            qWarning()
+                << "Null terminal in path ID" << pathId;
             continue; // Skip null terminals
         }
+
         // Extract terminal name from the JSON object
         QString terminalName =
             terminals[i]->getDisplayName();
@@ -563,7 +639,7 @@ ShortestPathsTable::createPathRow(int             pathId,
         // Add terminal name label
         auto nameLabel = new QLabel(terminalName);
         nameLabel->setAlignment(Qt::AlignCenter);
-        layout->addWidget(nameLabel);
+        contentLayout->addWidget(nameLabel);
 
         // Add transportation mode arrow for all but the
         // last terminal
@@ -587,14 +663,26 @@ ShortestPathsTable::createPathRow(int             pathId,
             modeLabel->setPixmap(modePixmap);
             modeLabel->setToolTip(
                 modeText); // Show mode name on hover
-            layout->addWidget(modeLabel);
+            contentLayout->addWidget(modeLabel);
         }
     }
 
     // Add stretch to ensure left alignment of path
     // visualization
-    layout->addStretch();
-    return widget;
+    contentLayout->addStretch();
+
+    // Create and configure scroll area
+    auto scrollArea = new QScrollArea();
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded);
+    scrollArea->setVerticalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff);
+    scrollArea->setFrameShape(
+        QFrame::NoFrame); // Hide the frame
+    scrollArea->setWidget(contentWidget);
+
+    return scrollArea;
 }
 
 /**
@@ -962,7 +1050,21 @@ void ShortestPathsTable::onCompareButtonClicked()
     // Verify we have enough paths to compare
     if (checkedPaths.size() >= 2)
     {
-        // Emit signal to request path comparison
+        // Get the path data for all checked paths
+        QList<const PathData *> pathDataToCompare =
+            getCheckedPathData();
+
+        // Create and show the comparison dialog
+        PathComparisonDialog *dialog =
+            new PathComparisonDialog(pathDataToCompare,
+                                     this);
+        dialog->setAttribute(
+            Qt::WA_DeleteOnClose); // Auto-delete when
+                                   // closed
+        dialog->exec();
+
+        // Emit signal to request path comparison (for any
+        // other listeners)
         emit pathComparisonRequested(checkedPaths);
     }
     else

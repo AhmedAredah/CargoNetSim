@@ -313,11 +313,6 @@ private:
     GlobalTerminalItem
         *m_globalTerminalItem; ///< Linked global terminal
 
-    // Animation-related members
-    QObject *animObject; ///< Animation object
-    QPropertyAnimation
-        *animation; ///< Property animation for effects
-
     // Static ID management
     static QMap<QString, int>
         TERMINAL_TYPES_IDs; ///< Next ID by terminal type

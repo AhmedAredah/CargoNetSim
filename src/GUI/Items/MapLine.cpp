@@ -1,4 +1,5 @@
 #include "MapLine.h"
+#include "GUI/Items/AnimationObject.h"
 
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
@@ -16,7 +17,9 @@ MapLine::MapLine(const QString &referenceNetworkID,
                  const QPointF &endPoint,
                  const QString &region,
                  const QMap<QString, QVariant> &properties)
-    : startPoint(startPoint)
+    : GraphicsObjectBase(nullptr)
+    , m_referenceNetwork(nullptr)
+    , startPoint(startPoint)
     , endPoint(endPoint)
     , m_properties(properties)
     , baseWidth(1)
@@ -191,6 +194,36 @@ MapLine::fromDict(const QMap<QString, QVariant> &data)
         data.value("z_value", 3).toDouble());
 
     return instance;
+}
+
+void MapLine::clearAnimationVisuals()
+{
+    GraphicsObjectBase::clearAnimationVisuals();
+}
+
+void MapLine::createAnimationVisual(const QColor &color)
+{
+    // Create a path item as an overlay
+    QPainterPath path;
+    path.moveTo(startPoint);
+    path.lineTo(endPoint);
+
+    QGraphicsView *view =
+        scene() && !scene()->views().isEmpty()
+            ? scene()->views().first()
+            : nullptr;
+    qreal viewScale = view ? view->transform().m11() : 1.0;
+    qreal penWidth  = qMax(5.0, 6.0 / viewScale);
+
+    QGraphicsPathItem *overlay =
+        new QGraphicsPathItem(path);
+    overlay->setPen(QPen(color, penWidth, Qt::SolidLine));
+    overlay->setZValue(100);
+
+    // Important: Don't set the parent in the constructor
+    overlay->setParentItem(this);
+
+    m_animObject->setOverlay(overlay);
 }
 
 } // namespace GUI

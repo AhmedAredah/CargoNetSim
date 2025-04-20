@@ -91,6 +91,10 @@ public:
                          QGraphicsItem *endItem,
                          const QString &connectionType);
 
+    static bool removeConnectionLine(
+        MainWindow                       *mainWindow,
+        CargoNetSim::GUI::ConnectionLine *connectionLine);
+
     static void connectVisibleTerminalsByNetworks(
         MainWindow *mainWindow);
 
@@ -116,6 +120,14 @@ public:
     static bool updateTerminalPositionByGlobalPosition(
         MainWindow *mainWindow, TerminalItem *terminal,
         QPointF globalGeoPos);
+
+    /**
+     * @brief Flashes the path lines for a selected path
+     * @param mainWindow Pointer to MainWindow
+     * @param pathId ID of the path to visualize
+     */
+    static void flashPathLines(MainWindow *mainWindow,
+                               int         pathId);
 
 private:
     static void updateTerminalGlobalPosition(

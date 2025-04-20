@@ -2065,17 +2065,17 @@ QPixmap createTransportationModePixmap(const QString &mode,
     if (mode.contains("Truck", Qt::CaseInsensitive))
     {
         modeColor =
-            QColor(255, 0, 255); // Magenta for truck
+            QColor(Qt::magenta); // Magenta for truck
     }
     else if (mode.contains("Rail", Qt::CaseInsensitive)
-             || mode.contains("Rail", Qt::CaseInsensitive))
+             || mode.contains("Train", Qt::CaseInsensitive))
     {
         modeColor =
-            QColor(80, 80, 80); // Dark gray for rail
+            QColor(Qt::darkGray); // Dark gray for rail
     }
     else if (mode.contains("Ship", Qt::CaseInsensitive))
     {
-        modeColor = QColor(0, 0, 255); // Blue for ship
+        modeColor = QColor(Qt::magenta); // Blue for ship
     }
 
     // Draw the text

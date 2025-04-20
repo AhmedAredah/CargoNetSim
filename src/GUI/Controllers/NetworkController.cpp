@@ -1,5 +1,5 @@
-#import "NetworkController.h"
-#import "../MainWindow.h"
+#include "NetworkController.h"
+#include "../MainWindow.h"
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Controllers/RegionDataController.h"
 #include "GUI/Controllers/UtilityFunctions.h"
@@ -33,6 +33,12 @@ QString NetworkController::importNetwork(
     else if (networkType == NetworkType::Truck)
     {
         networkNames = regionData->getTruckNetworks();
+    }
+    else if (networkType == NetworkType::Ship)
+    {
+        throw std::runtime_error(
+            "Ship network import is not supported yet.");
+        return "";
     }
 
     // Check for existing network - same check as in
@@ -246,6 +252,11 @@ bool NetworkController::removeNetwork(
     {
         return regionData->removeTruckNetwork(networkName);
     }
+    else if (networkType == NetworkType::Ship)
+    {
+        throw std::runtime_error(
+            "Ship network removal is not supported yet.");
+    }
     return false;
 }
 
@@ -266,10 +277,16 @@ bool NetworkController::renameNetwork(
             networkExists =
                 regionData->trainNetworkExists(newName);
         }
-        else
+        else if (networkType == NetworkType::Truck)
         {
             networkExists =
                 regionData->truckNetworkExists(newName);
+        }
+        else if (networkType == NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network rename is not supported "
+                "yet.");
         }
 
         if (networkExists && newName != oldName)
@@ -298,6 +315,12 @@ bool NetworkController::renameNetwork(
                 success = regionData->renameTruckNetwork(
                     oldName, newName);
             }
+            else if (networkType == NetworkType::Ship)
+            {
+                throw std::runtime_error(
+                    "Ship network rename is not supported "
+                    "yet.");
+            }
         }
         catch (std::exception &e)
         {
@@ -319,11 +342,17 @@ bool NetworkController::renameNetwork(
                     mainWindow->networkManagerDock_
                         ->updateNetworkList("Rail Network");
                 }
-                else
+                else if (networkType == NetworkType::Truck)
                 {
                     mainWindow->networkManagerDock_
                         ->updateNetworkList(
                             "Truck Network");
+                }
+                else if (networkType == NetworkType::Ship)
+                {
+                    throw std::runtime_error(
+                        "Ship network rename is not "
+                        "supported yet.");
                 }
             }
         }
@@ -362,6 +391,12 @@ bool NetworkController::changeNetworkColor(
         {
             network =
                 regionData->getTruckNetwork(networkName);
+        }
+        else if (networkType == NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network color is not "
+                "supported yet.");
         }
 
         if (network)
@@ -425,6 +460,13 @@ CargoNetSim::Backend::ShortestPathResult CargoNetSim::GUI::
             return network->findShortestPath(startNodeId,
                                              endNodeId);
         }
+        else if (networkType
+                 == CargoNetSim::GUI::NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network shortest path is not "
+                "supported yet.");
+        }
     }
     catch (const std::exception &e)
     {
@@ -478,6 +520,53 @@ bool NetworkController::clearAllNetworks(
     }
 
     return true;
+}
+
+QList<MapLine *> NetworkController::getShortestPathMapLines(
+    MainWindow *mainWindow, const QString &regionName,
+    const QString &networkName, NetworkType networkType,
+    int startNodeId, int endNodeId)
+{
+    QList<MapLine *> pathMapLines;
+    if (!mainWindow || !mainWindow->regionScene_)
+    {
+        return pathMapLines;
+    }
+
+    // Get shortest path result
+    Backend::ShortestPathResult result =
+        findNetworkShortestPath(regionName, networkName,
+                                networkType, startNodeId,
+                                endNodeId);
+
+    if (result.pathLinks.empty()
+        || result.pathLinks.size() < 1)
+    {
+        return pathMapLines;
+    }
+
+    // Get all map lines in the scene
+    QList<MapLine *> allMapLines =
+        mainWindow->regionScene_->getItemsByType<MapLine>();
+
+    // Find map lines that correspond to segments in the
+    // shortest path
+    for (int linkID : result.pathLinks)
+    {
+
+        for (MapLine *mapLine : allMapLines)
+        {
+            if (mapLine->getReferencedNetworkLinkID()
+                == QString::number(linkID))
+            {
+                pathMapLines.append(mapLine);
+                break; // Found the line for this segment,
+                       // move to next
+            }
+        }
+    }
+
+    return pathMapLines;
 }
 
 } // namespace GUI

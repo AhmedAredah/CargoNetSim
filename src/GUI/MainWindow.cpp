@@ -543,13 +543,31 @@ void MainWindow::setupStatusBar()
     mainLayout->setContentsMargins(4, 0, 4, 0);
     mainLayout->setSpacing(6);
 
-    // 1. LEFT SECTION - Status messages (fixed width)
+    // 1. LEFT SECTION - Status messages and spinner
+    QWidget     *leftContainer = new QWidget();
+    QHBoxLayout *leftLayout =
+        new QHBoxLayout(leftContainer);
+    leftLayout->setContentsMargins(0, 0, 0, 0);
+    leftLayout->setSpacing(6);
+
+    // Add the spinner BEFORE the status label
+    // Spinner widget
+    statusSpinner_ = new SpinnerWidget();
+    statusSpinner_->setFixedSize(16, 16);
+    // Get the application palette's text color
+    QColor textColor = palette().color(QPalette::Text);
+    // Use that color for the spinner
+    statusSpinner_->setSpinnerColor(textColor);
+    statusSpinner_->setVisibleWhenIdle(false);
+    leftLayout->addWidget(statusSpinner_);
+
+    // Status label - add AFTER the spinner
     statusLabel_ = new QLabel("Ready.");
     statusLabel_->setMinimumWidth(300);
-    statusLabel_->setMaximumWidth(
-        400); // Limit the width to prevent pushing center
-              // section
-    mainLayout->addWidget(statusLabel_);
+    statusLabel_->setMaximumWidth(400);
+    leftLayout->addWidget(statusLabel_);
+
+    mainLayout->addWidget(leftContainer);
 
     // 2. CENTER SECTION - Server indicators
     // Use a separate layout to ensure proper centering
@@ -667,6 +685,15 @@ void MainWindow::setupStatusBar()
     statusBar->addWidget(
         mainContainer,
         1); // Stretch factor 1 makes it fill the bar
+
+    // Initialize message queue
+    isProcessingMessageQueue_ = false;
+
+    QTimer *messageQueueTimer_ = new QTimer(this);
+    connect(messageQueueTimer_, &QTimer::timeout, this,
+            &MainWindow::processMessageQueue);
+    messageQueueTimer_->start(
+        100); // Check queue every 100ms
 }
 
 void MainWindow::setConnectionType(
@@ -874,13 +901,106 @@ void MainWindow::updateAllCoordinates()
 void MainWindow::showStatusBarMessage(QString message,
                                       int     timeout)
 {
-    statusBar()->showMessage(message, timeout);
+    // Add message to queue
+    StatusMessage newMessage;
+    newMessage.message = message;
+    newMessage.timeout =
+        timeout > 0
+            ? timeout
+            : 5000; // Default 5 seconds if not specified
+    newMessage.timestamp = QDateTime::currentDateTime();
+    newMessage.isError   = false;
+
+    messageQueue_.append(newMessage);
 }
 
 void MainWindow::showStatusBarError(QString message,
                                     int     timeout)
 {
-    statusBar()->showMessage(message, timeout);
+    // Add error message to queue
+    StatusMessage newMessage;
+    newMessage.message = message;
+    newMessage.timeout =
+        timeout > 0
+            ? timeout
+            : 5000; // Default 5 seconds if not specified
+    newMessage.timestamp = QDateTime::currentDateTime();
+    newMessage.isError   = true;
+
+    messageQueue_.append(newMessage);
+}
+
+void MainWindow::startStatusProgress()
+{
+    // Only start if we have a spinner
+    if (statusSpinner_)
+    {
+        statusSpinner_->startSpinning();
+    }
+}
+
+void MainWindow::stopStatusProgress()
+{
+    // Only stop if we have a spinner
+    if (statusSpinner_)
+    {
+        statusSpinner_->stopSpinning();
+    }
+}
+
+void MainWindow::processMessageQueue()
+{
+    // If already processing a message, do nothing
+    if (isProcessingMessageQueue_)
+    {
+        return;
+    }
+
+    // If queue is empty, set default message
+    if (messageQueue_.isEmpty())
+    {
+        statusLabel_->setText("Ready.");
+        statusLabel_->setStyleSheet("");
+        return;
+    }
+
+    // Mark as processing
+    isProcessingMessageQueue_ = true;
+
+    // Get the next message
+    StatusMessage currentMessage = messageQueue_.first();
+
+    // Display the message
+    statusLabel_->setText(currentMessage.message);
+
+    // Apply styling if it's an error message
+    if (currentMessage.isError)
+    {
+        statusLabel_->setStyleSheet("color: red;");
+    }
+    else
+    {
+        statusLabel_->setStyleSheet("");
+    }
+
+    // Schedule message removal after timeout
+    QTimer::singleShot(
+        currentMessage.timeout, this, [this]() {
+            // Remove the message from the queue
+            if (!messageQueue_.isEmpty())
+            {
+                messageQueue_.removeFirst();
+            }
+
+            // Reset processing flag
+            isProcessingMessageQueue_ = false;
+
+            // Process next message immediately if available
+            if (!messageQueue_.isEmpty())
+            {
+                processMessageQueue();
+            }
+        });
 }
 
 void MainWindow::togglePanMode()

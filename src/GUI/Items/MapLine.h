@@ -45,6 +45,11 @@ public:
 
     virtual ~MapLine() = default;
 
+    void
+    createAnimationVisual(const QColor &color) override;
+
+    void clearAnimationVisuals() override;
+
     /**
      * @brief Sets the reference network that this point is
      * created from
@@ -119,7 +124,7 @@ public:
         return m_properties;
     }
 
-    QString getReferencedNetworkNodeID() const
+    QString getReferencedNetworkLinkID() const
     {
         return m_properties.value("Network_ID", "-1")
             .toString();

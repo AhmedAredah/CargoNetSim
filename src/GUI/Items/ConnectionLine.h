@@ -35,6 +35,11 @@ public:
 
     virtual ~ConnectionLine();
 
+    void
+    createAnimationVisual(const QColor &color) override;
+
+    void clearAnimationVisuals() override;
+
     // Access to members
     QGraphicsItem *startItem() const
     {
@@ -84,11 +89,6 @@ public:
     // Selection handling
     bool isSelected() const;
     void setSelected(bool selected);
-
-    // Flash effect for highlighting
-    void flash(bool          evenIfHidden = false,
-               const QColor &color = QColor(255, 0, 0,
-                                            180)) override;
 
     // Serialization methods
     QMap<QString, QVariant> toDict() const;
@@ -153,10 +153,6 @@ private:
 
     // Visual
     ConnectionLabel *m_label;
-
-    // Animation
-    QObject            *m_animObject;
-    QPropertyAnimation *m_animation;
 
     // Static members
     static int CONNECTION_LINE_ID;

@@ -63,6 +63,8 @@ public:
     double  tripTime() const;
     int     containersCount() const;
     QString closestPort() const;
+    double  energyConsumption() const;
+    double  carbonEmissions() const;
 
 private:
     QString m_shipId;

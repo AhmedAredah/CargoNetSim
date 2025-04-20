@@ -219,6 +219,21 @@ Terminal *Terminal::fromJson(const QJsonObject &json)
         configJson["dwell_time"] = json["dwell_time"];
     }
 
+    // Extract the capacity
+    if (json.contains("capacity")
+        && json["capacity"].isObject())
+    {
+        configJson["capacity"] = json["capacity"];
+    }
+
+    // extract the aliases
+    if (json.contains("mode_network_aliases")
+        && json["mode_network_aliases"].isObject())
+    {
+        configJson["mode_network_aliases"] =
+            json["mode_network_aliases"];
+    }
+
     // Create the Terminal with the extracted data
     Terminal *terminal =
         new Terminal(terminalNames, dispName, configJson,

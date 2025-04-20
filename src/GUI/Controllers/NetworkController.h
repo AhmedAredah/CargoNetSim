@@ -8,6 +8,7 @@
 
 #include "Backend/Controllers/RegionDataController.h"
 #include "GUI/Commons/NetworkType.h"
+#include "GUI/Items/MapLine.h"
 
 namespace CargoNetSim
 {
@@ -50,6 +51,23 @@ public:
                             int startNodeId, int endNodeId);
 
     static bool clearAllNetworks(MainWindow *mainWindow);
+
+    /**
+     * @brief Finds the MapLines that correspond to a
+     * shortest path between two nodes
+     * @param mainWindow Pointer to MainWindow
+     * @param regionName Name of the region
+     * @param networkName Name of the network
+     * @param networkType Type of the network (Train, Truck,
+     * Ship)
+     * @param startNodeId Starting node ID
+     * @param endNodeId Ending node ID
+     * @return List of MapLines that form the shortest path
+     */
+    static QList<MapLine *> getShortestPathMapLines(
+        MainWindow *mainWindow, const QString &regionName,
+        const QString &networkName, NetworkType networkType,
+        int startNodeId, int endNodeId);
 
 protected:
     static bool

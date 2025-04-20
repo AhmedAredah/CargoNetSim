@@ -66,12 +66,15 @@ SimulationClientBase::~SimulationClientBase()
 }
 
 void SimulationClientBase::initializeClient(
-    SimulationTime *simulationTime, LoggerInterface *logger)
+    SimulationTime           *simulationTime,
+    TerminalSimulationClient *terminalClient,
+    LoggerInterface          *logger)
 {
 
     // Set the SimulationTime and logger interface
     m_logger = logger;
     m_simulationTime = simulationTime;
+    m_terminalClient = terminalClient;
 
     // Create RabbitMQ handler
     m_rabbitMQHandler = new RabbitMQHandler(

@@ -82,7 +82,8 @@ public:
      * @warning Call only once after thread start
      */
     void initializeClient(
-        SimulationTime  *simulationTime,
+        SimulationTime           *simulationTime,
+        TerminalSimulationClient *terminalClient = nullptr,
         LoggerInterface *logger = nullptr) override;
 
     /**

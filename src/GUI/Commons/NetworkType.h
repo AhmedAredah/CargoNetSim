@@ -7,7 +7,8 @@ namespace GUI
 enum class NetworkType
 {
     Train,
-    Truck
+    Truck,
+    Ship
 };
 }
 } // namespace CargoNetSim

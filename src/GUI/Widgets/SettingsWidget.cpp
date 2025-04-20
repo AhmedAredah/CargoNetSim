@@ -284,8 +284,9 @@ void SettingsWidget::initUI()
     trainCalcButton->setMaximumWidth(30);
     trainFuelLayout->addWidget(trainCalcButton);
 
-    trainLayout->addRow(tr("Fuel Consumption:"),
-                        trainFuelLayout);
+    trainLayout->addRow(
+        tr("Fuel Consumption per Locomotive:"),
+        trainFuelLayout);
 
     trainContainers = new QSpinBox(trainGroup);
     trainContainers->setRange(1, 10000000);

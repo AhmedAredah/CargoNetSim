@@ -141,10 +141,10 @@ bool CargoNetSimController::initialize(
     // Create and start client threads
     bool success = true;
     m_simulationTime = new Backend::SimulationTime();
+    success &= initializeTerminalClient();
     success &= initializeTruckClient(truckExePath);
     success &= initializeShipClient();
     success &= initializeTrainClient();
-    success &= initializeTerminalClient();
 
     return success;
 }
@@ -286,6 +286,7 @@ void CargoNetSimController::onThreadStarted()
         if (m_shipClient)
         {
             m_shipClient->initializeClient(m_simulationTime,
+                                           m_terminalClient,
                                            m_logger);
             m_shipClient->connectToServer();
         }
@@ -295,7 +296,8 @@ void CargoNetSimController::onThreadStarted()
         if (m_trainClient)
         {
             m_trainClient->initializeClient(
-                m_simulationTime, m_logger);
+                m_simulationTime, m_terminalClient,
+                m_logger);
             m_trainClient->connectToServer();
         }
     }
@@ -304,7 +306,7 @@ void CargoNetSimController::onThreadStarted()
         if (m_terminalClient)
         {
             m_terminalClient->initializeClient(
-                m_simulationTime, m_logger);
+                m_simulationTime, nullptr, m_logger);
             m_terminalClient->connectToServer();
         }
     }
@@ -313,7 +315,8 @@ void CargoNetSimController::onThreadStarted()
         if (m_truckManager)
         {
             m_truckManager->initializeManager(
-                m_simulationTime, m_logger);
+                m_simulationTime, m_terminalClient,
+                m_logger);
         }
     }
 }

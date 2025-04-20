@@ -3,7 +3,7 @@
     <simulation>
         <shortest_paths>5</shortest_paths>
         <time_step>15</time_step>
-        <time_value_of_money>20.000000</time_value_of_money>
+        <time_value_of_money>5.000000</time_value_of_money>
     </simulation>
     <fuel_energy>
         <HFO>11.100000</HFO>
@@ -28,15 +28,15 @@
     </carbon_taxes>
     <transport_modes>
         <ship>
-            <average_container_number>5000</average_container_number>
-            <average_fuel_consumption>141.130000</average_fuel_consumption>
+            <average_container_number>9000</average_container_number>
+            <average_fuel_consumption>154.600000</average_fuel_consumption>
             <average_speed>20.000000</average_speed>
             <fuel_type>HFO</fuel_type>
             <risk_factor>0.025000</risk_factor>
         </ship>
         <rail>
-            <average_container_number>400</average_container_number>
-            <average_fuel_consumption>0.940000</average_fuel_consumption>
+            <average_container_number>180</average_container_number>
+            <average_fuel_consumption>8.800000</average_fuel_consumption>
             <average_speed>40.000000</average_speed>
             <fuel_type>diesel_1</fuel_type>
             <risk_factor>0.006000</risk_factor>
@@ -44,7 +44,7 @@
         </rail>
         <truck>
             <average_container_number>1</average_container_number>
-            <average_fuel_consumption>0.320000</average_fuel_consumption>
+            <average_fuel_consumption>0.550000</average_fuel_consumption>
             <average_speed>70.000000</average_speed>
             <fuel_type>diesel_2</fuel_type>
             <risk_factor>0.012000</risk_factor>
