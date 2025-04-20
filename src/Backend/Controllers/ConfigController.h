@@ -1,15 +1,12 @@
 #pragma once
-
 #include <QDomDocument>
 #include <QDomElement>
 #include <QString>
 #include <QVariantMap>
-
 namespace CargoNetSim
 {
 namespace Backend
 {
-
 class ConfigController
 {
 public:
@@ -18,7 +15,6 @@ public:
      * @param configFile Path to the XML configuration file
      */
     ConfigController(const QString &configFile);
-
     /**
      * @brief Loads the configuration from the specified
      * file
@@ -26,52 +22,50 @@ public:
      * otherwise
      */
     bool loadConfig();
-
     /**
      * @brief Get all parameters from the configuration
      * @return QVariantMap containing all configuration
      * parameters
      */
     QVariantMap getAllParams() const;
-
     /**
      * @brief Get simulation parameters
      * @return QVariantMap containing simulation parameters
      */
     QVariantMap getSimulationParams() const;
-
     /**
      * @brief Get fuel energy values
      * @return QVariantMap containing fuel energy values
      */
     QVariantMap getFuelEnergy() const;
-
     /**
      * @brief Get fuel carbon content values
      * @return QVariantMap containing fuel carbon content
      * values
      */
     QVariantMap getFuelCarbonContent() const;
-
     /**
      * @brief Get fuel prices
      * @return QVariantMap containing fuel prices
      */
     QVariantMap getFuelPrices() const;
-
     /**
      * @brief Get carbon taxes
      * @return QVariantMap containing carbon taxes
      */
     QVariantMap getCarbonTaxes() const;
-
+    /**
+     * @brief Get time value of money settings
+     * @return QVariantMap containing time value of money
+     * settings
+     */
+    QVariantMap getTimeValueOfMoney() const;
     /**
      * @brief Get transport mode parameters
      * @return QVariantMap containing transport mode
      * parameters
      */
     QVariantMap getTransportModes() const;
-
     /**
      * @brief Get cost function weights for different
      * transportation modes
@@ -91,14 +85,12 @@ public:
      * - terminal_cost: USD per USD (multiplier = 1.0)
      */
     QVariantMap getCostFunctionWeights() const;
-
     /**
      * @brief Update configuration in memory
      * @param newConfig New configuration to replace the
      * current one
      */
     void updateConfig(const QVariantMap &newConfig);
-
     /**
      * @brief Save configuration to file
      * @return True if save was successful, false otherwise
@@ -111,7 +103,6 @@ private:
      * parameters
      */
     void createDefaultConfig();
-
     /**
      * @brief Helper method to parse XML element into
      * QVariantMap
@@ -121,7 +112,6 @@ private:
      */
     QVariantMap
     parseXmlElement(const QDomElement &element) const;
-
     /**
      * @brief Helper method to convert QVariantMap to XML
      * element
@@ -135,11 +125,9 @@ private:
         QDomDocument &doc, QDomElement &parentElement,
         const QVariantMap &map,
         const QString     &sectionName) const;
-
     QString
         m_configFile; ///< Path to the configuration file
     QVariantMap m_config; ///< Loaded configuration
 };
-
 } // namespace Backend
 } // namespace CargoNetSim

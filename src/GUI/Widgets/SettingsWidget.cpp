@@ -81,13 +81,19 @@ void SettingsWidget::initUI()
     timeStepSpin->setSuffix(tr(" minutes"));
     simLayout->addRow(tr("Time Step:"), timeStepSpin);
 
-    timeValueOfMoneySpin =
+    // Time value of money global settings
+    useSpecificTimeValues =
+        new QCheckBox(tr("Use mode-specific time values"),
+                      simulationGroup);
+    simLayout->addRow("", useSpecificTimeValues);
+
+    averageTimeValueSpin =
         new QDoubleSpinBox(simulationGroup);
-    timeValueOfMoneySpin->setRange(0, 1000.0);
-    timeValueOfMoneySpin->setValue(4.5);
-    timeValueOfMoneySpin->setSuffix(tr(" USD/h"));
-    simLayout->addRow(tr("Time Value of Money:"),
-                      timeValueOfMoneySpin);
+    averageTimeValueSpin->setRange(0, 1000.0);
+    averageTimeValueSpin->setValue(20.43);
+    averageTimeValueSpin->setSuffix(tr(" USD/h"));
+    simLayout->addRow(tr("Average Time Value (all modes):"),
+                      averageTimeValueSpin);
 
     shortestPathsSpin = new QSpinBox(simulationGroup);
     shortestPathsSpin->setRange(1, 10);
@@ -191,6 +197,14 @@ void SettingsWidget::initUI()
     shipLayout->setFieldGrowthPolicy(
         QFormLayout::AllNonFixedFieldsGrow);
 
+    // Ship time value of money
+    shipTimeValueSpin = new QDoubleSpinBox(shipGroup);
+    shipTimeValueSpin->setRange(0, 1000.0);
+    shipTimeValueSpin->setValue(13.43);
+    shipTimeValueSpin->setSuffix(tr(" USD/h"));
+    shipLayout->addRow(tr("Time Value of Money:"),
+                       shipTimeValueSpin);
+
     shipSpeedSpin = new QDoubleSpinBox(shipGroup);
     shipSpeedSpin->setRange(0, 100);
     shipSpeedSpin->setValue(20);
@@ -243,6 +257,14 @@ void SettingsWidget::initUI()
     QFormLayout *trainLayout = new QFormLayout(trainGroup);
     trainLayout->setFieldGrowthPolicy(
         QFormLayout::AllNonFixedFieldsGrow);
+
+    // Train time value of money
+    trainTimeValueSpin = new QDoubleSpinBox(trainGroup);
+    trainTimeValueSpin->setRange(0, 1000.0);
+    trainTimeValueSpin->setValue(16.43);
+    trainTimeValueSpin->setSuffix(tr(" USD/h"));
+    trainLayout->addRow(tr("Time Value of Money:"),
+                        trainTimeValueSpin);
 
     // Speed settings with checkbox
     QHBoxLayout *trainSpeedLayout = new QHBoxLayout();
@@ -309,6 +331,14 @@ void SettingsWidget::initUI()
     truckLayout->setFieldGrowthPolicy(
         QFormLayout::AllNonFixedFieldsGrow);
 
+    // Truck time value of money
+    truckTimeValueSpin = new QDoubleSpinBox(truckGroup);
+    truckTimeValueSpin->setRange(0, 1000.0);
+    truckTimeValueSpin->setValue(31.43);
+    truckTimeValueSpin->setSuffix(tr(" USD/h"));
+    truckLayout->addRow(tr("Time Value of Money:"),
+                        truckTimeValueSpin);
+
     QHBoxLayout *truckSpeedLayout = new QHBoxLayout();
     truckSpeedSpin = new QDoubleSpinBox(truckGroup);
     truckSpeedSpin->setRange(0, 200);
@@ -366,6 +396,21 @@ void SettingsWidget::initUI()
     transportLayout->addWidget(truckGroup);
 
     containerLayout->addWidget(transportGroup);
+
+    // Connect checkbox to enable/disable mode-specific time
+    // values
+    connect(useSpecificTimeValues, &QCheckBox::toggled,
+            [this](bool checked) {
+                shipTimeValueSpin->setEnabled(checked);
+                trainTimeValueSpin->setEnabled(checked);
+                truckTimeValueSpin->setEnabled(checked);
+            });
+
+    // Initially disable mode-specific time values if not
+    // checked
+    shipTimeValueSpin->setEnabled(false);
+    trainTimeValueSpin->setEnabled(false);
+    truckTimeValueSpin->setEnabled(false);
 
     // Add fuel types to all dropdowns
     updateFuelTypeDropdowns();
@@ -653,6 +698,47 @@ bool SettingsWidget::loadSettings()
                     simSettings["shortest_paths"].toInt());
         }
 
+        // Apply time value of money settings
+        if (settings.contains("time_value_of_money"))
+        {
+            QMap<QString, QVariant> timeValueSettings =
+                settings["time_value_of_money"].toMap();
+
+            if (timeValueSettings.contains(
+                    "use_mode_specific"))
+                useSpecificTimeValues->setChecked(
+                    timeValueSettings["use_mode_specific"]
+                        .toBool());
+
+            if (timeValueSettings.contains("average"))
+                averageTimeValueSpin->setValue(
+                    timeValueSettings["average"]
+                        .toDouble());
+
+            if (timeValueSettings.contains("ship"))
+                shipTimeValueSpin->setValue(
+                    timeValueSettings["ship"].toDouble());
+
+            if (timeValueSettings.contains("rail"))
+                trainTimeValueSpin->setValue(
+                    timeValueSettings["rail"].toDouble());
+
+            if (timeValueSettings.contains("truck"))
+                truckTimeValueSpin->setValue(
+                    timeValueSettings["truck"].toDouble());
+
+            // Enable/disable the specific time value fields
+            // based on checkbox
+            QWidget *specificContainer =
+                useSpecificTimeValues->parent()
+                    ->findChild<QWidget *>(
+                        QString(),
+                        Qt::FindDirectChildrenOnly);
+            if (specificContainer)
+                specificContainer->setEnabled(
+                    useSpecificTimeValues->isChecked());
+        }
+
         // Apply carbon tax settings
         if (settings.contains("carbon_taxes"))
         {
@@ -695,7 +781,6 @@ bool SettingsWidget::loadSettings()
             // Clear existing fuel types and reload from
             // settings
             fuelTypes.clear();
-
             // Combine all fuel type keys from all three
             // maps
             QSet<QString> allFuelKeys;
@@ -932,6 +1017,17 @@ void SettingsWidget::applySettings()
     simulation["shortest_paths"] =
         shortestPathsSpin->value();
     newSettings["simulation"] = simulation;
+
+    // Time value of money settings
+    QMap<QString, QVariant> timeValueOfMoney;
+    timeValueOfMoney["use_mode_specific"] =
+        useSpecificTimeValues->isChecked();
+    timeValueOfMoney["average"] =
+        averageTimeValueSpin->value();
+    timeValueOfMoney["ship"]  = shipTimeValueSpin->value();
+    timeValueOfMoney["rail"]  = trainTimeValueSpin->value();
+    timeValueOfMoney["truck"] = truckTimeValueSpin->value();
+    newSettings["time_value_of_money"] = timeValueOfMoney;
 
     // Fuel data
     newSettings["fuel_energy"]         = fuelEnergy;

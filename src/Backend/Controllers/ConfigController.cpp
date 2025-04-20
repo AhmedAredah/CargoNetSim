@@ -75,7 +75,8 @@ bool ConfigController::loadConfig()
                 || tagName == "fuel_energy"
                 || tagName == "fuel_carbon_content"
                 || tagName == "fuel_prices"
-                || tagName == "carbon_taxes")
+                || tagName == "carbon_taxes"
+                || tagName == "time_value_of_money")
             {
 
                 m_config[tagName] =
@@ -160,7 +161,8 @@ void ConfigController::createDefaultConfig()
     // the XML example
     QVariantMap simulation;
     simulation["time_step"]           = 15;
-    simulation["time_value_of_money"] = 45;
+    simulation["time_value_of_money"] = 20.43;
+    simulation["use_mode_specific"]   = false;
     simulation["shortest_paths"]      = 3;
     m_config["simulation"]            = simulation;
 
@@ -195,6 +197,7 @@ void ConfigController::createDefaultConfig()
     ship["average_container_number"] = 5000;
     ship["risk_factor"]              = 0.025;
     ship["fuel_type"]                = "HFO";
+    ship["time_value_of_money"]      = 13.43;
 
     QVariantMap train;
     train["average_speed"]            = 40;
@@ -203,6 +206,7 @@ void ConfigController::createDefaultConfig()
     train["risk_factor"]              = 0.006;
     train["use_network"]              = true;
     train["fuel_type"]                = "diesel_1";
+    train["time_value_of_money"]      = 16.43;
 
     QVariantMap truck;
     truck["average_speed"]            = 70;
@@ -211,6 +215,7 @@ void ConfigController::createDefaultConfig()
     truck["risk_factor"]              = 0.012;
     truck["use_network"]              = false;
     truck["fuel_type"]                = "diesel_2";
+    truck["time_value_of_money"]      = 31.43;
 
     QVariantMap transportModes;
     transportModes["ship"]      = ship;
@@ -247,6 +252,69 @@ QVariantMap ConfigController::getFuelPrices() const
 QVariantMap ConfigController::getCarbonTaxes() const
 {
     return m_config.value("carbon_taxes").toMap();
+}
+
+QVariantMap ConfigController::getTimeValueOfMoney() const
+{
+    QVariantMap timeValueOfMoney;
+
+    // Get the simulation settings
+    QVariantMap simulationParams = getSimulationParams();
+
+    // Get the use_mode_specific flag and average value from
+    // simulation section
+    timeValueOfMoney["use_mode_specific"] =
+        simulationParams.value("use_mode_specific", false)
+            .toBool();
+    timeValueOfMoney["average"] =
+        simulationParams.value("time_value_of_money", 20.43)
+            .toDouble();
+
+    // Get the transport modes
+    QVariantMap transportModes = getTransportModes();
+
+    // Extract mode-specific time values
+    if (transportModes.contains("ship"))
+    {
+        QVariantMap shipSettings =
+            transportModes["ship"].toMap();
+        timeValueOfMoney["ship"] =
+            shipSettings.value("time_value_of_money", 13.43)
+                .toDouble();
+    }
+    else
+    {
+        timeValueOfMoney["ship"] = 13.43; // Default value
+    }
+
+    if (transportModes.contains("rail"))
+    {
+        QVariantMap railSettings =
+            transportModes["rail"].toMap();
+        timeValueOfMoney["rail"] =
+            railSettings.value("time_value_of_money", 16.43)
+                .toDouble();
+    }
+    else
+    {
+        timeValueOfMoney["rail"] = 16.43; // Default value
+    }
+
+    if (transportModes.contains("truck"))
+    {
+        QVariantMap truckSettings =
+            transportModes["truck"].toMap();
+        timeValueOfMoney["truck"] =
+            truckSettings
+                .value("time_value_of_money", 31.43)
+                .toDouble();
+    }
+    else
+    {
+        timeValueOfMoney["truck"] = 31.43; // Default value
+    }
+
+    return timeValueOfMoney;
 }
 
 QVariantMap ConfigController::getTransportModes() const
@@ -399,11 +467,14 @@ QVariantMap ConfigController::getCostFunctionWeights() const
     QVariantMap transportModes   = getTransportModes();
     QVariantMap fuelPrices       = getFuelPrices();
     QVariantMap fuelEnergy       = getFuelEnergy();
+    QVariantMap timeValueOfMoney = getTimeValueOfMoney();
 
     // Extract required values
-    double timeValue =
-        simulationParams.value("time_value_of_money", 45.0)
-            .toDouble();
+    bool useModeSpecific =
+        timeValueOfMoney.value("use_mode_specific", false)
+            .toBool();
+    double averageTimeValue =
+        timeValueOfMoney.value("average", 20.43).toDouble();
     double carbonTaxRate =
         carbonTaxes.value("rate", 65.0).toDouble();
 
@@ -412,7 +483,7 @@ QVariantMap ConfigController::getCostFunctionWeights() const
     defaultWeights["cost"] =
         1.0; // USD per USD (direct cost multiplier)
     defaultWeights["travelTime"] =
-        timeValue; // USD per hour
+        averageTimeValue; // USD per hour
     defaultWeights["distance"] =
         0.0; // USD per km (not counting directly)
     defaultWeights["carbonEmissions"] =
@@ -422,7 +493,7 @@ QVariantMap ConfigController::getCostFunctionWeights() const
     defaultWeights["energyConsumption"] =
         1.0; // USD per kWh (default)
     defaultWeights["terminal_delay"] =
-        timeValue; // USD per hour
+        averageTimeValue; // USD per hour
     defaultWeights["terminal_cost"] =
         1.0; // USD per USD (direct cost multiplier)
 
@@ -431,6 +502,31 @@ QVariantMap ConfigController::getCostFunctionWeights() const
     QVariantMap shipWeights  = defaultWeights;
     QVariantMap trainWeights = defaultWeights;
     QVariantMap truckWeights = defaultWeights;
+
+    // Set time values of money if mode-specific is enabled
+    if (useModeSpecific)
+    {
+        shipWeights["travelTime"] =
+            timeValueOfMoney.value("ship", 13.43)
+                .toDouble();
+        shipWeights["terminal_delay"] =
+            timeValueOfMoney.value("ship", 13.43)
+                .toDouble();
+
+        trainWeights["travelTime"] =
+            timeValueOfMoney.value("rail", 16.43)
+                .toDouble();
+        trainWeights["terminal_delay"] =
+            timeValueOfMoney.value("rail", 16.43)
+                .toDouble();
+
+        truckWeights["travelTime"] =
+            timeValueOfMoney.value("truck", 31.43)
+                .toDouble();
+        truckWeights["terminal_delay"] =
+            timeValueOfMoney.value("truck", 31.43)
+                .toDouble();
+    }
 
     // Set carbon emission multipliers
     shipWeights["carbonEmissions"] =
