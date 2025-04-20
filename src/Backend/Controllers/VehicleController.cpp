@@ -99,10 +99,16 @@ bool VehicleController::updateShip(Ship *ship)
 
     // Remove old ship
     Ship *oldShip = m_ships[ship->getUserId()];
-    if (oldShip != ship)
+    // Check if it's the same object
+    if (oldShip == ship)
     {
-        delete oldShip;
+        // No need to update anything, it's already the same
+        // object
+        return true;
     }
+
+    // It's a different object, so delete the old one
+    delete oldShip;
 
     // Add updated ship
     ship->setParent(this);
@@ -251,10 +257,16 @@ bool VehicleController::updateTrain(Train *train)
 
     // Remove old train
     Train *oldTrain = m_trains[train->getUserId()];
-    if (oldTrain != train)
+    // Check if it's the same object
+    if (oldTrain == train)
     {
-        delete oldTrain;
+        // No need to update anything, it's already the same
+        // object
+        return true;
     }
+
+    // It's a different object, so delete the old one
+    delete oldTrain;
 
     // Add updated train
     train->setParent(this);
