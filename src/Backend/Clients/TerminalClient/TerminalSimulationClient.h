@@ -93,6 +93,21 @@ public:
     Q_INVOKABLE bool resetServer();
 
     /**
+     * @brief Sets cost function parameters for path finding
+     * @param parameters Cost parameters as a QVariantMap
+     * @return True if parameters were successfully set
+     *
+     * Updates the cost weights used by the graph for path
+     * finding operations. Must include entries for default
+     * and all transportation modes (Ship, Train, Truck)
+     * with appropriate weight attributes (cost,
+     * travellTime, distance, carbonEmissions, risk,
+     * energyConsumption, terminal_delay, terminal_cost).
+     */
+    Q_INVOKABLE bool setCostFunctionParameters(
+        const QVariantMap &parameters);
+
+    /**
      * @brief Initializes client in its thread
      * @param simulationTime Simulation time object
      * @param logger Optional logger, defaults to nullptr
@@ -102,7 +117,8 @@ public:
      * heartbeat.
      */
     void initializeClient(
-        SimulationTime  *simulationTime,
+        SimulationTime           *simulationTime,
+        TerminalSimulationClient *terminalClient = nullptr,
         LoggerInterface *logger = nullptr) override;
 
     // Terminal Management
@@ -281,6 +297,19 @@ public:
     addContainer(const QString                  &terminalId,
                  const ContainerCore::Container *container,
                  double addTime = -1.0);
+
+    /**
+     * @brief Adds multiple containers to a terminal
+     * @param terminalId Terminal identifier
+     * @param containers QString of Json of the containers
+     * @param addTime Addition time, default -1.0
+     * @return True if addition succeeds
+     *
+     * Adds multiple containers to the terminal.
+     */
+    Q_INVOKABLE bool
+    addContainers(const QString &terminalId,
+                  QString &containers, double addTime);
 
     /**
      * @brief Adds multiple containers to a terminal

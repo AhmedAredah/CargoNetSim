@@ -25,6 +25,8 @@ namespace Backend
 {
 class CargoNetSimController;
 class SimulationTime;
+class TerminalSimulationClient;
+
 } // namespace Backend
 } // namespace CargoNetSim
 
@@ -124,9 +126,10 @@ public:
      * @see SimulationClientBase::SimulationClientBase
      * @see QThread::started
      */
-    virtual void
-    initializeClient(SimulationTime  *simulationTime,
-                     LoggerInterface *logger = nullptr);
+    virtual void initializeClient(
+        SimulationTime           *simulationTime,
+        TerminalSimulationClient *terminalClient = nullptr,
+        LoggerInterface          *logger         = nullptr);
 
     /**
      * @brief Sets the controller reference
@@ -385,6 +388,9 @@ protected:
 
     // SimulationTime interface
     SimulationTime *m_simulationTime;
+
+    // Terminal client reference
+    TerminalSimulationClient *m_terminalClient;
 
     // Controller
     CargoNetSimController *m_controller = nullptr;

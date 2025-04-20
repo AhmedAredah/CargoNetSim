@@ -155,10 +155,12 @@ bool ShipSimulationClient::resetServer()
  * @throws std::runtime_error If RabbitMQ handler is not set
  */
 void ShipSimulationClient::initializeClient(
-    SimulationTime *simulationTime, LoggerInterface *logger)
+    SimulationTime           *simulationTime,
+    TerminalSimulationClient *terminalClient,
+    LoggerInterface          *logger)
 {
-    SimulationClientBase::initializeClient(simulationTime,
-                                           logger);
+    SimulationClientBase::initializeClient(
+        simulationTime, terminalClient, logger);
     if (m_rabbitMQHandler == nullptr)
     {
         if (m_logger)

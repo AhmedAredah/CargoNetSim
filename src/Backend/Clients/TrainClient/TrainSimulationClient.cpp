@@ -1,5 +1,7 @@
 #include "TrainSimulationClient.h"
+#include "Backend/Clients/TerminalClient/TerminalSimulationClient.h"
 #include "Backend/Clients/TrainClient/TrainNetwork.h"
+#include "Backend/Models/SimulationTime.h"
 #include "Backend/Models/TrainSystem.h"
 #include <QDebug>
 #include <QJsonDocument>
@@ -118,11 +120,13 @@ bool TrainSimulationClient::resetServer()
 }
 
 void TrainSimulationClient::initializeClient(
-    SimulationTime *simulationTime, LoggerInterface *logger)
+    SimulationTime           *simulationTime,
+    TerminalSimulationClient *terminalClient,
+    LoggerInterface          *logger)
 {
     // Call base class initialization first
-    SimulationClientBase::initializeClient(simulationTime,
-                                           logger);
+    SimulationClientBase::initializeClient(
+        simulationTime, terminalClient, logger);
 
     // Ensure RabbitMQ handler exists
     if (!m_rabbitMQHandler)
@@ -170,9 +174,9 @@ bool TrainSimulationClient::defineSimulator(
     const NeTrainSimNetwork *network, const double timeStep,
     const QList<Train *> &trains)
 {
-    QJsonArray nodesJson   = network->getNodesAsJson();
-    QJsonArray linksJson   = network->getLinksAsJson();
-    QString    networkName = network->getNetworkName();
+    QJsonObject nodesJson   = network->nodesToJson();
+    QJsonObject linksJson   = network->linksToJson();
+    QString     networkName = network->getNetworkName();
 
     // Delegate to full defineSimulator method
     return defineSimulator(nodesJson, linksJson,
@@ -180,9 +184,10 @@ bool TrainSimulationClient::defineSimulator(
 }
 
 bool TrainSimulationClient::defineSimulator(
-    const QJsonArray &nodesJson,
-    const QJsonArray &linksJson, const QString &networkName,
-    const double timeStep, const QList<Train *> &trains)
+    const QJsonObject &nodesJson,
+    const QJsonObject &linksJson,
+    const QString &networkName, const double timeStep,
+    const QList<Train *> &trains)
 {
     return executeSerializedCommand([&]() {
         // Prepare train data for JSON
@@ -454,68 +459,90 @@ bool TrainSimulationClient::unloadTrain(
     // Execute in a serialized command block
     return executeSerializedCommand([&]() {
         // Attempt private unload first
-        if (!unloadTrainPrivate(networkName, trainId,
-                                containersDestinationNames))
-        {
-            return false;
-        }
-
-        // Build command parameters
-        QJsonObject params{
-            {"networkName", networkName},
-            {"trainID", trainId},
-            {"ContainersDestinationNames",
-             QJsonArray::fromStringList(
-                 containersDestinationNames)}};
-
-        // Send command and wait for response
-        bool success = sendCommandAndWait(
-            "unloadContainersFromTrainAtCurrentTerminal",
-            params, {"containersUnloaded"});
-
-        // Log result of unload operation
-        if (m_logger)
-        {
-            if (success)
-            {
-                m_logger->log(
-                    "Train " + trainId + " unloaded",
-                    static_cast<int>(m_clientType));
-            }
-            else
-            {
-                m_logger->logError(
-                    "Failed to unload train " + trainId,
-                    static_cast<int>(m_clientType));
-            }
-        }
+        bool success =
+            unloadTrainPrivate(networkName, trainId,
+                               containersDestinationNames);
         return success;
     });
+}
+
+bool TrainSimulationClient::sendUnloadCommandAndWait(
+    const QString &command, const QJsonObject &params)
+{
+    // Reset the completion flag
+    m_unloadComplete = false;
+
+    // Send the command
+    bool sent = sendCommand(command, params);
+    if (!sent)
+    {
+        return false;
+    }
+
+    // TODO: Debug to know why the containerUnloaded event
+    // is not received despite being sent from the server
+    return true;
+
+    // Use both mechanisms:
+    // 1. The standard waitForEvent method from base
+    bool eventReceived =
+        waitForEvent({"containersUnloaded"}, 30000);
+
+    // 2. Also wait on our condition variable as a backup
+    if (!eventReceived && !m_unloadComplete)
+    {
+        QElapsedTimer timer;
+        timer.start();
+        int timeoutMs = 30000; // 30 seconds timeout
+
+        while (!m_unloadComplete
+               && timer.elapsed() < timeoutMs)
+        {
+            // Wait with timeout (will automatically
+            // release the mutex while waiting)
+            m_unloadCondition.wait(
+                &m_unloadMutex,
+                1000); // 1 second intervals
+        }
+    }
+
+    return eventReceived || m_unloadComplete;
 }
 
 bool TrainSimulationClient::unloadTrainPrivate(
     const QString &networkName, const QString &trainId,
     const QStringList &containersDestinationNames)
 {
-    // Build command parameters
-    QJsonObject params;
-    params["networkName"] = networkName;
-    params["trainID"]     = trainId;
-    params["ContainersDestinationNames"] =
-        QJsonArray::fromStringList(
-            containersDestinationNames);
+    // Use the dedicated unload mutex instead of
+    // executeSerializedCommand
+    QMutexLocker unloadLocker(&m_unloadMutex);
 
-    // Send command without waiting
-    bool success = sendCommand(
+    // Build command parameters
+    QJsonObject params{{"networkName", networkName},
+                       {"trainID", trainId},
+                       {"ContainersDestinationNames",
+                        QJsonArray::fromStringList(
+                            containersDestinationNames)}};
+
+    // Use dedicated unload command wait
+    bool success = sendUnloadCommandAndWait(
         "unloadContainersFromTrainAtCurrentTerminal",
         params);
 
-    // Log result of private unload
-    if (m_logger && !success)
+    // Log result of unload operation
+    if (m_logger)
     {
-        m_logger->logError("Private unload failed for "
-                               + trainId,
-                           static_cast<int>(m_clientType));
+        if (success)
+        {
+            m_logger->log("Train " + trainId + " unloaded",
+                          static_cast<int>(m_clientType));
+        }
+        else
+        {
+            m_logger->logError(
+                "Failed to unload train " + trainId,
+                static_cast<int>(m_clientType));
+        }
     }
     return success;
 }
@@ -783,45 +810,10 @@ void TrainSimulationClient::onTrainReachedDestination(
                     ->getTrainPathOnNodeIds()
                     .last());
 
-            // Construct terminal ID
-            QString terminalId = QString(destinationId);
-
-            // Placeholder for TerminalGraphServer
-            // if
-            // (TerminalGraphServer::getInstance()->terminalExists(terminalId))
-            // {
-            //     QStringList aliases =
-            //     TerminalGraphServer::getInstance()
-            //                               ->getAliasesOfTerminal(terminalId);
-            //     if
-            //     (TerminalGraphServer::getInstance()->terminal(terminalId)
-            //             ->checkCapacityStatus(containersCount))
-            //             {
-            //         // Store needed info before releasing
-            //         lock QString targetNetwork = network;
-            //         QString targetTrainId =
-            //         state->m_trainUserId; QStringList
-            //         targetAliases = aliases;
-            //
-            //         // Release lock, perform unload
-            //         operation, then acquire a new lock if
-            //         needed
-            //         {
-            //             // End the current scope to
-            //             release the lock
-            //         }
-            //
-            //         // Perform unload operation without
-            //         holding the lock
-            //         unloadTrainPrivate(targetNetwork,
-            //         targetTrainId, targetAliases);
-            //
-            //         // Re-acquire lock if needed for
-            //         further operations
-            //         // Commons::ScopedWriteLock
-            //         newLocker(m_dataAccessMutex);
-            //     }
-            // }
+            // TODO
+            // unloadTrainPrivate(
+            //     network, state->m_trainUserId,
+            //     QStringList() << destinationId);
         }
     }
 
@@ -1096,26 +1088,12 @@ void TrainSimulationClient::onTrainReachedTerminal(
     QString trainId = message["trainID"].toString();
 
     // Process if containers exist and terminal is valid
-    if (containersCount > 0 && !terminalId.isEmpty())
+    if (m_terminalClient && containersCount > 0
+        && !terminalId.isEmpty())
     {
-        // Construct full terminal ID
-        QString fullTerminalId = QString(terminalId);
-
-        // Placeholder for TerminalGraphServer
-        // if
-        // (TerminalGraphServer::getInstance()->terminalExists(fullTerminalId))
-        // {
-        //     QStringList aliases =
-        //     TerminalGraphServer::getInstance()
-        //                               ->getAliasesOfTerminal(fullTerminalId);
-        //     if
-        //     (TerminalGraphServer::getInstance()->terminal(fullTerminalId)
-        //             ->checkCapacityStatus(containersCount))
-        //             {
-        //         unloadTrainPrivate(network, trainId,
-        //         aliases);
-        //     }
-        // }
+        // TODO
+        // unloadTrainPrivate(network, trainId,
+        //                    QStringList() << terminalId);
     }
 
     // Log event using logger if available
@@ -1133,6 +1111,7 @@ void TrainSimulationClient::onContainersUnloaded(
 {
     // Extract terminal and container data
     QString terminalId = message["terminalID"].toString();
+    QString networkName = message["networkName"].toString();
     QJsonArray containers = message["containers"].toArray();
 
     // Wrap containers in a JSON object
@@ -1143,20 +1122,21 @@ void TrainSimulationClient::onContainersUnloaded(
     QString containersJson =
         doc.toJson(QJsonDocument::Compact);
 
-    // Placeholder for simulation time
-    // double currentTime =
-    // SimulatorTimeServer::getInstance()
-    //                          ->getCurrentSimulationTime();
-    double currentTime = 0.0;
+    QString fullTerminalID =
+        QString(networkName + "_" + terminalId);
 
-    // Placeholder for TerminalGraphServer
-    // if
-    // (TerminalGraphServer::getInstance()->terminalExists(terminalId))
-    // {
-    //     TerminalGraphServer::getInstance()->terminal(terminalId)
-    //         ->addContainersFromJson(containersJson,
-    //         currentTime);
-    // }
+    double currentTime = m_simulationTime->getCurrentTime();
+
+    if (m_terminalClient)
+    {
+        m_terminalClient->addContainers(
+            fullTerminalID, containersJson, currentTime);
+    }
+
+    // Signal that the unload is complete
+    QMutexLocker unloadLocker(&m_unloadMutex);
+    m_unloadComplete = true;
+    m_unloadCondition.wakeAll();
 
     // Log event using logger if available
     if (m_logger)

@@ -120,7 +120,8 @@ public:
      * @warning Call only once after thread start
      */
     void initializeClient(
-        SimulationTime  *simulationTime,
+        SimulationTime           *simulationTime,
+        TerminalSimulationClient *terminalClient = nullptr,
         LoggerInterface *logger = nullptr) override;
 
     /**
@@ -146,8 +147,8 @@ public:
      * Configures a train simulation with specified nodes,
      * links, and trains.
      *
-     * @param nodesJson JSON array of network nodes
-     * @param linksJson JSON array of network links
+     * @param nodesJson JSON object of network nodes
+     * @param linksJson JSON object of network links
      * @param networkName Unique identifier for the network
      * @param timeStep Simulation time increment, defaults
      * to 1.0
@@ -155,10 +156,10 @@ public:
      * empty
      * @return True if simulator definition succeeds
      */
-    bool defineSimulator(const QJsonArray &nodesJson,
-                         const QJsonArray &linksJson,
-                         const QString    &networkName,
-                         const double      timeStep   = 1.0,
+    bool defineSimulator(const QJsonObject &nodesJson,
+                         const QJsonObject &linksJson,
+                         const QString     &networkName,
+                         const double       timeStep  = 1.0,
                          const QList<Train *> &trains = {});
 
     /**
@@ -464,6 +465,15 @@ private:
      * improving performance for read-heavy workloads.
      */
     mutable QReadWriteLock m_dataAccessMutex;
+
+    bool
+    sendUnloadCommandAndWait(const QString     &command,
+                             const QJsonObject &params);
+
+    mutable QMutex m_unloadMutex;
+    QWaitCondition m_unloadCondition;
+    bool           m_unloadComplete =
+        false; // Flag to track unload completion
 
     /**
      * @var m_networkData

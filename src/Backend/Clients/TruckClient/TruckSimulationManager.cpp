@@ -60,10 +60,13 @@ TruckSimulationManager::~TruckSimulationManager()
 }
 
 void TruckSimulationManager::initializeManager(
-    SimulationTime *simulationTime, LoggerInterface *logger)
+    SimulationTime           *simulationTime,
+    TerminalSimulationClient *terminalClient,
+    LoggerInterface          *logger)
 {
     Commons::ScopedWriteLock locker(m_mutex);
     m_defaultSimulationTime = simulationTime;
+    m_defaultTerminalClient = terminalClient;
     m_defaultLogger         = logger;
 }
 
@@ -663,6 +666,7 @@ void TruckSimulationManager::initializeClientInThread(
     // Initialize client in its thread (will be executed
     // when thread starts)
     client->initializeClient(m_defaultSimulationTime,
+                             m_defaultTerminalClient,
                              m_defaultLogger);
 
     // Connect to server (will be executed when thread

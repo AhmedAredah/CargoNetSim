@@ -97,11 +97,13 @@ bool TerminalSimulationClient::resetServer()
 
 // Initialize client in thread
 void TerminalSimulationClient::initializeClient(
-    SimulationTime *simulationTime, LoggerInterface *logger)
+    SimulationTime           *simulationTime,
+    TerminalSimulationClient *terminalClient,
+    LoggerInterface          *logger)
 {
     // Call base class initialization first
-    SimulationClientBase::initializeClient(simulationTime,
-                                           logger);
+    SimulationClientBase::initializeClient(
+        simulationTime, terminalClient, logger);
 
     // Validate RabbitMQ handler presence
     if (!m_rabbitMQHandler)
@@ -116,6 +118,94 @@ void TerminalSimulationClient::initializeClient(
     // Log initialization details for audit
     qDebug() << "Client initialized in thread:"
              << QThread::currentThreadId();
+}
+
+// Set cost function parameters
+bool TerminalSimulationClient::setCostFunctionParameters(
+    const QVariantMap &parameters)
+{
+    // Execute command with serialization
+    return executeSerializedCommand([&]() {
+        // Create a complete parameter map with defaults
+        QVariantMap completeParams = parameters;
+
+        // Required mode entries
+        QStringList requiredModes = {
+            "default",
+            QString::number(static_cast<int>(
+                TransportationTypes::TransportationMode::
+                    Ship)),
+            QString::number(static_cast<int>(
+                TransportationTypes::TransportationMode::
+                    Train)),
+            QString::number(static_cast<int>(
+                TransportationTypes::TransportationMode::
+                    Truck))};
+
+        // Required attributes for each mode
+        QStringList requiredAttrs = {
+            "cost",           "travelTime",
+            "distance",       "carbonEmissions",
+            "risk",           "energyConsumption",
+            "terminal_delay", "terminal_cost"};
+
+        // Ensure all modes exist with default values
+        for (const QString &mode : requiredModes)
+        {
+            if (!completeParams.contains(mode)
+                || !completeParams[mode]
+                        .canConvert<QVariantMap>())
+            {
+                // Create mode with all default values
+                QVariantMap defaultModeParams;
+                for (const QString &attr : requiredAttrs)
+                {
+                    defaultModeParams[attr] = 1.0;
+                }
+                completeParams[mode] = defaultModeParams;
+                qDebug() << "Created default parameters "
+                            "for mode:"
+                         << mode;
+            }
+            else
+            {
+                // Mode exists, ensure all attributes exist
+                QVariantMap modeParams =
+                    completeParams[mode].toMap();
+                bool modeUpdated = false;
+
+                for (const QString &attr : requiredAttrs)
+                {
+                    if (!modeParams.contains(attr)
+                        || !modeParams[attr]
+                                .canConvert<double>())
+                    {
+                        modeParams[attr] = 1.0;
+                        modeUpdated      = true;
+                        qDebug()
+                            << "Added default value for"
+                            << attr << "in mode" << mode;
+                    }
+                }
+
+                if (modeUpdated)
+                {
+                    completeParams[mode] = modeParams;
+                }
+            }
+        }
+
+        // Parameters are now complete with defaults,
+        // prepare request
+        QJsonObject params;
+        params["parameters"] =
+            QJsonObject::fromVariantMap(completeParams);
+
+        // Send command to server
+        return sendCommandAndWait(
+            "set_cost_function_parameters", params,
+            {"costFunctionUpdated"});
+    });
 }
 
 // Add terminal
@@ -466,6 +556,27 @@ bool TerminalSimulationClient::addContainer(
         }
         // Send container addition command
         return sendCommandAndWait("add_container", params,
+                                  {"containersAdded"});
+    });
+}
+
+bool TerminalSimulationClient::addContainers(
+    const QString &terminalId, QString &containers,
+    double addTime)
+{
+    // Execute containers addition serially
+    return executeSerializedCommand([&]() {
+        // Prepare parameters for containers addition
+        QJsonObject params;
+        params["terminal_id"] = terminalId;
+
+        params["containers"] = containers;
+        if (addTime >= 0.0)
+        {
+            params["adding_time"] = addTime;
+        }
+        // Send containers addition command
+        return sendCommandAndWait("add_containers", params,
                                   {"containersAdded"});
     });
 }
@@ -911,13 +1022,7 @@ void TerminalSimulationClient::onTerminalsAdded(
             }
             m_terminalAliases[name] = aliasList;
         }
-
-        qDebug() << "Terminal added from bulk operation:"
-                 << name;
     }
-
-    qDebug() << "Bulk terminal addition completed with"
-             << terminalsArray.size() << "terminals";
 }
 
 // Handle route added event
@@ -955,13 +1060,7 @@ void TerminalSimulationClient::onRoutesAdded(
             routeJson["start_terminal"].toString();
         QString endTerminal =
             routeJson["end_terminal"].toString();
-
-        qDebug() << "Route added from bulk operation:"
-                 << startTerminal << "to" << endTerminal;
     }
-
-    qDebug() << "Bulk route addition completed with"
-             << routesArray.size() << "routes";
 }
 
 // Handle path found event
