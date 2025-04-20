@@ -349,6 +349,16 @@ QString ShipState::closestPort() const
     return m_closestPort;
 }
 
+double ShipState::energyConsumption() const
+{
+    return m_energyConsumption;
+}
+
+double ShipState::carbonEmissions() const
+{
+    return m_carbonDioxideEmitted;
+}
+
 } // namespace ShipClient
 } // namespace Backend
 } // namespace CargoNetSim
