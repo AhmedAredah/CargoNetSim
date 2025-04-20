@@ -98,6 +98,8 @@ set(GUI_SOURCES
     Widgets/InterfaceSelectionDialog.cpp
     Widgets/SpinnerWidget.h
     Widgets/SpinnerWidget.cpp
+    Widgets/PathComparisonDialog.h
+    Widgets/PathComparisonDialog.cpp
 )
 
 # Create the GUI library
