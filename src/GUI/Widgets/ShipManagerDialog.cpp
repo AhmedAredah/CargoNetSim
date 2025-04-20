@@ -126,7 +126,7 @@ void ShipManagerDialog::initUI()
 
     // Connect selection change to update details and delete button state
     connect(m_table, &QTableWidget::itemSelectionChanged,
-            this, [this]() {
+            [this]() {
                 updateDetails();
                 m_deleteAction->setEnabled(m_table->currentRow() >= 0);
             });

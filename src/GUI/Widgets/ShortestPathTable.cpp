@@ -12,9 +12,10 @@
  */
 
 #include "ShortestPathTable.h"
-#include "../Utils/IconCreator.h" // For icon creation utilities
 #include "GUI/Controllers/ViewController.h"
 #include "GUI/MainWindow.h"
+#include "GUI/Utils/IconCreator.h" // For icon creation utilities
+#include "GUI/Widgets/PathComparisonDialog.h"
 #include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -1049,7 +1050,21 @@ void ShortestPathsTable::onCompareButtonClicked()
     // Verify we have enough paths to compare
     if (checkedPaths.size() >= 2)
     {
-        // Emit signal to request path comparison
+        // Get the path data for all checked paths
+        QList<const PathData *> pathDataToCompare =
+            getCheckedPathData();
+
+        // Create and show the comparison dialog
+        PathComparisonDialog *dialog =
+            new PathComparisonDialog(pathDataToCompare,
+                                     this);
+        dialog->setAttribute(
+            Qt::WA_DeleteOnClose); // Auto-delete when
+                                   // closed
+        dialog->exec();
+
+        // Emit signal to request path comparison (for any
+        // other listeners)
         emit pathComparisonRequested(checkedPaths);
     }
     else
