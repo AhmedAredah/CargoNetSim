@@ -1,5 +1,5 @@
-#import "NetworkController.h"
-#import "../MainWindow.h"
+#include "NetworkController.h"
+#include "../MainWindow.h"
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Controllers/RegionDataController.h"
 #include "GUI/Controllers/UtilityFunctions.h"
