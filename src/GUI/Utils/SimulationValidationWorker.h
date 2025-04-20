@@ -86,6 +86,69 @@ private:
         const QMap<QString,
                    Backend::TruckClient::IntegrationNetwork
                        *> &truckNetworks);
+
+    void extractResults();
+
+    int getContainerCount(MainWindow *mainWindow);
+
+    double calculateEdgeCosts(
+        Backend::Path                       *path,
+        const QList<Backend::PathSegment *> &segments,
+        const QVariantMap &costFunctionWeights,
+        const QVariantMap &transportModes,
+        Backend::ShipClient::ShipSimulationClient
+            *shipClient,
+        Backend::TrainClient::TrainSimulationClient
+            *trainClient,
+        Backend::TruckClient::TruckSimulationManager
+            *truckClient,
+        int  containerCount);
+
+    double calculateShipSegmentCost(
+        Backend::Path *path,
+        Backend::ShipClient::ShipSimulationClient
+                          *shipClient,
+        const QVariantMap &modeWeights,
+        const QVariantMap &transportModes,
+        int                containerCount);
+
+    double calculateTrainSegmentCost(
+        Backend::Path *path,
+        Backend::TrainClient::TrainSimulationClient
+                          *trainClient,
+        const QVariantMap &modeWeights,
+        const QVariantMap &transportModes,
+        int                containerCount);
+
+    double calculateTruckSegmentCost(
+        Backend::Path *path,
+        Backend::TruckClient::TruckSimulationManager
+                          *truckClient,
+        const QVariantMap &modeWeights,
+        const QVariantMap &transportModes,
+        int                containerCount);
+
+    double calculateTerminalCosts(
+        const QList<Backend::PathSegment *> &segments,
+        const QList<Backend::Terminal *>    &terminals,
+        const QVariantMap &costFunctionWeights,
+        int                containerCount);
+
+    double calculateSingleTerminalCost(
+        Backend::Terminal *terminal,
+        const QVariantMap &costFunctionWeights,
+        int                containerCount);
+
+    double
+    calculateTerminalDwellTime(const QJsonObject &config);
+
+    bool calculateTerminalCustoms(const QJsonObject &config,
+                                  double &customsDelay,
+                                  double &customsCost);
+
+    double
+    calculateTerminalDirectCosts(const QJsonObject &config,
+                                 bool customsApplied);
 };
 
 } // namespace GUI
