@@ -1,4 +1,5 @@
 #include "MapLine.h"
+#include "GUI/Items/AnimationObject.h"
 
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
@@ -16,13 +17,13 @@ MapLine::MapLine(const QString &referenceNetworkID,
                  const QPointF &endPoint,
                  const QString &region,
                  const QMap<QString, QVariant> &properties)
-    : startPoint(startPoint)
+    : GraphicsObjectBase(nullptr)
+    , m_referenceNetwork(nullptr)
+    , startPoint(startPoint)
     , endPoint(endPoint)
     , m_properties(properties)
     , baseWidth(1)
     , pen(Qt::black, baseWidth)
-    , m_animObject(nullptr)
-    , m_animation(nullptr)
 {
     this->m_properties["Network_ID"] = referenceNetworkID;
     this->m_properties["region"]     = region;
@@ -195,80 +196,34 @@ MapLine::fromDict(const QMap<QString, QVariant> &data)
     return instance;
 }
 
-void MapLine::flash(bool evenIfHidden, const QColor &color)
+void MapLine::clearAnimationVisuals()
 {
-    bool wasHidden = !isVisible();
-    if (evenIfHidden && wasHidden)
-    {
-        setVisible(true);
-    }
+    GraphicsObjectBase::clearAnimationVisuals();
+}
 
-    // If a flash is already running, stop and clean it up
-    if (m_animation)
-    {
-        m_animation->stop();
-        m_animation->deleteLater();
-        m_animation = nullptr;
-    }
-
-    if (m_animObject)
-    {
-        m_animObject->deleteLater();
-        m_animObject = nullptr;
-    }
-
-    // Create a path item as an overlay to follow the line
+void MapLine::createAnimationVisual(const QColor &color)
+{
+    // Create a path item as an overlay
     QPainterPath path;
-    QGraphicsView *view = scene()->views().isEmpty()
-                              ? nullptr
-                              : scene()->views().first();
-
-    qreal viewScale = view ? view->transform().m11() : 1.0;
-    qreal penWidth  = qMax(5.0, 6.0 / viewScale);
-
-    QPen pen(color, penWidth, Qt::SolidLine);
     path.moveTo(startPoint);
     path.lineTo(endPoint);
 
+    QGraphicsView *view =
+        scene() && !scene()->views().isEmpty()
+            ? scene()->views().first()
+            : nullptr;
+    qreal viewScale = view ? view->transform().m11() : 1.0;
+    qreal penWidth  = qMax(5.0, 6.0 / viewScale);
+
     QGraphicsPathItem *overlay =
-        new QGraphicsPathItem(path, this);
-    overlay->setPen(pen);
+        new QGraphicsPathItem(path);
+    overlay->setPen(QPen(color, penWidth, Qt::SolidLine));
     overlay->setZValue(100);
 
-    // Store animation objects as instance variables
-    m_animObject = new AnimationObject(this);
-    static_cast<AnimationObject *>(m_animObject)
-        ->setOverlay(overlay);
+    // Important: Don't set the parent in the constructor
+    overlay->setParentItem(this);
 
-    m_animation = new QPropertyAnimation(m_animObject,
-                                         "opacity", this);
-    m_animation->setDuration(1000);
-    m_animation->setLoopCount(3);
-    m_animation->setStartValue(1.0);
-    m_animation->setKeyValueAt(0.5, 0.0);
-    m_animation->setEndValue(1.0);
-
-    // Set up cleanup on animation completion
-    connect(m_animation, &QPropertyAnimation::finished,
-            [=]() {
-                if (overlay && scene())
-                {
-                    scene()->removeItem(overlay);
-                }
-
-                if (evenIfHidden && wasHidden)
-                {
-                    setVisible(false);
-                }
-
-                // Clean up
-                m_animation->deleteLater();
-                m_animation = nullptr;
-                m_animObject->deleteLater();
-                m_animObject = nullptr;
-            });
-
-    m_animation->start();
+    m_animObject->setOverlay(overlay);
 }
 
 } // namespace GUI

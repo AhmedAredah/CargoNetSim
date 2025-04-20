@@ -53,8 +53,6 @@ ConnectionLine::ConnectionLine(
     , m_properties(properties)
     , m_id(getNewConnectionID())
     , m_isHovered(false)
-    , m_animObject(nullptr)
-    , m_animation(nullptr)
 {
     // Set higher z-value to ensure visibility
     setZValue(4);
@@ -535,90 +533,6 @@ void ConnectionLine::hoverLeaveEvent(
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
-void ConnectionLine::flash(bool          evenIfHidden,
-                           const QColor &color)
-{
-    bool wasHidden = !isVisible();
-    if (evenIfHidden && wasHidden)
-    {
-        setVisible(true);
-    }
-
-    // If a flash is already running, stop and clean it up
-    if (m_animation)
-    {
-        m_animation->stop();
-        m_animation->deleteLater();
-        m_animation = nullptr;
-    }
-
-    if (m_animObject)
-    {
-        m_animObject->deleteLater();
-        m_animObject = nullptr;
-    }
-
-    // Create a path item as an overlay to follow the line
-    QPainterPath path;
-    qreal        penWidth =
-        CONNECTION_STYLES.value(m_connectionType)
-            .value("width")
-            .toInt()
-        * 3;
-
-    QPen pen(color, penWidth, Qt::SolidLine);
-    path.moveTo(m_line.p1());
-
-    if (m_connectionType == "Truck")
-    {
-        path.lineTo(m_line.p2());
-    }
-    else
-    {
-        path.quadTo(m_ctrlPoint, m_line.p2());
-    }
-
-    QGraphicsPathItem *overlay =
-        new QGraphicsPathItem(path, this);
-    overlay->setPen(pen);
-    overlay->setZValue(100);
-
-    // Store animation objects as instance variables
-    m_animObject = new AnimationObject(this);
-    static_cast<AnimationObject *>(m_animObject)
-        ->setOverlay(overlay);
-
-    m_animation = new QPropertyAnimation(m_animObject,
-                                         "opacity", this);
-    m_animation->setDuration(1000);
-    m_animation->setLoopCount(3);
-    m_animation->setStartValue(1.0);
-    m_animation->setKeyValueAt(0.5, 0.0);
-    m_animation->setEndValue(1.0);
-
-    // Set up cleanup on animation completion
-    connect(m_animation, &QPropertyAnimation::finished,
-            [=]() {
-                if (overlay && scene())
-                {
-                    scene()->removeItem(overlay);
-                }
-
-                if (evenIfHidden && wasHidden)
-                {
-                    setVisible(false);
-                }
-
-                // Clean up
-                m_animation->deleteLater();
-                m_animation = nullptr;
-                m_animObject->deleteLater();
-                m_animObject = nullptr;
-            });
-
-    m_animation->start();
-}
-
 QMap<QString, QVariant> ConnectionLine::toDict() const
 {
     QMap<QString, QVariant> data;
@@ -816,6 +730,44 @@ int ConnectionLine::getNewConnectionID()
 {
     CONNECTION_LINE_ID++;
     return CONNECTION_LINE_ID;
+}
+
+void ConnectionLine::clearAnimationVisuals()
+{
+    GraphicsObjectBase::clearAnimationVisuals();
+}
+
+void ConnectionLine::createAnimationVisual(
+    const QColor &color)
+{
+    // Create a path item as an overlay to follow the line
+    QPainterPath path;
+    qreal        penWidth =
+        CONNECTION_STYLES.value(m_connectionType)
+            .value("width")
+            .toInt()
+        * 3;
+
+    path.moveTo(m_line.p1());
+
+    if (m_connectionType == "Truck")
+    {
+        path.lineTo(m_line.p2());
+    }
+    else
+    {
+        path.quadTo(m_ctrlPoint, m_line.p2());
+    }
+
+    QGraphicsPathItem *overlay = new QGraphicsPathItem();
+    overlay->setPath(path);
+    overlay->setPen(QPen(color, penWidth, Qt::SolidLine));
+    overlay->setZValue(100);
+
+    // Add to scene properly
+    overlay->setParentItem(this);
+
+    m_animObject->setOverlay(overlay);
 }
 
 } // namespace GUI

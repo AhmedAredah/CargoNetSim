@@ -45,6 +45,11 @@ public:
 
     virtual ~MapLine() = default;
 
+    void
+    createAnimationVisual(const QColor &color) override;
+
+    void clearAnimationVisuals() override;
+
     /**
      * @brief Sets the reference network that this point is
      * created from
@@ -164,11 +169,6 @@ public:
     static MapLine *
     fromDict(const QMap<QString, QVariant> &data);
 
-    // Flash effect for highlighting
-    void flash(bool          evenIfHidden = false,
-               const QColor &color = QColor(255, 0, 0,
-                                            180)) override;
-
 signals:
     /**
      * @brief Signal emitted when the line is clicked
@@ -203,10 +203,6 @@ private:
     int                     baseWidth;
     QPen                    pen;
     QObject                *m_referenceNetwork;
-
-    // Animation
-    QObject            *m_animObject;
-    QPropertyAnimation *m_animation;
 };
 
 } // namespace GUI

@@ -28,8 +28,6 @@ TerminalItem::TerminalItem(
     , m_region(region)
     , m_terminalType(terminalType)
     , m_properties(properties)
-    , animObject(nullptr)
-    , animation(nullptr)
     , m_wasSelected(false)
 {
     // Set a higher Z-value for terminals (will be drawn on
@@ -61,17 +59,6 @@ TerminalItem::TerminalItem(
 
 TerminalItem::~TerminalItem()
 {
-    // Clean up any active animations
-    if (animation)
-    {
-        animation->stop();
-        animation->deleteLater();
-    }
-
-    if (animObject)
-    {
-        animObject->deleteLater();
-    }
 }
 
 void TerminalItem::initializeDefaultProperties()
