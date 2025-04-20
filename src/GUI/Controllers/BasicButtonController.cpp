@@ -1047,7 +1047,6 @@ void BasicButtonController::showTrainManager(
             .getVehicleController()
             ->getAllTrains();
     dialog.setTrains(trains);
-    dialog.updateTable();
 
     if (dialog.exec() == QDialog::Accepted)
     {
