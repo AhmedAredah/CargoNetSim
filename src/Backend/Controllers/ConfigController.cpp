@@ -1,4 +1,5 @@
 #include "ConfigController.h"
+#include "Backend/Commons/TransportationMode.h"
 #include <QDebug>
 #include <QFile>
 #include <QTextStream>
@@ -388,6 +389,165 @@ void ConfigController::variantMapToXmlElement(
         element.appendChild(text);
         sectionElement.appendChild(element);
     }
+}
+
+QVariantMap ConfigController::getCostFunctionWeights() const
+{
+    // Get configuration parameters
+    QVariantMap simulationParams = getSimulationParams();
+    QVariantMap carbonTaxes      = getCarbonTaxes();
+    QVariantMap transportModes   = getTransportModes();
+    QVariantMap fuelPrices       = getFuelPrices();
+    QVariantMap fuelEnergy       = getFuelEnergy();
+
+    // Extract required values
+    double timeValue =
+        simulationParams.value("time_value_of_money", 45.0)
+            .toDouble();
+    double carbonTaxRate =
+        carbonTaxes.value("rate", 65.0).toDouble();
+
+    // Create default weights
+    QVariantMap defaultWeights;
+    defaultWeights["cost"] =
+        1.0; // USD per USD (direct cost multiplier)
+    defaultWeights["travelTime"] =
+        timeValue; // USD per hour
+    defaultWeights["distance"] =
+        0.0; // USD per km (not counting directly)
+    defaultWeights["carbonEmissions"] =
+        carbonTaxRate / 1000.0; // USD per kg of CO2
+    defaultWeights["risk"] =
+        100.0; // USD per risk unit (percentage * 100)
+    defaultWeights["energyConsumption"] =
+        1.0; // USD per kWh (default)
+    defaultWeights["terminal_delay"] =
+        timeValue; // USD per hour
+    defaultWeights["terminal_cost"] =
+        1.0; // USD per USD (direct cost multiplier)
+
+    // Create mode-specific weights by copying default
+    // weights
+    QVariantMap shipWeights  = defaultWeights;
+    QVariantMap trainWeights = defaultWeights;
+    QVariantMap truckWeights = defaultWeights;
+
+    // Set carbon emission multipliers
+    shipWeights["carbonEmissions"] =
+        shipWeights["carbonEmissions"].toDouble()
+        * carbonTaxes.value("ship_multiplier", 1.2)
+              .toDouble();
+    trainWeights["carbonEmissions"] =
+        trainWeights["carbonEmissions"].toDouble()
+        * carbonTaxes.value("train_multiplier", 1.1)
+              .toDouble();
+    truckWeights["carbonEmissions"] =
+        truckWeights["carbonEmissions"].toDouble()
+        * carbonTaxes.value("truck_multiplier", 1.1)
+              .toDouble();
+
+    // Extract transport mode data
+    QVariantMap shipData =
+        transportModes.value("ship").toMap();
+    QVariantMap trainData =
+        transportModes.value("rail").toMap();
+    QVariantMap truckData =
+        transportModes.value("truck").toMap();
+
+    // Set risk factors
+    shipWeights["risk"] =
+        shipWeights["risk"].toDouble()
+        * shipData.value("risk_factor", 0.025).toDouble();
+    trainWeights["risk"] =
+        trainWeights["risk"].toDouble()
+        * trainData.value("risk_factor", 0.006).toDouble();
+    truckWeights["risk"] =
+        truckWeights["risk"].toDouble()
+        * truckData.value("risk_factor", 0.012).toDouble();
+
+    // Calculate energy costs based on fuel types and
+    // calorific values Ship energy cost
+    QString shipFuelType =
+        shipData.value("fuel_type", "HFO").toString();
+    double shipFuelPrice =
+        fuelPrices
+            .value(shipFuelType,
+                   fuelPrices.value("HFO", 580.0))
+            .toDouble();
+    double shipCalorificValue =
+        fuelEnergy
+            .value(shipFuelType,
+                   fuelEnergy.value("HFO", 11.1))
+            .toDouble();
+
+    // For HFO, convert from price per ton to price per kg
+    double shipEnergyCost;
+    if (shipFuelType == "HFO")
+    {
+        // HFO price is per ton, calorific value is kWh/kg
+        shipEnergyCost =
+            shipFuelPrice
+            / (shipCalorificValue * 1000.0); // USD per kWh
+    }
+    else
+    {
+        // Other fuels price is per liter, calorific value
+        // is kWh/L
+        shipEnergyCost =
+            shipFuelPrice
+            / shipCalorificValue; // USD per kWh
+    }
+    shipWeights["energyConsumption"] = shipEnergyCost;
+
+    // Train energy cost
+    QString trainFuelType =
+        trainData.value("fuel_type", "diesel_1").toString();
+    double trainFuelPrice =
+        fuelPrices
+            .value(trainFuelType,
+                   fuelPrices.value("diesel_1", 1.35))
+            .toDouble();
+    double trainCalorificValue =
+        fuelEnergy
+            .value(trainFuelType,
+                   fuelEnergy.value("diesel_1", 10.7))
+            .toDouble();
+    double trainEnergyCost =
+        trainFuelPrice / trainCalorificValue; // USD per kWh
+    trainWeights["energyConsumption"] = trainEnergyCost;
+
+    // Truck energy cost
+    QString truckFuelType =
+        truckData.value("fuel_type", "diesel_2").toString();
+    double truckFuelPrice =
+        fuelPrices
+            .value(truckFuelType,
+                   fuelPrices.value("diesel_2", 1.35))
+            .toDouble();
+    double truckCalorificValue =
+        fuelEnergy
+            .value(truckFuelType,
+                   fuelEnergy.value("diesel_2", 10.0))
+            .toDouble();
+    double truckEnergyCost =
+        truckFuelPrice / truckCalorificValue; // USD per kWh
+    truckWeights["energyConsumption"] = truckEnergyCost;
+
+    // Using TransportationTypes enum values for
+    // transportation modes
+    QVariantMap updatedWeights;
+    updatedWeights["default"] = defaultWeights;
+    updatedWeights[QString::number(static_cast<int>(
+        TransportationTypes::TransportationMode::Ship))] =
+        shipWeights;
+    updatedWeights[QString::number(static_cast<int>(
+        TransportationTypes::TransportationMode::Train))] =
+        trainWeights;
+    updatedWeights[QString::number(static_cast<int>(
+        TransportationTypes::TransportationMode::Truck))] =
+        truckWeights;
+
+    return updatedWeights;
 }
 
 } // namespace Backend
