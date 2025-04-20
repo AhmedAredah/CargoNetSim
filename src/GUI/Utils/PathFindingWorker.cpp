@@ -2,6 +2,7 @@
 #include "Backend/Clients/TerminalClient/TerminalSimulationClient.h"
 #include "GUI/Controllers/UtilityFunctions.h"
 #include "GUI/Items/ConnectionLine.h"
+#include "GUI/Items/MapPoint.h"
 #include <QSet>
 #include <exception>
 
@@ -55,8 +56,17 @@ void PathFindingWorker::process()
             return;
         }
 
-        // Get the Origin and Destination terminals from the
-        // region scene
+        // Configure the server weights
+        auto configurationWeights =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getConfigController()
+                    ->getCostFunctionWeights();
+        terminalClient->setCostFunctionParameters(
+            configurationWeights);
+
+        // Get the Origin and Destination terminals from
+        // the region scene
         auto originTerminal =
             UtilitiesFunctions::getOriginTerminal(
                 mainWindow);
@@ -317,6 +327,47 @@ Backend::Terminal *PathFindingWorker::createTerminalObject(
     QString terminalName =
         terminal->getProperties().value("Name").toString();
     QString regionName = terminal->getRegion();
+    auto    mapPoints =
+        UtilitiesFunctions::getMapPointsOfTerminal(
+            mainWindow->regionScene_, terminal, regionName,
+            "*");
+    QStringList networkTerminalAliases;
+    networkTerminalAliases << terminalId;
+    for (CargoNetSim::GUI::MapPoint *mapPoint : mapPoints)
+    {
+        if (mapPoint->getReferenceNetwork())
+        {
+            if (CargoNetSim::Backend::TrainClient::
+                    NeTrainSimNetwork *network =
+                        dynamic_cast<
+                            CargoNetSim::Backend::
+                                TrainClient::
+                                    NeTrainSimNetwork *>(
+                            mapPoint
+                                ->getReferenceNetwork()))
+            {
+                networkTerminalAliases
+                    << (network->getNetworkName() + "_"
+                        + mapPoint
+                              ->getReferencedNetworkNodeID());
+            }
+            else if (
+                CargoNetSim::Backend::TruckClient::
+                    IntegrationNetwork *network =
+                        dynamic_cast<
+                            CargoNetSim::Backend::
+                                TruckClient::
+                                    IntegrationNetwork *>(
+                            mapPoint
+                                ->getReferenceNetwork()))
+            {
+                networkTerminalAliases
+                    << (network->getNetworkName() + "_"
+                        + mapPoint
+                              ->getReferencedNetworkNodeID());
+            }
+        }
+    }
 
     // Create interfaces map for the Terminal object
     QMap<Backend::TerminalTypes::TerminalInterface,
@@ -500,7 +551,8 @@ Backend::Terminal *PathFindingWorker::createTerminalObject(
 
     // Create Terminal object using the full constructor
     return new Backend::Terminal(
-        QStringList{terminalId}, // Include both ID and name
+        networkTerminalAliases, // Include both ID and
+                                // aliases
         terminalName, config, interfaces, regionName,
         nullptr);
 }
