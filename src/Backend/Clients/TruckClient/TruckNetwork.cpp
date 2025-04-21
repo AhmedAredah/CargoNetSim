@@ -139,9 +139,12 @@ IntegrationNetwork::findShortestPath(int startNodeId,
 
     // Calculate path metrics
     result.totalLength =
-        getPathLengthByLinks(result.pathLinks);
-    result.minTravelTime = m_graph->calculatePathMetric(
-        result.pathNodes, "time");
+        getPathLengthByLinks(result.pathLinks)
+        * 1000.0; // Convert km to m
+    result.minTravelTime =
+        m_graph->calculatePathMetric(result.pathNodes,
+                                     "time")
+        * 3600.0; // Convert hours to seconds
 
     return result;
 }
