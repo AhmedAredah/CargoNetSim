@@ -259,6 +259,13 @@ bool SimulationValidationWorker::setupSimulationData(
         QList<Backend::PathSegment *> segments =
             path->getSegments();
 
+        // Keep track of the number of vehicles needed
+        // per path
+        int shipCounter      = 0;
+        int trainCounter     = 0;
+        int truckCounter     = 0;
+        int containerCounter = 0;
+
         // Process each segment in the path
         for (auto segment : segments)
         {
@@ -427,7 +434,7 @@ bool SimulationValidationWorker::setupSimulationData(
                         QString trainId =
                             QString("%1_%2")
                                 .arg(path->getPathId())
-                                .arg(i + 1);
+                                .arg(trainCounter++);
                         Backend::Train *train =
                             vehicleController
                                 ->getRandomTrain()
@@ -445,8 +452,9 @@ bool SimulationValidationWorker::setupSimulationData(
                         // Add loading time offset for each
                         // train
                         train->setLoadTime(
-                            i * 10); // 10 seconds between
-                                     // trains
+                            trainCounter
+                            * 100); // 100 seconds between
+                                    // trains
 
                         // Assign containers to this train
                         QList<ContainerCore::Container *>
@@ -474,12 +482,14 @@ bool SimulationValidationWorker::setupSimulationData(
                                 // Update the container's ID
                                 // to make it unique
                                 QString newId =
-                                    QString("%1_%2")
+                                    QString("%1_%2_%3")
                                         .arg(
                                             path->getPathId())
                                         .arg(
                                             originalContainer
-                                                ->getContainerID());
+                                                ->getContainerID())
+                                        .arg(
+                                            containerCounter++);
                                 containerCopy
                                     ->setContainerID(newId);
 
@@ -604,7 +614,7 @@ bool SimulationValidationWorker::setupSimulationData(
                         QString tripId =
                             QString("%1_%2")
                                 .arg(path->getPathId())
-                                .arg(i + 1);
+                                .arg(truckCounter++);
 
                         // Assign containers to this truck
                         QList<ContainerCore::Container *>
@@ -632,12 +642,14 @@ bool SimulationValidationWorker::setupSimulationData(
                                 // Update the container's ID
                                 // to make it unique
                                 QString newId =
-                                    QString("%1_%2")
+                                    QString("%1_%2_%3")
                                         .arg(
                                             path->getPathId())
                                         .arg(
                                             originalContainer
-                                                ->getContainerID());
+                                                ->getContainerID())
+                                        .arg(
+                                            containerCounter++);
                                 containerCopy
                                     ->setContainerID(newId);
 
@@ -749,7 +761,7 @@ bool SimulationValidationWorker::setupSimulationData(
                         QString shipId =
                             QString("%1_%2")
                                 .arg(path->getPathId())
-                                .arg(i + 1);
+                                .arg(shipCounter++);
                         Backend::Ship *ship =
                             vehicleController
                                 ->getRandomShip()
@@ -788,12 +800,14 @@ bool SimulationValidationWorker::setupSimulationData(
                                 // Update the container's ID
                                 // to make it unique
                                 QString newId =
-                                    QString("%1_%2")
+                                    QString("%1_%2_%3")
                                         .arg(
                                             path->getPathId())
                                         .arg(
                                             originalContainer
-                                                ->getContainerID());
+                                                ->getContainerID())
+                                        .arg(
+                                            containerCounter++);
                                 containerCopy
                                     ->setContainerID(newId);
 
@@ -922,10 +936,8 @@ bool SimulationValidationWorker::runSimulations(
         }
 
         // Define the simulator with all trains
-        trainClient->defineSimulator(trainNetwork, 1.0);
-
-        trainClient->addTrainsToSimulator(
-            trainNetwork->getNetworkName(), trains);
+        trainClient->defineSimulator(trainNetwork, 1.0,
+                                     trains);
 
         // Add containers to each train
         for (const auto &trainData : trainDataList)

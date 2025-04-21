@@ -145,6 +145,8 @@ private:
     QDoubleSpinBox *shipMultiplierSpin;
     QDoubleSpinBox *truckMultiplierSpin;
     QDoubleSpinBox *trainMultiplierSpin;
+    QCheckBox      *useSpecificTimeValues;
+    QDoubleSpinBox *averageTimeValueSpin;
 
     // Ship settings
     QDoubleSpinBox *shipSpeedSpin;
@@ -152,6 +154,7 @@ private:
     QDoubleSpinBox *shipFuelSpin;
     QSpinBox       *shipContainers;
     QDoubleSpinBox *shipRiskSpin;
+    QDoubleSpinBox *shipTimeValueSpin;
 
     // Train settings
     QDoubleSpinBox *trainSpeedSpin;
@@ -160,6 +163,7 @@ private:
     QDoubleSpinBox *trainFuelSpin;
     QSpinBox       *trainContainers;
     QDoubleSpinBox *trainRiskSpin;
+    QDoubleSpinBox *trainTimeValueSpin;
 
     // Truck settings
     QDoubleSpinBox *truckSpeedSpin;
@@ -168,6 +172,7 @@ private:
     QDoubleSpinBox *truckFuelSpin;
     QSpinBox       *truckContainers;
     QDoubleSpinBox *truckRiskSpin;
+    QDoubleSpinBox *truckTimeValueSpin;
 
     // Groups
     QGroupBox *simulationGroup;
@@ -177,6 +182,7 @@ private:
     QGroupBox *shipGroup;
     QGroupBox *trainGroup;
     QGroupBox *truckGroup;
+    QGroupBox *timeValueGroup;
 
     // Apply button
     QPushButton *applyButton;

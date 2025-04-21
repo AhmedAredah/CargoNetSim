@@ -3,7 +3,8 @@
     <simulation>
         <shortest_paths>5</shortest_paths>
         <time_step>15</time_step>
-        <time_value_of_money>5.000000</time_value_of_money>
+        <use_mode_specific>false</use_mode_specific>
+        <time_value_of_money>20.430000</time_value_of_money>
     </simulation>
     <fuel_energy>
         <HFO>11.100000</HFO>
@@ -33,6 +34,7 @@
             <average_speed>20.000000</average_speed>
             <fuel_type>HFO</fuel_type>
             <risk_factor>0.025000</risk_factor>
+            <time_value_of_money>13.430000</time_value_of_money>
         </ship>
         <rail>
             <average_container_number>180</average_container_number>
@@ -41,6 +43,7 @@
             <fuel_type>diesel_1</fuel_type>
             <risk_factor>0.006000</risk_factor>
             <use_network>true</use_network>
+            <time_value_of_money>16.430000</time_value_of_money>
         </rail>
         <truck>
             <average_container_number>1</average_container_number>
@@ -49,6 +52,7 @@
             <fuel_type>diesel_2</fuel_type>
             <risk_factor>0.012000</risk_factor>
             <use_network>true</use_network>
+            <time_value_of_money>31.430000</time_value_of_money>
         </truck>
     </transport_modes>
 </config>
