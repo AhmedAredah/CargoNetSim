@@ -838,7 +838,7 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
             transportModes.value("rail").toMap();
         containersPerVehicle =
             modeProperties
-                .value("average_container_number", 400)
+                .value("average_container_number", 300)
                 .toInt();
         if (vehicleController->getAllTrains().isEmpty())
         {
@@ -870,7 +870,7 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
             transportModes.value("ship").toMap();
         containersPerVehicle =
             modeProperties
-                .value("average_container_number", 10000)
+                .value("average_container_number", 18000)
                 .toInt();
     }
 
