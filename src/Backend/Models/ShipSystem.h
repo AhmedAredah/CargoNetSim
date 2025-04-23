@@ -949,6 +949,9 @@ signals:
     void propertiesChanged();
 
 private:
+    // Add a constant to identify NaN sentinel values
+    static constexpr float NAN_SENTINEL_VALUE = -1.0f;
+
     /** @brief Unique identifier for the ship */
     QString m_shipId;
 
@@ -1082,6 +1085,14 @@ private:
      * @return True if the variant contains NaN.
      */
     bool containsNaN(const QVariant &value) const;
+
+    /**
+     * @brief Helper method to check if a float value should
+     * be treated as NaN
+     * @param value The float value to check.
+     * @return True if the value is NaN.
+     */
+    bool isNanValue(float value) const;
 };
 
 /**

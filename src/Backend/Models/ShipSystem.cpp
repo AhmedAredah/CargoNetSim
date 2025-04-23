@@ -167,121 +167,85 @@ Ship::Ship(
 Ship::Ship(const QJsonObject &json, QObject *parent)
     : QObject(parent)
 {
+    // Helper function for consistent NaN handling during
+    // parsing
+    auto parseFloat = [](const QJsonValue &value,
+                         float             defaultValue =
+                             0.0f) -> float {
+        if (value.isNull())
+        {
+            return NAN_SENTINEL_VALUE;
+        }
+
+        if (value.isString())
+        {
+            QString strVal = value.toString().toLower();
+            if (strVal.contains("nan")
+                || strVal.contains("na"))
+            {
+                return NAN_SENTINEL_VALUE;
+            }
+
+            bool  ok;
+            float floatVal = strVal.toFloat(&ok);
+            return ok ? floatVal : NAN_SENTINEL_VALUE;
+        }
+
+        return value.toDouble(defaultValue);
+    };
+
     // Parse basic string parameters
     m_shipId = json["ID"].toString();
 
     // Parse numeric parameters
-    m_maxSpeed        = json["MaxSpeed"].toDouble();
-    m_waterlineLength = json["WaterlineLength"].toDouble();
+    m_maxSpeed        = parseFloat(json["MaxSpeed"]);
+    m_waterlineLength = parseFloat(json["WaterlineLength"]);
     m_lengthBetweenPerpendiculars =
-        json["LengthBetweenPerpendiculars"].toDouble();
-    m_beam           = json["Beam"].toDouble();
-    m_draftAtForward = json["DraftAtForward"].toDouble();
-    m_draftAtAft     = json["DraftAtAft"].toDouble();
-
-    // Parse optional numeric parameters
-    if (json.contains("VolumetricDisplacement")
-        && !json["VolumetricDisplacement"].isNull())
-    {
-        m_volumetricDisplacement =
-            json["VolumetricDisplacement"].toDouble();
-    }
-    else
-    {
-        m_volumetricDisplacement = -1.0f;
-    }
-
-    if (json.contains("WettedHullSurface")
-        && !json["WettedHullSurface"].isNull())
-    {
-        m_wettedHullSurface =
-            json["WettedHullSurface"].toDouble();
-    }
-    else
-    {
-        m_wettedHullSurface = -1.0f;
-    }
-
-    m_areaAboveWaterline =
-        json["ShipAndCargoAreaAboveWaterline"].toDouble(
-            0.0);
-    m_bulbousBowCenterHeight =
-        json["BulbousBowTransverseAreaCenterHeight"]
-            .toDouble(0.0);
+        parseFloat(json["LengthBetweenPerpendiculars"]);
+    m_beam           = parseFloat(json["Beam"]);
+    m_draftAtForward = parseFloat(json["DraftAtForward"]);
+    m_draftAtAft     = parseFloat(json["DraftAtAft"]);
+    m_volumetricDisplacement =
+        parseFloat(json["VolumetricDisplacement"]);
+    m_wettedHullSurface =
+        parseFloat(json["WettedHullSurface"]);
+    m_areaAboveWaterline = parseFloat(
+        json["ShipAndCargoAreaAboveWaterline"], 0.0f);
+    m_bulbousBowCenterHeight = parseFloat(
+        json["BulbousBowTransverseAreaCenterHeight"], 0.0f);
     m_bulbousBowArea =
-        json["BulbousBowTransverseArea"].toDouble(0.0);
+        parseFloat(json["BulbousBowTransverseArea"], 0.0f);
     m_immersedTransomArea =
         json["ImmersedTransomArea"].toDouble(0.0);
-
-    if (json.contains("HalfWaterlineEntranceAngle")
-        && !json["HalfWaterlineEntranceAngle"].isNull())
-    {
-        m_entranceAngle =
-            json["HalfWaterlineEntranceAngle"].toDouble();
-    }
-    else
-    {
-        m_entranceAngle = -1.0f;
-    }
-
+    m_entranceAngle =
+        parseFloat(json["HalfWaterlineEntranceAngle"]);
     m_surfaceRoughness =
-        json["SurfaceRoughness"].toDouble(0.0);
-    m_buoyancyCenter =
-        json["LongitudinalBuoyancyCenter"].toDouble(0.0);
+        parseFloat(json["SurfaceRoughness"], 0.0f);
+    m_buoyancyCenter = parseFloat(
+        json["LongitudinalBuoyancyCenter"], 0.0f);
 
     if (json.contains("SternShapeParam")
         && !json["SternShapeParam"].isNull())
     {
+        bool ok;
         m_sternShapeParam =
-            json["SternShapeParam"].toInt(-1);
+            json["SternShapeParam"].toString().toInt(&ok);
+        if (!ok)
+        {
+            m_sternShapeParam = -1;
+        }
     }
     else
     {
         m_sternShapeParam = -1;
     }
 
-    // More optional parameters
-    if (json.contains("MidshipSectionCoef")
-        && !json["MidshipSectionCoef"].isNull())
-    {
-        m_midshipSectionCoef =
-            json["MidshipSectionCoef"].toDouble();
-    }
-    else
-    {
-        m_midshipSectionCoef = -1.0f;
-    }
-
-    if (json.contains("WaterplaneAreaCoef")
-        && !json["WaterplaneAreaCoef"].isNull())
-    {
-        m_waterplaneAreaCoef =
-            json["WaterplaneAreaCoef"].toDouble();
-    }
-    else
-    {
-        m_waterplaneAreaCoef = -1.0f;
-    }
-
-    if (json.contains("PrismaticCoef")
-        && !json["PrismaticCoef"].isNull())
-    {
-        m_prismaticCoef = json["PrismaticCoef"].toDouble();
-    }
-    else
-    {
-        m_prismaticCoef = -1.0f;
-    }
-
-    if (json.contains("BlockCoef")
-        && !json["BlockCoef"].isNull())
-    {
-        m_blockCoef = json["BlockCoef"].toDouble();
-    }
-    else
-    {
-        m_blockCoef = -1.0f;
-    }
+    m_midshipSectionCoef =
+        parseFloat(json["MidshipSectionCoef"]);
+    m_waterplaneAreaCoef =
+        parseFloat(json["WaterplaneAreaCoef"]);
+    m_prismaticCoef = parseFloat(json["PrismaticCoef"]);
+    m_blockCoef     = parseFloat(json["BlockCoef"]);
 
     // Parse engine and propeller parameters
     m_enginesPerPropeller =
@@ -445,12 +409,22 @@ bool Ship::containsNaN(const QVariant &value) const
         return true;
     }
 
-    if (value.typeId() == QMetaType::QString
-        && value.toString().toLower().contains("na"))
+    // Handle float values
+    if (value.typeId() == QMetaType::Float
+        || value.typeId() == QMetaType::Double)
     {
-        return true;
+        return isNanValue(value.toFloat());
     }
 
+    // Handle string values
+    if (value.typeId() == QMetaType::QString)
+    {
+        QString strVal = value.toString().toLower();
+        return strVal.contains("nan")
+               || strVal.contains("na");
+    }
+
+    // Check lists
     if (value.typeId() == QMetaType::QVariantList)
     {
         QVariantList list = value.toList();
@@ -466,8 +440,24 @@ bool Ship::containsNaN(const QVariant &value) const
     return false;
 }
 
+bool Ship::isNanValue(float value) const
+{
+    return qIsNaN(value) || value == NAN_SENTINEL_VALUE;
+}
+
 QJsonObject Ship::toJson() const
 {
+    // Helper function to handle float values that might be
+    // NaN
+    auto serializeFloat =
+        [this](float value) -> QJsonValue {
+        if (isNanValue(value))
+        {
+            return QString("nan");
+        }
+        return value;
+    };
+
     // Helper function to format path
     auto formatPath =
         [](const QVector<QVector<float>> &path) -> QString {
@@ -572,30 +562,43 @@ QJsonObject Ship::toJson() const
     // Add all ship attributes to JSON
     json["ID"]              = m_shipId;
     json["Path"]            = formatPath(m_pathCoordinates);
-    json["MaxSpeed"]        = m_maxSpeed;
-    json["WaterlineLength"] = m_waterlineLength;
+    json["MaxSpeed"]        = serializeFloat(m_maxSpeed);
+    json["WaterlineLength"] =
+        serializeFloat(m_waterlineLength);
     json["LengthBetweenPerpendiculars"] =
-        m_lengthBetweenPerpendiculars;
-    json["Beam"]           = m_beam;
-    json["DraftAtForward"] = m_draftAtForward;
-    json["DraftAtAft"]     = m_draftAtAft;
+        serializeFloat(m_lengthBetweenPerpendiculars);
+    json["Beam"] = serializeFloat(m_beam);
+    json["DraftAtForward"] =
+        serializeFloat(m_draftAtForward);
+    json["DraftAtAft"] = serializeFloat(m_draftAtAft);
     json["VolumetricDisplacement"] =
-        m_volumetricDisplacement;
-    json["WettedHullSurface"] = m_wettedHullSurface;
+        serializeFloat(m_volumetricDisplacement);
+    json["WettedHullSurface"] =
+        serializeFloat(m_wettedHullSurface);
     json["ShipAndCargoAreaAboveWaterline"] =
-        m_areaAboveWaterline;
+        serializeFloat(m_areaAboveWaterline);
     json["BulbousBowTransverseAreaCenterHeight"] =
-        m_bulbousBowCenterHeight;
-    json["BulbousBowTransverseArea"] = m_bulbousBowArea;
-    json["ImmersedTransomArea"] = m_immersedTransomArea;
-    json["HalfWaterlineEntranceAngle"] = m_entranceAngle;
-    json["SurfaceRoughness"]           = m_surfaceRoughness;
-    json["LongitudinalBuoyancyCenter"] = m_buoyancyCenter;
-    json["SternShapeParam"]            = m_sternShapeParam;
-    json["MidshipSectionCoef"] = m_midshipSectionCoef;
-    json["WaterplaneAreaCoef"] = m_waterplaneAreaCoef;
-    json["PrismaticCoef"]      = m_prismaticCoef;
-    json["BlockCoef"]          = m_blockCoef;
+        serializeFloat(m_bulbousBowCenterHeight);
+    json["BulbousBowTransverseArea"] =
+        serializeFloat(m_bulbousBowArea);
+    json["ImmersedTransomArea"] =
+        serializeFloat(m_immersedTransomArea);
+    json["HalfWaterlineEntranceAngle"] =
+        serializeFloat(m_entranceAngle);
+    json["SurfaceRoughness"] =
+        serializeFloat(m_surfaceRoughness);
+    json["LongitudinalBuoyancyCenter"] =
+        serializeFloat(m_buoyancyCenter);
+    json["SternShapeParam"] =
+        (m_sternShapeParam == -1)
+            ? QJsonValue(QString("nan"))
+            : QJsonValue(m_sternShapeParam);
+    json["MidshipSectionCoef"] =
+        serializeFloat(m_midshipSectionCoef);
+    json["WaterplaneAreaCoef"] =
+        serializeFloat(m_waterplaneAreaCoef);
+    json["PrismaticCoef"] = serializeFloat(m_prismaticCoef);
+    json["BlockCoef"]     = serializeFloat(m_blockCoef);
     json["TanksDetails"] =
         formatTanksDetails(m_tanksDetails);
     json["EnginesCountPerPropeller"] =
@@ -642,6 +645,8 @@ QJsonObject Ship::toJson() const
         json["AppendagesWettedSurfaces"] =
             appendagesList.join(';');
     }
+
+    qDebug() << "ship json: " << json;
 
     return json;
 }
@@ -1485,6 +1490,39 @@ QVector<Ship *>
 ShipsReader::readShipsFile(const QString &filePath,
                            QObject       *parent)
 {
+    auto getNanOrValue =
+        [](const QMap<QString, QVariant> &params,
+           const QString &key, float defaultVal = -1.0f) {
+            if (!params.contains(key)
+                || params[key].isNull())
+            {
+                return defaultVal;
+            }
+            return params[key].toFloat();
+        };
+
+    auto getNanOrValueInt =
+        [](const QMap<QString, QVariant> &params,
+           const QString &key, int defaultVal = -1) {
+            if (!params.contains(key)
+                || params[key].isNull())
+            {
+                return defaultVal;
+            }
+            return params[key].toInt();
+        };
+
+    auto getNanOrValueBool =
+        [](const QMap<QString, QVariant> &params,
+           const QString &key, bool defaultVal = false) {
+            if (!params.contains(key)
+                || params[key].isNull())
+            {
+                return defaultVal;
+            }
+            return params[key].toBool();
+        };
+
     QVector<Ship *> ships;
 
     if (!QFile::exists(filePath))
@@ -1545,7 +1583,8 @@ ShipsReader::readShipsFile(const QString &filePath,
             QMap<QString, QVariant> shipParams =
                 parseShipParameters(parts);
 
-            // Create a Ship instance and append to the list
+            // Create a Ship instance with getNanOrValue for
+            // all optional parameters
             Ship *ship = new Ship(
                 shipParams["ID"].toString(),
                 shipParams["Path"]
@@ -1557,11 +1596,12 @@ ShipsReader::readShipsFile(const QString &filePath,
                 shipParams["Beam"].toFloat(),
                 shipParams["DraftAtForward"].toFloat(),
                 shipParams["DraftAtAft"].toFloat(),
-                shipParams
-                    .value("VolumetricDisplacement", -1.0f)
-                    .toFloat(),
-                shipParams.value("WettedHullSurface", -1.0f)
-                    .toFloat(),
+                getNanOrValue(
+                    shipParams,
+                    "VolumetricDisplacement"), // Optional
+                getNanOrValue(
+                    shipParams,
+                    "WettedHullSurface"), // Optional
                 shipParams["ShipAndCargoAreaAboveWaterline"]
                     .toFloat(),
                 shipParams
@@ -1570,37 +1610,54 @@ ShipsReader::readShipsFile(const QString &filePath,
                 shipParams["BulbousBowTransverseArea"]
                     .toFloat(),
                 shipParams["ImmersedTransomArea"].toFloat(),
-                shipParams
-                    .value("HalfWaterlineEntranceAngle",
-                           -1.0f)
-                    .toFloat(),
+                getNanOrValue(shipParams,
+                              "HalfWaterlineEntranceAngl"
+                              "e"), // Optional
                 shipParams["SurfaceRoughness"].toFloat(),
                 shipParams["LongitudinalBuoyancyCenter"]
                     .toFloat(),
                 shipParams["SternShapeParam"].toInt(),
-                shipParams
-                    .value("MidshipSectionCoef", -1.0f)
-                    .toFloat(),
-                shipParams
-                    .value("WaterplaneAreaCoef", -1.0f)
-                    .toFloat(),
-                shipParams.value("PrismaticCoef", -1.0f)
-                    .toFloat(),
-                shipParams.value("BlockCoef", -1.0f)
-                    .toFloat(),
+                getNanOrValue(
+                    shipParams,
+                    "MidshipSectionCoef"), // Optional
+                getNanOrValue(
+                    shipParams,
+                    "WaterplaneAreaCoef"), // Optional
+                getNanOrValue(shipParams,
+                              "PrismaticCoef"), // Optional
+                getNanOrValue(shipParams,
+                              "BlockCoef"), // Optional
                 shipParams["TanksDetails"]
                     .value<QVector<QMap<QString, float>>>(),
                 shipParams["EnginesCountPerPropeller"]
                     .toInt(),
                 shipParams["EngineTierIIPropertiesPoints"]
                     .value<QVector<QMap<QString, float>>>(),
-                shipParams
-                    .value("EngineTierIIIPropertiesPoints")
-                    .value<QVector<QMap<QString, float>>>(),
-                shipParams.value("EngineTierIICurve")
-                    .value<QVector<QMap<QString, float>>>(),
-                shipParams.value("EngineTierIIICurve")
-                    .value<QVector<QMap<QString, float>>>(),
+                // Optional complex parameters
+                shipParams.contains(
+                    "EngineTierIIIPropertiesPoints")
+                        && !shipParams["EngineTierIIIProper"
+                                       "tiesPoints"]
+                                .isNull()
+                    ? shipParams
+                          ["EngineTierIIIPropertiesPoints"]
+                              .value<QVector<
+                                  QMap<QString, float>>>()
+                    : QVector<QMap<QString, float>>(),
+                shipParams.contains("EngineTierIICurve")
+                        && !shipParams["EngineTierIICurve"]
+                                .isNull()
+                    ? shipParams["EngineTierIICurve"]
+                          .value<QVector<
+                              QMap<QString, float>>>()
+                    : QVector<QMap<QString, float>>(),
+                shipParams.contains("EngineTierIIICurve")
+                        && !shipParams["EngineTierIIICurve"]
+                                .isNull()
+                    ? shipParams["EngineTierIIICurve"]
+                          .value<QVector<
+                              QMap<QString, float>>>()
+                    : QVector<QMap<QString, float>>(),
                 shipParams["GearboxRatio"].toFloat(),
                 shipParams["GearboxEfficiency"].toFloat(),
                 shipParams["ShaftEfficiency"].toFloat(),
@@ -1610,14 +1667,21 @@ ShipsReader::readShipsFile(const QString &filePath,
                 shipParams["PropellerBladesCount"].toInt(),
                 shipParams["PropellerExpandedAreaRatio"]
                     .toFloat(),
-                shipParams.value("StopIfNoEnergy", false)
-                    .toBool(),
-                shipParams.value("MaxRudderAngle", -1.0f)
-                    .toFloat(),
+                getNanOrValueBool(shipParams,
+                                  "StopIfNoEnergy",
+                                  false), // Optional
+                getNanOrValue(shipParams,
+                              "MaxRudderAngle"), // Optional
                 shipParams["VesselWeight"].toFloat(),
                 shipParams["CargoWeight"].toFloat(),
-                shipParams.value("AppendagesWettedSurfaces")
-                    .value<QMap<int, float>>(),
+                shipParams.contains(
+                    "AppendagesWettedSurfaces")
+                        && !shipParams
+                                ["AppendagesWettedSurfaces"]
+                                    .isNull()
+                    ? shipParams["AppendagesWettedSurfaces"]
+                          .value<QMap<int, float>>()
+                    : QMap<int, float>(), // Optional
                 parent);
 
             ships.append(ship);
