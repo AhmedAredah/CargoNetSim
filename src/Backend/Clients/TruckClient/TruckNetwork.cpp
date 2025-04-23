@@ -696,9 +696,9 @@ IntegrationSimulationConfigReader::readConfig(
         while (!in.atEnd())
         {
             QString line = in.readLine();
-            // Remove any control characters
-            line.remove(
-                QRegularExpression("[\\x00-\\x1F\\x7F]"));
+            // // Remove any control characters
+            // line.remove(
+            //     QRegularExpression("[\\x00-\\x1F\\x7F]"));
             if (!line.isEmpty())
             {
                 lines.append(line.trimmed());
@@ -718,7 +718,7 @@ IntegrationSimulationConfigReader::readConfig(
 
         // Parse simulation parameters (line 2)
         QStringList simParams = lines[1].trimmed().split(
-            QRegularExpression("\\s+"));
+            QRegularExpression("\\s+"), Qt::SkipEmptyParts);
         if (simParams.size() < 5)
         {
             throw std::runtime_error(
@@ -728,11 +728,15 @@ IntegrationSimulationConfigReader::readConfig(
         double simTime = simParams[0].toDouble();
 
         // Parse folders
-        QString inputFolder = lines[2].trimmed();
+        QString inputFolder =
+            lines[2].trimmed().replace("\\", "").replace(
+                "/", "");
         inputFolder =
             inputFolder.isEmpty() ? "." : inputFolder;
 
-        QString outputFolder = lines[3].trimmed();
+        QString outputFolder =
+            lines[3].trimmed().replace("\\", "").replace(
+                "/", "");
         outputFolder =
             outputFolder.isEmpty() ? "." : outputFolder;
 
