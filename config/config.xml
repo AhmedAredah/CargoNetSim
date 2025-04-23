@@ -17,7 +17,7 @@
         <diesel_2>2.680000</diesel_2>
     </fuel_carbon_content>
     <fuel_prices>
-        <HFO>580.000000</HFO>
+        <HFO>0.560000</HFO>
         <diesel_1>1.350000</diesel_1>
         <diesel_2>1.350000</diesel_2>
     </fuel_prices>
@@ -29,7 +29,7 @@
     </carbon_taxes>
     <transport_modes>
         <ship>
-            <average_container_number>9000</average_container_number>
+            <average_container_number>10000</average_container_number>
             <average_fuel_consumption>154.600000</average_fuel_consumption>
             <average_speed>20.000000</average_speed>
             <fuel_type>HFO</fuel_type>
