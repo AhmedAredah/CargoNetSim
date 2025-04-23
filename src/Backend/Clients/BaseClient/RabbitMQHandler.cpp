@@ -790,7 +790,10 @@ void RabbitMQHandler::processMessages()
                     // Emit signal with message
                     qDebug() << "Received message with "
                                 "routing key:"
-                             << routingKey;
+                             << routingKey
+                             << " and command event: "
+                             << message["event"].toString();
+                    ;
                     emit messageReceived(message);
                 }
                 else
