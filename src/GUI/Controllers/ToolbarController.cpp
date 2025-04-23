@@ -284,6 +284,27 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         new QHBoxLayout(mainWindow->networkToolsGroup_);
     networkToolsLayout->setContentsMargins(8, 12, 8, 8);
 
+    // Add link visible terminals to network button
+    QToolButton *linkTerminalsToNetworkButton =
+        new QToolButton();
+    linkTerminalsToNetworkButton->setToolButtonStyle(
+        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    linkTerminalsToNetworkButton->setIcon(QIcon(
+        IconFactory::createLinkTerminalsToNetworkIcon()));
+    linkTerminalsToNetworkButton->setText(
+        "Auto Link\nTerminals To Networks");
+    linkTerminalsToNetworkButton->setToolTip(
+        "Link Terminals to closest Network Points");
+    QObject::connect(
+        linkTerminalsToNetworkButton, &QToolButton::clicked,
+        [mainWindow]() {
+            UtilitiesFunctions::
+                onLinkTerminalsToNetworkActionTriggered(
+                    mainWindow);
+        });
+    networkToolsLayout->addWidget(
+        linkTerminalsToNetworkButton);
+
     // Add connect visible terminals button
     QToolButton *connectVisibleTerminalsByNetworkButton =
         new QToolButton();
@@ -930,6 +951,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     mainWindow
         ->toolsButtonsVisibility_[checkNetworkButton] =
         QList<int>{0, 1};
+    mainWindow->toolsButtonsVisibility_
+        [linkTerminalsToNetworkButton] = QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_
         [connectVisibleTerminalsByNetworkButton] =
         QList<int>{0, 1};

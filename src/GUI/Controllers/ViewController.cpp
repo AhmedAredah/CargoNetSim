@@ -14,6 +14,7 @@
 #include "GUI/Widgets/PropertiesPanel.h"
 #include "GUI/Widgets/ShortestPathTable.h"
 #include "UtilityFunctions.h"
+#include <QtWidgets/qapplication.h>
 #include <QtWidgets/qfiledialog.h>
 
 void CargoNetSim::GUI::ViewController::
@@ -574,6 +575,323 @@ void CargoNetSim::GUI::ViewController::flashPathLines(
                 mapLine->flash(false, flashColor);
             }
         }
+    }
+}
+
+bool CargoNetSim::GUI::ViewController::
+    linkTerminalToClosestNetworkPoint(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        const QList<NetworkType> &networkTypes)
+{
+    if (!mainWindow || !terminal || networkTypes.isEmpty())
+    {
+        return false;
+    }
+
+    QString           region = terminal->getRegion();
+    QList<MapPoint *> networkPoints;
+    QMap<NetworkType, QList<MapPoint *>>
+        alreadyLinkedPointsByType;
+
+    // Get all map points in the scene
+    QList<MapPoint *> allMapPoints =
+        mainWindow->regionScene_
+            ->getItemsByType<MapPoint>();
+
+    // Filter map points by network type and region
+    for (MapPoint *point : allMapPoints)
+    {
+        if (point->getRegion() != region)
+        {
+            continue;
+        }
+
+        QObject *network = point->getReferenceNetwork();
+        if (!network)
+        {
+            continue;
+        }
+
+        NetworkType matchedType =
+            NetworkType::Train; // Default, will be
+                                // overwritten
+        bool isMatchingType = false;
+
+        if (networkTypes.contains(NetworkType::Train))
+        {
+            if (dynamic_cast<
+                    Backend::TrainClient::NeTrainSimNetwork
+                        *>(network))
+            {
+                isMatchingType = true;
+                matchedType    = NetworkType::Train;
+            }
+        }
+
+        if (networkTypes.contains(NetworkType::Truck))
+        {
+            if (dynamic_cast<
+                    Backend::TruckClient::IntegrationNetwork
+                        *>(network))
+            {
+                isMatchingType = true;
+                matchedType    = NetworkType::Truck;
+            }
+        }
+
+        if (isMatchingType)
+        {
+            // Check if this point is already linked to a
+            // terminal
+            if (point->getLinkedTerminal())
+            {
+                alreadyLinkedPointsByType[matchedType]
+                    .append(point);
+            }
+            else
+            {
+                networkPoints.append(point);
+            }
+        }
+    }
+
+    if (networkPoints.isEmpty())
+    {
+        QString networkTypeStr;
+        if (networkTypes.size() == 1)
+        {
+            networkTypeStr =
+                networkTypes.first() == NetworkType::Train
+                    ? "train"
+                    : "truck";
+        }
+        else
+        {
+            networkTypeStr = "transport";
+        }
+
+        mainWindow->showStatusBarError(
+            QString("No available %1 network points found "
+                    "in region '%2'")
+                .arg(networkTypeStr)
+                .arg(region),
+            3000);
+        return false;
+    }
+
+    // Check if terminal is already linked to a network
+    // point of any requested type
+    for (NetworkType type : networkTypes)
+    {
+        const QList<MapPoint *> &typeLinkedPoints =
+            alreadyLinkedPointsByType[type];
+        for (MapPoint *point : typeLinkedPoints)
+        {
+            if (point->getLinkedTerminal() == terminal)
+            {
+                QString networkTypeStr =
+                    type == NetworkType::Train ? "train"
+                                               : "truck";
+                // // This terminal is already linked to a
+                // // network point of this type
+                // mainWindow->showStatusBarError(
+                //     QString("Terminal '%1' is already "
+                //             "linked to a %2 network
+                //             point.")
+                //         .arg(terminal->getProperty("Name")
+                //                  .toString())
+                //         .arg(networkTypeStr),
+                //     3000);
+                return false;
+            }
+        }
+    }
+
+    // Find the closest network point
+    MapPoint *closestPoint = nullptr;
+    qreal minDistance = std::numeric_limits<qreal>::max();
+
+    QPointF terminalPos = terminal->pos();
+    for (MapPoint *point : networkPoints)
+    {
+        QPointF pointPos = point->pos();
+        qreal   distance =
+            QLineF(terminalPos, pointPos).length();
+
+        if (distance < minDistance)
+        {
+            minDistance  = distance;
+            closestPoint = point;
+        }
+    }
+
+    if (closestPoint)
+    {
+        // Link the terminal to the closest point
+        UtilitiesFunctions::linkMapPointToTerminal(
+            mainWindow, closestPoint, terminal);
+
+        // Get the network name and type for display
+        QString  networkName    = "Unknown Network";
+        QString  networkTypeStr = "transport";
+        QObject *network =
+            closestPoint->getReferenceNetwork();
+        if (auto trainNet = dynamic_cast<
+                Backend::TrainClient::NeTrainSimNetwork *>(
+                network))
+        {
+            networkName    = trainNet->getNetworkName();
+            networkTypeStr = "train";
+        }
+        else if (auto truckNet =
+                     dynamic_cast<Backend::TruckClient::
+                                      IntegrationNetwork *>(
+                         network))
+        {
+            networkName    = truckNet->getNetworkName();
+            networkTypeStr = "truck";
+        }
+
+        mainWindow->showStatusBarMessage(
+            QString("Terminal '%1' successfully linked to "
+                    "%2 network '%3'")
+                .arg(terminal->getProperty("Name")
+                         .toString())
+                .arg(networkTypeStr)
+                .arg(networkName),
+            3000);
+
+        return true;
+    }
+
+    mainWindow->showStatusBarError(
+        "Failed to find a suitable network point to link.",
+        3000);
+    return false;
+}
+
+void CargoNetSim::GUI::ViewController::
+    linkAllVisibleTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes)
+{
+    if (!mainWindow || networkTypes.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No network types selected for linking.", 3000);
+        return;
+    }
+
+    // Get the current scene
+    auto scene = mainWindow->regionScene_;
+    if (!scene)
+    {
+        return;
+    }
+
+    // Get current region
+    QString currentRegion =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegion();
+
+    // Get all visible terminal items in the current region
+    QList<TerminalItem *> allTerminals =
+        scene->getItemsByType<TerminalItem>();
+    QList<TerminalItem *> visibleTerminals;
+
+    for (TerminalItem *terminal : allTerminals)
+    {
+        if (terminal && terminal->isVisible()
+            && terminal->getRegion() == currentRegion)
+        {
+            visibleTerminals.append(terminal);
+        }
+    }
+
+    if (visibleTerminals.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            QString(
+                "No visible terminals found in region '%1'")
+                .arg(currentRegion),
+            3000);
+        return;
+    }
+
+    // Create a dialog to confirm the operation
+    QMessageBox msgBox(mainWindow);
+    msgBox.setWindowTitle("Link Terminals to Network");
+    msgBox.setText(
+        QString(
+            "This will link all %1 visible terminals in "
+            "region '%2' to their closest network points.")
+            .arg(visibleTerminals.size())
+            .arg(currentRegion));
+
+    QString networkTypesStr;
+    if (networkTypes.contains(NetworkType::Train)
+        && networkTypes.contains(NetworkType::Truck))
+    {
+        networkTypesStr = "train and truck";
+    }
+    else if (networkTypes.contains(NetworkType::Train))
+    {
+        networkTypesStr = "train";
+    }
+    else if (networkTypes.contains(NetworkType::Truck))
+    {
+        networkTypesStr = "truck";
+    }
+
+    msgBox.setInformativeText(
+        QString("Selected network types: %1\n\nDo you want "
+                "to continue?")
+            .arg(networkTypesStr));
+    msgBox.setStandardButtons(QMessageBox::Yes
+                              | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+
+    int result = msgBox.exec();
+    if (result != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    // Link each terminal to its closest network point
+    int successCount = 0;
+    int i            = 0;
+
+    for (TerminalItem *terminal : visibleTerminals)
+    {
+
+        if (linkTerminalToClosestNetworkPoint(
+                mainWindow, terminal, networkTypes))
+        {
+            successCount++;
+        }
+
+        // Process events to keep UI responsive
+        QApplication::processEvents();
+    }
+
+    // Display results
+    if (successCount > 0)
+    {
+        mainWindow->showStatusBarMessage(
+            QString(
+                "Successfully linked %1 of %2 terminals to "
+                "their closest network points")
+                .arg(successCount)
+                .arg(visibleTerminals.size()),
+            5000);
+    }
+    else
+    {
+        mainWindow->showStatusBarError(
+            "No terminals could be linked to network "
+            "points.",
+            3000);
     }
 }
 

@@ -129,6 +129,14 @@ public:
     static void flashPathLines(MainWindow *mainWindow,
                                int         pathId);
 
+    static bool linkTerminalToClosestNetworkPoint(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        const QList<NetworkType> &networkTypes);
+
+    static void linkAllVisibleTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+
 private:
     static void updateTerminalGlobalPosition(
         MainWindow        *main_window,

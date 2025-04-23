@@ -134,6 +134,13 @@ public:
 
     static void
     validateSelectedSimulation(MainWindow *mainWindow);
+
+    static void linkSelectedTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+
+    static void onLinkTerminalsToNetworkActionTriggered(
+        MainWindow *mainWindow);
 };
 
 } // namespace GUI

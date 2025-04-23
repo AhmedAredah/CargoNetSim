@@ -826,6 +826,29 @@ QPixmap createUnlinkTerminalIcon()
 }
 
 //------------------------------------------------------------------------------
+// Link Terminals to Network Icon
+//------------------------------------------------------------------------------
+QPixmap createLinkTerminalsToNetworkIcon(int size)
+{
+    // Start with the base link terminal icon
+    QPixmap pixmap = createLinkTerminalIcon();
+
+    // Add network node representation
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Draw a small "AL" for Network
+    QFont font("Arial", size / 3, QFont::Bold);
+    painter.setPen(QPen(QColor(30, 144, 255), 2));
+    painter.setFont(font);
+    painter.drawText(pixmap.rect(),
+                     Qt::AlignTop | Qt::AlignHCenter, "AL");
+
+    painter.end();
+    return pixmap;
+}
+
+//------------------------------------------------------------------------------
 // Auto Connect Terminals Icon
 //------------------------------------------------------------------------------
 QPixmap createAutoConnectTerminalsIcon(int size)

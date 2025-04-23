@@ -6,6 +6,7 @@
 #include "GUI/Items/MapPoint.h"
 
 #include "GUI/Widgets/GraphicsView.h"
+#include "GUI/Widgets/NetworkSelectionDialog.h"
 #include "GUI/Widgets/PropertiesPanel.h"
 #include "GUI/Widgets/ShortestPathTable.h"
 
@@ -1385,4 +1386,106 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         3000);
     mainWindow->validatePathsButton_->setEnabled(false);
     thread->start();
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    linkSelectedTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes)
+{
+    if (!mainWindow || networkTypes.isEmpty())
+    {
+        return;
+    }
+
+    // Get the current scene
+    auto scene = mainWindow->regionScene_;
+    if (!scene)
+    {
+        return;
+    }
+
+    // Get selected terminal items
+    QList<QGraphicsItem *> selectedItems =
+        scene->selectedItems();
+    QList<TerminalItem *> selectedTerminals;
+
+    for (QGraphicsItem *item : selectedItems)
+    {
+        if (TerminalItem *terminal =
+                dynamic_cast<TerminalItem *>(item))
+        {
+            selectedTerminals.append(terminal);
+        }
+    }
+
+    if (selectedTerminals.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No terminals selected.", 3000);
+        return;
+    }
+
+    // Link each selected terminal to its closest network
+    // point
+    int successCount = 0;
+    for (TerminalItem *terminal : selectedTerminals)
+    {
+        if (ViewController::
+                linkTerminalToClosestNetworkPoint(
+                    mainWindow, terminal, networkTypes))
+        {
+            successCount++;
+        }
+    }
+
+    if (successCount > 0)
+    {
+        mainWindow->showStatusBarMessage(
+            QString("Successfully linked %1 terminal(s) to "
+                    "network points")
+                .arg(successCount),
+            3000);
+    }
+    else
+    {
+        mainWindow->showStatusBarError(
+            "No terminals could be linked to network "
+            "points.",
+            3000);
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    onLinkTerminalsToNetworkActionTriggered(
+        MainWindow *mainWindow)
+{
+    if (!mainWindow)
+    {
+        return;
+    }
+    NetworkSelectionDialog dialog(mainWindow);
+    int                    result = dialog.exec();
+
+    if (result == QDialog::Accepted
+        || result == QDialog::Accepted + 1)
+    {
+        QList<NetworkType> selectedTypes =
+            dialog.getSelectedNetworkTypes();
+
+        if (result == QDialog::Accepted)
+        {
+            // Link selected terminals
+            UtilitiesFunctions::
+                linkSelectedTerminalsToNetwork(
+                    mainWindow, selectedTypes);
+        }
+        else if (result == QDialog::Accepted + 1)
+        {
+            // Link all visible terminals
+            ViewController::
+                linkAllVisibleTerminalsToNetwork(
+                    mainWindow, selectedTypes);
+        }
+    }
 }
