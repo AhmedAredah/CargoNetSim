@@ -458,65 +458,25 @@ bool TrainSimulationClient::unloadTrain(
 {
     // Execute in a serialized command block
     return executeSerializedCommand([&]() {
-        // Attempt private unload first
-        bool success =
-            unloadTrainPrivate(networkName, trainId,
-                               containersDestinationNames);
-        return success;
+        // Build command parameters
+        QJsonObject params{
+            {"networkName", networkName},
+            {"trainID", trainId},
+            {"ContainersDestinationNames",
+             QJsonArray::fromStringList(
+                 containersDestinationNames)}};
+
+        // Use dedicated unload command wait
+        return sendCommandAndWait(
+            "unloadContainersFromTrainAtCurrentTerminal",
+            params, {"containerUnloaded"});
     });
-}
-
-bool TrainSimulationClient::sendUnloadCommandAndWait(
-    const QString &command, const QJsonObject &params)
-{
-    // Reset the completion flag
-    m_unloadComplete = false;
-
-    // Send the command
-    bool sent = sendCommand(command, params);
-    if (!sent)
-    {
-        return false;
-    }
-
-    // TODO: Debug to know why the containerUnloaded event
-    // is not received despite being sent from the server
-    return true;
-
-    // Use both mechanisms:
-    // 1. The standard waitForEvent method from base
-    bool eventReceived =
-        waitForEvent({"containersUnloaded"}, 30000);
-
-    // 2. Also wait on our condition variable as a backup
-    if (!eventReceived && !m_unloadComplete)
-    {
-        QElapsedTimer timer;
-        timer.start();
-        int timeoutMs = 30000; // 30 seconds timeout
-
-        while (!m_unloadComplete
-               && timer.elapsed() < timeoutMs)
-        {
-            // Wait with timeout (will automatically
-            // release the mutex while waiting)
-            m_unloadCondition.wait(
-                &m_unloadMutex,
-                1000); // 1 second intervals
-        }
-    }
-
-    return eventReceived || m_unloadComplete;
 }
 
 bool TrainSimulationClient::unloadTrainPrivate(
     const QString &networkName, const QString &trainId,
     const QStringList &containersDestinationNames)
 {
-    // Use the dedicated unload mutex instead of
-    // executeSerializedCommand
-    QMutexLocker unloadLocker(&m_unloadMutex);
-
     // Build command parameters
     QJsonObject params{{"networkName", networkName},
                        {"trainID", trainId},
@@ -524,25 +484,33 @@ bool TrainSimulationClient::unloadTrainPrivate(
                         QJsonArray::fromStringList(
                             containersDestinationNames)}};
 
-    // Use dedicated unload command wait
-    bool success = sendUnloadCommandAndWait(
-        "unloadContainersFromTrainAtCurrentTerminal",
-        params);
+    // Create local event loop
+    QEventLoop eventLoop;
+    bool       success = false;
 
-    // Log result of unload operation
-    if (m_logger)
+    // Connect the event signal to break the local event
+    // loop
+    connect(this, &SimulationClientBase::eventReceived,
+            [this, &eventLoop,
+             &success](const QString     &event,
+                       const QJsonObject &data) {
+                if (normalizeEventName(event)
+                    == "containersunloaded")
+                {
+                    success = true;
+                    eventLoop.quit();
+                }
+            });
+
+    // Send the command without waiting
+    if (sendCommand("unloadContainersFromShipAtTerminal",
+                    params))
     {
-        if (success)
-        {
-            m_logger->log("Train " + trainId + " unloaded",
-                          static_cast<int>(m_clientType));
-        }
-        else
-        {
-            m_logger->logError(
-                "Failed to unload train " + trainId,
-                static_cast<int>(m_clientType));
-        }
+        // Wait for the event with a timeout
+        QTimer::singleShot(
+            30000, &eventLoop,
+            &QEventLoop::quit); // 30-second timeout
+        eventLoop.exec();
     }
     return success;
 }
@@ -633,6 +601,9 @@ TrainSimulationClient::getAllTrainsStates() const
 void TrainSimulationClient::processMessage(
     const QJsonObject &message)
 {
+    // Delegate for the base class for the initial
+    // processing
+    SimulationClientBase::processMessage(message);
 
     // Check if message contains an event
     if (!message.contains("event"))
@@ -717,10 +688,6 @@ void TrainSimulationClient::processMessage(
     {
         qWarning() << "Unrecognized event:" << event;
     }
-
-    // Delegate for the base class for the initial
-    // processing
-    SimulationClientBase::processMessage(message);
 }
 
 void TrainSimulationClient::onSimulationCreated(
@@ -810,10 +777,9 @@ void TrainSimulationClient::onTrainReachedDestination(
                     ->getTrainPathOnNodeIds()
                     .last());
 
-            // TODO
-            // unloadTrainPrivate(
-            //     network, state->m_trainUserId,
-            //     QStringList() << destinationId);
+            unloadTrainPrivate(
+                network, state->m_trainUserId,
+                QStringList() << destinationId);
         }
     }
 
@@ -1091,9 +1057,8 @@ void TrainSimulationClient::onTrainReachedTerminal(
     if (m_terminalClient && containersCount > 0
         && !terminalId.isEmpty())
     {
-        // TODO
-        // unloadTrainPrivate(network, trainId,
-        //                    QStringList() << terminalId);
+        unloadTrainPrivate(network, trainId,
+                           QStringList() << terminalId);
     }
 
     // Log event using logger if available
@@ -1132,11 +1097,6 @@ void TrainSimulationClient::onContainersUnloaded(
         m_terminalClient->addContainers(
             fullTerminalID, containersJson, currentTime);
     }
-
-    // Signal that the unload is complete
-    QMutexLocker unloadLocker(&m_unloadMutex);
-    m_unloadComplete = true;
-    m_unloadCondition.wakeAll();
 
     // Log event using logger if available
     if (m_logger)
