@@ -2,59 +2,55 @@
 #include "NetworkSelectionDialog.h"
 #include <QLabel>
 #include <QMessageBox>
-
 namespace CargoNetSim
 {
 namespace GUI
 {
-
 NetworkSelectionDialog::NetworkSelectionDialog(
-    QWidget *parent)
+    QWidget *parent, Mode mode)
     : QDialog(parent)
+    , currentMode(mode)
 {
-    setWindowTitle("Select Network Types to Link");
+    setWindowTitle(mode == LinkMode
+                       ? "Select Network Types to Link"
+                       : "Select Network Types to Unlink");
     setMinimumWidth(350);
-
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-
     // Add description label
-    QLabel *descriptionLabel = new QLabel(
-        "Select the network type(s) to link terminals to:",
+    descriptionLabel = new QLabel(
+        mode == LinkMode ? "Select the network type(s) to "
+                           "link terminals to:"
+                         : "Select the network type(s) to "
+                           "unlink terminals from:",
         this);
     descriptionLabel->setWordWrap(true);
     mainLayout->addWidget(descriptionLabel);
-
     // Add network type checkboxes
     trainNetworkCheckBox =
         new QCheckBox("Train Network", this);
     truckNetworkCheckBox =
         new QCheckBox("Truck Network", this);
-
     mainLayout->addWidget(trainNetworkCheckBox);
     mainLayout->addWidget(truckNetworkCheckBox);
-
     // Create button layout
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-
     // Create custom buttons
-    linkSelectedButton =
-        new QPushButton("Link Selected Terminals", this);
-    linkAllVisibleButton =
-        new QPushButton("Link All Visible Terminals", this);
-    cancelButton = new QPushButton("Cancel", this);
+    linkSelectedButton   = new QPushButton(this);
+    linkAllVisibleButton = new QPushButton(this);
+    cancelButton         = new QPushButton("Cancel", this);
+
+    // Update button labels based on mode
+    updateButtonLabels();
 
     // Add buttons to layout
     buttonLayout->addWidget(linkSelectedButton);
     buttonLayout->addWidget(linkAllVisibleButton);
     buttonLayout->addWidget(cancelButton);
-
     // Add button layout to main layout
     mainLayout->addLayout(buttonLayout);
-
     // Disable buttons initially
     linkSelectedButton->setEnabled(false);
     linkAllVisibleButton->setEnabled(false);
-
     // Connect signals
     connect(
         trainNetworkCheckBox, &QCheckBox::stateChanged,
@@ -74,25 +70,52 @@ NetworkSelectionDialog::NetworkSelectionDialog(
             });
     connect(cancelButton, &QPushButton::clicked, this,
             &QDialog::reject);
-
     setLayout(mainLayout);
+}
+
+void NetworkSelectionDialog::setMode(Mode mode)
+{
+    if (currentMode != mode)
+    {
+        currentMode = mode;
+        setWindowTitle(
+            mode == LinkMode
+                ? "Select Network Types to Link"
+                : "Select Network Types to Unlink");
+
+        descriptionLabel->setText(
+            mode == LinkMode ? "Select the network type(s) "
+                               "to link terminals to:"
+                             : "Select the network type(s) "
+                               "to unlink terminals from:");
+
+        updateButtonLabels();
+    }
+}
+
+void NetworkSelectionDialog::updateButtonLabels()
+{
+    QString actionVerb =
+        currentMode == LinkMode ? "Link" : "Unlink";
+
+    linkSelectedButton->setText(actionVerb
+                                + " Selected Terminals");
+    linkAllVisibleButton->setText(
+        actionVerb + " All Visible Terminals");
 }
 
 QList<NetworkType>
 NetworkSelectionDialog::getSelectedNetworkTypes() const
 {
     QList<NetworkType> types;
-
     if (trainNetworkCheckBox->isChecked())
     {
         types.append(NetworkType::Train);
     }
-
     if (truckNetworkCheckBox->isChecked())
     {
         types.append(NetworkType::Truck);
     }
-
     return types;
 }
 
@@ -105,6 +128,5 @@ void NetworkSelectionDialog::onCheckBoxStateChanged()
     linkSelectedButton->setEnabled(enable);
     linkAllVisibleButton->setEnabled(enable);
 }
-
 } // namespace GUI
 } // namespace CargoNetSim

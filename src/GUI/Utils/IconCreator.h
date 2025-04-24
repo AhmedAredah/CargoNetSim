@@ -39,6 +39,7 @@ QPixmap createNetworkManagerIcon(int size = 128);
 QPixmap createLinkTerminalIcon();
 QPixmap createUnlinkTerminalIcon();
 QPixmap createLinkTerminalsToNetworkIcon(int size = 32);
+QPixmap createUnlinkTerminalsToNetworkIcon(int size = 32);
 QPixmap createAutoConnectTerminalsIcon(int size = 32);
 QPixmap createConnectByInterfaceIcon(int size = 32);
 QPixmap createCheckNetworkIcon(int size = 128);

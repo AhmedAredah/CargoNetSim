@@ -2620,3 +2620,281 @@ CargoNetSim::GUI::ViewController::createRegionCenter(
     centerPoint->setVisible(keepVisible);
     return centerPoint;
 }
+
+bool CargoNetSim::GUI::ViewController::
+    unlinkTerminalFromNetworkPoints(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        const QList<NetworkType> &networkTypes)
+{
+    if (!mainWindow || !terminal || networkTypes.isEmpty())
+    {
+        return false;
+    }
+
+    QString           region = terminal->getRegion();
+    QList<MapPoint *> linkedPoints;
+
+    // Get all map points in the scene
+    QList<MapPoint *> allMapPoints =
+        mainWindow->regionScene_
+            ->getItemsByType<MapPoint>();
+
+    // Find map points linked to this terminal with matching
+    // network types
+    for (MapPoint *point : allMapPoints)
+    {
+        if (point->getRegion() != region
+            || point->getLinkedTerminal() != terminal)
+        {
+            continue;
+        }
+
+        QObject *network = point->getReferenceNetwork();
+        if (!network)
+        {
+            continue;
+        }
+
+        bool    isMatchingType = false;
+        QString networkTypeStr = "unknown";
+
+        if (networkTypes.contains(NetworkType::Train))
+        {
+            if (dynamic_cast<
+                    Backend::TrainClient::NeTrainSimNetwork
+                        *>(network))
+            {
+                isMatchingType = true;
+                networkTypeStr = "train";
+            }
+        }
+
+        if (networkTypes.contains(NetworkType::Truck))
+        {
+            if (dynamic_cast<
+                    Backend::TruckClient::IntegrationNetwork
+                        *>(network))
+            {
+                isMatchingType = true;
+                networkTypeStr = "truck";
+            }
+        }
+
+        if (isMatchingType)
+        {
+            linkedPoints.append(point);
+        }
+    }
+
+    if (linkedPoints.isEmpty())
+    {
+        // Determine which network types were selected for
+        // more informative message
+        QStringList typeNames;
+        if (networkTypes.contains(NetworkType::Train))
+            typeNames.append("train");
+        if (networkTypes.contains(NetworkType::Truck))
+            typeNames.append("truck");
+
+        QString typesStr = typeNames.join(" or ");
+
+        mainWindow->showStatusBarError(
+            QString("Terminal '%1' is not linked to any %2 "
+                    "network points.")
+                .arg(terminal->getProperty("Name")
+                         .toString())
+                .arg(typesStr),
+            3000);
+        return false;
+    }
+
+    // Unlink all matching points
+    int unlinkCount = 0;
+    for (MapPoint *point : linkedPoints)
+    {
+        // Get network info for the message
+        QString  networkName    = "Unknown Network";
+        QString  networkTypeStr = "unknown";
+        QObject *network = point->getReferenceNetwork();
+
+        if (auto trainNet = dynamic_cast<
+                Backend::TrainClient::NeTrainSimNetwork *>(
+                network))
+        {
+            networkName    = trainNet->getNetworkName();
+            networkTypeStr = "train";
+        }
+        else if (auto truckNet =
+                     dynamic_cast<Backend::TruckClient::
+                                      IntegrationNetwork *>(
+                         network))
+        {
+            networkName    = truckNet->getNetworkName();
+            networkTypeStr = "truck";
+        }
+
+        // Unlink the terminal from the point
+        point->setLinkedTerminal(nullptr);
+        unlinkCount++;
+
+        // Show detailed message for each unlink operation
+        mainWindow->showStatusBarMessage(
+            QString("Terminal '%1' unlinked from %2 "
+                    "network '%3'")
+                .arg(terminal->getProperty("Name")
+                         .toString())
+                .arg(networkTypeStr)
+                .arg(networkName),
+            1500); // Shorter display time since there might
+                   // be multiple messages
+    }
+
+    // Show summary message
+    if (unlinkCount > 0)
+    {
+        mainWindow->showStatusBarMessage(
+            QString("Successfully unlinked terminal '%1' "
+                    "from %2 network point(s)")
+                .arg(terminal->getProperty("Name")
+                         .toString())
+                .arg(unlinkCount),
+            3000);
+
+        // Update the properties panel if this item is
+        // currently selected
+        if (mainWindow->propertiesPanel_->getCurrentItem()
+            == terminal)
+        {
+            mainWindow->propertiesPanel_->displayProperties(
+                terminal);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+void CargoNetSim::GUI::ViewController::
+    unlinkAllVisibleTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes)
+{
+    if (!mainWindow || networkTypes.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No network types selected for unlinking.",
+            3000);
+        return;
+    }
+
+    // Get the current scene
+    auto scene = mainWindow->regionScene_;
+    if (!scene)
+    {
+        return;
+    }
+
+    // Get current region
+    QString currentRegion =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegion();
+
+    // Get all visible terminal items in the current region
+    QList<TerminalItem *> allTerminals =
+        scene->getItemsByType<TerminalItem>();
+    QList<TerminalItem *> visibleTerminals;
+
+    for (TerminalItem *terminal : allTerminals)
+    {
+        if (terminal && terminal->isVisible()
+            && terminal->getRegion() == currentRegion)
+        {
+            visibleTerminals.append(terminal);
+        }
+    }
+
+    if (visibleTerminals.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            QString(
+                "No visible terminals found in region '%1'")
+                .arg(currentRegion),
+            3000);
+        return;
+    }
+
+    // Create a dialog to confirm the operation
+    QMessageBox msgBox(mainWindow);
+    msgBox.setWindowTitle("Unlink Terminals from Network");
+    msgBox.setText(
+        QString("This will unlink all %1 visible terminals "
+                "in region '%2' from network points.")
+            .arg(visibleTerminals.size())
+            .arg(currentRegion));
+
+    QString networkTypesStr;
+    if (networkTypes.contains(NetworkType::Train)
+        && networkTypes.contains(NetworkType::Truck))
+    {
+        networkTypesStr = "train and truck";
+    }
+    else if (networkTypes.contains(NetworkType::Train))
+    {
+        networkTypesStr = "train";
+    }
+    else if (networkTypes.contains(NetworkType::Truck))
+    {
+        networkTypesStr = "truck";
+    }
+
+    msgBox.setInformativeText(
+        QString("Selected network types: %1\n\nDo you want "
+                "to continue?")
+            .arg(networkTypesStr));
+    msgBox.setStandardButtons(QMessageBox::Yes
+                              | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+
+    int result = msgBox.exec();
+    if (result != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    // Unlink each terminal from network points
+    int successCount = 0;
+    int i            = 0;
+
+    for (TerminalItem *terminal : visibleTerminals)
+    {
+
+        if (unlinkTerminalFromNetworkPoints(
+                mainWindow, terminal, networkTypes))
+        {
+            successCount++;
+        }
+
+        // Process events to keep UI responsive
+        QApplication::processEvents();
+    }
+
+    // Display results
+    if (successCount > 0)
+    {
+        mainWindow->showStatusBarMessage(
+            QString("Successfully unlinked %1 of %2 "
+                    "terminals from network points")
+                .arg(successCount)
+                .arg(visibleTerminals.size()),
+            5000);
+    }
+    else
+    {
+        mainWindow->showStatusBarError(
+            "No terminals were unlinked from network "
+            "points.",
+            3000);
+    }
+}

@@ -141,6 +141,12 @@ public:
 
     static void onLinkTerminalsToNetworkActionTriggered(
         MainWindow *mainWindow);
+
+    static void unlinkSelectedTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+    static void onUnlinkTerminalsToNetworkActionTriggered(
+        MainWindow *mainWindow);
 };
 
 } // namespace GUI

@@ -137,6 +137,14 @@ public:
         MainWindow               *mainWindow,
         const QList<NetworkType> &networkTypes);
 
+    static bool unlinkTerminalFromNetworkPoints(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        const QList<NetworkType> &networkTypes);
+
+    static void unlinkAllVisibleTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+
 private:
     static void updateTerminalGlobalPosition(
         MainWindow        *main_window,

@@ -248,6 +248,12 @@ public:
     void addPaths(const QList<Backend::Path *> &paths);
 
     /**
+     * @brief Gets the size of the paths in the table
+     * @return The number of paths in the table.
+     */
+    int pathsSize() const;
+
+    /**
      * @brief Updates the prediction costs for an existing
      * path
      * @param pathId The ID of the path to update

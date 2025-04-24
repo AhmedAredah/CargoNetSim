@@ -305,6 +305,27 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     networkToolsLayout->addWidget(
         linkTerminalsToNetworkButton);
 
+    // Add unlink visible terminals to network buttons
+    QToolButton *unlinkTerminalsToNetworkButton =
+        new QToolButton();
+    unlinkTerminalsToNetworkButton->setToolButtonStyle(
+        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    unlinkTerminalsToNetworkButton->setIcon(QIcon(
+        IconFactory::createUnlinkTerminalsToNetworkIcon()));
+    unlinkTerminalsToNetworkButton->setText(
+        "Auto Unlink\nTerminals From Networks");
+    unlinkTerminalsToNetworkButton->setToolTip(
+        "Unlink Terminals from Network Points");
+    QObject::connect(
+        unlinkTerminalsToNetworkButton,
+        &QToolButton::clicked, [mainWindow]() {
+            UtilitiesFunctions::
+                onUnlinkTerminalsToNetworkActionTriggered(
+                    mainWindow);
+        });
+    networkToolsLayout->addWidget(
+        unlinkTerminalsToNetworkButton);
+
     // Add connect visible terminals button
     QToolButton *connectVisibleTerminalsByNetworkButton =
         new QToolButton();
@@ -952,7 +973,9 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         ->toolsButtonsVisibility_[checkNetworkButton] =
         QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_
-        [linkTerminalsToNetworkButton] = QList<int>{0, 1};
+        [linkTerminalsToNetworkButton] = QList<int>{0};
+    mainWindow->toolsButtonsVisibility_
+        [unlinkTerminalsToNetworkButton] = QList<int>{0};
     mainWindow->toolsButtonsVisibility_
         [connectVisibleTerminalsByNetworkButton] =
         QList<int>{0, 1};

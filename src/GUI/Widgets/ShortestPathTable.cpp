@@ -394,6 +394,11 @@ void ShortestPathsTable::addPaths(
     m_exportAllButton->setEnabled(!m_pathData.isEmpty());
 }
 
+int ShortestPathsTable::pathsSize() const
+{
+    return m_pathData.size();
+}
+
 /**
  * @brief Updates the prediction costs for an existing path
  * @param pathId The ID of the path to update

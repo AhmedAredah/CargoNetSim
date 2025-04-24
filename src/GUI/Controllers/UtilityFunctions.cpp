@@ -737,6 +737,19 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         return;
     }
 
+    if (mainWindow->shortestPathTable_->pathsSize() > 0)
+    {
+        // Ask the user if they are sure to contunue
+        QMessageBox::StandardButton reply =
+            QMessageBox::question(
+                mainWindow, "Continue?",
+                "CargoNetSim has already found shortest "
+                "paths between the origin and destination. "
+                "Do you want to continue anyway? This will "
+                "delete the current results.",
+                QMessageBox::Yes | QMessageBox::No);
+    }
+
     // Create a worker and a thread
     QThread           *thread = new QThread();
     PathFindingWorker *worker = new PathFindingWorker();
@@ -1464,8 +1477,9 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     {
         return;
     }
-    NetworkSelectionDialog dialog(mainWindow);
-    int                    result = dialog.exec();
+    NetworkSelectionDialog dialog(
+        mainWindow, NetworkSelectionDialog::Mode::LinkMode);
+    int result = dialog.exec();
 
     if (result == QDialog::Accepted
         || result == QDialog::Accepted + 1)
@@ -1485,6 +1499,106 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             // Link all visible terminals
             ViewController::
                 linkAllVisibleTerminalsToNetwork(
+                    mainWindow, selectedTypes);
+        }
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    unlinkSelectedTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes)
+{
+    if (!mainWindow || networkTypes.isEmpty())
+    {
+        return;
+    }
+
+    // Get the current scene
+    auto scene = mainWindow->regionScene_;
+    if (!scene)
+    {
+        return;
+    }
+
+    // Get selected terminal items
+    QList<QGraphicsItem *> selectedItems =
+        scene->selectedItems();
+    QList<TerminalItem *> selectedTerminals;
+
+    for (QGraphicsItem *item : selectedItems)
+    {
+        if (TerminalItem *terminal =
+                dynamic_cast<TerminalItem *>(item))
+        {
+            selectedTerminals.append(terminal);
+        }
+    }
+
+    if (selectedTerminals.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No terminals selected.", 3000);
+        return;
+    }
+
+    // Unlink each selected terminal from network points
+    int successCount = 0;
+    for (TerminalItem *terminal : selectedTerminals)
+    {
+        if (ViewController::unlinkTerminalFromNetworkPoints(
+                mainWindow, terminal, networkTypes))
+        {
+            successCount++;
+        }
+    }
+
+    if (successCount > 0)
+    {
+        mainWindow->showStatusBarMessage(
+            QString("Successfully unlinked %1 terminal(s) "
+                    "from network points")
+                .arg(successCount),
+            3000);
+    }
+    else
+    {
+        mainWindow->showStatusBarError(
+            "No terminals could be unlinked from network "
+            "points.",
+            3000);
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    onUnlinkTerminalsToNetworkActionTriggered(
+        MainWindow *mainWindow)
+{
+    NetworkSelectionDialog dialog(
+        mainWindow,
+        NetworkSelectionDialog::Mode::UnlinkMode);
+    dialog.setWindowTitle("Select Network Types to Unlink");
+
+    int result = dialog.exec();
+
+    if (result == QDialog::Accepted
+        || result == QDialog::Accepted + 1)
+    {
+        QList<NetworkType> selectedTypes =
+            dialog.getSelectedNetworkTypes();
+
+        if (result == QDialog::Accepted)
+        {
+            // Unlink selected terminals
+            UtilitiesFunctions::
+                unlinkSelectedTerminalsToNetwork(
+                    mainWindow, selectedTypes);
+        }
+        else if (result == QDialog::Accepted + 1)
+        {
+            // Unlink all visible terminals
+            ViewController::
+                unlinkAllVisibleTerminalsToNetwork(
                     mainWindow, selectedTypes);
         }
     }
