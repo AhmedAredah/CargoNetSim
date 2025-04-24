@@ -781,8 +781,8 @@ void MainWindow::handleTabChange(int index)
     {
         int        toolbarTabIndex = it.key();
         QList<int> tabIndices      = it.value();
-        ribbon_->setTabVisible(toolbarTabIndex,
-                               tabIndices.contains(index));
+        toolbar_->setTabVisible(toolbarTabIndex,
+                                tabIndices.contains(index));
     }
 
     // Handle dock window visibility

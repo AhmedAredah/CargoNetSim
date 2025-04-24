@@ -102,6 +102,8 @@ set(GUI_SOURCES
     Widgets/PathComparisonDialog.cpp
     Widgets/NetworkSelectionDialog.h
     Widgets/NetworkSelectionDialog.cpp
+    Widgets/ScrollableToolBar.h
+    Widgets/ScrollableToolBar.cpp
 )
 
 # Create the GUI library

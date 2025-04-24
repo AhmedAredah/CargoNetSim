@@ -19,6 +19,7 @@
 #include <QtCore/qdatetime.h>
 
 #include "Controllers/HeartbeatController.h"
+#include "GUI/Widgets/ScrollableToolBar.h"
 #include "GUI/Widgets/SpinnerWidget.h"
 #include "Items/GlobalTerminalItem.h"
 #include "Items/RegionCenterPoint.h"
@@ -387,7 +388,7 @@ protected:
     HeartbeatController *heartbeatController_;
 
     // Toolbar organization
-    QTabWidget *ribbon_;
+    ScrollableToolBar *toolbar_;
     QGroupBox  *viewImportGroup_;
     QGroupBox  *projectGroup_;
     QGroupBox  *toolsGroup_;

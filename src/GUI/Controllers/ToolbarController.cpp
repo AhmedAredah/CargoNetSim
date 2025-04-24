@@ -18,6 +18,7 @@
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Controllers/VehicleController.h"
 #include "GUI/Controllers/ViewController.h"
+#include "GUI/Widgets/ScrollableToolBar.h"
 
 namespace CargoNetSim
 {
@@ -26,38 +27,11 @@ namespace GUI
 
 void ToolbarController::setupToolbar(MainWindow *mainWindow)
 {
-    // Create ribbon-style toolbar
-    mainWindow->ribbon_ = new QTabWidget();
-
-    // Add style for centered group box titles
-    mainWindow->ribbon_->setStyleSheet(
-        "QGroupBox {"
-        "   margin-top: 0px;    /* Remove space above the "
-        "GroupBox */"
-        "   margin-bottom: 15px; /* Add space below the "
-        "GroupBox */"
-        "   padding-top: 0px;"
-        "   padding-right: 2px;"
-        "   padding-bottom: 10px;"
-        "   padding-left: 2px;"
-        "}"
-        "QGroupBox::title {"
-        "   subcontrol-origin: margin;"
-        "   subcontrol-position: bottom center;"
-        "   padding: 0 5px;"
-        "   bottom: 7px;"
-        "}"
-        "QToolButton {"
-        "   icon-size: 32px;"
-        "}");
-
+    // Create scrollable toolbar with integrated ribbon
+    ScrollableToolBar *toolbar = new ScrollableToolBar();
     mainWindow->addToolBarBreak();
-    QToolBar *toolbar = new QToolBar();
-    toolbar->setAllowedAreas(
-        Qt::ToolBarArea::TopToolBarArea);
-    toolbar->setMovable(false);
     mainWindow->addToolBar(toolbar);
-    toolbar->addWidget(mainWindow->ribbon_);
+    mainWindow->toolbar_ = toolbar;
 
     // Create Home tab
     QWidget     *homeTab    = new QWidget();
@@ -525,8 +499,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     homeLayout->addWidget(mainWindow->logsGroup_);
 
     homeLayout->addStretch();
-    int homeTabIndex =
-        mainWindow->ribbon_->addTab(homeTab, "Home");
+    int homeTabIndex = toolbar->addTab(homeTab, "Home");
 
     // Create Import tab
     QWidget     *importTab    = new QWidget();
@@ -614,7 +587,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
 
     // Create Transportation Vehicles group
     mainWindow->transportationVehiclesGroup_ =
-        new QGroupBox("Transportation Vehicles");
+        new QGroupBox("Vehicles");
     QHBoxLayout *transportationVehiclesLayout =
         new QHBoxLayout(
             mainWindow->transportationVehiclesGroup_);
@@ -662,7 +635,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
 
     importLayout->addStretch();
     int importTabIndex =
-        mainWindow->ribbon_->addTab(importTab, "Import");
+        toolbar->addTab(importTab, "Import");
 
     // Create View tab
     QWidget     *viewTab    = new QWidget();
@@ -879,8 +852,7 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         regionNetworksButton, shortestPathsTableButton};
     viewLayout->addWidget(mainWindow->windowsGroup_);
     viewLayout->addStretch();
-    int viewTabIndex =
-        mainWindow->ribbon_->addTab(viewTab, "View");
+    int viewTabIndex = toolbar->addTab(viewTab, "View");
 
     mainWindow->windowVisibility_.clear();
 
