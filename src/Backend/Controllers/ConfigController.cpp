@@ -568,7 +568,7 @@ QVariantMap ConfigController::getCostFunctionWeights() const
     double shipFuelPrice =
         fuelPrices
             .value(shipFuelType,
-                   fuelPrices.value("HFO", 580.0))
+                   fuelPrices.value("HFO", 0.56))
             .toDouble();
     double shipCalorificValue =
         fuelEnergy
@@ -578,21 +578,12 @@ QVariantMap ConfigController::getCostFunctionWeights() const
 
     // For HFO, convert from price per ton to price per kg
     double shipEnergyCost;
-    if (shipFuelType == "HFO")
-    {
-        // HFO price is per ton, calorific value is kWh/kg
-        shipEnergyCost =
-            shipFuelPrice
-            / (shipCalorificValue * 1000.0); // USD per kWh
-    }
-    else
-    {
-        // Other fuels price is per liter, calorific value
-        // is kWh/L
-        shipEnergyCost =
-            shipFuelPrice
-            / shipCalorificValue; // USD per kWh
-    }
+
+    // Fuels price is per liter, calorific value
+    // is kWh/L
+    shipEnergyCost =
+        shipFuelPrice / shipCalorificValue; // USD per kWh
+
     shipWeights["energyConsumption"] = shipEnergyCost;
 
     // Train energy cost
