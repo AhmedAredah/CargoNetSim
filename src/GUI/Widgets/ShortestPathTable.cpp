@@ -718,18 +718,18 @@ QPixmap ShortestPathsTable::createArrowPixmap(
     if (mode.contains("Truck", Qt::CaseInsensitive))
     {
         arrowColor =
-            QColor(255, 0, 255); // Magenta for truck
+            QColor(Qt::magenta); // Magenta for truck
     }
     else if (mode.contains("Rail", Qt::CaseInsensitive)
              || mode.contains("Train", Qt::CaseInsensitive))
     {
         arrowColor =
-            QColor(80, 80, 80); // Dark gray for rail
+            QColor(Qt::darkGray); // Dark gray for rail
     }
     else if (mode.contains("Ship", Qt::CaseInsensitive)
              || mode.contains("Water", Qt::CaseInsensitive))
     {
-        arrowColor = QColor(0, 0, 255); // Blue for ship
+        arrowColor = QColor(Qt::blue); // Blue for ship
     }
 
     // Draw the mode text
