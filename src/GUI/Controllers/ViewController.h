@@ -145,6 +145,17 @@ public:
         MainWindow               *mainWindow,
         const QList<NetworkType> &networkTypes);
 
+    static void showFilteredConnections(
+        MainWindow        *mainWindow,
+        const QStringList &terminalNames,
+        const QStringList &connectionTypes);
+
+    static bool moveNetworkItems(MainWindow    *mainWindow,
+                                 NetworkType    networkType,
+                                 const QString &networkName,
+                                 const QPointF &offset,
+                                 const QString &regionName);
+
 private:
     static void updateTerminalGlobalPosition(
         MainWindow        *main_window,

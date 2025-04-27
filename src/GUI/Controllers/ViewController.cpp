@@ -1,6 +1,7 @@
 #include "GUI/Controllers/ViewController.h"
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "GUI/Controllers/NetworkController.h"
+#include "GUI/Controllers/ToolbarController.h"
 #include "GUI/Items/BackgroundPhotoItem.h"
 #include "GUI/Items/ConnectionLine.h"
 #include "GUI/Items/MapLine.h"
@@ -655,6 +656,9 @@ bool CargoNetSim::GUI::ViewController::
         }
     }
 
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
     if (networkPoints.isEmpty())
     {
         QString networkTypeStr;
@@ -705,6 +709,9 @@ bool CargoNetSim::GUI::ViewController::
                 return false;
             }
         }
+
+        // Process events to keep UI responsive
+        QApplication::processEvents();
     }
 
     // Find the closest network point
@@ -782,10 +789,18 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
 
+    ToolbarController::storeButtonStates(mainWindow);
+    ToolbarController::disableAllButtons(mainWindow);
+    mainWindow->startStatusProgress();
+
     // Get the current scene
     auto scene = mainWindow->regionScene_;
     if (!scene)
     {
+        mainWindow->showStatusBarError(
+            "No active scene found.", 3000);
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -816,6 +831,8 @@ void CargoNetSim::GUI::ViewController::
                 "No visible terminals found in region '%1'")
                 .arg(currentRegion),
             3000);
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -855,6 +872,8 @@ void CargoNetSim::GUI::ViewController::
     int result = msgBox.exec();
     if (result != QMessageBox::Yes)
     {
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -869,6 +888,9 @@ void CargoNetSim::GUI::ViewController::
                 mainWindow, terminal, networkTypes))
         {
             successCount++;
+
+            // Process events to keep UI responsive
+            QApplication::processEvents();
         }
 
         // Process events to keep UI responsive
@@ -893,6 +915,9 @@ void CargoNetSim::GUI::ViewController::
             "points.",
             3000);
     }
+
+    ToolbarController::restoreButtonStates(mainWindow);
+    mainWindow->stopStatusProgress();
 }
 
 void CargoNetSim::GUI::ViewController::flashTerminalItems(
@@ -901,6 +926,9 @@ void CargoNetSim::GUI::ViewController::flashTerminalItems(
     for (auto terminal : terminals)
     {
         terminal->flash(evenIfHidden);
+
+        // Process events to keep UI responsive
+        QApplication::processEvents();
     }
 }
 
@@ -959,6 +987,10 @@ void CargoNetSim::GUI::ViewController::drawNetwork(
     QString regionName = regionData->getRegion();
     QColor  linksColor = ColorUtils::getRandomColor();
 
+    ToolbarController::storeButtonStates(mainWindow);
+    ToolbarController::disableAllButtons(mainWindow);
+    mainWindow->startStatusProgress();
+
     // Get the network data
     if (networkType == NetworkType::Train)
     {
@@ -974,6 +1006,9 @@ void CargoNetSim::GUI::ViewController::drawNetwork(
         CargoNetSim::GUI::ViewController::drawTruckNetwork(
             mainWindow, network, regionName, linksColor);
     }
+
+    ToolbarController::restoreButtonStates(mainWindow);
+    mainWindow->stopStatusProgress();
 }
 
 void CargoNetSim::GUI::ViewController::
@@ -981,8 +1016,10 @@ void CargoNetSim::GUI::ViewController::
                             const QString &networkName,
                             const bool     isVisible)
 {
-    if (!mainWindow->regionScene_)
+    if (!mainWindow || !mainWindow->regionScene_)
+    {
         return;
+    }
 
     // Common function to check network name and set
     // visibility
@@ -1246,6 +1283,9 @@ void CargoNetSim::GUI::ViewController::drawTrainNetwork(
         }
     }
 
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
     // Draw the train network links
     for (auto &link : network->getLinks())
     {
@@ -1293,6 +1333,11 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
             *networkConfig,
     QString &regionName, QColor &linksColor)
 {
+    if (!mainWindow)
+    {
+        return;
+    }
+
     mainWindow->regionView_->setUsingProjectedCoords(true);
     mainWindow->updateAllCoordinates();
 
@@ -1329,6 +1374,9 @@ void CargoNetSim::GUI::ViewController::drawTruckNetwork(
 
         point->setReferenceNetwork(network);
     }
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
 
     for (auto &link : network->getLinks())
     {
@@ -2022,6 +2070,14 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
 
+    // Store the current button states and disable all
+    ToolbarController::storeButtonStates(mainWindow);
+    ToolbarController::disableAllButtons(mainWindow);
+    mainWindow->startStatusProgress();
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
     // Check if the region view is active
     bool isGlobalView = mainWindow->isGlobalViewActive();
     GraphicsScene *currentScene =
@@ -2031,7 +2087,8 @@ void CargoNetSim::GUI::ViewController::
     QString                     currentRegion = "";
     QList<TerminalItem *>       terminals;
     QList<GlobalTerminalItem *> globalTerminals;
-    bool anyConnectionCreated = false;
+    QSet<QString>               visibleTerminalTypes;
+    QSet<QString>               availableNetworks;
 
     TerminalItem *originTerminal =
         UtilitiesFunctions::getOriginTerminal(mainWindow);
@@ -2040,6 +2097,10 @@ void CargoNetSim::GUI::ViewController::
         mainWindow->showStatusBarError(
             "Origin is not present in the region view!",
             3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -2055,6 +2116,9 @@ void CargoNetSim::GUI::ViewController::
         {
             mainWindow->showStatusBarError(
                 "No containers at origin!", 3000);
+            ToolbarController::restoreButtonStates(
+                mainWindow);
+            mainWindow->stopStatusProgress();
             return; // Early return if no containers
         }
     }
@@ -2064,8 +2128,15 @@ void CargoNetSim::GUI::ViewController::
         // convert
         mainWindow->showStatusBarError(
             "Invalid container format at origin!", 3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
 
     if (isGlobalView)
     {
@@ -2074,6 +2145,20 @@ void CargoNetSim::GUI::ViewController::
                 mainWindow->globalMapScene_, "*", "*",
                 UtilitiesFunctions::ConnectionType::Any,
                 UtilitiesFunctions::LinkType::Any);
+
+        // Collect terminal types
+        for (auto terminal : globalTerminals)
+        {
+            if (terminal->getLinkedTerminalItem())
+            {
+                visibleTerminalTypes.insert(
+                    terminal->getLinkedTerminalItem()
+                        ->getTerminalType());
+            }
+        }
+
+        // Add Ship network type
+        availableNetworks.insert("Ship");
     }
     else
     {
@@ -2087,6 +2172,36 @@ void CargoNetSim::GUI::ViewController::
                 "*",
                 UtilitiesFunctions::ConnectionType::Any,
                 UtilitiesFunctions::LinkType::Any);
+
+        // Collect terminal types
+        for (auto terminal : terminals)
+        {
+            visibleTerminalTypes.insert(
+                terminal->getTerminalType());
+        }
+
+        // Process events to keep UI responsive
+        QApplication::processEvents();
+
+        // Check available networks in the current region
+        auto regionData =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->getCurrentRegionData();
+
+        if (regionData)
+        {
+            if (!regionData->getTrainNetworks().isEmpty())
+            {
+                availableNetworks.insert("Rail");
+            }
+
+            if (!regionData->getTruckNetworks().isEmpty())
+            {
+                availableNetworks.insert("Truck");
+            }
+        }
     }
 
     if ((terminals.empty() && !isGlobalView)
@@ -2098,6 +2213,10 @@ void CargoNetSim::GUI::ViewController::
                                "in the current %1")
                            .arg(msgHndler);
         mainWindow->showStatusBarError(mssg, 3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
     else if ((terminals.size() == 1 && !isGlobalView)
@@ -2110,17 +2229,110 @@ void CargoNetSim::GUI::ViewController::
                                "in the current %1.")
                            .arg(msgHndler);
         mainWindow->showStatusBarError(mssg, 3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
-    // Connect terminals based on common networks in the
-    // region view
-    bool errorOccurred = false;
+    // If no available networks, show error and return
+    if (availableNetworks.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No available network types found for "
+            "connecting terminals.",
+            3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
+        return;
+    }
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
+    // Show network selection dialog with NetworkSelection
+    // type
+    InterfaceSelectionDialog dialog(
+        availableNetworks, visibleTerminalTypes,
+        InterfaceSelectionDialog::NetworkSelection,
+        mainWindow);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
+        return; // User cancelled
+    }
+
+    // Get selected networks using the new method
+    QList<QString> selectedNetworks =
+        dialog.getSelectedNetworkTypes();
+
+    // Get included terminal types
+    QMap<QString, bool> includedTerminalTypes =
+        dialog.getIncludedTerminalTypes();
+
+    if (selectedNetworks.isEmpty())
+    {
+        mainWindow->showStatusBarMessage(
+            "No network types selected for connection.",
+            3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
+        return;
+    }
+
+    // Check if any terminal types are selected
+    bool anyTerminalTypeSelected = false;
+    for (auto it = includedTerminalTypes.begin();
+         it != includedTerminalTypes.end(); ++it)
+    {
+        if (it.value())
+        {
+            anyTerminalTypeSelected = true;
+            break;
+        }
+    }
+
+    if (!anyTerminalTypeSelected)
+    {
+        mainWindow->showStatusBarMessage(
+            "No terminal types selected for connection.",
+            3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
+        return;
+    }
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
+    bool anyConnectionCreated = false;
+    bool errorOccurred        = false;
+    int  processCount =
+        0; // Counter to determine when to process events
 
     if (!isGlobalView)
     {
         for (auto &sourceTerminal : terminals)
         {
+            // Skip if terminal type is not included
+            if (!includedTerminalTypes.value(
+                    sourceTerminal->getTerminalType(),
+                    true))
+            {
+                continue;
+            }
+
             for (auto &targetTerminal : terminals)
             {
                 if (sourceTerminal == targetTerminal)
@@ -2128,12 +2340,30 @@ void CargoNetSim::GUI::ViewController::
                     continue;
                 }
 
+                // Skip if terminal type is not included
+                if (!includedTerminalTypes.value(
+                        targetTerminal->getTerminalType(),
+                        true))
+                {
+                    continue;
+                }
+
+                // Process events periodically to keep UI
+                // responsive
+                if (++processCount % 10
+                    == 0) // Process every 10 iterations
+                {
+                    QApplication::processEvents();
+                }
+
                 QList<QString> commonModes =
                     UtilitiesFunctions::getCommonModes(
                         sourceTerminal, targetTerminal);
 
                 // Process Rail connections in region view
-                if (commonModes.contains("Rail")
+                // if selected
+                if (selectedNetworks.contains("Rail")
+                    && commonModes.contains("Rail")
                     && !CargoNetSim::CargoNetSimController::
                             getInstance()
                                 .getRegionDataController()
@@ -2144,7 +2374,8 @@ void CargoNetSim::GUI::ViewController::
                     bool isConnected = UtilitiesFunctions::
                         processNetworkModeConnection(
                             mainWindow, sourceTerminal,
-                            targetTerminal, NetworkType::Train);
+                            targetTerminal,
+                            NetworkType::Train);
                     if (isConnected)
                     {
                         anyConnectionCreated = true;
@@ -2152,7 +2383,9 @@ void CargoNetSim::GUI::ViewController::
                 }
 
                 // Process Truck connections in region view
-                if (commonModes.contains("Truck")
+                // if selected
+                if (selectedNetworks.contains("Truck")
+                    && commonModes.contains("Truck")
                     && !CargoNetSim::CargoNetSimController::
                             getInstance()
                                 .getRegionDataController()
@@ -2163,35 +2396,49 @@ void CargoNetSim::GUI::ViewController::
                     bool isConnected = UtilitiesFunctions::
                         processNetworkModeConnection(
                             mainWindow, sourceTerminal,
-                            targetTerminal, NetworkType::Truck);
+                            targetTerminal,
+                            NetworkType::Truck);
                     if (isConnected)
                     {
                         anyConnectionCreated = true;
                     }
                 }
-
-                // Process Ship connections (if needed)
-                if (commonModes.contains("Ship"))
-                {
-                    // TODO
-                    // Similar implementation as Rail and Truck
-                    // Skip for now so we do not allow skips
-                    // connections between ports in the same
-                    // region
-                }
             }
         }
-        }
+    }
     else // Global view
     {
         for (auto &sourceTerminal : globalTerminals)
         {
+            // Skip if terminal type is not included
+            TerminalItem *sourceLinkedTerminal =
+                sourceTerminal->getLinkedTerminalItem();
+            if (!sourceLinkedTerminal
+                || !includedTerminalTypes.value(
+                    sourceLinkedTerminal->getTerminalType(),
+                    true))
+            {
+                continue;
+            }
+
             // Break outer loop if error occurred
             if (errorOccurred)
                 break;
 
             for (auto &targetTerminal : globalTerminals)
             {
+                // Skip if terminal type is not included
+                TerminalItem *targetLinkedTerminal =
+                    targetTerminal->getLinkedTerminalItem();
+                if (!targetLinkedTerminal
+                    || !includedTerminalTypes.value(
+                        targetLinkedTerminal
+                            ->getTerminalType(),
+                        true))
+                {
+                    continue;
+                }
+
                 // Break inner loop if error occurred
                 if (errorOccurred)
                     break;
@@ -2199,6 +2446,14 @@ void CargoNetSim::GUI::ViewController::
                 if (sourceTerminal == targetTerminal)
                 {
                     continue;
+                }
+
+                // Process events periodically to keep UI
+                // responsive
+                if (++processCount % 10
+                    == 0) // Process every 10 iterations
+                {
+                    QApplication::processEvents();
                 }
 
                 QList<QString> commonModes =
@@ -2210,6 +2465,13 @@ void CargoNetSim::GUI::ViewController::
                     // Break mode loop if error occurred
                     if (errorOccurred)
                         break;
+
+                    // Skip if this network type wasn't
+                    // selected
+                    if (!selectedNetworks.contains(mode))
+                    {
+                        continue;
+                    }
 
                     QString connectionType;
                     if (mode.toLower() == "ship")
@@ -2284,15 +2546,31 @@ void CargoNetSim::GUI::ViewController::
                     }
                 }
             }
+
+            // Process events for each source terminal to
+            // ensure responsiveness
+            QApplication::processEvents();
         }
     }
+
+    // Final process events before showing result message
+    QApplication::processEvents();
 
     if (anyConnectionCreated)
     {
         mainWindow->showStatusBarMessage(
             "Terminal connections created based on "
-            "networks.");
+            "selected networks and terminal types.");
     }
+    else if (!errorOccurred)
+    {
+        mainWindow->showStatusBarMessage(
+            "No new connections were created.", 3000);
+    }
+
+    // Restore toolbar button states
+    ToolbarController::restoreButtonStates(mainWindow);
+    mainWindow->stopStatusProgress();
 }
 
 void CargoNetSim::GUI::ViewController::
@@ -2303,6 +2581,14 @@ void CargoNetSim::GUI::ViewController::
     {
         return;
     }
+
+    // Store the current button states and disable all
+    ToolbarController::storeButtonStates(mainWindow);
+    ToolbarController::disableAllButtons(mainWindow);
+    mainWindow->startStatusProgress();
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
 
     // Get the current view and scene based on which tab is
     // active
@@ -2319,6 +2605,9 @@ void CargoNetSim::GUI::ViewController::
     // Track which terminal types are present in the current
     // view
     QSet<QString> visibleTerminalTypes;
+
+    // Process events to keep UI responsive
+    QApplication::processEvents();
 
     if (isGlobalView)
     {
@@ -2366,22 +2655,40 @@ void CargoNetSim::GUI::ViewController::
         }
     }
 
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
     if (visibleTerminals.empty())
     {
         mainWindow->showStatusBarError(
             "No visible terminals found in the current "
             "view.",
             3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
     // Find all available common interfaces
     QSet<QString> availableInterfaces;
+    int           processCount =
+        0; // Counter to determine when to process events
+
     for (int i = 0; i < visibleTerminals.size(); ++i)
     {
         for (int j = i + 1; j < visibleTerminals.size();
              ++j)
         {
+            // Process events periodically to keep UI
+            // responsive
+            if (++processCount % 10
+                == 0) // Process every 10 iterations
+            {
+                QApplication::processEvents();
+            }
+
             // Get the source and target terminals
             QGraphicsItem *sourceItem = visibleTerminals[i];
             QGraphicsItem *targetItem = visibleTerminals[j];
@@ -2400,22 +2707,33 @@ void CargoNetSim::GUI::ViewController::
         }
     }
 
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
     // If no common interfaces, show error and return
     if (availableInterfaces.isEmpty())
     {
         mainWindow->showStatusBarError(
             "No common interfaces found between terminals.",
             3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
     // Show interface selection dialog with only visible
     // terminal types
-    InterfaceSelectionDialog dialog(availableInterfaces,
-                                    visibleTerminalTypes,
-                                    mainWindow);
+    InterfaceSelectionDialog dialog(
+        availableInterfaces, visibleTerminalTypes,
+        InterfaceSelectionDialog::InterfaceSelection,
+        mainWindow);
     if (dialog.exec() != QDialog::Accepted)
     {
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return; // User cancelled
     }
 
@@ -2431,6 +2749,10 @@ void CargoNetSim::GUI::ViewController::
     {
         mainWindow->showStatusBarMessage(
             "No interfaces selected for connection.", 3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -2451,11 +2773,20 @@ void CargoNetSim::GUI::ViewController::
         mainWindow->showStatusBarMessage(
             "No terminal types selected for connection.",
             3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
+    // Process events to keep UI responsive
+    QApplication::processEvents();
+
     // Connect terminals based on selected interfaces
     int connectionsCreated = 0;
+    processCount           = 0; // Reset counter
+
     for (int i = 0; i < visibleTerminals.size(); ++i)
     {
         for (int j = i + 1; j < visibleTerminals.size();
@@ -2465,6 +2796,14 @@ void CargoNetSim::GUI::ViewController::
             if (i == j)
             {
                 continue;
+            }
+
+            // Process events periodically to keep UI
+            // responsive
+            if (++processCount % 10
+                == 0) // Process every 10 iterations
+            {
+                QApplication::processEvents();
             }
 
             // Get the source and target terminals
@@ -2556,7 +2895,14 @@ void CargoNetSim::GUI::ViewController::
                 }
             }
         }
+
+        // Process events after processing each source
+        // terminal
+        QApplication::processEvents();
     }
+
+    // Process events before showing final message
+    QApplication::processEvents();
 
     if (connectionsCreated > 0)
     {
@@ -2571,6 +2917,10 @@ void CargoNetSim::GUI::ViewController::
         mainWindow->showStatusBarMessage(
             "No new connections were created.", 3000);
     }
+
+    // Restore toolbar button states
+    ToolbarController::restoreButtonStates(mainWindow);
+    mainWindow->stopStatusProgress();
 }
 
 CargoNetSim::GUI::RegionCenterPoint *
@@ -2788,10 +3138,18 @@ void CargoNetSim::GUI::ViewController::
         return;
     }
 
+    // Store the current button states and disable all
+    ToolbarController::storeButtonStates(mainWindow);
+    ToolbarController::disableAllButtons(mainWindow);
+    mainWindow->startStatusProgress();
+
     // Get the current scene
     auto scene = mainWindow->regionScene_;
     if (!scene)
     {
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -2822,6 +3180,10 @@ void CargoNetSim::GUI::ViewController::
                 "No visible terminals found in region '%1'")
                 .arg(currentRegion),
             3000);
+
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -2860,6 +3222,9 @@ void CargoNetSim::GUI::ViewController::
     int result = msgBox.exec();
     if (result != QMessageBox::Yes)
     {
+        // Restore toolbar button states
+        ToolbarController::restoreButtonStates(mainWindow);
+        mainWindow->stopStatusProgress();
         return;
     }
 
@@ -2897,4 +3262,296 @@ void CargoNetSim::GUI::ViewController::
             "points.",
             3000);
     }
+    // Restore toolbar button states
+    ToolbarController::restoreButtonStates(mainWindow);
+    mainWindow->stopStatusProgress();
+}
+
+void CargoNetSim::GUI::ViewController::
+    showFilteredConnections(
+        MainWindow        *mainWindow,
+        const QStringList &terminalNames,
+        const QStringList &connectionTypes)
+{
+    if (!mainWindow || terminalNames.isEmpty()
+        || connectionTypes.isEmpty())
+    {
+        return;
+    }
+
+    // Determine if we're in global or region view
+    bool isGlobalView    = mainWindow->isGlobalViewActive();
+    GraphicsScene *scene = isGlobalView
+                               ? mainWindow->globalMapScene_
+                               : mainWindow->regionScene_;
+
+    // Get all connection lines in the scene
+    QList<ConnectionLine *> connectionLines =
+        scene->getItemsByType<ConnectionLine>();
+
+    // Find all the specified terminals
+    QList<QGraphicsItem *> selectedTerminals;
+
+    if (isGlobalView)
+    {
+        // Get all global terminals in the scene
+        QList<GlobalTerminalItem *> globalTerminals =
+            scene->getItemsByType<GlobalTerminalItem>();
+
+        // Find the specified global terminals by name
+        for (GlobalTerminalItem *terminal : globalTerminals)
+        {
+            TerminalItem *linkedTerminal =
+                terminal->getLinkedTerminalItem();
+            if (linkedTerminal)
+            {
+                QString name =
+                    linkedTerminal->getProperty("Name")
+                        .toString();
+                if (terminalNames.contains(name))
+                {
+                    selectedTerminals.append(terminal);
+                }
+            }
+        }
+    }
+    else
+    {
+        // Get all terminals in the scene
+        QList<TerminalItem *> terminals =
+            scene->getItemsByType<TerminalItem>();
+
+        // Get the current region
+        QString currentRegion =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getRegionDataController()
+                    ->getCurrentRegion();
+
+        // Find the specified terminals by name in the
+        // current region
+        for (TerminalItem *terminal : terminals)
+        {
+            if (terminal->getRegion() == currentRegion)
+            {
+                QString name = terminal->getProperty("Name")
+                                   .toString();
+                if (terminalNames.contains(name))
+                {
+                    selectedTerminals.append(terminal);
+                }
+            }
+        }
+    }
+
+    // Show error message if no terminals found
+    if (selectedTerminals.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "Could not find any of the selected terminals "
+            "in the current view.",
+            3000);
+        return;
+    }
+
+    // Hide all connection lines first
+    for (ConnectionLine *line : connectionLines)
+    {
+        line->setVisible(false);
+    }
+
+    // Show only connection lines that meet both criteria:
+    // 1. Connect two of the selected terminals
+    // 2. Are of a selected type
+    int connectionsFound = 0;
+
+    for (ConnectionLine *line : connectionLines)
+    {
+        // Check if the connection type is selected
+        if (!connectionTypes.contains(
+                line->connectionType()))
+        {
+            continue;
+        }
+
+        // Check if both endpoints are in the selected
+        // terminals list
+        QGraphicsItem *startItem = line->startItem();
+        QGraphicsItem *endItem   = line->endItem();
+
+        bool startIsSelected =
+            selectedTerminals.contains(startItem);
+        bool endIsSelected =
+            selectedTerminals.contains(endItem);
+
+        if (startIsSelected && endIsSelected)
+        {
+            line->setVisible(true);
+            connectionsFound++;
+        }
+    }
+
+    // Show status bar message
+    if (connectionsFound > 0)
+    {
+        QString message =
+            QString("Showing %1 connection(s) between %2 "
+                    "terminal(s) of types: %3")
+                .arg(connectionsFound)
+                .arg(terminalNames.size())
+                .arg(connectionTypes.join(", "));
+        mainWindow->showStatusBarMessage(message, 5000);
+    }
+    else
+    {
+        mainWindow->showStatusBarMessage(
+            "No connections found matching the selected "
+            "criteria.",
+            3000);
+    }
+}
+
+bool CargoNetSim::GUI::ViewController::moveNetworkItems(
+    MainWindow *mainWindow, NetworkType networkType,
+    const QString &networkName, const QPointF &offset,
+    const QString &regionName)
+{
+    if (!mainWindow || !mainWindow->regionScene_)
+        return false;
+
+    GraphicsScene *scene = mainWindow->regionScene_;
+
+    // Check if we're using projected coordinates
+    bool usingProjectedCoords =
+        mainWindow->regionView_->isUsingProjectedCoords();
+
+    // Get all network map points and lines
+    QList<MapPoint *> mapPoints =
+        scene->getItemsByType<MapPoint>();
+    QList<MapLine *> mapLines =
+        scene->getItemsByType<MapLine>();
+
+    int itemsUpdated = 0;
+
+    // Process map points
+    for (MapPoint *point : mapPoints)
+    {
+        // Skip points that don't belong to this region or
+        // network
+        if (point->getRegion() != regionName)
+            continue;
+
+        QObject *refNetwork = point->getReferenceNetwork();
+        if (!refNetwork)
+            continue;
+
+        // Check if this point belongs to the target network
+        bool isTargetNetwork = false;
+
+        if (networkType == NetworkType::Train)
+        {
+            auto trainNet = qobject_cast<
+                Backend::TrainClient::NeTrainSimNetwork *>(
+                refNetwork);
+            if (trainNet
+                && trainNet->getNetworkName()
+                       == networkName)
+                isTargetNetwork = true;
+        }
+        else if (networkType == NetworkType::Truck)
+        {
+            auto truckNet = qobject_cast<
+                Backend::TruckClient::IntegrationNetwork *>(
+                refNetwork);
+            if (truckNet
+                && truckNet->getNetworkName()
+                       == networkName)
+                isTargetNetwork = true;
+        }
+
+        if (!isTargetNetwork)
+            continue;
+
+        // Update point position
+        QPointF currentPos = point->getSceneCoordinate();
+        QPointF newPos     = currentPos + offset;
+
+        // Update both scene position and properties
+        point->setSceneCoordinate(newPos);
+        point->updateProperties(
+            {{"x", newPos.x()}, {"y", newPos.y()}});
+
+        // Update any linked terminal
+        TerminalItem *linkedTerminal =
+            point->getLinkedTerminal();
+        if (linkedTerminal)
+        {
+            linkedTerminal->setPos(newPos);
+            // Update the global terminal item position if
+            // needed
+            updateGlobalMapItem(mainWindow, linkedTerminal);
+        }
+
+        itemsUpdated++;
+    }
+
+    // Process map lines
+    for (MapLine *line : mapLines)
+    {
+        // Skip lines that don't belong to this region or
+        // network
+        if (line->getRegion() != regionName)
+            continue;
+
+        QObject *refNetwork = line->getReferenceNetwork();
+        if (!refNetwork)
+            continue;
+
+        // Check if this line belongs to the target network
+        bool isTargetNetwork = false;
+
+        if (networkType == NetworkType::Train)
+        {
+            auto trainNet = qobject_cast<
+                Backend::TrainClient::NeTrainSimNetwork *>(
+                refNetwork);
+            if (trainNet
+                && trainNet->getNetworkName()
+                       == networkName)
+                isTargetNetwork = true;
+        }
+        else if (networkType == NetworkType::Truck)
+        {
+            auto truckNet = qobject_cast<
+                Backend::TruckClient::IntegrationNetwork *>(
+                refNetwork);
+            if (truckNet
+                && truckNet->getNetworkName()
+                       == networkName)
+                isTargetNetwork = true;
+        }
+
+        if (!isTargetNetwork)
+            continue;
+
+        // Update line start and end points
+        QPointF currentStart = line->getStartPoint();
+        QPointF currentEnd   = line->getEndPoint();
+
+        QPointF newStart = currentStart + offset;
+        QPointF newEnd   = currentEnd + offset;
+
+        line->setPoints(newStart, newEnd);
+
+        itemsUpdated++;
+    }
+
+    if (itemsUpdated > 0)
+    {
+        // Force scene update
+        scene->update();
+        return true;
+    }
+
+    return false;
 }
