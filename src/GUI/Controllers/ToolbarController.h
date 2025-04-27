@@ -33,6 +33,13 @@ public:
      * @param mainWindow Pointer to the main window
      */
     static void setupToolbar(MainWindow *mainWindow);
+
+    static void storeButtonStates(MainWindow *mainWindow);
+    static void restoreButtonStates(MainWindow *mainWindow);
+    static void disableAllButtons(MainWindow *mainWindow);
+
+private:
+    static QMap<QWidget *, bool> widgetStates;
 };
 
 } // namespace GUI

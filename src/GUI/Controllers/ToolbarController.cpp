@@ -25,13 +25,23 @@ namespace CargoNetSim
 namespace GUI
 {
 
+QMap<QWidget *, bool> ToolbarController::widgetStates;
+
 void ToolbarController::setupToolbar(MainWindow *mainWindow)
 {
+    //////////////////////////////////////////////////////////////////////////
+    // Create base toolbar and ribbon
+    //////////////////////////////////////////////////////////////////////////
+
     // Create scrollable toolbar with integrated ribbon
     ScrollableToolBar *toolbar = new ScrollableToolBar();
     mainWindow->addToolBarBreak();
     mainWindow->addToolBar(toolbar);
     mainWindow->toolbar_ = toolbar;
+
+    //////////////////////////////////////////////////////////////////////////
+    // HOME TAB - Core functionality
+    //////////////////////////////////////////////////////////////////////////
 
     // Create Home tab
     QWidget     *homeTab    = new QWidget();
@@ -62,38 +72,40 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     projectLayout->addWidget(newProjectButton);
 
     // Open project button
-    QToolButton *openProjectButton = new QToolButton();
-    openProjectButton->setToolButtonStyle(
-        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
-    openProjectButton->setText("Open\nProject");
-    openProjectButton->setIcon(
-        QIcon(IconFactory::createOpenProjectIcon()));
-    openProjectButton->setEnabled(false);
-    // QObject::connect(openProjectButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  BasicButtonController::openProject(mainWindow);
-    //                  });
-    projectLayout->addWidget(openProjectButton);
+    // QToolButton *openProjectButton = new QToolButton();
+    // openProjectButton->setToolButtonStyle(
+    //     Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    // openProjectButton->setText("Open\nProject");
+    // openProjectButton->setIcon(
+    //     QIcon(IconFactory::createOpenProjectIcon()));
+    // openProjectButton->setEnabled(false);
+    // // QObject::connect(openProjectButton,
+    // // &QToolButton::clicked,
+    // //                  [mainWindow]() {
+    // // BasicButtonController::openProject(mainWindow);
+    // //                  });
+    // projectLayout->addWidget(openProjectButton);
 
     // Save project button
-    QToolButton *saveProjectButton = new QToolButton();
-    saveProjectButton->setToolButtonStyle(
-        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
-    saveProjectButton->setText("Save\nProject");
-    saveProjectButton->setIcon(
-        QIcon(IconFactory::createSaveProjectIcon()));
-    saveProjectButton->setEnabled(false);
-    // QObject::connect(saveProjectButton,
-    // &QToolButton::clicked,
-    //                  [mainWindow]() {
-    //                  BasicButtonController::saveProject(mainWindow);
-    //                  });
-    projectLayout->addWidget(saveProjectButton);
+    // QToolButton *saveProjectButton = new QToolButton();
+    // saveProjectButton->setToolButtonStyle(
+    //     Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    // saveProjectButton->setText("Save\nProject");
+    // saveProjectButton->setIcon(
+    //     QIcon(IconFactory::createSaveProjectIcon()));
+    // saveProjectButton->setEnabled(false);
+    // // QObject::connect(saveProjectButton,
+    // // &QToolButton::clicked,
+    // //                  [mainWindow]() {
+    // // BasicButtonController::saveProject(mainWindow);
+    // //                  });
+    // projectLayout->addWidget(saveProjectButton);
 
-    mainWindow->projectButtons_ = {newProjectButton,
-                                   openProjectButton,
-                                   saveProjectButton};
+    mainWindow->projectButtons_ = {
+        newProjectButton
+        // openProjectButton,
+        // saveProjectButton
+    };
     homeLayout->addWidget(mainWindow->projectGroup_);
 
     // Create Tools group
@@ -399,10 +411,28 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         });
     networkToolsLayout->addWidget(checkNetworkButton);
 
+    // Create Move Network button
+    QToolButton *moveNetworkAction =
+        new QToolButton(mainWindow);
+    moveNetworkAction->setToolButtonStyle(
+        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    moveNetworkAction->setIcon(
+        IconFactory::createMoveNetworkIcon());
+    moveNetworkAction->setText("Move\nNetwork");
+    moveNetworkAction->setStatusTip(
+        "Move an entire network by a specified offset");
+    QObject::connect(
+        moveNetworkAction, &QToolButton::clicked,
+        [mainWindow]() {
+            UtilitiesFunctions::onShowMoveNetworkDialog(
+                mainWindow);
+        });
+    networkToolsLayout->addWidget(moveNetworkAction);
+
     mainWindow->networkToolsButtons_ = {
         checkNetworkButton,
         connectVisibleTerminalsByNetworkButton,
-        disconnectAllTerminalsButton};
+        disconnectAllTerminalsButton, moveNetworkAction};
 
     homeLayout->addWidget(mainWindow->networkToolsGroup_);
 
@@ -500,6 +530,10 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
 
     homeLayout->addStretch();
     int homeTabIndex = toolbar->addTab(homeTab, "Home");
+
+    //////////////////////////////////////////////////////////////////////////
+    // IMPORT TAB
+    //////////////////////////////////////////////////////////////////////////
 
     // Create Import tab
     QWidget     *importTab    = new QWidget();
@@ -636,6 +670,10 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     importLayout->addStretch();
     int importTabIndex =
         toolbar->addTab(importTab, "Import");
+
+    //////////////////////////////////////////////////////////////////////////
+    // VIEW TAB
+    //////////////////////////////////////////////////////////////////////////
 
     // Create View tab
     QWidget     *viewTab    = new QWidget();
@@ -841,6 +879,22 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         });
     visibilityLayout->addWidget(terminalsButton);
 
+    // Add connection filter button
+    QToolButton *showConnectionsButton = new QToolButton();
+    showConnectionsButton->setToolButtonStyle(
+        Qt::ToolButtonStyle::ToolButtonTextUnderIcon);
+    showConnectionsButton->setText(
+        "Show Connections\nBetween Terminals");
+    showConnectionsButton->setIcon(
+        QIcon(IconFactory::createFilterConnectionsIcon()));
+    QObject::connect(showConnectionsButton,
+                     &QToolButton::clicked, [mainWindow]() {
+                         UtilitiesFunctions::
+                             openTerminalConnectionSelector(
+                                 mainWindow);
+                     });
+    visibilityLayout->addWidget(showConnectionsButton);
+
     // Store buttons for visibility management
     mainWindow->visibilityButtons_ = {connectionLinesButton,
                                       terminalsButton};
@@ -944,6 +998,8 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
     mainWindow
         ->toolsButtonsVisibility_[checkNetworkButton] =
         QList<int>{0, 1};
+    mainWindow->toolsButtonsVisibility_[moveNetworkAction] =
+        QList<int>{0};
     mainWindow->toolsButtonsVisibility_
         [linkTerminalsToNetworkButton] = QList<int>{0};
     mainWindow->toolsButtonsVisibility_
@@ -961,10 +1017,12 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         QList<int>{2};
     mainWindow->toolsButtonsVisibility_[newProjectButton] =
         QList<int>{0, 1};
-    mainWindow->toolsButtonsVisibility_[openProjectButton] =
-        QList<int>{0, 1};
-    mainWindow->toolsButtonsVisibility_[saveProjectButton] =
-        QList<int>{0, 1};
+    // mainWindow->toolsButtonsVisibility_[openProjectButton]
+    // =
+    //     QList<int>{0, 1};
+    // mainWindow->toolsButtonsVisibility_[saveProjectButton]
+    // =
+    //     QList<int>{0, 1};
     mainWindow
         ->toolsButtonsVisibility_[shortestPathsButton] =
         QList<int>{0, 1};
@@ -973,15 +1031,79 @@ void ToolbarController::setupToolbar(MainWindow *mainWindow)
         QList<int>{0, 1};
     mainWindow
         ->toolsButtonsVisibility_[trainManagerButton] =
-        QList<int>{0};
+        QList<int>{0, 1};
     mainWindow->toolsButtonsVisibility_[shipManagerButton] =
-        QList<int>{0};
+        QList<int>{0, 1};
 
     // Store tabs visibility configuration
     mainWindow->tabsVisibility_ = {
         {homeTabIndex, {0, 1, 2}},
         {importTabIndex, {0, 1}},
         {viewTabIndex, {0, 1}}};
+}
+
+void ToolbarController::storeButtonStates(
+    MainWindow *mainWindow)
+{
+    widgetStates.clear();
+
+    if (mainWindow->toolbar_)
+    {
+        // Get all interactive widgets
+        QList<QWidget *> interactiveWidgets =
+            mainWindow->toolbar_
+                ->findAllInteractiveWidgets();
+
+        // Store enabled state for all widgets
+        for (QWidget *widget : interactiveWidgets)
+        {
+            widgetStates[widget] = widget->isEnabled();
+        }
+    }
+
+    mainWindow->showStatusBarMessage(
+        "Toolbar interactive element states saved", 2000);
+}
+
+void ToolbarController::restoreButtonStates(
+    MainWindow *mainWindow)
+{
+    // Restore widget states from saved states
+    for (auto it = widgetStates.begin();
+         it != widgetStates.end(); ++it)
+    {
+        QWidget *widget  = it.key();
+        bool     enabled = it.value();
+        if (widget)
+        {
+            widget->setEnabled(enabled);
+        }
+    }
+
+    mainWindow->showStatusBarMessage(
+        "Toolbar interactive element states restored",
+        2000);
+}
+
+void ToolbarController::disableAllButtons(
+    MainWindow *mainWindow)
+{
+    if (mainWindow->toolbar_)
+    {
+        // Get all interactive widgets
+        QList<QWidget *> interactiveWidgets =
+            mainWindow->toolbar_
+                ->findAllInteractiveWidgets();
+
+        // Disable all widgets
+        for (QWidget *widget : interactiveWidgets)
+        {
+            widget->setEnabled(false);
+        }
+    }
+
+    mainWindow->showStatusBarMessage(
+        "All toolbar interactive elements disabled", 2000);
 }
 
 } // namespace GUI
