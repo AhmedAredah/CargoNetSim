@@ -1,7 +1,7 @@
 <config>
     <!--Configuration parameters for CargoNetSim-->
     <simulation>
-        <shortest_paths>5</shortest_paths>
+        <shortest_paths>10</shortest_paths>
         <time_step>15</time_step>
         <time_value_of_money>20.430000</time_value_of_money>
         <use_mode_specific>false</use_mode_specific>
