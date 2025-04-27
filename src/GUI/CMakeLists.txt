@@ -104,6 +104,10 @@ set(GUI_SOURCES
     Widgets/NetworkSelectionDialog.cpp
     Widgets/ScrollableToolBar.h
     Widgets/ScrollableToolBar.cpp
+    Widgets/TerminalSelectionDialog.h
+    Widgets/TerminalSelectionDialog.cpp
+    Widgets/NetworkMoveDialog.h
+    Widgets/NetworkMoveDialog.cpp
 )
 
 # Create the GUI library
