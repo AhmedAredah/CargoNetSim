@@ -495,7 +495,7 @@ bool TrainSimulationClient::unloadTrainPrivate(
              &success](const QString     &event,
                        const QJsonObject &data) {
                 if (normalizeEventName(event)
-                    == "containersunloaded")
+                    == "containersUnloaded")
                 {
                     success = true;
                     eventLoop.quit();
@@ -503,8 +503,9 @@ bool TrainSimulationClient::unloadTrainPrivate(
             });
 
     // Send the command without waiting
-    if (sendCommand("unloadContainersFromShipAtTerminal",
-                    params))
+    if (sendCommand(
+            "unloadContainersFromTrainAtCurrentTerminal",
+            params))
     {
         // Wait for the event with a timeout
         QTimer::singleShot(
