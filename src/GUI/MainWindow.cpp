@@ -1540,29 +1540,30 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                 }
             }
             // Handle other item types as needed
-            else if (MapPoint *point =
-                         dynamic_cast<MapPoint *>(item))
-            {
-                if (point)
-                {
-                    QString id =
-                        point->getProperty("NodeID")
-                            .toString();
-                    currentScene
-                        ->removeItemWithId<MapPoint>(id);
-                }
-            }
-            else if (MapLine *line =
-                         dynamic_cast<MapLine *>(item))
-            {
-                if (line)
-                {
-                    QString id = line->getProperty("LinkID")
-                                     .toString();
-                    currentScene->removeItemWithId<MapLine>(
-                        id);
-                }
-            }
+            // else if (MapPoint *point =
+            //              dynamic_cast<MapPoint *>(item))
+            // {
+            //     if (point)
+            //     {
+            //         QString id =
+            //             point->getProperty("NodeID")
+            //                 .toString();
+            //         currentScene
+            //             ->removeItemWithId<MapPoint>(id);
+            //     }
+            // }
+            // else if (MapLine *line =
+            //              dynamic_cast<MapLine *>(item))
+            // {
+            //     if (line)
+            //     {
+            //         QString id =
+            //         line->getProperty("LinkID")
+            //                          .toString();
+            //         currentScene->removeItemWithId<MapLine>(
+            //             id);
+            //     }
+            // }
 
             selectedItems.removeAll(nullptr);
         }
