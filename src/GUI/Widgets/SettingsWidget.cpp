@@ -96,7 +96,7 @@ void SettingsWidget::initUI()
                       averageTimeValueSpin);
 
     shortestPathsSpin = new QSpinBox(simulationGroup);
-    shortestPathsSpin->setRange(1, 10);
+    shortestPathsSpin->setRange(1, 20);
     shortestPathsSpin->setValue(3);
     shortestPathsSpin->setSuffix(tr(" paths"));
     simLayout->addRow(tr("Number of Shortest Paths:"),
