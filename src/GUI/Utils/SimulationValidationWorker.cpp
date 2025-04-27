@@ -1335,10 +1335,12 @@ double SimulationValidationWorker::calculateShipSegmentCost(
 
     // Apply weights to metrics
     double segmentCost = 0.0;
-    segmentCost +=
-        travelTime * modeWeights["travelTime"].toDouble();
-    segmentCost +=
-        distance * modeWeights["distance"].toDouble();
+    segmentCost += travelTime
+                   * modeWeights["travelTime"].toDouble()
+                   / 3600.0; // sec to hr
+    segmentCost += distance
+                   * modeWeights["distance"].toDouble()
+                   / 1000.0; // m to km
     segmentCost +=
         carbonEmissions
         * modeWeights["carbonEmissions"].toDouble();
