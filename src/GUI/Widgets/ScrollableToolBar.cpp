@@ -9,10 +9,15 @@
 #include "ScrollableToolBar.h"
 
 #include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QHBoxLayout>
+#include <QLineEdit>
 #include <QPainter>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollArea>
+#include <QSpinBox>
 #include <QStyle>
 #include <QStyleOption>
 #include <QToolButton>
@@ -174,6 +179,93 @@ QAction *ScrollableToolBar::addSeparator()
     return action;
 }
 
+/**
+ * @brief Find all interactive widgets in the toolbar and
+ * its containers
+ * @return QList<QWidget*> List of all interactive widgets
+ * found
+ */
+QList<QWidget *>
+ScrollableToolBar::findAllInteractiveWidgets()
+{
+    QList<QWidget *> allWidgets;
+
+    // Function to check if a widget is interactive and
+    // should be included
+    auto isInteractiveWidget = [](QWidget *widget) -> bool {
+        return (qobject_cast<QToolButton *>(widget)
+                || qobject_cast<QComboBox *>(widget)
+                || qobject_cast<QLineEdit *>(widget)
+                || qobject_cast<QCheckBox *>(widget)
+                || qobject_cast<QSpinBox *>(widget)
+                || qobject_cast<QDoubleSpinBox *>(widget)
+                || qobject_cast<QPushButton *>(widget)
+                || qobject_cast<QSlider *>(widget));
+    };
+
+    // Process the ribbon
+    if (ribbon_)
+    {
+        for (int i = 0; i < ribbon_->count(); i++)
+        {
+            QWidget *tabWidget = ribbon_->widget(i);
+            if (!tabWidget)
+                continue;
+
+            // Get all widgets recursively
+            QList<QWidget *> tabWidgets =
+                tabWidget->findChildren<QWidget *>();
+
+            // Add interactive widgets to our list
+            for (QWidget *widget : tabWidgets)
+            {
+                if (isInteractiveWidget(widget)
+                    && !allWidgets.contains(widget))
+                {
+                    allWidgets.append(widget);
+                }
+            }
+        }
+    }
+
+    // Process the container widget
+    if (containerWidget)
+    {
+        // Get all widgets recursively
+        QList<QWidget *> containerWidgets =
+            containerWidget->findChildren<QWidget *>();
+
+        // Add interactive widgets to our list
+        for (QWidget *widget : containerWidgets)
+        {
+            if (isInteractiveWidget(widget)
+                && !allWidgets.contains(widget))
+            {
+                allWidgets.append(widget);
+            }
+        }
+    }
+
+    // Process direct children
+    QList<QWidget *> directWidgets =
+        findChildren<QWidget *>(QString(),
+                                Qt::FindDirectChildrenOnly);
+    for (QWidget *widget : directWidgets)
+    {
+        if (widget != ribbon_ && widget != containerWidget
+            && widget != scrollArea)
+        {
+            if (isInteractiveWidget(widget)
+                && !allWidgets.contains(widget))
+            {
+                allWidgets.append(widget);
+            }
+        }
+    }
+
+    return allWidgets;
+}
+
 void ScrollableToolBar::resizeEvent(QResizeEvent *event)
 {
     // Don't set fixed width, allow the scroll area to
@@ -184,7 +276,7 @@ void ScrollableToolBar::resizeEvent(QResizeEvent *event)
         event->size().width()); // Set maximum width to
                                 // current width
     scrollArea->setMinimumHeight(
-        containerWidget->sizeHint().height());
+        containerWidget->sizeHint().height() + 10.0);
     QToolBar::resizeEvent(event);
 }
 

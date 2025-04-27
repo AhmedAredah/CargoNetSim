@@ -11,6 +11,7 @@
 
 #include <QTabWidget>
 #include <QToolBar>
+#include <QtWidgets/qtoolbutton.h>
 
 // Forward declarations to reduce header dependencies
 class QScrollArea;
@@ -115,6 +116,14 @@ public:
      * the container layout.
      */
     QAction *addSeparator();
+
+    /**
+     * @brief Find all interactive widgets in the toolbar
+     * and its containers
+     * @return QList<QWidget*> List of all interactive
+     * widgets found
+     */
+    QList<QWidget *> findAllInteractiveWidgets();
 
 protected:
     /**
