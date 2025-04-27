@@ -1380,6 +1380,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
             mainWindow->showStatusBarError(message, 3000);
             mainWindow->validatePathsButton_->setEnabled(
                 true);
+            mainWindow->stopStatusProgress();
         },
         Qt::QueuedConnection);
 
@@ -1389,6 +1390,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
         mainWindow, [mainWindow]() {
             mainWindow->validatePathsButton_->setEnabled(
                 true);
+            mainWindow->stopStatusProgress();
         });
     QObject::connect(worker,
                      &SimulationValidationWorker::finished,
@@ -1403,6 +1405,7 @@ void CargoNetSim::GUI::UtilitiesFunctions::
     mainWindow->showStatusBarMessage(
         "Starting simulation validation in background...",
         3000);
+    mainWindow->startStatusProgress();
     mainWindow->validatePathsButton_->setEnabled(false);
     thread->start();
 }
