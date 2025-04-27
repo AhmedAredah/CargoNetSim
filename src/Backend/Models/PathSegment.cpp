@@ -121,5 +121,12 @@ PathSegment *PathSegment::fromJson(const QJsonObject &json,
     return new PathSegment(json, parent);
 }
 
+void PathSegment::setAttributes(
+    const QJsonObject &attributes)
+{
+    // Set the attributes of the path segment
+    m_attributes = attributes;
+}
+
 } // namespace Backend
 } // namespace CargoNetSim

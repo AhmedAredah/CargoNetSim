@@ -134,6 +134,15 @@ public:
     {
         return m_attributes;
     }
+
+    /**
+     * @brief Sets the segment attributes
+     * @param attributes New attributes as QJsonObject
+     *
+     * Updates the segment's properties.
+     */
+    void setAttributes(const QJsonObject &attributes);
+
     /**
      * @brief Converts the segment to JSON format
      * @return QJsonObject representing the segment
