@@ -43,6 +43,7 @@ QPixmap createUnlinkTerminalsToNetworkIcon(int size = 32);
 QPixmap createAutoConnectTerminalsIcon(int size = 32);
 QPixmap createConnectByInterfaceIcon(int size = 32);
 QPixmap createCheckNetworkIcon(int size = 128);
+QPixmap createMoveNetworkIcon(int size = 128);
 QPixmap createUnconnectTerminalsIcon(int size = 32);
 QPixmap createSettingsIcon(int size = 128);
 QPixmap createNewProjectIcon(int size = 128);
@@ -71,6 +72,7 @@ QPixmap createTransportationModePixmap(const QString &mode,
                                        int width = 64);
 
 QPixmap createCalculatorIcon(int size = 128);
+QPixmap createFilterConnectionsIcon(int size = 128);
 
 } // namespace IconFactory
 } // namespace GUI
