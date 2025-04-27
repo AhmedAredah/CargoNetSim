@@ -30,8 +30,8 @@
     <transport_modes>
         <ship>
             <average_container_number>10000</average_container_number>
-            <average_fuel_consumption>154.600000</average_fuel_consumption>
-            <average_speed>20.000000</average_speed>
+            <average_fuel_consumption>70.000000</average_fuel_consumption>
+            <average_speed>42.600000</average_speed>
             <fuel_type>HFO</fuel_type>
             <risk_factor>0.025000</risk_factor>
             <time_value_of_money>13.430000</time_value_of_money>
