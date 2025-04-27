@@ -569,5 +569,64 @@ QList<MapLine *> NetworkController::getShortestPathMapLines(
     return pathMapLines;
 }
 
+bool NetworkController::moveNetwork(
+    MainWindow *mainWindow, NetworkType networkType,
+    const QString &networkName, const QPointF &offset,
+    Backend::RegionData *regionData)
+{
+    if (!mainWindow || !regionData)
+        return false;
+
+    try
+    {
+        // Get the network based on type
+        BaseNetwork *network = nullptr;
+
+        if (networkType == NetworkType::Train)
+        {
+            network =
+                regionData->getTrainNetwork(networkName);
+        }
+        else if (networkType == NetworkType::Truck)
+        {
+            network =
+                regionData->getTruckNetwork(networkName);
+        }
+        else if (networkType == NetworkType::Ship)
+        {
+            throw std::runtime_error(
+                "Ship network moving is not supported "
+                "yet.");
+        }
+
+        if (!network)
+            return false;
+
+        // Perform the actual movement through the
+        // ViewController
+        bool success = ViewController::moveNetworkItems(
+            mainWindow, networkType, networkName, offset,
+            regionData->getRegion());
+
+        if (success)
+        {
+            mainWindow->showStatusBarMessage(
+                QString("Network '%1' moved successfully.")
+                    .arg(networkName),
+                3000);
+        }
+
+        return success;
+    }
+    catch (const std::exception &e)
+    {
+        QMessageBox::critical(
+            mainWindow, "Error",
+            QString("Failed to move network: %1")
+                .arg(e.what()));
+        return false;
+    }
+}
+
 } // namespace GUI
 } // namespace CargoNetSim
