@@ -62,6 +62,14 @@ void MapLine::setPen(const QPen &newPen)
     }
 }
 
+void MapLine::setPoints(const QPointF &newStartPoint,
+                        const QPointF &newEndPoint)
+{
+    startPoint = newStartPoint;
+    endPoint   = newEndPoint;
+    update();
+}
+
 QRectF MapLine::boundingRect() const
 {
     // Calculate bounding rect with padding
