@@ -267,8 +267,13 @@ bool SimulationValidationWorker::setupSimulationData(
         int containerCounter = 0;
 
         // Process each segment in the path
-        for (auto segment : segments)
+        for (int segmentCounter = 0;
+             segmentCounter < segments.size();
+             segmentCounter++)
         {
+            Backend::PathSegment *segment =
+                segments[segmentCounter];
+
             if (!segment)
             {
                 continue;
@@ -432,8 +437,9 @@ bool SimulationValidationWorker::setupSimulationData(
                     {
                         // Create a new train
                         QString trainId =
-                            QString("%1_%2")
+                            QString("%1_%2_%3")
                                 .arg(path->getPathId())
+                                .arg(segmentCounter)
                                 .arg(trainCounter++);
                         Backend::Train *train =
                             vehicleController
@@ -612,8 +618,9 @@ bool SimulationValidationWorker::setupSimulationData(
                     {
                         // Create a new truck trip
                         QString tripId =
-                            QString("%1_%2")
+                            QString("%1_%2_%3")
                                 .arg(path->getPathId())
+                                .arg(segmentCounter)
                                 .arg(truckCounter++);
 
                         // Assign containers to this truck
@@ -759,8 +766,9 @@ bool SimulationValidationWorker::setupSimulationData(
                     {
                         // Create a new ship
                         QString shipId =
-                            QString("%1_%2")
+                            QString("%1_%2_%3")
                                 .arg(path->getPathId())
+                                .arg(segmentCounter)
                                 .arg(shipCounter++);
                         Backend::Ship *ship =
                             vehicleController
@@ -1189,8 +1197,11 @@ double SimulationValidationWorker::calculateEdgeCosts(
     double totalEdgeCosts = 0.0;
 
     // Process each segment in the path
-    for (auto segment : segments)
+    for (int segmentCounter = 0;
+         segmentCounter < segments.size(); segmentCounter++)
     {
+        Backend::PathSegment *segment =
+            segments[segmentCounter];
         if (!segment)
         {
             continue;
@@ -1225,24 +1236,27 @@ double SimulationValidationWorker::calculateEdgeCosts(
                 TransportationMode::Ship)
         {
             segmentCost = calculateShipSegmentCost(
-                path, shipClient, modeWeights,
-                transportModes, containerCount);
+                path, segment, segmentCounter, shipClient,
+                modeWeights, transportModes,
+                containerCount);
         }
         else if (mode
                  == Backend::TransportationTypes::
                      TransportationMode::Train)
         {
             segmentCost = calculateTrainSegmentCost(
-                path, trainClient, modeWeights,
-                transportModes, containerCount);
+                path, segment, segmentCounter, trainClient,
+                modeWeights, transportModes,
+                containerCount);
         }
         else if (mode
                  == Backend::TransportationTypes::
                      TransportationMode::Truck)
         {
             segmentCost = calculateTruckSegmentCost(
-                path, truckClient, modeWeights,
-                transportModes, containerCount);
+                path, segment, segmentCounter, truckClient,
+                modeWeights, transportModes,
+                containerCount);
         }
 
         // Add to total edge costs
@@ -1253,7 +1267,8 @@ double SimulationValidationWorker::calculateEdgeCosts(
 }
 
 double SimulationValidationWorker::calculateShipSegmentCost(
-    Backend::Path                             *path,
+    Backend::Path *path, Backend::PathSegment *segment,
+    int segmentCounter,
     Backend::ShipClient::ShipSimulationClient *shipClient,
     const QVariantMap                         &modeWeights,
     const QVariantMap &transportModes, int containerCount)
@@ -1277,17 +1292,28 @@ double SimulationValidationWorker::calculateShipSegmentCost(
             if (shipState)
             {
                 // Check if this ship is part of our path
-                QString shipId = shipState->shipId();
-                if (shipId.startsWith(QString("%1_").arg(
-                        path->getPathId())))
+                // and segment
+                QString     shipId  = shipState->shipId();
+                QStringList idParts = shipId.split('_');
+
+                // Parse the ID to get path and segment IDs
+                if (idParts.size() >= 3
+                    && idParts[0]
+                           == QString::number(
+                               path->getPathId())
+                    && idParts[1]
+                           == QString::number(
+                               segmentCounter))
                 {
                     // Count this ship
                     shipCount++;
 
                     // Extract metrics
-                    travelTime += shipState->tripTime();
+                    travelTime += shipState->tripTime()
+                                  / 3600.0; // sec to hr
                     distance +=
-                        shipState->travelledDistance();
+                        shipState->travelledDistance()
+                        / 1000.0;
                     carbonEmissions +=
                         shipState->carbonEmissions();
                     energyConsumption +=
@@ -1331,30 +1357,53 @@ double SimulationValidationWorker::calculateShipSegmentCost(
     // Adjust metrics by ratio
     carbonEmissions *= containerToCapacityRatio;
     energyConsumption *= containerToCapacityRatio;
-    risk *= containerToCapacityRatio;
 
     // Apply weights to metrics
-    double segmentCost = 0.0;
-    segmentCost += travelTime
-                   * modeWeights["travelTime"].toDouble()
-                   / 3600.0; // sec to hr
-    segmentCost += distance
-                   * modeWeights["distance"].toDouble()
-                   / 1000.0; // m to km
-    segmentCost +=
+    QMap<QString, double> simulatedValues;
+    QMap<QString, double> simulatedCost;
+    simulatedValues["travelTime"]      = travelTime;
+    simulatedValues["distance"]        = distance;
+    simulatedValues["carbonEmissions"] = carbonEmissions;
+    simulatedValues["energyConsumption"] =
+        energyConsumption;
+    simulatedValues["risk"] = risk;
+    simulatedValues["cost"] = 0.0;
+
+    simulatedCost["travelTime"] =
+        travelTime * modeWeights["travelTime"].toDouble();
+    simulatedCost["distance"] =
+        distance * modeWeights["distance"].toDouble();
+    simulatedCost["carbonEmissions"] =
         carbonEmissions
-        * modeWeights["carbonEmissions"].toDouble();
-    segmentCost +=
+        * modeWeights["carbonEmissions"].toDouble(); // kg
+    simulatedCost["energyConsumption"] =
         energyConsumption
-        * modeWeights["energyConsumption"].toDouble();
-    segmentCost += risk * modeWeights["risk"].toDouble();
+        * modeWeights["energyConsumption"]
+              .toDouble(); // kWh
+    simulatedCost["risk"] =
+        risk * modeWeights["risk"].toDouble();
+    simulatedCost["cost"] = 0.0;
+    double segmentCost =
+        simulatedCost["travelTime"]
+        + simulatedCost["distance"]
+        + simulatedCost["carbonEmissions"]
+        + simulatedCost["energyConsumption"]
+        + simulatedCost["risk"];
+
+    // Add to the path segment
+    setSegmentActualDetails(segment, simulatedValues,
+                            "actual_values");
+
+    setSegmentActualDetails(segment, simulatedCost,
+                            "actual_cost");
 
     return segmentCost;
 }
 
 double
 SimulationValidationWorker::calculateTrainSegmentCost(
-    Backend::Path *path,
+    Backend::Path *path, Backend::PathSegment *segment,
+    int segmentCounter,
     Backend::TrainClient::TrainSimulationClient
                       *trainClient,
     const QVariantMap &modeWeights,
@@ -1379,17 +1428,28 @@ SimulationValidationWorker::calculateTrainSegmentCost(
             if (trainState)
             {
                 // Check if this train is part of our path
+                // and segment
                 QString trainId = trainState->m_trainUserId;
-                if (trainId.startsWith(QString("%1_").arg(
-                        path->getPathId())))
+                QStringList idParts = trainId.split('_');
+
+                // Parse the ID to get path and segment IDs
+                if (idParts.size() >= 3
+                    && idParts[0]
+                           == QString::number(
+                               path->getPathId())
+                    && idParts[1]
+                           == QString::number(
+                               segmentCounter))
                 {
                     // Count this train
                     trainCount++;
 
                     // Extract metrics
-                    travelTime += trainState->m_tripTime;
+                    travelTime += trainState->m_tripTime
+                                  / 3600; // sec t0 hr
                     distance +=
-                        trainState->m_travelledDistance;
+                        trainState->m_travelledDistance
+                        / 1000.0; // m to km
                     carbonEmissions +=
                         trainState
                             ->m_totalCarbonDioxideEmitted;
@@ -1434,30 +1494,54 @@ SimulationValidationWorker::calculateTrainSegmentCost(
     // Adjust metrics by ratio
     carbonEmissions *= containerToCapacityRatio;
     energyConsumption *= containerToCapacityRatio;
-    risk *= containerToCapacityRatio;
 
     // Apply weights to metrics
-    double segmentCost = 0.0;
-    segmentCost += travelTime
-                   * modeWeights["travelTime"].toDouble()
-                   / 3600.0; // sec to hr
-    segmentCost += distance
-                   * modeWeights["distance"].toDouble()
-                   / 1000.0; // m to km
-    segmentCost +=
+    QMap<QString, double> simulatedValues;
+    QMap<QString, double> simulatedCost;
+    simulatedValues["travelTime"]      = travelTime;
+    simulatedValues["distance"]        = distance;
+    simulatedValues["carbonEmissions"] = carbonEmissions;
+    simulatedValues["energyConsumption"] =
+        energyConsumption;
+    simulatedValues["risk"] = risk;
+    simulatedValues["cost"] = 0.0;
+
+    simulatedCost["travelTime"] =
+        travelTime * modeWeights["travelTime"].toDouble();
+    simulatedCost["distance"] =
+        distance * modeWeights["distance"].toDouble();
+    simulatedCost["carbonEmissions"] =
         carbonEmissions
         * modeWeights["carbonEmissions"].toDouble(); // kg
-    segmentCost += energyConsumption
-                   * modeWeights["energyConsumption"]
-                         .toDouble(); // kWh
-    segmentCost += risk * modeWeights["risk"].toDouble();
+    simulatedCost["energyConsumption"] =
+        energyConsumption
+        * modeWeights["energyConsumption"]
+              .toDouble(); // kWh
+    simulatedCost["risk"] =
+        risk * modeWeights["risk"].toDouble();
+    simulatedCost["cost"] = 0.0;
+
+    double segmentCost =
+        simulatedCost["travelTime"]
+        + simulatedCost["distance"]
+        + simulatedCost["carbonEmissions"]
+        + simulatedCost["energyConsumption"]
+        + simulatedCost["risk"];
+
+    // Add to the path segment
+    setSegmentActualDetails(segment, simulatedValues,
+                            "actual_values");
+
+    setSegmentActualDetails(segment, simulatedCost,
+                            "actual_cost");
 
     return segmentCost;
 }
 
 double
 SimulationValidationWorker::calculateTruckSegmentCost(
-    Backend::Path *path,
+    Backend::Path *path, Backend::PathSegment *segment,
+    int segmentCounter,
     Backend::TruckClient::TruckSimulationManager
                       *truckClient,
     const QVariantMap &modeWeights,
@@ -1529,18 +1613,47 @@ SimulationValidationWorker::calculateTruckSegmentCost(
     risk *= containerToCapacityRatio;
 
     // Apply weights to metrics
-    double segmentCost = 0.0;
-    segmentCost +=
-        travelTime * modeWeights["travelTime"].toDouble();
-    segmentCost +=
-        distance * modeWeights["distance"].toDouble();
-    segmentCost +=
+    // Apply weights to metrics
+    QMap<QString, double> simulatedValues;
+    QMap<QString, double> simulatedCost;
+    simulatedValues["travelTime"]      = travelTime;
+    simulatedValues["distance"]        = distance;
+    simulatedValues["carbonEmissions"] = carbonEmissions;
+    simulatedValues["energyConsumption"] =
+        energyConsumption;
+    simulatedValues["risk"] = risk;
+    simulatedValues["cost"] = 0.0;
+
+    simulatedCost["travelTime"] =
+        travelTime * modeWeights["travelTime"].toDouble()
+        / 3600.0; // sec to hr
+    simulatedCost["distance"] =
+        distance * modeWeights["distance"].toDouble()
+        / 1000.0; // m to km
+    simulatedCost["carbonEmissions"] =
         carbonEmissions
-        * modeWeights["carbonEmissions"].toDouble();
-    segmentCost +=
+        * modeWeights["carbonEmissions"].toDouble(); // kg
+    simulatedCost["energyConsumption"] =
         energyConsumption
-        * modeWeights["energyConsumption"].toDouble();
-    segmentCost += risk * modeWeights["risk"].toDouble();
+        * modeWeights["energyConsumption"]
+              .toDouble(); // kWh
+    simulatedCost["risk"] =
+        risk * modeWeights["risk"].toDouble();
+    simulatedCost["cost"] = 0.0;
+
+    double segmentCost =
+        simulatedCost["travelTime"]
+        + simulatedCost["distance"]
+        + simulatedCost["carbonEmissions"]
+        + simulatedCost["energyConsumption"]
+        + simulatedCost["risk"];
+
+    // Add to the path segment
+    setSegmentActualDetails(segment, simulatedValues,
+                            "actual_values");
+
+    setSegmentActualDetails(segment, simulatedCost,
+                            "actual_cost");
 
     return segmentCost;
 }
@@ -1799,6 +1912,43 @@ SimulationValidationWorker::calculateTerminalDirectCosts(
     }
 
     return terminalCost;
+}
+
+void SimulationValidationWorker::setSegmentActualDetails(
+    Backend::PathSegment        *segment,
+    const QMap<QString, double> &details,
+    const QString               &underlyingKey)
+{
+    if (!segment)
+    {
+        return;
+    }
+
+    // Get current attributes
+    QJsonObject currentAttributes =
+        segment->getAttributes();
+
+    // Create or get the underlying object
+    QJsonObject underlyingObject;
+    if (currentAttributes.contains(underlyingKey)
+        && currentAttributes[underlyingKey].isObject())
+    {
+        underlyingObject =
+            currentAttributes[underlyingKey].toObject();
+    }
+
+    // Set the segment details
+    for (auto it = details.constBegin();
+         it != details.constEnd(); ++it)
+    {
+        underlyingObject[it.key()] = it.value();
+    }
+
+    // Update the attributes with the modified object
+    currentAttributes[underlyingKey] = underlyingObject;
+
+    // Set the updated attributes back to the segment
+    segment->setAttributes(currentAttributes);
 }
 
 } // namespace GUI
