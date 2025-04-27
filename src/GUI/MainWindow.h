@@ -46,6 +46,7 @@ class ViewController;
 class UtilitiesFunctions;
 class PathFindingWorker;
 class SimulationValidationWorker;
+class TerminalSelectionDialog;
 
 /**
  * @brief Main application window for CargoNetSim
@@ -67,6 +68,7 @@ class MainWindow : public CustomMainWindow
     friend class UtilitiesFunctions;
     friend class PathFindingWorker;
     friend class SimulationValidationWorker;
+    friend class TerminalSelectionDialog;
 
 public:
     /**

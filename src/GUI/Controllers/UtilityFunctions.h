@@ -147,6 +147,12 @@ public:
         const QList<NetworkType> &networkTypes);
     static void onUnlinkTerminalsToNetworkActionTriggered(
         MainWindow *mainWindow);
+
+    static void
+    openTerminalConnectionSelector(MainWindow *mainWindow);
+
+    static void
+    onShowMoveNetworkDialog(MainWindow *mainWindow);
 };
 
 } // namespace GUI

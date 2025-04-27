@@ -6,12 +6,14 @@
 #include "GUI/Items/MapPoint.h"
 
 #include "GUI/Widgets/GraphicsView.h"
+#include "GUI/Widgets/NetworkMoveDialog.h"
 #include "GUI/Widgets/NetworkSelectionDialog.h"
 #include "GUI/Widgets/PropertiesPanel.h"
 #include "GUI/Widgets/ShortestPathTable.h"
 
 #include "GUI/Utils/PathFindingWorker.h"
 #include "GUI/Utils/SimulationValidationWorker.h"
+#include "GUI/Widgets/TerminalSelectionDialog.h"
 
 QList<CargoNetSim::GUI::TerminalItem *>
 CargoNetSim::GUI::UtilitiesFunctions::getTerminalItems(
@@ -1116,21 +1118,25 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
     bool continueProcess = true;
     if (sourcePoints.empty())
     {
-        mainWindow->showStatusBarError(
-            QString("Terminal %1 has no associated nodes.")
-                .arg(sourceTerminal->getProperty("Name", "")
-                         .toString()),
-            3000);
+        // mainWindow->showStatusBarError(
+        //     QString("Terminal %1 has no associated
+        //     nodes.")
+        //         .arg(sourceTerminal->getProperty("Name",
+        //         "")
+        //                  .toString()),
+        //     3000);
         continueProcess = false;
     }
 
     if (targetPoints.empty())
     {
-        mainWindow->showStatusBarError(
-            QString("Terminal %1 has no associated nodes.")
-                .arg(targetTerminal->getProperty("Name", "")
-                         .toString()),
-            3000);
+        // mainWindow->showStatusBarError(
+        //     QString("Terminal %1 has no associated
+        //     nodes.")
+        //         .arg(targetTerminal->getProperty("Name",
+        //         "")
+        //                  .toString()),
+        //     3000);
         continueProcess = false;
     }
 
@@ -1601,5 +1607,142 @@ void CargoNetSim::GUI::UtilitiesFunctions::
                 unlinkAllVisibleTerminalsToNetwork(
                     mainWindow, selectedTypes);
         }
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    openTerminalConnectionSelector(MainWindow *mainWindow)
+{
+    if (!mainWindow)
+    {
+        return;
+    }
+
+    TerminalSelectionDialog dialog(mainWindow);
+
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        QStringList selectedTerminals =
+            dialog.getSelectedTerminalNames();
+        QStringList selectedConnectionTypes =
+            dialog.getSelectedConnectionTypes();
+
+        // Show connections based on filter criteria
+        ViewController::showFilteredConnections(
+            mainWindow, selectedTerminals,
+            selectedConnectionTypes);
+    }
+}
+
+void CargoNetSim::GUI::UtilitiesFunctions::
+    onShowMoveNetworkDialog(MainWindow *mainWindow)
+{
+    if (!mainWindow)
+        return;
+
+    // Get the current region
+    QString currentRegion =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegion();
+
+    if (currentRegion.isEmpty())
+    {
+        mainWindow->showStatusBarError(
+            "No region selected.", 3000);
+        return;
+    }
+
+    // Get region data
+    Backend::RegionData *regionData =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getRegionDataController()
+            ->getCurrentRegionData();
+
+    if (!regionData)
+    {
+        mainWindow->showStatusBarError(
+            "Region data not available.", 3000);
+        return;
+    }
+
+    // Check if there are any networks in the region
+    bool hasNetworks =
+        !regionData->getTrainNetworks().isEmpty()
+        || !regionData->getTruckNetworks().isEmpty();
+
+    if (!hasNetworks)
+    {
+        mainWindow->showStatusBarError(
+            "No networks available in the current region.",
+            3000);
+        return;
+    }
+
+    // Determine coordinate system
+    bool isUsingProjectedCoords =
+        mainWindow->regionView_->isUsingProjectedCoords();
+
+    // Create and show dialog
+    NetworkMoveDialog dialog(mainWindow, currentRegion,
+                             isUsingProjectedCoords,
+                             mainWindow);
+    if (dialog.exec() == QDialog::Accepted
+        && dialog.hasNetworkSelected())
+    {
+        QPointF     offset = dialog.getOffset();
+        NetworkType networkType =
+            dialog.getSelectedNetworkType();
+        QString networkName =
+            dialog.getSelectedNetworkName();
+
+        // Convert offset to scene coordinates if needed
+        if (isUsingProjectedCoords)
+        {
+            // The offset is in meters, but we need to
+            // convert it to scene coordinates
+            QPointF originScene = QPointF(0, 0);
+            QPointF originGeo =
+                mainWindow->regionView_->sceneToWGS84(
+                    originScene);
+            QPointF originProjected =
+                mainWindow->regionView_->convertCoordinates(
+                    originGeo, "to_projected");
+
+            QPointF offsetProjected =
+                QPointF(originProjected.x() + offset.x(),
+                        originProjected.y() + offset.y());
+            QPointF offsetGeo =
+                mainWindow->regionView_->convertCoordinates(
+                    offsetProjected, "to_geodetic");
+            QPointF offsetScene =
+                mainWindow->regionView_->wgs84ToScene(
+                    offsetGeo);
+
+            offset = offsetScene - originScene;
+        }
+        else
+        {
+            // The offset is in degrees, directly convert to
+            // scene coordinates
+            QPointF originScene = QPointF(0, 0);
+            QPointF originGeo =
+                mainWindow->regionView_->sceneToWGS84(
+                    originScene);
+
+            QPointF offsetGeo =
+                QPointF(originGeo.x() + offset.x(),
+                        originGeo.y() + offset.y());
+            QPointF offsetScene =
+                mainWindow->regionView_->wgs84ToScene(
+                    offsetGeo);
+
+            offset = offsetScene - originScene;
+        }
+
+        // Move the network
+        NetworkController::moveNetwork(
+            mainWindow, networkType, networkName, offset,
+            regionData);
     }
 }
