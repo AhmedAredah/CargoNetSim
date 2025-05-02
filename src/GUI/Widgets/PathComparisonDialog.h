@@ -121,6 +121,10 @@ private:
      */
     QPixmap createTransportModePixmap(const QString &mode);
 
+    QString
+    getTerminalDisplayNameByID(Backend::Path *path,
+                               const QString &terminalID);
+
     /**
      * @brief List of PathData objects being compared
      */
