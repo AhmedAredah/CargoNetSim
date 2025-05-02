@@ -15,6 +15,7 @@
 #include "GUI/Controllers/ViewController.h"
 #include "GUI/MainWindow.h"
 #include "GUI/Utils/IconCreator.h" // For icon creation utilities
+#include "GUI/Utils/PathReportExporter.h"
 #include "GUI/Widgets/PathComparisonDialog.h"
 #include <QApplication>
 #include <QFileDialog>
@@ -214,12 +215,17 @@ void ShortestPathsTable::initUI()
     // Initialize button groups
     createPathButtonPanel();
     createExportPanel();
+    createSelectionPanel();
+
+    // Add selection buttons to panel with left alignment
+    buttonPanel->addWidget(m_selectAllButton);
+    buttonPanel->addWidget(m_unselectAllButton);
 
     // Add buttons to panel with right alignment
-    buttonPanel->addStretch(); // Push buttons to the right
+    buttonPanel->addStretch(); // Push remaining buttons to
+                               // the right
     buttonPanel->addWidget(m_compareButton);
     buttonPanel->addWidget(m_exportButton);
-    buttonPanel->addWidget(m_exportAllButton);
 
     // Add button panel to main layout
     layout->addLayout(buttonPanel);
@@ -300,9 +306,9 @@ void ShortestPathsTable::createPathButtonPanel()
 {
     // Create compare button for path comparison
     m_compareButton =
-        new QPushButton(tr("Compare Paths"), this);
+        new QPushButton(tr("View/Compare Paths"), this);
     m_compareButton->setToolTip(
-        tr("Compare selected paths"));
+        tr("View or Compare selected paths"));
     m_compareButton->setEnabled(
         false); // Disabled until paths are selected
 
@@ -318,29 +324,50 @@ void ShortestPathsTable::createPathButtonPanel()
  */
 void ShortestPathsTable::createExportPanel()
 {
-    // Create button for exporting a single selected path
-    m_exportButton =
-        new QPushButton(tr("Export Path"), this);
+    // Create button for exporting paths
+    m_exportButton = new QPushButton(tr("Export"), this);
     m_exportButton->setToolTip(
-        tr("Export selected path data"));
+        tr("Export selected paths or all paths if none "
+           "selected"));
     m_exportButton->setEnabled(
-        false); // Disabled until a path is selected
+        false); // Disabled until paths are added
 
     // Connect button click to export handler
     connect(m_exportButton, &QPushButton::clicked, this,
             &ShortestPathsTable::onExportButtonClicked);
+}
 
-    // Create button for exporting all paths
-    m_exportAllButton =
-        new QPushButton(tr("Export All"), this);
-    m_exportAllButton->setToolTip(
-        tr("Export all path data"));
-    m_exportAllButton->setEnabled(
+/**
+ * @brief Creates the selection button panel
+ *
+ * Initializes buttons for selecting and unselecting all
+ * paths.
+ */
+void ShortestPathsTable::createSelectionPanel()
+{
+    // Create select all button
+    m_selectAllButton =
+        new QPushButton(tr("Select All"), this);
+    m_selectAllButton->setToolTip(tr("Select all paths"));
+    m_selectAllButton->setEnabled(
         false); // Disabled until paths are added
 
-    // Connect button click to export all handler
-    connect(m_exportAllButton, &QPushButton::clicked, this,
-            &ShortestPathsTable::onExportAllButtonClicked);
+    // Connect button click to select all handler
+    connect(m_selectAllButton, &QPushButton::clicked, this,
+            &ShortestPathsTable::onSelectAllButtonClicked);
+
+    // Create unselect all button
+    m_unselectAllButton =
+        new QPushButton(tr("Unselect All"), this);
+    m_unselectAllButton->setToolTip(
+        tr("Unselect all paths"));
+    m_unselectAllButton->setEnabled(
+        false); // Disabled until paths are checked
+
+    // Connect button click to unselect all handler
+    connect(
+        m_unselectAllButton, &QPushButton::clicked, this,
+        &ShortestPathsTable::onUnselectAllButtonClicked);
 }
 
 /**
@@ -353,8 +380,17 @@ void ShortestPathsTable::createExportPanel()
 void ShortestPathsTable::addPaths(
     const QList<Backend::Path *> &paths)
 {
+    // Sort the paths by total path cost
+    QVector<Backend::Path *> tempPaths(paths.begin(),
+                                       paths.end());
+    std::sort(tempPaths.begin(), tempPaths.end(),
+              [](Backend::Path *a, Backend::Path *b) {
+                  return a->getTotalPathCost()
+                         < b->getTotalPathCost();
+              });
+
     // Process each path from the list
-    for (Backend::Path *path : paths)
+    for (Backend::Path *path : tempPaths)
     {
         if (!path)
         {
@@ -391,7 +427,7 @@ void ShortestPathsTable::addPaths(
     refreshTable();
 
     // Enable export all button if we have data
-    m_exportAllButton->setEnabled(!m_pathData.isEmpty());
+    m_exportButton->setEnabled(!m_pathData.isEmpty());
 }
 
 int ShortestPathsTable::pathsSize() const
@@ -809,10 +845,31 @@ void ShortestPathsTable::refreshTable()
                     emit checkboxChanged(
                         pathId, state == Qt::Checked);
 
-                    // Enable compare button if at least
-                    // 2 paths are checked
+                    // Get all checked paths
+                    QVector<int> checkedPaths =
+                        getCheckedPathIds();
+                    bool hasCheckedPaths =
+                        !checkedPaths.isEmpty();
+
+                    // Enable compare button if at least 1
+                    // path is checked
                     m_compareButton->setEnabled(
-                        getCheckedPathIds().size() >= 2);
+                        hasCheckedPaths);
+
+                    // Enable export button if there are any
+                    // paths in the table (checked or not)
+                    m_exportButton->setEnabled(
+                        !m_pathData.isEmpty());
+
+                    // Update select/unselect buttons state
+                    m_unselectAllButton->setEnabled(
+                        hasCheckedPaths);
+
+                    // Enable select all button only if not
+                    // all paths are already selected
+                    m_selectAllButton->setEnabled(
+                        m_pathData.size()
+                        > checkedPaths.size());
                 });
 
         // Add Path ID cell
@@ -868,7 +925,12 @@ void ShortestPathsTable::refreshTable()
     m_updatingUI = false;
 
     // Update button states
-    m_exportAllButton->setEnabled(!m_pathData.isEmpty());
+    m_exportButton->setEnabled(!m_pathData.isEmpty());
+
+    // Update selection button states
+    m_selectAllButton->setEnabled(!m_pathData.isEmpty());
+    m_unselectAllButton->setEnabled(
+        false); // Initially disable until paths are checked
 }
 
 /**
@@ -994,7 +1056,6 @@ void ShortestPathsTable::clear()
     // Disable buttons that require paths
     m_compareButton->setEnabled(false);
     m_exportButton->setEnabled(false);
-    m_exportAllButton->setEnabled(false);
 }
 
 /**
@@ -1013,16 +1074,17 @@ void ShortestPathsTable::onSelectionChanged()
 
     // Get the currently selected path ID
     int pathId = getSelectedPathId();
+
+    // Enable export button if either a path is selected or
+    // any path is checked
+    bool hasCheckedPaths = !getCheckedPathIds().isEmpty();
+    m_exportButton->setEnabled(pathId >= 0
+                               || hasCheckedPaths);
+
+    // Emit selection signal if a path is selected
     if (pathId >= 0)
     {
-        // A path is selected
         emit pathSelected(pathId);
-        m_exportButton->setEnabled(true);
-    }
-    else
-    {
-        // No path is selected
-        m_exportButton->setEnabled(false);
     }
 }
 
@@ -1052,34 +1114,21 @@ void ShortestPathsTable::onCompareButtonClicked()
     // Get IDs of all checked paths
     QVector<int> checkedPaths = getCheckedPathIds();
 
-    // Verify we have enough paths to compare
-    if (checkedPaths.size() >= 2)
-    {
-        // Get the path data for all checked paths
-        QList<const PathData *> pathDataToCompare =
-            getCheckedPathData();
+    // Get the path data for all checked paths
+    QList<const PathData *> pathDataToCompare =
+        getCheckedPathData();
 
-        // Create and show the comparison dialog
-        PathComparisonDialog *dialog =
-            new PathComparisonDialog(pathDataToCompare,
-                                     this);
-        dialog->setAttribute(
-            Qt::WA_DeleteOnClose); // Auto-delete when
-                                   // closed
-        dialog->exec();
+    // Create and show the comparison dialog
+    PathComparisonDialog *dialog =
+        new PathComparisonDialog(pathDataToCompare, this);
+    dialog->setAttribute(
+        Qt::WA_DeleteOnClose); // Auto-delete when
+                               // closed
+    dialog->exec();
 
-        // Emit signal to request path comparison (for any
-        // other listeners)
-        emit pathComparisonRequested(checkedPaths);
-    }
-    else
-    {
-        // Show error if not enough paths are selected
-        QMessageBox::information(
-            this, tr("Path Comparison"),
-            tr("Please select at least two paths to "
-               "compare."));
-    }
+    // Emit signal to request path comparison (for any
+    // other listeners)
+    emit pathComparisonRequested(checkedPaths);
 }
 
 /**
@@ -1089,12 +1138,30 @@ void ShortestPathsTable::onCompareButtonClicked()
  */
 void ShortestPathsTable::onExportButtonClicked()
 {
-    // Get the currently selected path ID
-    int pathId = getSelectedPathId();
-    if (pathId >= 0)
+    // Get IDs of all checked paths
+    QVector<int> checkedPaths = getCheckedPathIds();
+
+    if (checkedPaths.isEmpty())
     {
-        // Emit signal to request path export
-        emit pathExportRequested(pathId);
+        // No paths checked, export all visible paths
+        exportPathsToPdf(QVector<int>());
+        emit allPathsExportRequested();
+    }
+    else
+    {
+        // Export only checked paths
+        exportPathsToPdf(checkedPaths);
+
+        // If only one path is checked, emit the single path
+        // export signal
+        if (checkedPaths.size() == 1)
+        {
+            emit pathExportRequested(checkedPaths.first());
+        }
+        else
+        {
+            emit allPathsExportRequested();
+        }
     }
 }
 
@@ -1105,11 +1172,193 @@ void ShortestPathsTable::onExportButtonClicked()
  */
 void ShortestPathsTable::onExportAllButtonClicked()
 {
-    // Verify we have paths to export
-    if (!m_pathData.isEmpty())
+    // Export all paths to PDF (empty vector means all
+    // paths)
+    exportPathsToPdf(QVector<int>());
+
+    // Emit signal for other listeners
+    emit allPathsExportRequested();
+}
+
+/**
+ * @brief Slot called when the select all button is clicked
+ *
+ * Checks all checkboxes in the table.
+ */
+void ShortestPathsTable::onSelectAllButtonClicked()
+{
+    // Set flag to prevent recursive UI updates
+    m_updatingUI = true;
+
+    // Iterate through all rows in the table
+    for (int row = 0; row < m_table->rowCount(); ++row)
     {
-        // Emit signal to request export of all paths
-        emit allPathsExportRequested();
+        // Get the checkbox widget in the first column
+        auto checkboxWidget = m_table->cellWidget(row, 0);
+        if (!checkboxWidget)
+        {
+            continue; // Skip rows without checkbox widget
+        }
+
+        // Get the layout from the widget
+        auto layout = checkboxWidget->layout();
+        if (!layout)
+        {
+            continue; // Skip if no layout
+        }
+
+        // Get the checkbox from the layout
+        auto checkBox = qobject_cast<QCheckBox *>(
+            layout->itemAt(0)->widget());
+        if (checkBox)
+        {
+            // Check the checkbox
+            checkBox->setChecked(true);
+        }
+    }
+
+    // Clear UI update flag
+    m_updatingUI = false;
+
+    // Enable compare button if paths are checked
+    m_compareButton->setEnabled(
+        !getCheckedPathIds().isEmpty());
+
+    // Enable/disable selection buttons based on state
+    m_selectAllButton->setEnabled(false);
+    m_unselectAllButton->setEnabled(
+        !getCheckedPathIds().isEmpty());
+}
+
+/**
+ * @brief Slot called when the unselect all button is
+ * clicked
+ *
+ * Unchecks all checkboxes in the table.
+ */
+void ShortestPathsTable::onUnselectAllButtonClicked()
+{
+    // Set flag to prevent recursive UI updates
+    m_updatingUI = true;
+
+    // Iterate through all rows in the table
+    for (int row = 0; row < m_table->rowCount(); ++row)
+    {
+        // Get the checkbox widget in the first column
+        auto checkboxWidget = m_table->cellWidget(row, 0);
+        if (!checkboxWidget)
+        {
+            continue; // Skip rows without checkbox widget
+        }
+
+        // Get the layout from the widget
+        auto layout = checkboxWidget->layout();
+        if (!layout)
+        {
+            continue; // Skip if no layout
+        }
+
+        // Get the checkbox from the layout
+        auto checkBox = qobject_cast<QCheckBox *>(
+            layout->itemAt(0)->widget());
+        if (checkBox)
+        {
+            // Uncheck the checkbox
+            checkBox->setChecked(false);
+        }
+    }
+
+    // Clear UI update flag
+    m_updatingUI = false;
+
+    // Disable compare button as no paths are checked
+    m_compareButton->setEnabled(false);
+
+    // Enable/disable selection buttons based on state
+    m_selectAllButton->setEnabled(!m_pathData.isEmpty());
+    m_unselectAllButton->setEnabled(false);
+}
+
+void ShortestPathsTable::exportPathsToPdf(
+    const QVector<int> &pathIds)
+{
+    // Get path data for the specified IDs
+    QList<const PathData *> pathsToExport;
+
+    if (pathIds.isEmpty())
+    {
+        // If no IDs specified, export all visible paths
+        for (auto it = m_pathData.begin();
+             it != m_pathData.end(); ++it)
+        {
+            if (it.value()->isVisible)
+            {
+                pathsToExport.append(it.value());
+            }
+        }
+    }
+    else
+    {
+        // Export only the specified paths
+        for (int pathId : pathIds)
+        {
+            auto it = m_pathData.find(pathId);
+            if (it != m_pathData.end()
+                && it.value()->isVisible)
+            {
+                pathsToExport.append(it.value());
+            }
+        }
+    }
+
+    if (pathsToExport.isEmpty())
+    {
+        QMessageBox::warning(
+            this, tr("Export Error"),
+            tr("No paths selected for export."));
+        return;
+    }
+
+    // Create default filename based on path IDs
+    QString defaultFilename;
+    if (pathsToExport.size() == 1)
+    {
+        defaultFilename = tr("path_%1_report.pdf")
+                              .arg(pathsToExport.first()
+                                       ->path->getPathId());
+    }
+    else
+    {
+        defaultFilename = tr("paths_report.pdf");
+    }
+
+    // Create exporter
+    PathReportExporter exporter;
+
+    // Ask user if they want to preview or directly export
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Export PDF Report"));
+    msgBox.setText(tr("How would you like to proceed with "
+                      "the PDF report?"));
+    QPushButton *previewButton = msgBox.addButton(
+        tr("Preview Report"), QMessageBox::ActionRole);
+    QPushButton *exportButton = msgBox.addButton(
+        tr("Save PDF"), QMessageBox::ActionRole);
+    msgBox.addButton(QMessageBox::Cancel);
+    msgBox.setDefaultButton(previewButton);
+
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == previewButton)
+    {
+        // Show preview dialog
+        exporter.previewReport(pathsToExport, this);
+    }
+    else if (msgBox.clickedButton() == exportButton)
+    {
+        // Show file dialog and export
+        exporter.exportPathsWithDialog(pathsToExport, this,
+                                       defaultFilename);
     }
 }
 

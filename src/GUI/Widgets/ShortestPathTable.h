@@ -149,7 +149,11 @@ public:
          */
         ~PathData()
         {
-            delete path;
+            if (path)
+            {
+                delete path;
+                path = nullptr;
+            }
         }
 
         /**
@@ -452,6 +456,16 @@ private slots:
      */
     void onExportAllButtonClicked();
 
+    void onSelectAllButtonClicked();
+    void onUnselectAllButtonClicked();
+
+    /**
+     * @brief Slot called when the export path to PDF is
+     * called
+     * @param pathIds IDs of the paths to export
+     */
+    void exportPathsToPdf(const QVector<int> &pathIds);
+
 private:
     class PathScrollEventFilter : public QObject
     {
@@ -561,6 +575,8 @@ private:
     // map lines
     void flashPathMapLines(int pathId);
 
+    void createSelectionPanel();
+
     /**
      * @brief Table widget for displaying path data
      *
@@ -596,14 +612,6 @@ private:
     QPushButton *m_exportButton;
 
     /**
-     * @brief Button to export all paths
-     *
-     * When clicked, emits a signal to request export of all
-     * paths.
-     */
-    QPushButton *m_exportAllButton;
-
-    /**
      * @brief Flag to prevent recursive UI updates
      *
      * Used to avoid infinite loops when updating the UI in
@@ -611,6 +619,9 @@ private:
      * updates.
      */
     bool m_updatingUI;
+
+    QPushButton *m_selectAllButton;
+    QPushButton *m_unselectAllButton;
 
     PathScrollEventFilter *m_scrollEventFilter;
 };
