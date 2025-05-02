@@ -35,6 +35,7 @@ public:
     QList<QString>      getSelectedInterfaces() const;
     QList<QString>      getSelectedNetworkTypes() const;
     QMap<QString, bool> getIncludedTerminalTypes() const;
+    bool                useCoordinateDistance() const;
 
 private slots:
     void selectAllInterfaces();
@@ -49,6 +50,7 @@ private:
     QMap<QString, QCheckBox *> m_interfaceCheckboxes;
     QMap<QString, QCheckBox *> m_networkTypeCheckboxes;
     QMap<QString, QCheckBox *> m_terminalTypeCheckboxes;
+    QCheckBox *m_useCoordinateDistanceCheckbox;
 };
 } // namespace GUI
 } // namespace CargoNetSim

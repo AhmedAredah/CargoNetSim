@@ -19,6 +19,7 @@ InterfaceSelectionDialog::InterfaceSelectionDialog(
     DialogType dialogType, QWidget *parent)
     : QDialog(parent)
     , m_dialogType(dialogType)
+    , m_useCoordinateDistanceCheckbox(nullptr)
 {
     QString windowTitle, headerText, optionsGroupTitle;
 
@@ -180,6 +181,20 @@ InterfaceSelectionDialog::InterfaceSelectionDialog(
                     deselectAllTerminalTypes);
     }
 
+    // Add coordinate distance checkbox for
+    // InterfaceSelection type
+    if (dialogType == InterfaceSelection)
+    {
+        m_useCoordinateDistanceCheckbox =
+            new QCheckBox("Use coordinate distance to "
+                          "calculate connection properties",
+                          this);
+        m_useCoordinateDistanceCheckbox->setChecked(
+            true); // Default to checked
+        mainLayout->addWidget(
+            m_useCoordinateDistanceCheckbox);
+    }
+
     // Create a 2x2 grid layout for dialog buttons
     QGridLayout *buttonGrid = new QGridLayout();
     buttonGrid->setSpacing(10);
@@ -251,6 +266,16 @@ InterfaceSelectionDialog::getIncludedTerminalTypes() const
         includedTypes[it.key()] = it.value()->isChecked();
     }
     return includedTypes;
+}
+
+bool InterfaceSelectionDialog::useCoordinateDistance() const
+{
+    if (m_dialogType == InterfaceSelection
+        && m_useCoordinateDistanceCheckbox)
+    {
+        return m_useCoordinateDistanceCheckbox->isChecked();
+    }
+    return false;
 }
 
 void InterfaceSelectionDialog::selectAllInterfaces()
