@@ -2745,6 +2745,10 @@ void CargoNetSim::GUI::ViewController::
     QMap<QString, bool> includedTerminalTypes =
         dialog.getIncludedTerminalTypes();
 
+    // Get coordinate distance flag
+    bool useCoordinateDistance =
+        dialog.useCoordinateDistance();
+
     if (selectedInterfaces.isEmpty())
     {
         mainWindow->showStatusBarMessage(
@@ -2778,6 +2782,89 @@ void CargoNetSim::GUI::ViewController::
         ToolbarController::restoreButtonStates(mainWindow);
         mainWindow->stopStatusProgress();
         return;
+    }
+
+    // If using coordinate distance, perform additional
+    // checks
+    if (useCoordinateDistance)
+    {
+        // Check origin terminal has containers
+        TerminalItem *originTerminal =
+            UtilitiesFunctions::getOriginTerminal(
+                mainWindow);
+        int containerCount = 0;
+
+        if (originTerminal)
+        {
+            QVariant containersVar =
+                originTerminal->getProperty("Containers");
+            if (containersVar.canConvert<
+                    QList<ContainerCore::Container *>>())
+            {
+                QList<ContainerCore::Container *>
+                    containers = containersVar.value<QList<
+                        ContainerCore::Container *>>();
+                containerCount = containers.size();
+            }
+        }
+
+        if (!originTerminal)
+        {
+            mainWindow->showStatusBarError(
+                "No origin terminal is found in the map!",
+                3000);
+
+            // Restore toolbar button states
+            ToolbarController::restoreButtonStates(
+                mainWindow);
+            mainWindow->stopStatusProgress();
+            return;
+        }
+        if (containerCount == 0)
+        {
+            mainWindow->showStatusBarError(
+                "No containers are found in the origin "
+                "terminal!",
+                3000);
+
+            // Restore toolbar button states
+            ToolbarController::restoreButtonStates(
+                mainWindow);
+            mainWindow->stopStatusProgress();
+            return;
+        }
+
+        // Check vehicles are imported
+        auto vehicleController =
+            CargoNetSim::CargoNetSimController::
+                getInstance()
+                    .getVehicleController();
+
+        if (vehicleController->getAllShips().isEmpty())
+        {
+            mainWindow->showStatusBarError(
+                "No ships available! Load ships first.",
+                3000);
+
+            // Restore toolbar button states
+            ToolbarController::restoreButtonStates(
+                mainWindow);
+            mainWindow->stopStatusProgress();
+            return;
+        }
+
+        if (vehicleController->getAllTrains().isEmpty())
+        {
+            mainWindow->showStatusBarError(
+                "No trains available! Load trains first.",
+                3000);
+
+            // Restore toolbar button states
+            ToolbarController::restoreButtonStates(
+                mainWindow);
+            mainWindow->stopStatusProgress();
+            return;
+        }
     }
 
     // Process events to keep UI responsive
@@ -2889,6 +2976,110 @@ void CargoNetSim::GUI::ViewController::
                                     targetItem, mode);
                         if (connection)
                         {
+                            // If using coordinate distance,
+                            // set properties based on
+                            // geographic distance
+                            if (useCoordinateDistance)
+                            {
+                                // Get geographic
+                                // coordinates for both
+                                // terminals
+                                QPointF sourcePos;
+                                QPointF targetPos;
+
+                                if (isGlobalView)
+                                {
+                                    // In global view, get
+                                    // geographic
+                                    // coordinates directly
+                                    sourcePos =
+                                        mainWindow
+                                            ->globalMapView_
+                                            ->sceneToWGS84(
+                                                sourceItem
+                                                    ->pos());
+                                    targetPos =
+                                        mainWindow
+                                            ->globalMapView_
+                                            ->sceneToWGS84(
+                                                targetItem
+                                                    ->pos());
+                                }
+                                else
+                                {
+                                    // In region view, get
+                                    // geographic
+                                    // coordinates based on
+                                    // current coordinate
+                                    // system
+                                    sourcePos =
+                                        mainWindow
+                                            ->regionView_
+                                            ->sceneToWGS84(
+                                                sourceItem
+                                                    ->pos());
+                                    targetPos =
+                                        mainWindow
+                                            ->regionView_
+                                            ->sceneToWGS84(
+                                                targetItem
+                                                    ->pos());
+                                }
+
+                                // Calculate distance
+                                double distanceMeters =
+                                    UtilitiesFunctions::
+                                        getApproximateGeoDistance(
+                                            sourcePos,
+                                            targetPos);
+
+                                // Set up a
+                                // ShortestPathResult to
+                                // pass to
+                                // setConnectionProperties
+                                CargoNetSim::Backend::
+                                    ShortestPathResult
+                                        result;
+                                result.totalLength =
+                                    distanceMeters;
+                                result
+                                    .optimizationCriterion =
+                                    "distance";
+
+                                // Determine network type
+                                // based on connection mode
+                                NetworkType networkType;
+                                if (mode == "Rail")
+                                {
+                                    networkType =
+                                        NetworkType::Train;
+                                }
+                                else if (mode == "Truck")
+                                {
+                                    networkType =
+                                        NetworkType::Truck;
+                                }
+                                else if (mode == "Ship")
+                                {
+                                    networkType =
+                                        NetworkType::Ship;
+                                }
+                                else
+                                {
+                                    // Default to ship for
+                                    // any other mode
+                                    networkType =
+                                        NetworkType::Ship;
+                                }
+
+                                // Set connection properties
+                                UtilitiesFunctions::
+                                    setConnectionProperties(
+                                        mainWindow,
+                                        connection, result,
+                                        networkType, false);
+                            }
+
                             connectionsCreated++;
                         }
                     }
