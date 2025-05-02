@@ -666,7 +666,7 @@ const ShipState *ShipSimulationClient::getShipState(
     const auto &states = m_shipState[networkName];
     for (const auto *state : states)
     {
-        if (state && state->shipId() == shipId)
+        if (state && state->getShipId() == shipId)
         {
             return state;
         }
@@ -1366,7 +1366,7 @@ void ShipSimulationClient::onShipStateAvailable(
             auto &shipStates = m_shipState[networkName];
             for (int i = 0; i < shipStates.size(); ++i)
             {
-                if (shipStates[i]->shipId() == shipId)
+                if (shipStates[i]->getShipId() == shipId)
                 {
                     // Delete the old state and remove it
                     // from the list

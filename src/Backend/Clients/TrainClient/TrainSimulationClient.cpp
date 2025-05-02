@@ -534,7 +534,7 @@ const TrainState *TrainSimulationClient::getTrainState(
 
     for (const auto *state : m_trainState[networkName])
     {
-        if (state && state->m_trainUserId == trainId)
+        if (state && state->getTrainUserId() == trainId)
         {
             return state;
         }
@@ -735,66 +735,71 @@ void TrainSimulationClient::onSimulationEnded(
 void TrainSimulationClient::onTrainReachedDestination(
     const QJsonObject &message)
 {
-    // Lock mutex for safe data access
-    Commons::ScopedWriteLock locker(m_dataAccessMutex);
-
-    // Extract train status from message
-    QJsonObject trainStatus = message["state"].toObject();
-
-    // List to track train IDs
     QStringList trainIds;
+    QList<std::tuple<QString, QString, QStringList>>
+        unloadTasks;
 
-    // Process each network in the status
-    for (auto it = trainStatus.begin();
-         it != trainStatus.end(); ++it)
+    // First phase - process data with lock
     {
-        QString network = it.key();
+        Commons::ScopedWriteLock locker(m_dataAccessMutex);
 
-        // Ensure network exists in train states
-        if (!m_trainState.contains(network))
+        QJsonObject trainStatus =
+            message["state"].toObject();
+
+        for (auto it = trainStatus.begin();
+             it != trainStatus.end(); ++it)
         {
-            m_trainState[network] = QList<TrainState *>();
-        }
+            QString network = it.key();
 
-        // Extract train state data
-        QJsonObject data =
-            it.value().toObject()["trainState"].toObject();
+            if (!m_trainState.contains(network))
+            {
+                m_trainState[network] =
+                    QList<TrainState *>();
+            }
 
-        // Create and store new train state
-        TrainState *state = new TrainState(data);
-        m_trainState[network].append(state);
-        trainIds.append(state->m_trainUserId);
+            QJsonObject data = it.value()
+                                   .toObject()["trainState"]
+                                   .toObject();
 
-        // Check for containers to unload
-        int containersCount =
-            data["containersCount"].toInt();
-        if (containersCount > 0
-            && m_loadedTrains.contains(
-                state->m_trainUserId))
-        {
-            // Get destination ID from train path
-            QString destinationId = QString::number(
-                m_loadedTrains[state->m_trainUserId]
-                    ->getTrainPathOnNodeIds()
-                    .last());
+            TrainState *state = new TrainState(data);
+            m_trainState[network].append(state);
+            trainIds.append(state->getTrainUserId());
 
-            unloadTrainPrivate(
-                network, state->m_trainUserId,
-                QStringList() << destinationId);
+            // Instead of unloading here, collect tasks for
+            // later execution
+            int containersCount =
+                data["containersCount"].toInt();
+            if (containersCount > 0
+                && m_loadedTrains.contains(
+                    state->getTrainUserId()))
+            {
+                QString destinationId = QString::number(
+                    m_loadedTrains[state->getTrainUserId()]
+                        ->getTrainPathOnNodeIds()
+                        .last());
+
+                unloadTasks.append(std::make_tuple(
+                    network, state->getTrainUserId(),
+                    QStringList() << destinationId));
+            }
         }
     }
 
-    // Log event using logger if available
+    // Second phase - process unload tasks without holding
+    // the lock
+    for (const auto &task : unloadTasks)
+    {
+        unloadTrainPrivate(std::get<0>(task),
+                           std::get<1>(task),
+                           std::get<2>(task));
+    }
+
+    // Log event
     if (m_logger)
     {
         m_logger->log("Trains [" + trainIds.join(", ")
                           + "] reached destinations",
                       static_cast<int>(m_clientType));
-    }
-    else
-    {
-        qDebug() << "Trains [" << trainIds.join(", ")
-                 << "] reached destinations";
     }
 }
 
