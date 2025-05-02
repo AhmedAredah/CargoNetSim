@@ -119,7 +119,9 @@ public:
         CargoNetSim::GUI::ConnectionLine *connection,
         const CargoNetSim::Backend::ShortestPathResult
                                       &pathResult,
-        CargoNetSim::GUI::NetworkType &networkType);
+        CargoNetSim::GUI::NetworkType &networkType,
+        std::optional<bool> overrideUseNetworkValue =
+            std::nullopt);
 
     static bool processNetworkModeConnection(
         MainWindow                     *mainWindow,

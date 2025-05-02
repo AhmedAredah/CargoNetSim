@@ -750,6 +750,11 @@ void CargoNetSim::GUI::UtilitiesFunctions::
                 "Do you want to continue anyway? This will "
                 "delete the current results.",
                 QMessageBox::Yes | QMessageBox::No);
+
+        if (reply == QMessageBox::No)
+        {
+            return;
+        }
     }
 
     // Create a worker and a thread
@@ -816,7 +821,8 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
         CargoNetSim::GUI::ConnectionLine *connection,
         const CargoNetSim::Backend::ShortestPathResult
                                       &pathResult,
-        CargoNetSim::GUI::NetworkType &networkType)
+        CargoNetSim::GUI::NetworkType &networkType,
+        std::optional<bool> overrideUseNetworkValue)
 {
     // Early check
     if (!connection || !mainWindow)
@@ -929,8 +935,21 @@ bool CargoNetSim::GUI::UtilitiesFunctions::
                                / containersPerVehicle));
 
     // Calculate travel time
-    bool useNetwork =
-        modeProperties.value("use_network", false).toBool();
+    // Determine whether to use network or config settings
+    bool useNetwork;
+
+    // If overrideUseNetwork has a value, use that value
+    if (overrideUseNetworkValue.has_value())
+    {
+        useNetwork = overrideUseNetworkValue.value();
+    }
+    else
+    {
+        // Otherwise use the default from mode properties
+        useNetwork =
+            modeProperties.value("use_network", false)
+                .toBool();
+    }
 
     // Calculate travel time
     // We do not have a network to estimate the changes of
@@ -1344,6 +1363,14 @@ void CargoNetSim::GUI::UtilitiesFunctions::
 {
     if (!mainWindow)
     {
+        return;
+    }
+
+    if (mainWindow->shortestPathTable_->getCheckedPathData()
+            .isEmpty())
+    {
+        mainWindow->showError(
+            "No paths selected for validation.");
         return;
     }
 
