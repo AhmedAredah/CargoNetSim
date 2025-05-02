@@ -1,14 +1,5 @@
-#include "ShipSimulationClient.h"
-#include <QCoreApplication>
+#include "ShipState.h"
 #include <QDebug>
-#include <QDir>
-#include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QThread>
-
-// Placeholder includes (you would have these implemented)
-#include "Backend/Models/ShipSystem.h"
 
 namespace CargoNetSim
 {
@@ -52,29 +43,41 @@ ShipState::ShipState(const QJsonObject &shipData)
     , m_closestPort(
           shipData.value("closestPort").toString("Unknown"))
     , m_energyConsumption(0.0)
-    , m_carbonDioxideEmitted(
-          shipData.value("carbonDioxideEmitted")
-              .toDouble(0.0))
+    , m_carbonDioxideEmitted(0.0)
+    , m_latitude(0.0)
+    , m_longitude(0.0)
+    , m_waterDepth(0.0)
+    , m_salinity(0.0)
+    , m_temperature(0.0)
+    , m_waveHeight(0.0)
+    , m_waveLength(0.0)
+    , m_waveAngularFrequency(0.0)
 {
     // Parse consumption data
     QJsonObject consumption =
         shipData.value("consumption").toObject();
-    m_energyConsumption =
-        consumption.value("energyConsumption")
-            .toDouble(0.0);
-
-    // Parse fuel consumption
-    QJsonArray fuelConsumption =
-        consumption.value("fuelConsumption").toArray();
-    for (const QJsonValue &fuelEntry : fuelConsumption)
+    if (!consumption.isEmpty())
     {
-        QJsonObject fuelObj = fuelEntry.toObject();
-        QString     fuelType =
-            fuelObj.value("fuelType").toString("Unknown");
-        double consumedVolume =
-            fuelObj.value("consumedVolumeLiters")
+        m_energyConsumption =
+            consumption.value("energyConsumption")
                 .toDouble(0.0);
-        m_fuelConsumption[fuelType] = consumedVolume;
+        m_carbonDioxideEmitted =
+            consumption.value("carbonDioxideEmitted")
+                .toDouble(0.0);
+
+        // Parse fuel consumption
+        QJsonArray fuelConsumption =
+            consumption.value("fuelConsumption").toArray();
+        for (const QJsonValue &fuelEntry : fuelConsumption)
+        {
+            QJsonObject fuelObj  = fuelEntry.toObject();
+            QString     fuelType = fuelObj.value("fuelType")
+                                   .toString("Unknown");
+            double consumedVolume =
+                fuelObj.value("consumedVolumeLiters")
+                    .toDouble(0.0);
+            m_fuelConsumption[fuelType] = consumedVolume;
+        }
     }
 
     // Parse energy sources
@@ -98,26 +101,38 @@ ShipState::ShipState(const QJsonObject &shipData)
     // Parse position data
     QJsonObject position =
         shipData.value("position").toObject();
-    m_latitude  = position.value("latitude").toDouble(0.0);
-    m_longitude = position.value("longitude").toDouble(0.0);
-
-    QJsonArray posArray =
-        position.value("position").toArray();
-    for (const QJsonValue &pos : posArray)
+    if (!position.isEmpty())
     {
-        m_position.append(pos.toDouble(0.0));
+        m_latitude =
+            position.value("latitude").toDouble(0.0);
+        m_longitude =
+            position.value("longitude").toDouble(0.0);
+
+        QJsonArray posArray =
+            position.value("position").toArray();
+        for (const QJsonValue &pos : posArray)
+        {
+            m_position.append(pos.toDouble(0.0));
+        }
     }
 
     // Parse environmental data
     QJsonObject env =
         shipData.value("environment").toObject();
-    m_waterDepth  = env.value("waterDepth").toDouble(0.0);
-    m_salinity    = env.value("salinity").toDouble(0.0);
-    m_temperature = env.value("temperature").toDouble(0.0);
-    m_waveHeight  = env.value("waveHeight").toDouble(0.0);
-    m_waveLength  = env.value("waveLength").toDouble(0.0);
-    m_waveAngularFrequency =
-        env.value("waveAngularFrequency").toDouble(0.0);
+    if (!env.isEmpty())
+    {
+        m_waterDepth =
+            env.value("waterDepth").toDouble(0.0);
+        m_salinity = env.value("salinity").toDouble(0.0);
+        m_temperature =
+            env.value("temperature").toDouble(0.0);
+        m_waveHeight =
+            env.value("waveHeight").toDouble(0.0);
+        m_waveLength =
+            env.value("waveLength").toDouble(0.0);
+        m_waveAngularFrequency =
+            env.value("waveAngularFrequency").toDouble(0.0);
+    }
 }
 
 QVariant
@@ -161,8 +176,27 @@ ShipState::getMetric(const QString &metricName) const
         return m_energyConsumption;
     if (metricName == "carbonDioxideEmitted")
         return m_carbonDioxideEmitted;
+    if (metricName == "latitude")
+        return m_latitude;
+    if (metricName == "longitude")
+        return m_longitude;
+    if (metricName == "waterDepth")
+        return m_waterDepth;
+    if (metricName == "salinity")
+        return m_salinity;
+    if (metricName == "temperature")
+        return m_temperature;
+    if (metricName == "waveHeight")
+        return m_waveHeight;
+    if (metricName == "waveLength")
+        return m_waveLength;
+    if (metricName == "waveAngularFrequency")
+        return m_waveAngularFrequency;
+
+    // For complex types, we could add special handling here
 
     // If we don't have a direct match
+    qWarning() << "Unknown metric requested:" << metricName;
     return QVariant();
 }
 
@@ -187,6 +221,7 @@ QVariantMap ShipState::info() const
     info["containersCount"]      = m_containersCount;
     info["closestPort"]          = m_closestPort;
     info["energyConsumption"]    = m_energyConsumption;
+    info["carbonDioxideEmitted"] = m_carbonDioxideEmitted;
 
     // Add fuel consumption
     QVariantMap fuelMap;
@@ -197,7 +232,6 @@ QVariantMap ShipState::info() const
     }
     info["fuelConsumption"] = fuelMap;
 
-    info["carbonDioxideEmitted"] = m_carbonDioxideEmitted;
     info["energySources"] =
         QVariant::fromValue(m_energySources);
 
@@ -246,6 +280,8 @@ QJsonObject ShipState::toJson() const
     // Consumption
     QJsonObject consumption;
     consumption["energyConsumption"] = m_energyConsumption;
+    consumption["carbonDioxideEmitted"] =
+        m_carbonDioxideEmitted;
 
     QJsonArray fuelConsumption;
     for (auto it = m_fuelConsumption.constBegin();
@@ -258,8 +294,6 @@ QJsonObject ShipState::toJson() const
     }
     consumption["fuelConsumption"] = fuelConsumption;
     json["consumption"]            = consumption;
-
-    json["carbonDioxideEmitted"] = m_carbonDioxideEmitted;
 
     // Energy sources
     QJsonArray energySources;
@@ -304,59 +338,128 @@ QJsonObject ShipState::toJson() const
     return json;
 }
 
-QString ShipState::shipId() const
+// Implementation of all getter methods
+QString ShipState::getShipId() const
 {
     return m_shipId;
 }
-
-double ShipState::travelledDistance() const
+double ShipState::getTravelledDistance() const
 {
     return m_travelledDistance;
 }
-
-double ShipState::currentSpeed() const
-{
-    return m_currentSpeed;
-}
-
-double ShipState::currentAcceleration() const
+double ShipState::getCurrentAcceleration() const
 {
     return m_currentAcceleration;
 }
-
-bool ShipState::isLoaded() const
+double ShipState::getPreviousAcceleration() const
+{
+    return m_previousAcceleration;
+}
+double ShipState::getCurrentSpeed() const
+{
+    return m_currentSpeed;
+}
+double ShipState::getPreviousSpeed() const
+{
+    return m_previousSpeed;
+}
+double ShipState::getTotalThrust() const
+{
+    return m_totalThrust;
+}
+double ShipState::getTotalResistance() const
+{
+    return m_totalResistance;
+}
+double ShipState::getVesselWeight() const
+{
+    return m_vesselWeight;
+}
+double ShipState::getCargoWeight() const
+{
+    return m_cargoWeight;
+}
+bool ShipState::getIsOn() const
+{
+    return m_isOn;
+}
+bool ShipState::getIsOutOfEnergy() const
+{
+    return m_outOfEnergy;
+}
+bool ShipState::getIsLoaded() const
 {
     return m_loaded;
 }
-
-bool ShipState::reachedDestination() const
+bool ShipState::getReachedDestination() const
 {
     return m_reachedDestination;
 }
-
-double ShipState::tripTime() const
+double ShipState::getTripTime() const
 {
     return m_tripTime;
 }
-
-int ShipState::containersCount() const
+int ShipState::getContainersCount() const
 {
     return m_containersCount;
 }
-
-QString ShipState::closestPort() const
+QString ShipState::getClosestPort() const
 {
     return m_closestPort;
 }
-
-double ShipState::energyConsumption() const
+double ShipState::getEnergyConsumption() const
 {
     return m_energyConsumption;
 }
-
-double ShipState::carbonEmissions() const
+const QMap<QString, double> &
+ShipState::getFuelConsumption() const
+{
+    return m_fuelConsumption;
+}
+double ShipState::getCarbonEmissions() const
 {
     return m_carbonDioxideEmitted;
+}
+const QList<QVariantMap> &
+ShipState::getEnergySources() const
+{
+    return m_energySources;
+}
+double ShipState::getLatitude() const
+{
+    return m_latitude;
+}
+double ShipState::getLongitude() const
+{
+    return m_longitude;
+}
+const QList<double> &ShipState::getPosition() const
+{
+    return m_position;
+}
+double ShipState::getWaterDepth() const
+{
+    return m_waterDepth;
+}
+double ShipState::getSalinity() const
+{
+    return m_salinity;
+}
+double ShipState::getTemperature() const
+{
+    return m_temperature;
+}
+double ShipState::getWaveHeight() const
+{
+    return m_waveHeight;
+}
+double ShipState::getWaveLength() const
+{
+    return m_waveLength;
+}
+double ShipState::getWaveAngularFrequency() const
+{
+    return m_waveAngularFrequency;
 }
 
 } // namespace ShipClient

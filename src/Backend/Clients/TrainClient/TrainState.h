@@ -1,18 +1,8 @@
-/**
- * @file TrainState.h
- * @brief Header for TrainState class
- * @author Ahmed Aredah
- * @date March 20, 2025
- *
- * Declares the TrainState class, which represents the state
- * of a train in the CargoNetSim simulation backend.
- */
-
 #pragma once
-
 #include <QJsonObject>
 #include <QMap>
 #include <QString>
+#include <QVariant>
 
 namespace CargoNetSim
 {
@@ -58,76 +48,79 @@ public:
      */
     QJsonObject toJson() const;
 
+    // Getters for all member variables
+    QMap<QString, double> getTotalFuelConsumed() const;
+    double                getCumEnergyStat() const;
+    double                getCumulativeDelayTime() const;
+    double                getCumulativeMaxDelayTime() const;
+    double                getCumulativeStoppedStat() const;
+    double                getTripTime() const;
+    double                getCurrentAcceleration() const;
+    double  getCurrentResistanceForces() const;
+    double  getCurrentSpeed() const;
+    double  getCurrentTractiveForce() const;
+    double  getCurrentUsedTractivePower() const;
+    bool    getIsLoaded() const;
+    bool    getIsOn() const;
+    bool    getIsOutOfEnergy() const;
+    bool    getReachedDestination() const;
+    double  getTotalEnergyConsumed() const;
+    double  getTotalEnergyRegenerated() const;
+    double  getTotalCarbonDioxideEmitted() const;
+    int     getTotalLength() const;
+    double  getTotalMass() const;
+    QString getTrainUserId() const;
+    double  getTravelledDistance() const;
+    int     getContainersCount() const;
+
+private:
     /// @brief Total fuel consumed by type
     QMap<QString, double> m_totalFuelConsumed;
-
     /// @brief Cumulative energy statistic
     double m_cumEnergyStat;
-
     /// @brief Total delay time accumulated
     double m_cumulativeDelayTime;
-
     /// @brief Maximum delay time accumulated
     double m_cumulativeMaxDelayTime;
-
     /// @brief Total stopped time statistic
     double m_cumulativeStoppedStat;
-
     /// @brief Total trip duration
     double m_tripTime;
-
     /// @brief Current acceleration of the train
     double m_currentAcceleration;
-
     /// @brief Current resistance forces
     double m_currentResistanceForces;
-
     /// @brief Current speed of the train
     double m_currentSpeed;
-
     /// @brief Current tractive force applied
     double m_currentTractiveForce;
-
     /// @brief Current tractive power used
     double m_currentUsedTractivePower;
-
     /// @brief Whether the train is loaded
     bool m_isLoaded;
-
     /// @brief Whether the train is powered on
     bool m_isOn;
-
     /// @brief Whether the train is out of energy
     bool m_outOfEnergy;
-
     /// @brief Whether the train reached its destination
     bool m_reachedDestination;
-
     /// @brief Total energy consumed
     double m_totalEnergyConsumed;
-
     /// @brief Total energy regenerated
     double m_totalEnergyRegenerated;
-
     /// @brief Total CO2 emissions
     double m_totalCarbonDioxideEmitted;
-
     /// @brief Total length of the train
     int m_totalLength;
-
     /// @brief Total mass of the train
     double m_totalMass;
-
     /// @brief User-defined train ID
     QString m_trainUserId;
-
     /// @brief Distance traveled by the train
     double m_travelledDistance;
-
     /// @brief Number of containers on the train
     int m_containersCount;
 
-private:
     /**
      * @brief Map of all metrics for dynamic access
      *
@@ -140,6 +133,7 @@ private:
 } // namespace Backend
 } // namespace CargoNetSim
 
+// Declare metatypes
 Q_DECLARE_METATYPE(
     CargoNetSim::Backend::TrainClient::TrainState)
 Q_DECLARE_METATYPE(
