@@ -3,7 +3,7 @@
     <simulation>
         <shortest_paths>10</shortest_paths>
         <time_step>15</time_step>
-        <time_value_of_money>20.430000</time_value_of_money>
+        <time_value_of_money>24.080000</time_value_of_money>
         <use_mode_specific>false</use_mode_specific>
     </simulation>
     <fuel_energy>
@@ -22,7 +22,7 @@
         <diesel_2>1.350000</diesel_2>
     </fuel_prices>
     <carbon_taxes>
-        <rate>0.000000</rate>
+        <rate>65.000000</rate>
         <ship_multiplier>1.000000</ship_multiplier>
         <train_multiplier>1.000000</train_multiplier>
         <truck_multiplier>1.000000</truck_multiplier>
@@ -30,7 +30,7 @@
     <transport_modes>
         <ship>
             <average_container_number>10000</average_container_number>
-            <average_fuel_consumption>70.000000</average_fuel_consumption>
+            <average_fuel_consumption>21.000000</average_fuel_consumption>
             <average_speed>42.600000</average_speed>
             <fuel_type>HFO</fuel_type>
             <risk_factor>0.025000</risk_factor>
@@ -38,8 +38,8 @@
         </ship>
         <rail>
             <average_container_number>180</average_container_number>
-            <average_fuel_consumption>8.800000</average_fuel_consumption>
-            <average_speed>40.000000</average_speed>
+            <average_fuel_consumption>5.500000</average_fuel_consumption>
+            <average_speed>88.500000</average_speed>
             <fuel_type>diesel_1</fuel_type>
             <risk_factor>0.006000</risk_factor>
             <time_value_of_money>16.430000</time_value_of_money>
@@ -48,7 +48,7 @@
         <truck>
             <average_container_number>1</average_container_number>
             <average_fuel_consumption>0.550000</average_fuel_consumption>
-            <average_speed>70.000000</average_speed>
+            <average_speed>88.500000</average_speed>
             <fuel_type>diesel_2</fuel_type>
             <risk_factor>0.012000</risk_factor>
             <time_value_of_money>31.430000</time_value_of_money>
