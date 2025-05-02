@@ -781,8 +781,8 @@ void MainWindow::handleTabChange(int index)
     {
         int        toolbarTabIndex = it.key();
         QList<int> tabIndices      = it.value();
-        ribbon_->setTabVisible(toolbarTabIndex,
-                               tabIndices.contains(index));
+        toolbar_->setTabVisible(toolbarTabIndex,
+                                tabIndices.contains(index));
     }
 
     // Handle dock window visibility
@@ -912,6 +912,21 @@ void MainWindow::showStatusBarMessage(QString message,
     newMessage.isError   = false;
 
     messageQueue_.append(newMessage);
+
+    // Limit non-error messages to the latest 2
+    int nonErrorCount = 0;
+    for (int i = messageQueue_.size() - 1; i >= 0; i--)
+    {
+        if (!messageQueue_[i].isError)
+        {
+            nonErrorCount++;
+            if (nonErrorCount > 2)
+            {
+                // Remove the older message
+                messageQueue_.removeAt(i);
+            }
+        }
+    }
 }
 
 void MainWindow::showStatusBarError(QString message,
@@ -926,6 +941,15 @@ void MainWindow::showStatusBarError(QString message,
             : 5000; // Default 5 seconds if not specified
     newMessage.timestamp = QDateTime::currentDateTime();
     newMessage.isError   = true;
+
+    // Remove all non-error messages
+    for (int i = messageQueue_.size() - 1; i >= 0; i--)
+    {
+        if (!messageQueue_[i].isError)
+        {
+            messageQueue_.removeAt(i);
+        }
+    }
 
     messageQueue_.append(newMessage);
 }
@@ -956,10 +980,18 @@ void MainWindow::processMessageQueue()
         return;
     }
 
-    // If queue is empty, set default message
+    // If queue is empty, set default message based on
+    // spinner state
     if (messageQueue_.isEmpty())
     {
-        statusLabel_->setText("Ready.");
+        if (statusSpinner_ && statusSpinner_->isSpinning())
+        {
+            statusLabel_->setText("Processing...");
+        }
+        else
+        {
+            statusLabel_->setText("Ready.");
+        }
         statusLabel_->setStyleSheet("");
         return;
     }
@@ -967,8 +999,21 @@ void MainWindow::processMessageQueue()
     // Mark as processing
     isProcessingMessageQueue_ = true;
 
-    // Get the next message
-    StatusMessage currentMessage = messageQueue_.first();
+    // Prioritize error messages - find the first error
+    // message if any
+    int messageIndex = 0;
+    for (int i = 0; i < messageQueue_.size(); i++)
+    {
+        if (messageQueue_[i].isError)
+        {
+            messageIndex = i;
+            break;
+        }
+    }
+
+    // Get the prioritized message
+    StatusMessage currentMessage =
+        messageQueue_[messageIndex];
 
     // Display the message
     statusLabel_->setText(currentMessage.message);
@@ -985,11 +1030,12 @@ void MainWindow::processMessageQueue()
 
     // Schedule message removal after timeout
     QTimer::singleShot(
-        currentMessage.timeout, this, [this]() {
+        currentMessage.timeout, this,
+        [this, messageIndex]() {
             // Remove the message from the queue
-            if (!messageQueue_.isEmpty())
+            if (messageIndex < messageQueue_.size())
             {
-                messageQueue_.removeFirst();
+                messageQueue_.removeAt(messageIndex);
             }
 
             // Reset processing flag
@@ -999,6 +1045,20 @@ void MainWindow::processMessageQueue()
             if (!messageQueue_.isEmpty())
             {
                 processMessageQueue();
+            }
+            else
+            {
+                // Set text based on spinner state
+                if (statusSpinner_
+                    && statusSpinner_->isSpinning())
+                {
+                    statusLabel_->setText("Processing...");
+                }
+                else
+                {
+                    statusLabel_->setText("Ready.");
+                }
+                statusLabel_->setStyleSheet("");
             }
         });
 }
@@ -1480,29 +1540,30 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                 }
             }
             // Handle other item types as needed
-            else if (MapPoint *point =
-                         dynamic_cast<MapPoint *>(item))
-            {
-                if (point)
-                {
-                    QString id =
-                        point->getProperty("NodeID")
-                            .toString();
-                    currentScene
-                        ->removeItemWithId<MapPoint>(id);
-                }
-            }
-            else if (MapLine *line =
-                         dynamic_cast<MapLine *>(item))
-            {
-                if (line)
-                {
-                    QString id = line->getProperty("LinkID")
-                                     .toString();
-                    currentScene->removeItemWithId<MapLine>(
-                        id);
-                }
-            }
+            // else if (MapPoint *point =
+            //              dynamic_cast<MapPoint *>(item))
+            // {
+            //     if (point)
+            //     {
+            //         QString id =
+            //             point->getProperty("NodeID")
+            //                 .toString();
+            //         currentScene
+            //             ->removeItemWithId<MapPoint>(id);
+            //     }
+            // }
+            // else if (MapLine *line =
+            //              dynamic_cast<MapLine *>(item))
+            // {
+            //     if (line)
+            //     {
+            //         QString id =
+            //         line->getProperty("LinkID")
+            //                          .toString();
+            //         currentScene->removeItemWithId<MapLine>(
+            //             id);
+            //     }
+            // }
 
             selectedItems.removeAll(nullptr);
         }

@@ -19,6 +19,7 @@
 #include <QtCore/qdatetime.h>
 
 #include "Controllers/HeartbeatController.h"
+#include "GUI/Widgets/ScrollableToolBar.h"
 #include "GUI/Widgets/SpinnerWidget.h"
 #include "Items/GlobalTerminalItem.h"
 #include "Items/RegionCenterPoint.h"
@@ -45,6 +46,7 @@ class ViewController;
 class UtilitiesFunctions;
 class PathFindingWorker;
 class SimulationValidationWorker;
+class TerminalSelectionDialog;
 
 /**
  * @brief Main application window for CargoNetSim
@@ -66,6 +68,7 @@ class MainWindow : public CustomMainWindow
     friend class UtilitiesFunctions;
     friend class PathFindingWorker;
     friend class SimulationValidationWorker;
+    friend class TerminalSelectionDialog;
 
 public:
     /**
@@ -387,7 +390,7 @@ protected:
     HeartbeatController *heartbeatController_;
 
     // Toolbar organization
-    QTabWidget *ribbon_;
+    ScrollableToolBar *toolbar_;
     QGroupBox  *viewImportGroup_;
     QGroupBox  *projectGroup_;
     QGroupBox  *toolsGroup_;

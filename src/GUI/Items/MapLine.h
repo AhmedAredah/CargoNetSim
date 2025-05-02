@@ -92,6 +92,9 @@ public:
         m_properties.value("region") = region;
     }
 
+    void setPoints(const QPointF &newStartPoint,
+                   const QPointF &newEndPoint);
+
     /**
      * @brief Get the start point
      */

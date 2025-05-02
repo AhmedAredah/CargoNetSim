@@ -139,9 +139,12 @@ IntegrationNetwork::findShortestPath(int startNodeId,
 
     // Calculate path metrics
     result.totalLength =
-        getPathLengthByLinks(result.pathLinks);
-    result.minTravelTime = m_graph->calculatePathMetric(
-        result.pathNodes, "time");
+        getPathLengthByLinks(result.pathLinks)
+        * 1000.0; // Convert km to m
+    result.minTravelTime =
+        m_graph->calculatePathMetric(result.pathNodes,
+                                     "time")
+        * 3600.0; // Convert hours to seconds
 
     return result;
 }
@@ -693,9 +696,9 @@ IntegrationSimulationConfigReader::readConfig(
         while (!in.atEnd())
         {
             QString line = in.readLine();
-            // Remove any control characters
-            line.remove(
-                QRegularExpression("[\\x00-\\x1F\\x7F]"));
+            // // Remove any control characters
+            // line.remove(
+            //     QRegularExpression("[\\x00-\\x1F\\x7F]"));
             if (!line.isEmpty())
             {
                 lines.append(line.trimmed());
@@ -715,7 +718,7 @@ IntegrationSimulationConfigReader::readConfig(
 
         // Parse simulation parameters (line 2)
         QStringList simParams = lines[1].trimmed().split(
-            QRegularExpression("\\s+"));
+            QRegularExpression("\\s+"), Qt::SkipEmptyParts);
         if (simParams.size() < 5)
         {
             throw std::runtime_error(
@@ -725,11 +728,15 @@ IntegrationSimulationConfigReader::readConfig(
         double simTime = simParams[0].toDouble();
 
         // Parse folders
-        QString inputFolder = lines[2].trimmed();
+        QString inputFolder =
+            lines[2].trimmed().replace("\\", "").replace(
+                "/", "");
         inputFolder =
             inputFolder.isEmpty() ? "." : inputFolder;
 
-        QString outputFolder = lines[3].trimmed();
+        QString outputFolder =
+            lines[3].trimmed().replace("\\", "").replace(
+                "/", "");
         outputFolder =
             outputFolder.isEmpty() ? "." : outputFolder;
 

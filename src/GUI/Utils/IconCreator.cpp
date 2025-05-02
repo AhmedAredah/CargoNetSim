@@ -826,6 +826,52 @@ QPixmap createUnlinkTerminalIcon()
 }
 
 //------------------------------------------------------------------------------
+// Link Terminals to Network Icon
+//------------------------------------------------------------------------------
+QPixmap createLinkTerminalsToNetworkIcon(int size)
+{
+    // Start with the base link terminal icon
+    QPixmap pixmap = createLinkTerminalIcon();
+
+    // Add network node representation
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Draw a small "AL" for Network
+    QFont font("Arial", size / 3, QFont::Bold);
+    painter.setPen(QPen(QColor(30, 144, 255), 2));
+    painter.setFont(font);
+    painter.drawText(pixmap.rect(),
+                     Qt::AlignTop | Qt::AlignHCenter, "AL");
+
+    painter.end();
+    return pixmap;
+}
+
+//------------------------------------------------------------------------------
+// Unlink Terminals to Network Icon
+//------------------------------------------------------------------------------
+QPixmap createUnlinkTerminalsToNetworkIcon(int size)
+{
+    // Start with the base link terminal icon
+    QPixmap pixmap = createUnlinkTerminalIcon();
+
+    // Add network node representation
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Draw a small "AL" for Network
+    QFont font("Arial", size / 3, QFont::Bold);
+    painter.setPen(QPen(QColor(30, 144, 255), 2));
+    painter.setFont(font);
+    painter.drawText(pixmap.rect(),
+                     Qt::AlignTop | Qt::AlignHCenter, "AL");
+
+    painter.end();
+    return pixmap;
+}
+
+//------------------------------------------------------------------------------
 // Auto Connect Terminals Icon
 //------------------------------------------------------------------------------
 QPixmap createAutoConnectTerminalsIcon(int size)
@@ -922,6 +968,74 @@ QPixmap createCheckNetworkIcon(int size)
     QPoint end_point(int(size * 0.85), int(size * 0.65));
     painter.drawLine(start_point, mid_point);
     painter.drawLine(mid_point, end_point);
+
+    painter.end();
+    return pixmap;
+}
+
+//------------------------------------------------------------------------------
+// Move Network Icon
+//------------------------------------------------------------------------------
+QPixmap createMoveNetworkIcon(int size)
+{
+    QPixmap pixmap(size, size);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QColor node_color("#3498DB");
+    QColor connection_color("#2ECC71");
+    QColor arrow_color("#E74C3C");
+
+    // Define network nodes
+    QVector<QPointF> nodes;
+    nodes.append(QPointF(size * 0.5, size * 0.2));
+    nodes.append(QPointF(size * 0.2, size * 0.4));
+    nodes.append(QPointF(size * 0.8, size * 0.4));
+    nodes.append(QPointF(size * 0.3, size * 0.75));
+    nodes.append(QPointF(size * 0.7, size * 0.75));
+
+    // Draw connections between nodes
+    QPen pen(connection_color,
+             std::max(2, int(size * 0.03)));
+    painter.setPen(pen);
+    QList<QPair<int, int>> connections = {
+        {0, 1}, {0, 2}, {1, 3}, {2, 4},
+        {1, 2}, {3, 4}, {3, 0}, {4, 0}};
+    for (const auto &conn : connections)
+    {
+        painter.drawLine(nodes[conn.first],
+                         nodes[conn.second]);
+    }
+
+    // Draw nodes
+    int radius = std::max(4, int(size * 0.05));
+    painter.setBrush(QBrush(node_color));
+    painter.setPen(
+        QPen(Qt::black, std::max(1, int(size * 0.02))));
+    for (const QPointF &pt : nodes)
+    {
+        painter.drawEllipse(pt, radius, radius);
+    }
+
+    // Draw arrow to indicate movement
+    pen = QPen(arrow_color, std::max(3, int(size * 0.04)));
+    painter.setPen(pen);
+
+    // Arrow body
+    QPointF arrow_start(size * 0.25, size * 0.65);
+    QPointF arrow_end(size * 0.75, size * 0.65);
+    painter.drawLine(arrow_start, arrow_end);
+
+    // Arrow head
+    QPolygonF arrowHead;
+    arrowHead << arrow_end
+              << QPointF(arrow_end.x() - size * 0.1,
+                         arrow_end.y() - size * 0.05)
+              << QPointF(arrow_end.x() - size * 0.1,
+                         arrow_end.y() + size * 0.05);
+    painter.setBrush(QBrush(arrow_color));
+    painter.setPen(Qt::NoPen);
+    painter.drawPolygon(arrowHead);
 
     painter.end();
     return pixmap;
@@ -2075,7 +2189,7 @@ QPixmap createTransportationModePixmap(const QString &mode,
     }
     else if (mode.contains("Ship", Qt::CaseInsensitive))
     {
-        modeColor = QColor(Qt::magenta); // Blue for ship
+        modeColor = QColor(Qt::blue); // Blue for ship
     }
 
     // Draw the text
@@ -2204,6 +2318,66 @@ QPixmap createCalculatorIcon(int size)
                 button_labels[label_index++]);
         }
     }
+
+    painter.end();
+    return pixmap;
+}
+
+//------------------------------------------------------------------------------
+// Filter Connections Icon
+//------------------------------------------------------------------------------
+QPixmap createFilterConnectionsIcon(int size)
+{
+    QPixmap pixmap(size, size);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Base connection line and terminals
+    QPen connectionPen(QColor("#2E86C1"), 2);
+    painter.setPen(connectionPen);
+    int    radius = 4;
+    QPoint left_center(8, size / 2);
+    QPoint right_center(size - 8, size / 2);
+
+    // Draw terminals
+    painter.drawEllipse(left_center, radius, radius);
+    painter.drawEllipse(right_center, radius, radius);
+
+    // Draw dashed connection line to represent filtering
+    QPen dashedPen(QColor("#2E86C1"), 2, Qt::DashLine);
+    painter.setPen(dashedPen);
+    painter.drawLine(left_center, right_center);
+
+    // Draw filter symbol (funnel shape)
+    QPen filterPen(QColor("#E67E22"),
+                   2); // Orange color for filter
+    painter.setPen(filterPen);
+    painter.setBrush(QBrush(QColor(
+        230, 126, 34, 80))); // Semi-transparent orange
+
+    QPolygon filterShape;
+    int      centerX      = size / 2;
+    int      topWidth     = size / 3;
+    int      bottomWidth  = size / 6;
+    int      filterHeight = size / 3;
+
+    filterShape << QPoint(centerX - topWidth / 2, size / 3)
+                << QPoint(centerX + topWidth / 2, size / 3)
+                << QPoint(centerX + bottomWidth / 2,
+                          size / 3 + filterHeight)
+                << QPoint(centerX - bottomWidth / 2,
+                          size / 3 + filterHeight);
+
+    painter.drawPolygon(filterShape);
+
+    // Draw small filter indicator at bottom of funnel
+    int indicatorSize = 3;
+    painter.setBrush(QBrush(QColor("#E67E22")));
+    painter.drawEllipse(centerX - indicatorSize / 2,
+                        size / 3 + filterHeight
+                            + indicatorSize,
+                        indicatorSize, indicatorSize);
 
     painter.end();
     return pixmap;

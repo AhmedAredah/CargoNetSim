@@ -129,6 +129,33 @@ public:
     static void flashPathLines(MainWindow *mainWindow,
                                int         pathId);
 
+    static bool linkTerminalToClosestNetworkPoint(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        const QList<NetworkType> &networkTypes);
+
+    static void linkAllVisibleTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+
+    static bool unlinkTerminalFromNetworkPoints(
+        MainWindow *mainWindow, TerminalItem *terminal,
+        const QList<NetworkType> &networkTypes);
+
+    static void unlinkAllVisibleTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+
+    static void showFilteredConnections(
+        MainWindow        *mainWindow,
+        const QStringList &terminalNames,
+        const QStringList &connectionTypes);
+
+    static bool moveNetworkItems(MainWindow    *mainWindow,
+                                 NetworkType    networkType,
+                                 const QString &networkName,
+                                 const QPointF &offset,
+                                 const QString &regionName);
+
 private:
     static void updateTerminalGlobalPosition(
         MainWindow        *main_window,

@@ -466,15 +466,6 @@ private:
      */
     mutable QReadWriteLock m_dataAccessMutex;
 
-    bool
-    sendUnloadCommandAndWait(const QString     &command,
-                             const QJsonObject &params);
-
-    mutable QMutex m_unloadMutex;
-    QWaitCondition m_unloadCondition;
-    bool           m_unloadComplete =
-        false; // Flag to track unload completion
-
     /**
      * @var m_networkData
      * @brief Stores simulation results by network

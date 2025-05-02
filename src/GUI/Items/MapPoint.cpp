@@ -97,6 +97,13 @@ void MapPoint::updateProperties(
     emit propertiesChanged();
 }
 
+void MapPoint::setSceneCoordinate(const QPointF &newPos)
+{
+    m_sceneCoordinate = newPos;
+    setPos(newPos);
+    emit positionChanged(newPos);
+}
+
 QRectF MapPoint::boundingRect() const
 {
     if (m_terminal)

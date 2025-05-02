@@ -504,9 +504,36 @@ bool ShipSimulationClient::
         terminalsArray.append(terminal);
     }
     params["terminalNames"] = terminalsArray;
-    bool success            = sendCommandAndWait(
-        "unloadContainersFromShipAtTerminal", params,
-        {"shipunloadedcontainers"});
+
+    // Create local event loop
+    QEventLoop eventLoop;
+    bool       success = false;
+
+    // Connect the event signal to break the local event
+    // loop
+    connect(this, &SimulationClientBase::eventReceived,
+            [this, &eventLoop,
+             &success](const QString     &event,
+                       const QJsonObject &data) {
+                if (normalizeEventName(event)
+                    == "containersunloaded")
+                {
+                    success = true;
+                    eventLoop.quit();
+                }
+            });
+
+    // Send the command without waiting
+    if (sendCommand("unloadContainersFromShipAtTerminal",
+                    params))
+    {
+        // Wait for the event with a timeout
+        QTimer::singleShot(
+            30000, &eventLoop,
+            &QEventLoop::quit); // 30-second timeout
+        eventLoop.exec();
+    }
+
     if (m_logger)
     {
         if (success)
@@ -541,8 +568,18 @@ bool ShipSimulationClient::
         const QStringList &terminalNames)
 {
     return executeSerializedCommand([&]() {
-        return unloadContainersFromShipAtTerminalsPrivate(
-            networkName, shipId, terminalNames);
+        QJsonObject params;
+        params["networkName"] = networkName;
+        params["shipID"]      = shipId;
+        QJsonArray terminalsArray;
+        for (const QString &terminal : terminalNames)
+        {
+            terminalsArray.append(terminal);
+        }
+        params["terminalNames"] = terminalsArray;
+        return sendCommandAndWait(
+            "unloadContainersFromShipAtTerminal", params,
+            {"containersUnloaded"});
     });
 }
 
@@ -629,7 +666,7 @@ const ShipState *ShipSimulationClient::getShipState(
     const auto &states = m_shipState[networkName];
     for (const auto *state : states)
     {
-        if (state && state->shipId() == shipId)
+        if (state && state->getShipId() == shipId)
         {
             return state;
         }
@@ -720,6 +757,10 @@ ShipSimulationClient::getAllShipsStates() const
 void ShipSimulationClient::processMessage(
     const QJsonObject &message)
 {
+
+    // Delegate for the base class for the initial
+    // processing
+    SimulationClientBase::processMessage(message);
 
     if (!message.contains("event"))
     {
@@ -824,10 +865,6 @@ void ShipSimulationClient::processMessage(
                 << "Unrecognized event:" << eventType;
         }
     }
-
-    // Delegate for the base class for the initial
-    // processing
-    SimulationClientBase::processMessage(message);
 }
 
 /**
@@ -1181,29 +1218,8 @@ void ShipSimulationClient::onShipReachedDestination(
             QString     shipId      = parts[1];
             QStringList terminalIds = it.value();
 
-            bool foundTerminal = false;
-            for (const QString &terminalId : terminalIds)
-            {
-                foundTerminal = true;
-                unloadContainersFromShipAtTerminalsPrivate(
-                    networkName, shipId,
-                    QStringList{terminalId});
-            }
-
-            if (!foundTerminal && m_logger)
-            {
-                m_logger->log(
-                    "No terminal of ["
-                        + terminalIds.join(", ")
-                        + "] exists",
-                    static_cast<int>(m_clientType));
-            }
-            else if (!foundTerminal)
-            {
-                qWarning() << "No terminal of ["
-                           << terminalIds.join(", ")
-                           << "] exists!";
-            }
+            unloadContainersFromShipAtTerminalsPrivate(
+                networkName, shipId, terminalIds);
         }
     }
 
@@ -1239,9 +1255,9 @@ void ShipSimulationClient::onShipReachedSeaport(
     QString networkName =
         message.value("networkName").toString();
     QString shipId = message.value("shipID").toString();
-    bool    success =
-        unloadContainersFromShipAtTerminalsPrivate(
-            networkName, shipId, QStringList{terminalId});
+    unloadContainersFromShipAtTerminalsPrivate(
+        networkName, shipId, QStringList{terminalId});
+
     if (m_logger)
     {
         m_logger->log("Ship " + shipId + " reached seaport "
@@ -1350,7 +1366,7 @@ void ShipSimulationClient::onShipStateAvailable(
             auto &shipStates = m_shipState[networkName];
             for (int i = 0; i < shipStates.size(); ++i)
             {
-                if (shipStates[i]->shipId() == shipId)
+                if (shipStates[i]->getShipId() == shipId)
                 {
                     // Delete the old state and remove it
                     // from the list

@@ -1,14 +1,5 @@
 #include "TrainState.h"
-
-/**
- * @file TrainState.cpp
- * @brief Implementation of TrainState class
- * @author Ahmed Aredah
- * @date March 20, 2025
- *
- * Implements TrainState with detailed comments for audit
- * and review, managing train state in the simulation.
- */
+#include <QDebug>
 
 namespace CargoNetSim
 {
@@ -18,47 +9,62 @@ namespace TrainClient
 {
 
 TrainState::TrainState(const QJsonObject &trainData)
-    : m_cumEnergyStat(trainData["cumEnergyStat"].toDouble())
+    : m_cumEnergyStat(
+          trainData.value("cumEnergyStat").toDouble(0.0))
     , m_cumulativeDelayTime(
-          trainData["cumulativeDelayTimeStat"].toDouble())
+          trainData.value("cumulativeDelayTimeStat")
+              .toDouble(0.0))
     , m_cumulativeMaxDelayTime(
-          trainData["cumulativeMaxDelayTimeStat"]
-              .toDouble())
+          trainData.value("cumulativeMaxDelayTimeStat")
+              .toDouble(0.0))
     , m_cumulativeStoppedStat(
-          trainData["cumulativeStoppedStat"].toDouble())
-    , m_tripTime(trainData["tripTime"].toDouble())
+          trainData.value("cumulativeStoppedStat")
+              .toDouble(0.0))
+    , m_tripTime(trainData.value("tripTime").toDouble(0.0))
     , m_currentAcceleration(
-          trainData["currentAcceleration"].toDouble())
+          trainData.value("currentAcceleration")
+              .toDouble(0.0))
     , m_currentResistanceForces(
-          trainData["currentResistanceForces"].toDouble())
-    , m_currentSpeed(trainData["currentSpeed"].toDouble())
+          trainData.value("currentResistanceForces")
+              .toDouble(0.0))
+    , m_currentSpeed(
+          trainData.value("currentSpeed").toDouble(0.0))
     , m_currentTractiveForce(
-          trainData["currentTractiveForce"].toDouble())
+          trainData.value("currentTractiveForce")
+              .toDouble(0.0))
     , m_currentUsedTractivePower(
-          trainData["currentUsedTractivePower"].toDouble())
-    , m_isLoaded(trainData["isLoaded"].toBool())
-    , m_isOn(trainData["isOn"].toBool())
-    , m_outOfEnergy(trainData["outOfEnergy"].toBool())
+          trainData.value("currentUsedTractivePower")
+              .toDouble(0.0))
+    , m_isLoaded(trainData.value("isLoaded").toBool(false))
+    , m_isOn(trainData.value("isOn").toBool(false))
+    , m_outOfEnergy(
+          trainData.value("outOfEnergy").toBool(false))
     , m_reachedDestination(
-          trainData["reachedDestination"].toBool())
+          trainData.value("reachedDestination")
+              .toBool(false))
     , m_totalEnergyConsumed(
-          trainData["totalEnergyConsumed"].toDouble())
+          trainData.value("totalEnergyConsumed")
+              .toDouble(0.0))
     , m_totalEnergyRegenerated(
-          trainData["totalEnergyRegenerated"].toDouble())
+          trainData.value("totalEnergyRegenerated")
+              .toDouble(0.0))
     , m_totalCarbonDioxideEmitted(
-          trainData["totalCarbonDioxideEmitted"].toDouble())
-    , m_totalLength(trainData["totalLength"].toInt())
-    , m_totalMass(trainData["totalMass"].toDouble())
-    , m_trainUserId(
-          trainData["trainUserID"].toString("Unknown"))
+          trainData.value("totalCarbonDioxideEmitted")
+              .toDouble(0.0))
+    , m_totalLength(trainData.value("totalLength").toInt(0))
+    , m_totalMass(
+          trainData.value("totalMass").toDouble(0.0))
+    , m_trainUserId(trainData.value("trainUserID")
+                        .toString("Unknown"))
     , m_travelledDistance(
-          trainData["travelledDistance"].toDouble())
+          trainData.value("travelledDistance")
+              .toDouble(0.0))
     , m_containersCount(
-          trainData["containersCount"].toInt())
+          trainData.value("containersCount").toInt(0))
 {
     // Extract fuel consumption data from JSON
     QJsonObject fuelObj =
-        trainData["totalFuelConsumed"].toObject();
+        trainData.value("totalFuelConsumed").toObject();
 
     // Iterate over fuel types and their values
     for (auto it = fuelObj.begin(); it != fuelObj.end();
@@ -66,7 +72,7 @@ TrainState::TrainState(const QJsonObject &trainData)
     {
         // Store each fuel type and its consumption
         m_totalFuelConsumed[it.key()] =
-            it.value().toDouble();
+            it.value().toDouble(0.0);
     }
 
     // Populate the metrics map for dynamic access
@@ -110,6 +116,12 @@ QVariant
 TrainState::getMetric(const QString &metricName) const
 {
     // Return the value of the requested metric
+    if (!m_metrics.contains(metricName))
+    {
+        qWarning() << "Unknown metric requested:"
+                   << metricName;
+        return QVariant();
+    }
     return m_metrics.value(metricName);
 }
 
@@ -119,14 +131,13 @@ QJsonObject TrainState::toJson() const
     QJsonObject obj;
 
     // Convert fuel map to JSON object
-    QMap<QString, QVariant> fuelVariantMap;
-    for (const QString &key : m_totalFuelConsumed.keys())
+    QJsonObject fuelObj;
+    for (auto it = m_totalFuelConsumed.constBegin();
+         it != m_totalFuelConsumed.constEnd(); ++it)
     {
-        fuelVariantMap[key] =
-            QVariant(m_totalFuelConsumed[key]);
+        fuelObj[it.key()] = it.value();
     }
-    obj["totalFuelConsumed"] =
-        QJsonObject::fromVariantMap(fuelVariantMap);
+    obj["totalFuelConsumed"] = fuelObj;
 
     // Add scalar metrics to JSON
     obj["cumEnergyStat"]           = m_cumEnergyStat;
@@ -163,6 +174,101 @@ QJsonObject TrainState::toJson() const
 
     // Return the completed JSON object
     return obj;
+}
+
+// Implement all getters
+QMap<QString, double>
+TrainState::getTotalFuelConsumed() const
+{
+    return m_totalFuelConsumed;
+}
+double TrainState::getCumEnergyStat() const
+{
+    return m_cumEnergyStat;
+}
+double TrainState::getCumulativeDelayTime() const
+{
+    return m_cumulativeDelayTime;
+}
+double TrainState::getCumulativeMaxDelayTime() const
+{
+    return m_cumulativeMaxDelayTime;
+}
+double TrainState::getCumulativeStoppedStat() const
+{
+    return m_cumulativeStoppedStat;
+}
+double TrainState::getTripTime() const
+{
+    return m_tripTime;
+}
+double TrainState::getCurrentAcceleration() const
+{
+    return m_currentAcceleration;
+}
+double TrainState::getCurrentResistanceForces() const
+{
+    return m_currentResistanceForces;
+}
+double TrainState::getCurrentSpeed() const
+{
+    return m_currentSpeed;
+}
+double TrainState::getCurrentTractiveForce() const
+{
+    return m_currentTractiveForce;
+}
+double TrainState::getCurrentUsedTractivePower() const
+{
+    return m_currentUsedTractivePower;
+}
+bool TrainState::getIsLoaded() const
+{
+    return m_isLoaded;
+}
+bool TrainState::getIsOn() const
+{
+    return m_isOn;
+}
+bool TrainState::getIsOutOfEnergy() const
+{
+    return m_outOfEnergy;
+}
+bool TrainState::getReachedDestination() const
+{
+    return m_reachedDestination;
+}
+double TrainState::getTotalEnergyConsumed() const
+{
+    return m_totalEnergyConsumed;
+}
+double TrainState::getTotalEnergyRegenerated() const
+{
+    return m_totalEnergyRegenerated;
+}
+double TrainState::getTotalCarbonDioxideEmitted() const
+{
+    return m_totalCarbonDioxideEmitted;
+}
+int TrainState::getTotalLength() const
+{
+    return m_totalLength;
+}
+double TrainState::getTotalMass() const
+{
+    return m_totalMass;
+}
+QString TrainState::getTrainUserId() const
+{
+    return m_trainUserId;
+}
+double TrainState::getTravelledDistance() const
+{
+    return m_travelledDistance;
+}
+int TrainState::getContainersCount() const
+{
+    return m_containersCount;
 }
 
 } // namespace TrainClient

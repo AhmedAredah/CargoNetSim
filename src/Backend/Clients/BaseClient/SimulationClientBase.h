@@ -236,8 +236,8 @@ protected:
     virtual bool sendCommandAndWait(
         const QString &command, const QJsonObject &params,
         const QStringList &expectedEvents,
-        int            timeoutMs  = 1800000, // 30 minutes
-        const QString &routingKey = QString());
+        int                timeoutMs  = 7200000, // 2 hour
+        const QString     &routingKey = QString());
 
     /**
      * @brief Send a command without waiting for response

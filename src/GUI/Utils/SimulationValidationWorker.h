@@ -73,6 +73,20 @@ private:
         QMap<QString,
              Backend::TruckClient::IntegrationNetwork *>
             &truckNetworks);
+    bool setupSimulationDataForPath(
+        Backend::Path *path,
+        QMap<QString, QList<ShipSimData>>
+            &shipSimulationData,
+        QMap<QString, QList<TrainSimData>>
+            &trainSimulationData,
+        QMap<QString, QList<TruckSimData>>
+            &truckSimulationData,
+        QMap<QString,
+             Backend::TrainClient::NeTrainSimNetwork *>
+            &trainNetworks,
+        QMap<QString,
+             Backend::TruckClient::IntegrationNetwork *>
+            &truckNetworks);
     bool runSimulations(
         const QMap<QString, QList<ShipSimData>>
             &shipSimulationData,
@@ -105,7 +119,8 @@ private:
         int  containerCount);
 
     double calculateShipSegmentCost(
-        Backend::Path *path,
+        Backend::Path *path, Backend::PathSegment *segment,
+        int segmentCounter,
         Backend::ShipClient::ShipSimulationClient
                           *shipClient,
         const QVariantMap &modeWeights,
@@ -113,7 +128,8 @@ private:
         int                containerCount);
 
     double calculateTrainSegmentCost(
-        Backend::Path *path,
+        Backend::Path *path, Backend::PathSegment *segment,
+        int segmentCounter,
         Backend::TrainClient::TrainSimulationClient
                           *trainClient,
         const QVariantMap &modeWeights,
@@ -121,7 +137,8 @@ private:
         int                containerCount);
 
     double calculateTruckSegmentCost(
-        Backend::Path *path,
+        Backend::Path *path, Backend::PathSegment *segment,
+        int segmentCounter,
         Backend::TruckClient::TruckSimulationManager
                           *truckClient,
         const QVariantMap &modeWeights,
@@ -149,6 +166,14 @@ private:
     double
     calculateTerminalDirectCosts(const QJsonObject &config,
                                  bool customsApplied);
+
+    void setSegmentActualDetails(
+        Backend::PathSegment        *segment,
+        const QMap<QString, double> &details,
+        const QString               &underlyingKey);
+
+    void deleteSegmentDetails(Backend::PathSegment *segment,
+                              const QString &underlyingKey);
 };
 
 } // namespace GUI

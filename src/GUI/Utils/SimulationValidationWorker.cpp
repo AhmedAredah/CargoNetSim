@@ -164,6 +164,39 @@ bool SimulationValidationWorker::validateTerminals()
 
 bool SimulationValidationWorker::processSelectedPaths()
 {
+    // // Storage for simulation data
+    // QMap<QString, QList<ShipSimData>> shipSimulationData;
+    // QMap<QString, QList<TrainSimData>>
+    // trainSimulationData; QMap<QString,
+    // QList<TruckSimData>> truckSimulationData;
+    // QMap<QString, Backend::TrainClient::NeTrainSimNetwork
+    // *>
+    //     trainNetworks;
+    // QMap<QString,
+    //      Backend::TruckClient::IntegrationNetwork *>
+    //     truckNetworks;
+
+    // // Setup simulation data based on selected paths
+    // if (!setupSimulationData(shipSimulationData,
+    //                          trainSimulationData,
+    //                          truckSimulationData,
+    //                          trainNetworks,
+    //                          truckNetworks))
+    // {
+    //     return false;
+    // }
+
+    // // Run simulations with the collected data
+    // if (!runSimulations(shipSimulationData,
+    //                     trainSimulationData,
+    //                     truckSimulationData,
+    //                     trainNetworks, truckNetworks))
+    // {
+    //     return false;
+    // }
+
+    // return true;
+
     // Storage for simulation data
     QMap<QString, QList<ShipSimData>>  shipSimulationData;
     QMap<QString, QList<TrainSimData>> trainSimulationData;
@@ -174,13 +207,54 @@ bool SimulationValidationWorker::processSelectedPaths()
          Backend::TruckClient::IntegrationNetwork *>
         truckNetworks;
 
-    // Setup simulation data based on selected paths
-    if (!setupSimulationData(shipSimulationData,
-                             trainSimulationData,
-                             truckSimulationData,
-                             trainNetworks, truckNetworks))
+    // Get the selected paths for simulation validation
+    auto selectedPathsData = mainWindow->shortestPathTable_
+                                 ->getCheckedPathData();
+    if (selectedPathsData.isEmpty())
     {
+        emit errorMessage(
+            "No paths selected for simulation");
         return false;
+    }
+
+    // Process each selected path individually to ensure
+    // independent container distribution
+    for (auto pathData : selectedPathsData)
+    {
+        // Clear the simulation data maps for this specific
+        // path
+        QMap<QString, QList<ShipSimData>>  pathShipSimData;
+        QMap<QString, QList<TrainSimData>> pathTrainSimData;
+        QMap<QString, QList<TruckSimData>> pathTruckSimData;
+
+        // Setup simulation data for just this path
+        if (!setupSimulationDataForPath(
+                pathData->path, pathShipSimData,
+                pathTrainSimData, pathTruckSimData,
+                trainNetworks, truckNetworks))
+        {
+            return false;
+        }
+
+        // Merge this path's simulation data into the
+        // overall maps
+        for (auto networkName : pathShipSimData.keys())
+        {
+            shipSimulationData[networkName].append(
+                pathShipSimData[networkName]);
+        }
+
+        for (auto networkName : pathTrainSimData.keys())
+        {
+            trainSimulationData[networkName].append(
+                pathTrainSimData[networkName]);
+        }
+
+        for (auto networkName : pathTruckSimData.keys())
+        {
+            truckSimulationData[networkName].append(
+                pathTruckSimData[networkName]);
+        }
     }
 
     // Run simulations with the collected data
@@ -195,6 +269,622 @@ bool SimulationValidationWorker::processSelectedPaths()
     return true;
 }
 
+bool SimulationValidationWorker::setupSimulationDataForPath(
+    Backend::Path                      *path,
+    QMap<QString, QList<ShipSimData>>  &shipSimulationData,
+    QMap<QString, QList<TrainSimData>> &trainSimulationData,
+    QMap<QString, QList<TruckSimData>> &truckSimulationData,
+    QMap<QString, Backend::TrainClient::NeTrainSimNetwork *>
+                         &trainNetworks,
+    QMap<QString, Backend::TruckClient::IntegrationNetwork
+                      *> &truckNetworks)
+{
+    auto vehicleController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getVehicleController();
+    auto configController =
+        CargoNetSim::CargoNetSimController::getInstance()
+            .getConfigController();
+    QMap<QString, QVariant> transModes =
+        configController->getTransportModes();
+
+    int shipContainerCount =
+        transModes.value("ship")
+            .toMap()
+            .value("average_container_number", -1)
+            .toInt();
+    int trainContainerCount =
+        transModes.value("rail")
+            .toMap()
+            .value("average_container_number", -1)
+            .toInt();
+    int truckContainerCount =
+        transModes.value("truck")
+            .toMap()
+            .value("average_container_number", -1)
+            .toInt();
+
+    auto originTerminal =
+        UtilitiesFunctions::getOriginTerminal(mainWindow);
+    if (!originTerminal)
+    {
+        emit errorMessage(
+            "There is no origin in the region map");
+        return false;
+    }
+
+    QVariant containersVar =
+        originTerminal->getProperty("Containers");
+    QList<ContainerCore::Container *> containers;
+    if (containersVar.canConvert<
+            QList<ContainerCore::Container *>>())
+    {
+        containers =
+            containersVar
+                .value<QList<ContainerCore::Container *>>();
+    }
+
+    if (containers.isEmpty())
+    {
+        emit errorMessage(
+            "No containers in the origin terminal");
+        return false;
+    }
+
+    // Get segments from the path
+    QList<Backend::PathSegment *> segments =
+        path->getSegments();
+
+    // Keep track of the number of vehicles needed per path
+    int shipCounter      = 0;
+    int trainCounter     = 0;
+    int truckCounter     = 0;
+    int containerCounter = 0;
+
+    // Process each segment in the path
+    for (int segmentCounter = 0;
+         segmentCounter < segments.size(); segmentCounter++)
+    {
+        Backend::PathSegment *segment =
+            segments[segmentCounter];
+        if (!segment)
+        {
+            continue;
+        }
+
+        QString startID = segment->getStart();
+        QString endID   = segment->getEnd();
+
+        // Get terminal items corresponding to the segment
+        // endpoints
+        TerminalItem *startTerminal =
+            mainWindow->regionScene_
+                ->getItemById<TerminalItem>(startID);
+        TerminalItem *endTerminal =
+            mainWindow->regionScene_
+                ->getItemById<TerminalItem>(endID);
+
+        // If not found in region scene, try global map
+        // scene
+        if (!startTerminal)
+        {
+            GlobalTerminalItem *startGlobalTerminal =
+                mainWindow->globalMapScene_
+                    ->getItemById<GlobalTerminalItem>(
+                        startID);
+            if (startGlobalTerminal)
+            {
+                startTerminal =
+                    startGlobalTerminal
+                        ->getLinkedTerminalItem();
+            }
+        }
+
+        if (!endTerminal)
+        {
+            GlobalTerminalItem *endGlobalTerminal =
+                mainWindow->globalMapScene_
+                    ->getItemById<GlobalTerminalItem>(
+                        endID);
+            if (endGlobalTerminal)
+            {
+                endTerminal = endGlobalTerminal
+                                  ->getLinkedTerminalItem();
+            }
+        }
+
+        if (!startTerminal || !endTerminal)
+        {
+            continue;
+        }
+
+        // Check for Rail connectivity
+        if (segment->getMode()
+            == Backend::TransportationTypes::
+                TransportationMode::Train)
+        {
+            // Get map points linked to these terminals for
+            // train networks
+            QList<MapPoint *> startNetworkPoints =
+                UtilitiesFunctions::getMapPointsOfTerminal(
+                    mainWindow->regionScene_, startTerminal,
+                    "*", "*", NetworkType::Train);
+            QList<MapPoint *> endNetworkPoints =
+                UtilitiesFunctions::getMapPointsOfTerminal(
+                    mainWindow->regionScene_, endTerminal,
+                    "*", "*", NetworkType::Train);
+
+            // Find common networks between the terminals
+            auto commonNets = UtilitiesFunctions::
+                getCommonNetworksOfNetworkType(
+                    startNetworkPoints, endNetworkPoints,
+                    NetworkType::Train);
+
+            for (auto networkPair : commonNets)
+            {
+                MapPoint *startPoint = networkPair.first;
+                MapPoint *endPoint   = networkPair.second;
+
+                QString startNodeID =
+                    startPoint
+                        ->getReferencedNetworkNodeID();
+                QString endNodeID =
+                    endPoint->getReferencedNetworkNodeID();
+
+                // Skip if same node (no path)
+                if (startNodeID == endNodeID)
+                {
+                    continue;
+                }
+
+                // Get the network
+                auto network =
+                    startPoint->getReferenceNetwork();
+                if (!network)
+                {
+                    continue;
+                }
+
+                // Check if it's a train network
+                auto trainNetwork = dynamic_cast<
+                    Backend::TrainClient::NeTrainSimNetwork
+                        *>(network);
+                if (!trainNetwork)
+                {
+                    continue;
+                }
+
+                int  startIDint = startNodeID.toInt();
+                int  endIDint   = endNodeID.toInt();
+                auto startNode =
+                    trainNetwork->getNodeByID(startIDint);
+                auto endNode =
+                    trainNetwork->getNodeByID(endIDint);
+                if (!startNode || !endIDint)
+                {
+                    continue;
+                }
+
+                QString startNodeUniqueID =
+                    startNode->getInternalUniqueID();
+                QString endNodeUniqueID =
+                    endNode->getInternalUniqueID();
+
+                // Store the network for later use
+                QString networkName =
+                    trainNetwork->getNetworkName();
+                trainNetworks[networkName] = trainNetwork;
+
+                // Make a copy of the containers to
+                // distribute to trains
+                QList<ContainerCore::Container *>
+                    containersCopy = containers;
+
+                // Create trains based on number of
+                // containers
+                int numTrains = (containersCopy.size()
+                                 + trainContainerCount - 1)
+                                / trainContainerCount;
+                numTrains = qMax(
+                    1, numTrains); // At least one train
+
+                for (int i = 0; i < numTrains; i++)
+                {
+                    // Create a new train
+                    QString trainId =
+                        QString("%1_%2_%3")
+                            .arg(path->getPathId())
+                            .arg(segmentCounter)
+                            .arg(trainCounter++);
+                    Backend::Train *train =
+                        vehicleController->getRandomTrain()
+                            ->copy();
+                    train->setUserId(trainId);
+
+                    // Set the train's path
+                    QList<int> trainPath;
+                    trainPath.append(startNodeID.toInt());
+                    trainPath.append(endNodeID.toInt());
+                    train->setTrainPathOnNodeIds(trainPath);
+
+                    // Add loading time offset for each
+                    // train
+                    train->setLoadTime(
+                        trainCounter
+                        * 100); // 100 seconds between
+                                // trains
+
+                    // Assign containers to this train
+                    QList<ContainerCore::Container *>
+                        trainContainers;
+                    int containersToAdd =
+                        qMin(trainContainerCount,
+                             containersCopy.size());
+
+                    for (int j = 0; j < containersToAdd;
+                         j++)
+                    {
+                        if (!containersCopy.isEmpty())
+                        {
+                            // Get a container and make a
+                            // copy with unique ID
+                            ContainerCore::Container
+                                *originalContainer =
+                                    containersCopy
+                                        .takeFirst();
+                            ContainerCore::Container
+                                *containerCopy =
+                                    originalContainer
+                                        ->copy();
+
+                            // Update the container's ID to
+                            // make it unique
+                            QString newId =
+                                QString("%1_%2_%3")
+                                    .arg(path->getPathId())
+                                    .arg(
+                                        originalContainer
+                                            ->getContainerID())
+                                    .arg(
+                                        containerCounter++);
+                            containerCopy->setContainerID(
+                                newId);
+
+                            containerCopy
+                                ->setContainerCurrentLocation(
+                                    startNodeID);
+                            containerCopy->addDestination(
+                                endNodeID);
+
+                            trainContainers.append(
+                                containerCopy);
+                        }
+                    }
+
+                    // Add the train data to our simulation
+                    // data structure
+                    TrainSimData trainData;
+                    trainData.train      = train;
+                    trainData.containers = trainContainers;
+
+                    if (!trainSimulationData.contains(
+                            networkName))
+                    {
+                        trainSimulationData[networkName] =
+                            QList<TrainSimData>();
+                    }
+
+                    trainSimulationData[networkName].append(
+                        trainData);
+                }
+            }
+        }
+
+        // Check for Truck connectivity
+        else if (segment->getMode()
+                 == Backend::TransportationTypes::
+                     TransportationMode::Truck)
+        {
+            // Similar implementation for Truck networks
+            QList<MapPoint *> startNetworkPoints =
+                UtilitiesFunctions::getMapPointsOfTerminal(
+                    mainWindow->regionScene_, startTerminal,
+                    "*", "*", NetworkType::Truck);
+            QList<MapPoint *> endNetworkPoints =
+                UtilitiesFunctions::getMapPointsOfTerminal(
+                    mainWindow->regionScene_, endTerminal,
+                    "*", "*", NetworkType::Truck);
+
+            // Find common networks between the terminals
+            auto commonNets = UtilitiesFunctions::
+                getCommonNetworksOfNetworkType(
+                    startNetworkPoints, endNetworkPoints,
+                    NetworkType::Truck);
+
+            for (auto networkPair : commonNets)
+            {
+                MapPoint *startPoint = networkPair.first;
+                MapPoint *endPoint   = networkPair.second;
+
+                QString startNodeID =
+                    startPoint
+                        ->getReferencedNetworkNodeID();
+                QString endNodeID =
+                    endPoint->getReferencedNetworkNodeID();
+
+                if (startNodeID == endNodeID)
+                {
+                    continue;
+                }
+
+                // Get the network
+                auto network =
+                    startPoint->getReferenceNetwork();
+                if (!network)
+                {
+                    continue;
+                }
+
+                // Check if it's a truck network
+                auto truckNetwork = dynamic_cast<
+                    Backend::TruckClient::IntegrationNetwork
+                        *>(network);
+                if (!truckNetwork)
+                {
+                    continue;
+                }
+
+                // Store the network for later use
+                QString networkName =
+                    truckNetwork->getNetworkName();
+                truckNetworks[networkName] = truckNetwork;
+
+                // Make a copy of the containers to
+                // distribute to trucks
+                QList<ContainerCore::Container *>
+                    containersCopy = containers;
+
+                // Create truck trips based on number of
+                // containers
+                int numTrucks = (containersCopy.size()
+                                 + truckContainerCount - 1)
+                                / truckContainerCount;
+                numTrucks = qMax(
+                    1, numTrucks); // At least one truck
+
+                for (int i = 0; i < numTrucks; i++)
+                {
+                    // Create a new truck trip
+                    QString tripId =
+                        QString("%1_%2_%3")
+                            .arg(path->getPathId())
+                            .arg(segmentCounter)
+                            .arg(truckCounter++);
+
+                    // Assign containers to this truck
+                    QList<ContainerCore::Container *>
+                        truckContainers;
+                    int containersToAdd =
+                        qMin(truckContainerCount,
+                             containersCopy.size());
+
+                    for (int j = 0; j < containersToAdd;
+                         j++)
+                    {
+                        if (!containersCopy.isEmpty())
+                        {
+                            // Get a container and make a
+                            // copy with unique ID
+                            ContainerCore::Container
+                                *originalContainer =
+                                    containersCopy
+                                        .takeFirst();
+                            ContainerCore::Container
+                                *containerCopy =
+                                    originalContainer
+                                        ->copy();
+
+                            // Update the container's ID to
+                            // make it unique
+                            QString newId =
+                                QString("%1_%2_%3")
+                                    .arg(path->getPathId())
+                                    .arg(
+                                        originalContainer
+                                            ->getContainerID())
+                                    .arg(
+                                        containerCounter++);
+                            containerCopy->setContainerID(
+                                newId);
+
+                            // Update origin and
+                            // destinations
+                            containerCopy
+                                ->setContainerCurrentLocation(
+                                    startTerminal
+                                        ->getProperty(
+                                            "Name")
+                                        .toString());
+                            containerCopy->addDestination(
+                                endTerminal
+                                    ->getProperty("Name")
+                                    .toString());
+
+                            truckContainers.append(
+                                containerCopy);
+                        }
+                    }
+
+                    // Add the truck data to our simulation
+                    // data structure
+                    TruckSimData truckData;
+                    truckData.tripId = tripId;
+                    truckData.originNode =
+                        startNodeID.toInt();
+                    truckData.destinationNode =
+                        endNodeID.toInt();
+                    truckData.containers = truckContainers;
+
+                    if (!truckSimulationData.contains(
+                            networkName))
+                    {
+                        truckSimulationData[networkName] =
+                            QList<TruckSimData>();
+                    }
+
+                    truckSimulationData[networkName].append(
+                        truckData);
+                }
+            }
+        }
+
+        // Check for Ship connectivity
+        else if (segment->getMode()
+                 == Backend::TransportationTypes::
+                     TransportationMode::Ship)
+        {
+            // Get global positions of terminals
+            QPointF startGlobalPos;
+            QPointF endGlobalPos;
+
+            // Get global terminal items if they exist
+            GlobalTerminalItem *startGlobalItem =
+                startTerminal->getGlobalTerminalItem();
+            GlobalTerminalItem *endGlobalItem =
+                endTerminal->getGlobalTerminalItem();
+
+            if (startGlobalItem && endGlobalItem)
+            {
+                startGlobalPos =
+                    mainWindow->globalMapView_
+                        ->sceneToWGS84(
+                            startGlobalItem->pos());
+                endGlobalPos =
+                    mainWindow->globalMapView_
+                        ->sceneToWGS84(
+                            endGlobalItem->pos());
+
+                // Define network name - either same region
+                // or different regions
+                QString networkName;
+                if (startTerminal->getRegion()
+                    == endTerminal->getRegion())
+                {
+                    networkName =
+                        startTerminal->getRegion();
+                }
+                else
+                {
+                    networkName =
+                        startTerminal->getRegion() + "_to_"
+                        + endTerminal->getRegion();
+                }
+
+                // Make a copy of the containers to
+                // distribute to ships
+                QList<ContainerCore::Container *>
+                    containersCopy = containers;
+
+                // Create ships based on number of
+                // containers
+                int numShips = (containersCopy.size()
+                                + shipContainerCount - 1)
+                               / shipContainerCount;
+                numShips =
+                    qMax(1, numShips); // At least one ship
+
+                for (int i = 0; i < numShips; i++)
+                {
+                    // Create a new ship
+                    QString shipId =
+                        QString("%1_%2_%3")
+                            .arg(path->getPathId())
+                            .arg(segmentCounter)
+                            .arg(shipCounter++);
+                    Backend::Ship *ship =
+                        vehicleController->getRandomShip()
+                            ->copy();
+                    ship->setUserId(shipId);
+
+                    // Set the ship's path
+                    QList<QPointF> shipPath;
+                    shipPath.append(startGlobalPos);
+                    shipPath.append(endGlobalPos);
+                    ship->setPathCoordinates(shipPath);
+
+                    // Assign containers to this ship
+                    QList<ContainerCore::Container *>
+                        shipContainers;
+                    int containersToAdd =
+                        qMin(shipContainerCount,
+                             containersCopy.size());
+
+                    for (int j = 0; j < containersToAdd;
+                         j++)
+                    {
+                        if (!containersCopy.isEmpty())
+                        {
+                            // Get a container and make a
+                            // copy with unique ID
+                            ContainerCore::Container
+                                *originalContainer =
+                                    containersCopy
+                                        .takeFirst();
+                            ContainerCore::Container
+                                *containerCopy =
+                                    originalContainer
+                                        ->copy();
+
+                            // Update the container's ID to
+                            // make it unique
+                            QString newId =
+                                QString("%1_%2_%3")
+                                    .arg(path->getPathId())
+                                    .arg(
+                                        originalContainer
+                                            ->getContainerID())
+                                    .arg(
+                                        containerCounter++);
+                            containerCopy->setContainerID(
+                                newId);
+
+                            // Update origin and
+                            // destinations
+                            containerCopy
+                                ->setContainerCurrentLocation(
+                                    startTerminal->getID());
+                            containerCopy->addDestination(
+                                endTerminal->getID());
+
+                            shipContainers.append(
+                                containerCopy);
+                        }
+                    }
+
+                    // Add the ship data to our simulation
+                    // data structure
+                    ShipSimData shipData;
+                    shipData.ship       = ship;
+                    shipData.containers = shipContainers;
+                    shipData.destinationTerminal =
+                        endTerminal->getID();
+
+                    if (!shipSimulationData.contains(
+                            networkName))
+                    {
+                        shipSimulationData[networkName] =
+                            QList<ShipSimData>();
+                    }
+
+                    shipSimulationData[networkName].append(
+                        shipData);
+                }
+            }
+        }
+    }
+
+    return true;
+}
 bool SimulationValidationWorker::setupSimulationData(
     QMap<QString, QList<ShipSimData>>  &shipSimulationData,
     QMap<QString, QList<TrainSimData>> &trainSimulationData,
@@ -267,8 +957,13 @@ bool SimulationValidationWorker::setupSimulationData(
         int containerCounter = 0;
 
         // Process each segment in the path
-        for (auto segment : segments)
+        for (int segmentCounter = 0;
+             segmentCounter < segments.size();
+             segmentCounter++)
         {
+            Backend::PathSegment *segment =
+                segments[segmentCounter];
+
             if (!segment)
             {
                 continue;
@@ -432,8 +1127,9 @@ bool SimulationValidationWorker::setupSimulationData(
                     {
                         // Create a new train
                         QString trainId =
-                            QString("%1_%2")
+                            QString("%1_%2_%3")
                                 .arg(path->getPathId())
+                                .arg(segmentCounter)
                                 .arg(trainCounter++);
                         Backend::Train *train =
                             vehicleController
@@ -612,8 +1308,9 @@ bool SimulationValidationWorker::setupSimulationData(
                     {
                         // Create a new truck trip
                         QString tripId =
-                            QString("%1_%2")
+                            QString("%1_%2_%3")
                                 .arg(path->getPathId())
+                                .arg(segmentCounter)
                                 .arg(truckCounter++);
 
                         // Assign containers to this truck
@@ -759,8 +1456,9 @@ bool SimulationValidationWorker::setupSimulationData(
                     {
                         // Create a new ship
                         QString shipId =
-                            QString("%1_%2")
+                            QString("%1_%2_%3")
                                 .arg(path->getPathId())
+                                .arg(segmentCounter)
                                 .arg(shipCounter++);
                         Backend::Ship *ship =
                             vehicleController
@@ -1033,15 +1731,22 @@ bool SimulationValidationWorker::runSimulations(
     if (!trainSimulationData.isEmpty())
     {
         emit statusMessage("Running train simulations...");
-        trainClient->runSimulator(
-            trainSimulationData.keys());
+
+        for (auto network : trainSimulationData.keys())
+        {
+            trainClient->runSimulator({network});
+        }
     }
 
     // Run the ship simulations
     if (!shipSimulationData.isEmpty())
     {
         emit statusMessage("Running ship simulations...");
-        shipClient->runSimulator(shipSimulationData.keys());
+
+        for (auto network : shipSimulationData.keys())
+        {
+            shipClient->runSimulator({network});
+        }
     }
 
     // Run the truck simulations
@@ -1082,6 +1787,25 @@ void SimulationValidationWorker::extractResults()
     // Get the selected paths for simulation validation
     auto selectedPathsData = mainWindow->shortestPathTable_
                                  ->getCheckedPathData();
+
+    // clear actual segments attributes and costs
+    for (auto pathData : selectedPathsData)
+    {
+        Backend::Path *path = pathData->path;
+        if (!path)
+        {
+            continue;
+        }
+        // Get segments from the path
+        QList<Backend::PathSegment *> segments =
+            path->getSegments();
+
+        for (auto segment : segments)
+        {
+            deleteSegmentDetails(segment, "actual_values");
+            deleteSegmentDetails(segment, "actual_cost");
+        }
+    }
 
     emit statusMessage("Extracting simulation results...");
 
@@ -1189,8 +1913,11 @@ double SimulationValidationWorker::calculateEdgeCosts(
     double totalEdgeCosts = 0.0;
 
     // Process each segment in the path
-    for (auto segment : segments)
+    for (int segmentCounter = 0;
+         segmentCounter < segments.size(); segmentCounter++)
     {
+        Backend::PathSegment *segment =
+            segments[segmentCounter];
         if (!segment)
         {
             continue;
@@ -1225,24 +1952,27 @@ double SimulationValidationWorker::calculateEdgeCosts(
                 TransportationMode::Ship)
         {
             segmentCost = calculateShipSegmentCost(
-                path, shipClient, modeWeights,
-                transportModes, containerCount);
+                path, segment, segmentCounter, shipClient,
+                modeWeights, transportModes,
+                containerCount);
         }
         else if (mode
                  == Backend::TransportationTypes::
                      TransportationMode::Train)
         {
             segmentCost = calculateTrainSegmentCost(
-                path, trainClient, modeWeights,
-                transportModes, containerCount);
+                path, segment, segmentCounter, trainClient,
+                modeWeights, transportModes,
+                containerCount);
         }
         else if (mode
                  == Backend::TransportationTypes::
                      TransportationMode::Truck)
         {
             segmentCost = calculateTruckSegmentCost(
-                path, truckClient, modeWeights,
-                transportModes, containerCount);
+                path, segment, segmentCounter, truckClient,
+                modeWeights, transportModes,
+                containerCount);
         }
 
         // Add to total edge costs
@@ -1253,7 +1983,8 @@ double SimulationValidationWorker::calculateEdgeCosts(
 }
 
 double SimulationValidationWorker::calculateShipSegmentCost(
-    Backend::Path                             *path,
+    Backend::Path *path, Backend::PathSegment *segment,
+    int segmentCounter,
     Backend::ShipClient::ShipSimulationClient *shipClient,
     const QVariantMap                         &modeWeights,
     const QVariantMap &transportModes, int containerCount)
@@ -1277,21 +2008,33 @@ double SimulationValidationWorker::calculateShipSegmentCost(
             if (shipState)
             {
                 // Check if this ship is part of our path
-                QString shipId = shipState->shipId();
-                if (shipId.startsWith(QString("%1_").arg(
-                        path->getPathId())))
+                // and segment
+                QString     shipId = shipState->getShipId();
+                QStringList idParts = shipId.split('_');
+
+                // Parse the ID to get path and segment IDs
+                if (idParts.size() >= 3
+                    && idParts[0]
+                           == QString::number(
+                               path->getPathId())
+                    && idParts[1]
+                           == QString::number(
+                               segmentCounter))
                 {
                     // Count this ship
                     shipCount++;
 
                     // Extract metrics
-                    travelTime += shipState->tripTime();
+                    travelTime += shipState->getTripTime()
+                                  / 3600.0; // sec to hr
                     distance +=
-                        shipState->travelledDistance();
+                        shipState->getTravelledDistance()
+                        / 1000.0;
                     carbonEmissions +=
-                        shipState->carbonEmissions();
+                        shipState->getCarbonEmissions()
+                        / 1000.0; // kg to ton
                     energyConsumption +=
-                        shipState->energyConsumption();
+                        shipState->getEnergyConsumption();
 
                     // Use risk factor from transportModes
                     // config
@@ -1331,28 +2074,53 @@ double SimulationValidationWorker::calculateShipSegmentCost(
     // Adjust metrics by ratio
     carbonEmissions *= containerToCapacityRatio;
     energyConsumption *= containerToCapacityRatio;
-    risk *= containerToCapacityRatio;
 
     // Apply weights to metrics
-    double segmentCost = 0.0;
-    segmentCost +=
+    QMap<QString, double> simulatedValues;
+    QMap<QString, double> simulatedCost;
+    simulatedValues["travelTime"]      = travelTime;
+    simulatedValues["distance"]        = distance;
+    simulatedValues["carbonEmissions"] = carbonEmissions;
+    simulatedValues["energyConsumption"] =
+        energyConsumption;
+    simulatedValues["risk"] = risk;
+    simulatedValues["cost"] = 0.0;
+
+    simulatedCost["travelTime"] =
         travelTime * modeWeights["travelTime"].toDouble();
-    segmentCost +=
+    simulatedCost["distance"] =
         distance * modeWeights["distance"].toDouble();
-    segmentCost +=
+    simulatedCost["carbonEmissions"] =
         carbonEmissions
-        * modeWeights["carbonEmissions"].toDouble();
-    segmentCost +=
+        * modeWeights["carbonEmissions"].toDouble(); // kg
+    simulatedCost["energyConsumption"] =
         energyConsumption
-        * modeWeights["energyConsumption"].toDouble();
-    segmentCost += risk * modeWeights["risk"].toDouble();
+        * modeWeights["energyConsumption"]
+              .toDouble(); // kWh
+    simulatedCost["risk"] =
+        risk * modeWeights["risk"].toDouble();
+    simulatedCost["cost"] = 0.0;
+    double segmentCost =
+        simulatedCost["travelTime"]
+        + simulatedCost["distance"]
+        + simulatedCost["carbonEmissions"]
+        + simulatedCost["energyConsumption"]
+        + simulatedCost["risk"];
+
+    // Add to the path segment
+    setSegmentActualDetails(segment, simulatedValues,
+                            "actual_values");
+
+    setSegmentActualDetails(segment, simulatedCost,
+                            "actual_cost");
 
     return segmentCost;
 }
 
 double
 SimulationValidationWorker::calculateTrainSegmentCost(
-    Backend::Path *path,
+    Backend::Path *path, Backend::PathSegment *segment,
+    int segmentCounter,
     Backend::TrainClient::TrainSimulationClient
                       *trainClient,
     const QVariantMap &modeWeights,
@@ -1377,22 +2145,36 @@ SimulationValidationWorker::calculateTrainSegmentCost(
             if (trainState)
             {
                 // Check if this train is part of our path
-                QString trainId = trainState->m_trainUserId;
-                if (trainId.startsWith(QString("%1_").arg(
-                        path->getPathId())))
+                // and segment
+                QString trainId =
+                    trainState->getTrainUserId();
+                QStringList idParts = trainId.split('_');
+
+                // Parse the ID to get path and segment IDs
+                if (idParts.size() >= 3
+                    && idParts[0]
+                           == QString::number(
+                               path->getPathId())
+                    && idParts[1]
+                           == QString::number(
+                               segmentCounter))
                 {
                     // Count this train
                     trainCount++;
 
                     // Extract metrics
-                    travelTime += trainState->m_tripTime;
+                    travelTime += trainState->getTripTime()
+                                  / 3600; // sec t0 hr
                     distance +=
-                        trainState->m_travelledDistance;
+                        trainState->getTravelledDistance()
+                        / 1000.0; // m to km
                     carbonEmissions +=
                         trainState
-                            ->m_totalCarbonDioxideEmitted;
+                            ->getTotalCarbonDioxideEmitted()
+                        / 1000.0; // kg to ton
                     energyConsumption +=
-                        trainState->m_totalEnergyConsumed;
+                        trainState
+                            ->getTotalEnergyConsumed();
 
                     // Use risk factor from transportModes
                     // config
@@ -1432,30 +2214,54 @@ SimulationValidationWorker::calculateTrainSegmentCost(
     // Adjust metrics by ratio
     carbonEmissions *= containerToCapacityRatio;
     energyConsumption *= containerToCapacityRatio;
-    risk *= containerToCapacityRatio;
 
     // Apply weights to metrics
-    double segmentCost = 0.0;
-    segmentCost += travelTime
-                   * modeWeights["travelTime"].toDouble()
-                   / 3600.0; // sec to hr
-    segmentCost += distance
-                   * modeWeights["distance"].toDouble()
-                   / 1000.0; // m to km
-    segmentCost +=
+    QMap<QString, double> simulatedValues;
+    QMap<QString, double> simulatedCost;
+    simulatedValues["travelTime"]      = travelTime;
+    simulatedValues["distance"]        = distance;
+    simulatedValues["carbonEmissions"] = carbonEmissions;
+    simulatedValues["energyConsumption"] =
+        energyConsumption;
+    simulatedValues["risk"] = risk;
+    simulatedValues["cost"] = 0.0;
+
+    simulatedCost["travelTime"] =
+        travelTime * modeWeights["travelTime"].toDouble();
+    simulatedCost["distance"] =
+        distance * modeWeights["distance"].toDouble();
+    simulatedCost["carbonEmissions"] =
         carbonEmissions
         * modeWeights["carbonEmissions"].toDouble(); // kg
-    segmentCost += energyConsumption
-                   * modeWeights["energyConsumption"]
-                         .toDouble(); // kWh
-    segmentCost += risk * modeWeights["risk"].toDouble();
+    simulatedCost["energyConsumption"] =
+        energyConsumption
+        * modeWeights["energyConsumption"]
+              .toDouble(); // kWh
+    simulatedCost["risk"] =
+        risk * modeWeights["risk"].toDouble();
+    simulatedCost["cost"] = 0.0;
+
+    double segmentCost =
+        simulatedCost["travelTime"]
+        + simulatedCost["distance"]
+        + simulatedCost["carbonEmissions"]
+        + simulatedCost["energyConsumption"]
+        + simulatedCost["risk"];
+
+    // Add to the path segment
+    setSegmentActualDetails(segment, simulatedValues,
+                            "actual_values");
+
+    setSegmentActualDetails(segment, simulatedCost,
+                            "actual_cost");
 
     return segmentCost;
 }
 
 double
 SimulationValidationWorker::calculateTruckSegmentCost(
-    Backend::Path *path,
+    Backend::Path *path, Backend::PathSegment *segment,
+    int segmentCounter,
     Backend::TruckClient::TruckSimulationManager
                       *truckClient,
     const QVariantMap &modeWeights,
@@ -1527,18 +2333,47 @@ SimulationValidationWorker::calculateTruckSegmentCost(
     risk *= containerToCapacityRatio;
 
     // Apply weights to metrics
-    double segmentCost = 0.0;
-    segmentCost +=
-        travelTime * modeWeights["travelTime"].toDouble();
-    segmentCost +=
-        distance * modeWeights["distance"].toDouble();
-    segmentCost +=
+    // Apply weights to metrics
+    QMap<QString, double> simulatedValues;
+    QMap<QString, double> simulatedCost;
+    simulatedValues["travelTime"]      = travelTime;
+    simulatedValues["distance"]        = distance;
+    simulatedValues["carbonEmissions"] = carbonEmissions;
+    simulatedValues["energyConsumption"] =
+        energyConsumption;
+    simulatedValues["risk"] = risk;
+    simulatedValues["cost"] = 0.0;
+
+    simulatedCost["travelTime"] =
+        travelTime * modeWeights["travelTime"].toDouble()
+        / 3600.0; // sec to hr
+    simulatedCost["distance"] =
+        distance * modeWeights["distance"].toDouble()
+        / 1000.0; // m to km
+    simulatedCost["carbonEmissions"] =
         carbonEmissions
-        * modeWeights["carbonEmissions"].toDouble();
-    segmentCost +=
+        * modeWeights["carbonEmissions"].toDouble(); // kg
+    simulatedCost["energyConsumption"] =
         energyConsumption
-        * modeWeights["energyConsumption"].toDouble();
-    segmentCost += risk * modeWeights["risk"].toDouble();
+        * modeWeights["energyConsumption"]
+              .toDouble(); // kWh
+    simulatedCost["risk"] =
+        risk * modeWeights["risk"].toDouble();
+    simulatedCost["cost"] = 0.0;
+
+    double segmentCost =
+        simulatedCost["travelTime"]
+        + simulatedCost["distance"]
+        + simulatedCost["carbonEmissions"]
+        + simulatedCost["energyConsumption"]
+        + simulatedCost["risk"];
+
+    // Add to the path segment
+    setSegmentActualDetails(segment, simulatedValues,
+                            "actual_values");
+
+    setSegmentActualDetails(segment, simulatedCost,
+                            "actual_cost");
 
     return segmentCost;
 }
@@ -1549,33 +2384,78 @@ double SimulationValidationWorker::calculateTerminalCosts(
     const QVariantMap &costFunctionWeights,
     int                containerCount)
 {
+
     double totalTerminalCosts = 0.0;
+    int    segmentCount       = segments.size();
+
+    // Early return for empty list
+    if (segmentCount == 0)
+    {
+        return totalTerminalCosts;
+    }
+
+    for (int i = 0; i < segmentCount; i++)
+    {
+        auto attributes = segments[i]->getAttributes();
+        if (!attributes.contains("estimated_cost"))
+        {
+            continue;
+        }
+
+        auto terminalCostsMap = attributes["estimated_cost"]
+                                    .toObject()
+                                    .toVariantMap();
+        double previousCost =
+            terminalCostsMap
+                .value("previousTerminalCost", 0.0)
+                .toDouble();
+        double nextCost =
+            terminalCostsMap.value("nextTerminalCost", 0.0)
+                .toDouble();
+
+        // Calculate costs based on segment position
+        // First segment: full previous, half next
+        // Last segment: half previous, full next
+        // Middle segment: half of both
+        // Single segment: full both
+        bool isFirst = (i == 0);
+        bool isLast  = (i == segmentCount - 1);
+
+        totalTerminalCosts +=
+            (isFirst ? previousCost : previousCost / 2.0)
+            + (isLast ? nextCost : nextCost / 2.0);
+    }
+
+    return totalTerminalCosts;
+
+    // double totalTerminalCosts = 0.0;
 
     // Process terminal costs - only for intermediate
     // terminals where mode changes Skip first (origin) and
     // last (destination) terminals
-    for (int i = 1; i < terminals.size() - 1; i++)
-    {
-        // Check if this terminal represents a mode change
-        if (i > 0 && i < segments.size())
-        {
-            Backend::TransportationTypes::TransportationMode
-                prevMode = segments[i - 1]->getMode();
-            Backend::TransportationTypes::TransportationMode
-                nextMode = segments[i]->getMode();
+    // for (int i = 1; i < terminals.size() - 1; i++)
+    // {
+    //     // Check if this terminal represents a mode
+    //     change if (i > 0 && i < segments.size())
+    //     {
+    //         Backend::TransportationTypes::TransportationMode
+    //             prevMode = segments[i - 1]->getMode();
+    //         Backend::TransportationTypes::TransportationMode
+    //             nextMode = segments[i]->getMode();
 
-            // If modes are different, include terminal
-            // costs
-            if (prevMode != nextMode)
-            {
-                double terminalCost =
-                    calculateSingleTerminalCost(
-                        terminals[i], costFunctionWeights,
-                        containerCount);
-                totalTerminalCosts += terminalCost;
-            }
-        }
-    }
+    //         // If modes are different, include terminal
+    //         // costs
+    //         if (prevMode != nextMode)
+    //         {
+    //             double terminalCost =
+    //                 calculateSingleTerminalCost(
+    //                     terminals[i],
+    //                     costFunctionWeights,
+    //                     containerCount);
+    //             totalTerminalCosts += terminalCost;
+    //         }
+    //     }
+    // }
 
     return totalTerminalCosts;
 }
@@ -1797,6 +2677,77 @@ SimulationValidationWorker::calculateTerminalDirectCosts(
     }
 
     return terminalCost;
+}
+
+void SimulationValidationWorker::setSegmentActualDetails(
+    Backend::PathSegment        *segment,
+    const QMap<QString, double> &details,
+    const QString               &underlyingKey)
+{
+    if (!segment)
+    {
+        return;
+    }
+    // Get current attributes
+    QJsonObject currentAttributes =
+        segment->getAttributes();
+    // Create or get the underlying object
+    QJsonObject underlyingObject;
+    if (currentAttributes.contains(underlyingKey)
+        && currentAttributes[underlyingKey].isObject())
+    {
+        underlyingObject =
+            currentAttributes[underlyingKey].toObject();
+    }
+    // Set the segment details
+    for (auto it = details.constBegin();
+         it != details.constEnd(); ++it)
+    {
+        // Check if the key already exists in the underlying
+        // object
+        if (underlyingObject.contains(it.key()))
+        {
+            // Add the old value to the new value
+            double oldValue =
+                underlyingObject[it.key()].toDouble();
+            underlyingObject[it.key()] =
+                oldValue + it.value();
+        }
+        else
+        {
+            // Set the new value directly if key doesn't
+            // exist
+            underlyingObject[it.key()] = it.value();
+        }
+    }
+    // Update the attributes with the modified object
+    currentAttributes[underlyingKey] = underlyingObject;
+    // Set the updated attributes back to the segment
+    segment->setAttributes(currentAttributes);
+}
+
+void SimulationValidationWorker::deleteSegmentDetails(
+    Backend::PathSegment *segment,
+    const QString        &underlyingKey)
+{
+    if (!segment)
+    {
+        return;
+    }
+
+    // Get current attributes
+    QJsonObject currentAttributes =
+        segment->getAttributes();
+
+    // Check if the underlyingKey exists in the attributes
+    if (currentAttributes.contains(underlyingKey))
+    {
+        // Remove the underlyingKey and all values below it
+        currentAttributes.remove(underlyingKey);
+
+        // Set the updated attributes back to the segment
+        segment->setAttributes(currentAttributes);
+    }
 }
 
 } // namespace GUI

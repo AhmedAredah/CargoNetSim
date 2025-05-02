@@ -69,6 +69,11 @@ public:
         const QString &networkName, NetworkType networkType,
         int startNodeId, int endNodeId);
 
+    static bool moveNetwork(
+        MainWindow *mainWindow, NetworkType networkType,
+        const QString &networkName, const QPointF &offset,
+        Backend::RegionData *regionData);
+
 protected:
     static bool
     importTrainNetwork(MainWindow          *mainWindow,

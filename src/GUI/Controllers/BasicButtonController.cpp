@@ -762,10 +762,10 @@ void BasicButtonController::newProject(
             mainWindow->regionManager_->clearRegions();
 
             // Reset current region
-            CargoNetSim::CargoNetSimController::
-                getInstance()
-                    .getRegionDataController()
-                    ->setCurrentRegion("Default Region");
+            // CargoNetSim::CargoNetSimController::
+            //     getInstance()
+            //         .getRegionDataController()
+            //         ->setCurrentRegion("Default Region");
 
             // Reset network registries
             CargoNetSim::CargoNetSimController::

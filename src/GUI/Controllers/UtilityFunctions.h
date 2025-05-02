@@ -119,7 +119,9 @@ public:
         CargoNetSim::GUI::ConnectionLine *connection,
         const CargoNetSim::Backend::ShortestPathResult
                                       &pathResult,
-        CargoNetSim::GUI::NetworkType &networkType);
+        CargoNetSim::GUI::NetworkType &networkType,
+        std::optional<bool> overrideUseNetworkValue =
+            std::nullopt);
 
     static bool processNetworkModeConnection(
         MainWindow                     *mainWindow,
@@ -134,6 +136,25 @@ public:
 
     static void
     validateSelectedSimulation(MainWindow *mainWindow);
+
+    static void linkSelectedTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+
+    static void onLinkTerminalsToNetworkActionTriggered(
+        MainWindow *mainWindow);
+
+    static void unlinkSelectedTerminalsToNetwork(
+        MainWindow               *mainWindow,
+        const QList<NetworkType> &networkTypes);
+    static void onUnlinkTerminalsToNetworkActionTriggered(
+        MainWindow *mainWindow);
+
+    static void
+    openTerminalConnectionSelector(MainWindow *mainWindow);
+
+    static void
+    onShowMoveNetworkDialog(MainWindow *mainWindow);
 };
 
 } // namespace GUI

@@ -10,10 +10,8 @@
 #include <QObject>
 #include <QString>
 #include <QThread>
+#include <QVariant>
 #include <QWaitCondition>
-
-#include "Backend/Clients/BaseClient/SimulationClientBase.h"
-#include "Backend/Commons/ClientType.h"
 
 namespace CargoNetSim
 {
@@ -53,18 +51,37 @@ public:
      */
     QJsonObject toJson() const;
 
-    // Accessor methods for common properties
-    QString shipId() const;
-    double  travelledDistance() const;
-    double  currentSpeed() const;
-    double  currentAcceleration() const;
-    bool    isLoaded() const;
-    bool    reachedDestination() const;
-    double  tripTime() const;
-    int     containersCount() const;
-    QString closestPort() const;
-    double  energyConsumption() const;
-    double  carbonEmissions() const;
+    // Accessor methods - getters for all variables
+    QString getShipId() const;
+    double  getTravelledDistance() const;
+    double  getCurrentAcceleration() const;
+    double  getPreviousAcceleration() const;
+    double  getCurrentSpeed() const;
+    double  getPreviousSpeed() const;
+    double  getTotalThrust() const;
+    double  getTotalResistance() const;
+    double  getVesselWeight() const;
+    double  getCargoWeight() const;
+    bool    getIsOn() const;
+    bool    getIsOutOfEnergy() const;
+    bool    getIsLoaded() const;
+    bool    getReachedDestination() const;
+    double  getTripTime() const;
+    int     getContainersCount() const;
+    QString getClosestPort() const;
+    double  getEnergyConsumption() const;
+    const QMap<QString, double> &getFuelConsumption() const;
+    double                       getCarbonEmissions() const;
+    const QList<QVariantMap>    &getEnergySources() const;
+    double                       getLatitude() const;
+    double                       getLongitude() const;
+    const QList<double>         &getPosition() const;
+    double                       getWaterDepth() const;
+    double                       getSalinity() const;
+    double                       getTemperature() const;
+    double                       getWaveHeight() const;
+    double                       getWaveLength() const;
+    double getWaveAngularFrequency() const;
 
 private:
     QString m_shipId;

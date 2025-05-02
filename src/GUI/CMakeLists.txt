@@ -64,6 +64,10 @@ set(GUI_SOURCES
     Utils/PathFindingWorker.cpp
     Utils/SimulationValidationWorker.h
     Utils/SimulationValidationWorker.cpp
+    Utils/PathReportGenerator.h
+    Utils/PathReportGenerator.cpp
+    Utils/PathReportExporter.h
+    Utils/PathReportExporter.cpp
     
     # Widgets
     Widgets/ColorPickerDialog.cpp
@@ -100,6 +104,14 @@ set(GUI_SOURCES
     Widgets/SpinnerWidget.cpp
     Widgets/PathComparisonDialog.h
     Widgets/PathComparisonDialog.cpp
+    Widgets/NetworkSelectionDialog.h
+    Widgets/NetworkSelectionDialog.cpp
+    Widgets/ScrollableToolBar.h
+    Widgets/ScrollableToolBar.cpp
+    Widgets/TerminalSelectionDialog.h
+    Widgets/TerminalSelectionDialog.cpp
+    Widgets/NetworkMoveDialog.h
+    Widgets/NetworkMoveDialog.cpp
 )
 
 # Create the GUI library
@@ -115,6 +127,7 @@ target_link_libraries(CargoNetSimGUI
     Qt6::Xml
     Container::Container
     rabbitmq::rabbitmq
+    KDReports::kdreports
     CargoNetSimBackend
 )
 

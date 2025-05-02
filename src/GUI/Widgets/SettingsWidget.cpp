@@ -29,10 +29,10 @@ SettingsWidget::SettingsWidget(QWidget *parent)
 {
     // Initialize with default values for fuel types
     fuelTypes = {{"HFO",
-                  {{"cost", 580.0},
+                  {{"cost", 0.56},
                    {"calorific", 11.1},
                    {"carbon_content", 3.15},
-                   {"unit", "kg"}}},
+                   {"unit", "L"}}},
                  {"diesel_1",
                   {{"cost", 1.35},
                    {"calorific", 10.7},
@@ -96,7 +96,7 @@ void SettingsWidget::initUI()
                       averageTimeValueSpin);
 
     shortestPathsSpin = new QSpinBox(simulationGroup);
-    shortestPathsSpin->setRange(1, 10);
+    shortestPathsSpin->setRange(1, 20);
     shortestPathsSpin->setValue(3);
     shortestPathsSpin->setSuffix(tr(" paths"));
     simLayout->addRow(tr("Number of Shortest Paths:"),
@@ -456,15 +456,8 @@ void SettingsWidget::updateFuelTable()
         costSpin->setDecimals(2);
         costSpin->setValue(data["cost"].toDouble());
 
-        if (data["unit"].toString() == "kg")
-        {
-            costSpin->setSuffix(tr(" per ton"));
-        }
-        else
-        {
-            costSpin->setSuffix(tr(" per ")
-                                + data["unit"].toString());
-        }
+        costSpin->setSuffix(tr(" per ")
+                            + data["unit"].toString());
 
         fuelTable->setCellWidget(row, 1, costSpin);
 
@@ -491,7 +484,7 @@ void SettingsWidget::updateFuelTable()
 
         // Unit
         QComboBox *unitCombo = new QComboBox();
-        unitCombo->addItems({"L", "kg"});
+        unitCombo->addItems({"L"});
         unitCombo->setCurrentText(data["unit"].toString());
         fuelTable->setCellWidget(row, 4, unitCombo);
 
@@ -557,15 +550,9 @@ void SettingsWidget::updateFuelData(const QString &fuelType,
                             fuelTable->cellWidget(row, 3));
 
                     QString unitStr = value.toString();
-                    if (unitStr == "kg")
-                    {
-                        costSpin->setSuffix(tr(" per ton"));
-                    }
-                    else
-                    {
-                        costSpin->setSuffix(tr(" per ")
-                                            + unitStr);
-                    }
+
+                    costSpin->setSuffix(tr(" per ")
+                                        + unitStr);
 
                     calorificSpin->setSuffix(tr(" kWh/")
                                              + unitStr);

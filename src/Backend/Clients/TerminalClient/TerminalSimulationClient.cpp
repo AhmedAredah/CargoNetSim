@@ -856,6 +856,9 @@ TerminalSimulationClient::ping(const QString &echo)
 void TerminalSimulationClient::processMessage(
     const QJsonObject &message)
 {
+    // Delegate to base class for initial processing
+    SimulationClientBase::processMessage(message);
+
     // Check for event field presence
     if (!message.contains("event"))
     {
@@ -941,9 +944,6 @@ void TerminalSimulationClient::processMessage(
                 << "Unknown event received:" << event;
         }
     }
-
-    // Delegate to base class for initial processing
-    SimulationClientBase::processMessage(message);
 }
 
 // Handle terminal added event

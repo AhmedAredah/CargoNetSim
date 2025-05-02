@@ -393,6 +393,10 @@ TruckSimulationClient::getContainerManager() const
 void TruckSimulationClient::processMessage(
     const QJsonObject &message)
 {
+    // Delegate for the base class for the initial
+    // processing
+    SimulationClientBase::processMessage(message);
+
     // Basic validation
     if (!message.contains("body"))
     {

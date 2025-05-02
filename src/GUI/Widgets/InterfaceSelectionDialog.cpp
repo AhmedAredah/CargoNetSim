@@ -1,3 +1,4 @@
+// In InterfaceSelectionDialog.cpp
 #include "InterfaceSelectionDialog.h"
 #include <QDialogButtonBox>
 #include <QFrame>
@@ -13,12 +14,31 @@ namespace CargoNetSim
 namespace GUI
 {
 InterfaceSelectionDialog::InterfaceSelectionDialog(
-    const QSet<QString> &availableInterfaces,
+    const QSet<QString> &availableOptions,
     const QSet<QString> &visibleTerminalTypes,
-    QWidget             *parent)
+    DialogType dialogType, QWidget *parent)
     : QDialog(parent)
+    , m_dialogType(dialogType)
+    , m_useCoordinateDistanceCheckbox(nullptr)
 {
-    setWindowTitle("Select Interfaces to Connect");
+    QString windowTitle, headerText, optionsGroupTitle;
+
+    // Set titles based on dialog type
+    if (dialogType == NetworkSelection)
+    {
+        windowTitle = "Select Networks to Connect";
+        headerText =
+            "Select which network types to connect:";
+        optionsGroupTitle = "Available Network Types:";
+    }
+    else
+    { // InterfaceSelection (default)
+        windowTitle = "Select Interfaces to Connect";
+        headerText  = "Select which interfaces to connect:";
+        optionsGroupTitle = "Available Interfaces:";
+    }
+
+    setWindowTitle(windowTitle);
     setMinimumWidth(450);
     setMaximumWidth(500);
     setMinimumHeight(500);
@@ -28,59 +48,86 @@ InterfaceSelectionDialog::InterfaceSelectionDialog(
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
     // Header with descriptive label
-    QLabel *label = new QLabel(
-        "Select which interfaces to connect:", this);
+    QLabel *label = new QLabel(headerText, this);
     label->setStyleSheet("font-weight: bold;");
     mainLayout->addWidget(label);
 
-    // Create a scrollable area for interface checkboxes
-    QScrollArea *interfaceScrollArea =
-        new QScrollArea(this);
-    interfaceScrollArea->setWidgetResizable(true);
-    interfaceScrollArea->setFrameShape(QFrame::NoFrame);
+    // Create a scrollable area for option checkboxes
+    QScrollArea *optionsScrollArea = new QScrollArea(this);
+    optionsScrollArea->setWidgetResizable(true);
+    optionsScrollArea->setFrameShape(QFrame::NoFrame);
 
-    QWidget *interfaceScrollContent =
-        new QWidget(interfaceScrollArea);
+    QWidget *optionsScrollContent =
+        new QWidget(optionsScrollArea);
     QVBoxLayout *checkboxLayout =
-        new QVBoxLayout(interfaceScrollContent);
+        new QVBoxLayout(optionsScrollContent);
     checkboxLayout->setContentsMargins(0, 0, 0, 0);
 
-    // Create a checkbox for each available interface
-    for (const QString &interface : availableInterfaces)
+    // Create a checkbox for each available option
+    for (const QString &option : availableOptions)
     {
-        QCheckBox *checkbox =
-            new QCheckBox(interface, this);
+        QCheckBox *checkbox = new QCheckBox(option, this);
         checkbox->setChecked(true); // Default to checked
         checkboxLayout->addWidget(checkbox);
-        m_checkboxes[interface] = checkbox;
+
+        if (dialogType == NetworkSelection)
+        {
+            m_networkTypeCheckboxes[option] = checkbox;
+        }
+        else
+        {
+            m_interfaceCheckboxes[option] = checkbox;
+        }
     }
 
     // Add some spacing at the bottom of the checkbox layout
     checkboxLayout->addStretch();
 
-    interfaceScrollArea->setWidget(interfaceScrollContent);
+    optionsScrollArea->setWidget(optionsScrollContent);
 
-    // Create button layout for interface selection
-    QHBoxLayout *interfaceButtonLayout = new QHBoxLayout();
-    QPushButton *selectAllInterfacesBtn =
+    // Create button layout for option selection
+    QHBoxLayout *optionsButtonLayout = new QHBoxLayout();
+    QPushButton *selectAllOptionsBtn =
         new QPushButton("Select All", this);
-    QPushButton *deselectAllInterfacesBtn =
+    QPushButton *deselectAllOptionsBtn =
         new QPushButton("Deselect All", this);
 
-    interfaceButtonLayout->addWidget(
-        selectAllInterfacesBtn);
-    interfaceButtonLayout->addWidget(
-        deselectAllInterfacesBtn);
+    optionsButtonLayout->addWidget(selectAllOptionsBtn);
+    optionsButtonLayout->addWidget(deselectAllOptionsBtn);
 
-    // Create groupbox for interfaces section
-    QGroupBox *interfacesBox =
-        new QGroupBox("Available Interfaces:", this);
-    QVBoxLayout *interfacesBoxLayout =
-        new QVBoxLayout(interfacesBox);
-    interfacesBoxLayout->addWidget(interfaceScrollArea);
-    interfacesBoxLayout->addLayout(interfaceButtonLayout);
+    // Create groupbox for options section
+    QGroupBox *optionsBox =
+        new QGroupBox(optionsGroupTitle, this);
+    QVBoxLayout *optionsBoxLayout =
+        new QVBoxLayout(optionsBox);
+    optionsBoxLayout->addWidget(optionsScrollArea);
+    optionsBoxLayout->addLayout(optionsButtonLayout);
 
-    mainLayout->addWidget(interfacesBox);
+    mainLayout->addWidget(optionsBox);
+
+    // Connect option button signals based on dialog type
+    if (dialogType == NetworkSelection)
+    {
+        connect(selectAllOptionsBtn, &QPushButton::clicked,
+                this,
+                &InterfaceSelectionDialog::
+                    selectAllNetworkTypes);
+        connect(deselectAllOptionsBtn,
+                &QPushButton::clicked, this,
+                &InterfaceSelectionDialog::
+                    deselectAllNetworkTypes);
+    }
+    else
+    {
+        connect(
+            selectAllOptionsBtn, &QPushButton::clicked,
+            this,
+            &InterfaceSelectionDialog::selectAllInterfaces);
+        connect(deselectAllOptionsBtn,
+                &QPushButton::clicked, this,
+                &InterfaceSelectionDialog::
+                    deselectAllInterfaces);
+    }
 
     // Only add terminal types section if we have visible
     // terminal types
@@ -134,6 +181,20 @@ InterfaceSelectionDialog::InterfaceSelectionDialog(
                     deselectAllTerminalTypes);
     }
 
+    // Add coordinate distance checkbox for
+    // InterfaceSelection type
+    if (dialogType == InterfaceSelection)
+    {
+        m_useCoordinateDistanceCheckbox =
+            new QCheckBox("Use coordinate distance to "
+                          "calculate connection properties",
+                          this);
+        m_useCoordinateDistanceCheckbox->setChecked(
+            true); // Default to checked
+        mainLayout->addWidget(
+            m_useCoordinateDistanceCheckbox);
+    }
+
     // Create a 2x2 grid layout for dialog buttons
     QGridLayout *buttonGrid = new QGridLayout();
     buttonGrid->setSpacing(10);
@@ -153,14 +214,7 @@ InterfaceSelectionDialog::InterfaceSelectionDialog(
     // Add the button grid to the main layout
     mainLayout->addLayout(buttonGrid);
 
-    // Connect button signals
-    connect(selectAllInterfacesBtn, &QPushButton::clicked,
-            this,
-            &InterfaceSelectionDialog::selectAllInterfaces);
-    connect(
-        deselectAllInterfacesBtn, &QPushButton::clicked,
-        this,
-        &InterfaceSelectionDialog::deselectAllInterfaces);
+    // Connect dialog button signals
     connect(okButton, &QPushButton::clicked, this,
             &QDialog::accept);
     connect(cancelButton, &QPushButton::clicked, this,
@@ -176,8 +230,8 @@ QList<QString>
 InterfaceSelectionDialog::getSelectedInterfaces() const
 {
     QList<QString> selectedInterfaces;
-    for (auto it = m_checkboxes.constBegin();
-         it != m_checkboxes.constEnd(); ++it)
+    for (auto it = m_interfaceCheckboxes.constBegin();
+         it != m_interfaceCheckboxes.constEnd(); ++it)
     {
         if (it.value()->isChecked())
         {
@@ -185,6 +239,21 @@ InterfaceSelectionDialog::getSelectedInterfaces() const
         }
     }
     return selectedInterfaces;
+}
+
+QList<QString>
+InterfaceSelectionDialog::getSelectedNetworkTypes() const
+{
+    QList<QString> selectedNetworkTypes;
+    for (auto it = m_networkTypeCheckboxes.constBegin();
+         it != m_networkTypeCheckboxes.constEnd(); ++it)
+    {
+        if (it.value()->isChecked())
+        {
+            selectedNetworkTypes.append(it.key());
+        }
+    }
+    return selectedNetworkTypes;
 }
 
 QMap<QString, bool>
@@ -199,9 +268,19 @@ InterfaceSelectionDialog::getIncludedTerminalTypes() const
     return includedTypes;
 }
 
+bool InterfaceSelectionDialog::useCoordinateDistance() const
+{
+    if (m_dialogType == InterfaceSelection
+        && m_useCoordinateDistanceCheckbox)
+    {
+        return m_useCoordinateDistanceCheckbox->isChecked();
+    }
+    return false;
+}
+
 void InterfaceSelectionDialog::selectAllInterfaces()
 {
-    for (auto checkbox : m_checkboxes)
+    for (auto checkbox : m_interfaceCheckboxes)
     {
         checkbox->setChecked(true);
     }
@@ -209,7 +288,23 @@ void InterfaceSelectionDialog::selectAllInterfaces()
 
 void InterfaceSelectionDialog::deselectAllInterfaces()
 {
-    for (auto checkbox : m_checkboxes)
+    for (auto checkbox : m_interfaceCheckboxes)
+    {
+        checkbox->setChecked(false);
+    }
+}
+
+void InterfaceSelectionDialog::selectAllNetworkTypes()
+{
+    for (auto checkbox : m_networkTypeCheckboxes)
+    {
+        checkbox->setChecked(true);
+    }
+}
+
+void InterfaceSelectionDialog::deselectAllNetworkTypes()
+{
+    for (auto checkbox : m_networkTypeCheckboxes)
     {
         checkbox->setChecked(false);
     }

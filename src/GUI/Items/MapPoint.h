@@ -104,6 +104,13 @@ public:
         const QMap<QString, QVariant> &newProperties);
 
     /**
+     * @brief Sets the coordinates of the point
+     *
+     * @param newPos The new scene coordinates
+     */
+    void setSceneCoordinate(const QPointF &newPos);
+
+    /**
      * @brief Get the current m_terminal linked to this
      * point
      *
@@ -195,6 +202,11 @@ signals:
      * @brief Signal emitted when the point is clicked
      */
     void clicked(MapPoint *point);
+
+    /**
+     * @brief Signal emitted when the point is moved
+     */
+    void positionChanged(QPointF position);
 
     /**
      * @brief Signal emitted when the linked terminal
