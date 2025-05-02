@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QTextStream>
+#include <QtWidgets/qsplitter.h>
 
 namespace CargoNetSim
 {
@@ -500,6 +501,64 @@ QWidget *PathComparisonDialog::createSegmentsTab()
         auto attributeLayout =
             new QVBoxLayout(attributeWidget);
 
+        // Create a splitter to allow collapsing segment
+        // info
+        auto splitter = new QSplitter(Qt::Vertical, this);
+
+        // Top part - segment info widget
+        auto segmentInfoWidget = new QWidget(this);
+        auto segmentInfoLayout =
+            new QVBoxLayout(segmentInfoWidget);
+
+        // Add segment info header with details
+        QString segmentInfoText =
+            tr("<h3>Segment %1 Attributes</h3>")
+                .arg(segmentIdx + 1);
+
+        // Add path-specific segment details
+        for (const auto &path : m_pathData)
+        {
+            if (path && path->path)
+            {
+                const auto &segments =
+                    path->path->getSegments();
+                if (segmentIdx < segments.size()
+                    && segments[segmentIdx])
+                {
+                    QString startTerminalName =
+                        getTerminalDisplayNameByID(
+                            path->path, segments[segmentIdx]
+                                            ->getStart());
+                    QString endTerminalName =
+                        getTerminalDisplayNameByID(
+                            path->path,
+                            segments[segmentIdx]->getEnd());
+                    QString transportMode =
+                        Backend::TransportationTypes::
+                            toString(segments[segmentIdx]
+                                         ->getMode());
+
+                    QString segmentInfo =
+                        QString("<p><b>Path %1:</b> %2 → "
+                                "%3 (%4)</p>")
+                            .arg(path->path->getPathId())
+                            .arg(startTerminalName)
+                            .arg(endTerminalName)
+                            .arg(transportMode);
+
+                    segmentInfoText += segmentInfo;
+                }
+            }
+        }
+
+        auto infoLabel = new QLabel(segmentInfoText, this);
+        infoLabel->setAlignment(Qt::AlignCenter);
+        segmentInfoLayout->addWidget(infoLabel);
+
+        // Bottom part - table widget
+        auto tableWidget = new QWidget(this);
+        auto tableLayout = new QVBoxLayout(tableWidget);
+
         // Create attribute headers
         QStringList attributeHeaders = headers;
 
@@ -725,10 +784,24 @@ QWidget *PathComparisonDialog::createSegmentsTab()
             transposedAttributeData.append(rowData);
         }
 
+        // Create and add table to the table widget layout
         auto attributeTable = createComparisonTable(
             attributeHeaders, attributeRowLabels,
             transposedAttributeData);
-        attributeLayout->addWidget(attributeTable);
+        tableLayout->addWidget(attributeTable);
+
+        // Add widgets to splitter
+        splitter->addWidget(segmentInfoWidget);
+        splitter->addWidget(tableWidget);
+
+        // Set initial sizes for the splitter
+        QList<int> sizes;
+        sizes << 150
+              << 400; // Adjust these values as needed
+        splitter->setSizes(sizes);
+
+        // Add splitter to main attribute layout
+        attributeLayout->addWidget(splitter);
 
         segmentTabWidget->addTab(attributeWidget,
                                  tr("Segment %1 Attributes")
@@ -1197,6 +1270,60 @@ QWidget *PathComparisonDialog::createCostsTab()
         auto segmentWidget = new QWidget(this);
         auto segmentLayout = new QVBoxLayout(segmentWidget);
 
+        // Create a splitter to allow collapsing segment
+        // info
+        auto splitter = new QSplitter(Qt::Vertical, this);
+
+        // Top part - segment info widget
+        auto segmentInfoWidget = new QWidget(this);
+        auto segmentInfoLayout =
+            new QVBoxLayout(segmentInfoWidget);
+
+        // Add segment info at the top of the tab
+        QString segmentInfoText =
+            tr("<h3>Segment %1 Costs</h3>")
+                .arg(segmentIdx + 1);
+        for (const auto &path : m_pathData)
+        {
+            if (path && path->path)
+            {
+                const auto &segments =
+                    path->path->getSegments();
+                if (segmentIdx < segments.size()
+                    && segments[segmentIdx])
+                {
+                    QString startTerminalName =
+                        getTerminalDisplayNameByID(
+                            path->path, segments[segmentIdx]
+                                            ->getStart());
+                    QString endTerminalName =
+                        getTerminalDisplayNameByID(
+                            path->path,
+                            segments[segmentIdx]->getEnd());
+                    QString segmentInfo =
+                        QString("<p><b>Path %1:</b> %2 → "
+                                "%3 (%4)</p>")
+                            .arg(path->path->getPathId())
+                            .arg(startTerminalName)
+                            .arg(endTerminalName)
+                            .arg(
+                                Backend::TransportationTypes::
+                                    toString(
+                                        segments[segmentIdx]
+                                            ->getMode()));
+                    segmentInfoText += segmentInfo;
+                }
+            }
+        }
+
+        auto infoLabel = new QLabel(segmentInfoText, this);
+        infoLabel->setAlignment(Qt::AlignCenter);
+        segmentInfoLayout->addWidget(infoLabel);
+
+        // Bottom part - table widget
+        auto tableWidget = new QWidget(this);
+        auto tableLayout = new QVBoxLayout(tableWidget);
+
         // Row labels for segment costs
         QStringList segmentCostRowLabels = {
             tr("Carbon Emissions Cost (Predicted)"),
@@ -1419,52 +1546,24 @@ QWidget *PathComparisonDialog::createCostsTab()
             transposedSegmentData.append(rowData);
         }
 
-        // Create and add table
+        // Create and add table to the table widget layout
         auto segmentTable = createComparisonTable(
             headers, segmentCostRowLabels,
             transposedSegmentData);
-        segmentLayout->addWidget(segmentTable);
+        tableLayout->addWidget(segmentTable);
 
-        // Add segment info at the top of the tab
-        QString segmentInfoText =
-            tr("<h3>Segment %1 Costs</h3>")
-                .arg(segmentIdx + 1);
-        for (const auto &path : m_pathData)
-        {
-            if (path && path->path)
-            {
-                const auto &segments =
-                    path->path->getSegments();
-                if (segmentIdx < segments.size()
-                    && segments[segmentIdx])
-                {
-                    QString startTerminalName =
-                        getTerminalDisplayNameByID(
-                            path->path, segments[segmentIdx]
-                                            ->getStart());
-                    QString endTerminalName =
-                        getTerminalDisplayNameByID(
-                            path->path,
-                            segments[segmentIdx]->getEnd());
-                    QString segmentInfo =
-                        QString("<p><b>Path %1:</b> %2 → "
-                                "%3 (%4)</p>")
-                            .arg(path->path->getPathId())
-                            .arg(startTerminalName)
-                            .arg(endTerminalName)
-                            .arg(
-                                Backend::TransportationTypes::
-                                    toString(
-                                        segments[segmentIdx]
-                                            ->getMode()));
-                    segmentInfoText += segmentInfo;
-                }
-            }
-        }
+        // Add widgets to splitter
+        splitter->addWidget(segmentInfoWidget);
+        splitter->addWidget(tableWidget);
 
-        auto infoLabel = new QLabel(segmentInfoText, this);
-        infoLabel->setAlignment(Qt::AlignCenter);
-        segmentLayout->insertWidget(0, infoLabel);
+        // Set initial sizes for the splitter
+        QList<int> sizes;
+        sizes << 150
+              << 400; // Adjust these values as needed
+        splitter->setSizes(sizes);
+
+        // Add splitter to segment layout
+        segmentLayout->addWidget(splitter);
 
         costTabWidget->addTab(
             segmentWidget,
