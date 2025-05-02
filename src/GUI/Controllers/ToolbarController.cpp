@@ -1060,9 +1060,6 @@ void ToolbarController::storeButtonStates(
             widgetStates[widget] = widget->isEnabled();
         }
     }
-
-    mainWindow->showStatusBarMessage(
-        "Toolbar interactive element states saved", 2000);
 }
 
 void ToolbarController::restoreButtonStates(
@@ -1079,10 +1076,6 @@ void ToolbarController::restoreButtonStates(
             widget->setEnabled(enabled);
         }
     }
-
-    mainWindow->showStatusBarMessage(
-        "Toolbar interactive element states restored",
-        2000);
 }
 
 void ToolbarController::disableAllButtons(
@@ -1101,9 +1094,6 @@ void ToolbarController::disableAllButtons(
             widget->setEnabled(false);
         }
     }
-
-    mainWindow->showStatusBarMessage(
-        "All toolbar interactive elements disabled", 2000);
 }
 
 } // namespace GUI
