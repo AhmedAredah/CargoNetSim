@@ -1,7 +1,4 @@
 <h1 align="center">
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
   <a href="https://github.com/VTTI-CSM/CargoNetSim">
     <img src="https://github.com/user-attachments/assets/72c29fe8-cb40-4f61-bb4b-447cafff9c3a" alt="NeTrainSim"/>
 
@@ -26,6 +23,15 @@
     <a href="https://cla-assistant.io/VTTI-CSM/CargoNetSim"><img src="https://cla-assistant.io/readme/badge/VTTI-CSM/CargoNetSim" alt="CLA assistant" /></a>
   </a>
 </p>
+
+<div align="center">
+
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
+</div>
+
 
 <p align="center">
   <a href="https://github.com/VTTI-CSM/CargoNetSim/releases" target="_blank">Download CargoNetSim</a> |
@@ -123,5 +129,3 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
