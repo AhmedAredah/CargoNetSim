@@ -1,6 +1,6 @@
 <h1 align="center">
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
   <a href="https://github.com/VTTI-CSM/CargoNetSim">
     <img src="https://github.com/user-attachments/assets/72c29fe8-cb40-4f61-bb4b-447cafff9c3a" alt="NeTrainSim"/>
@@ -114,6 +114,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/AhmedAredah"><img src="https://avatars.githubusercontent.com/u/77444744?v=4?s=100" width="100px;" alt="Ahmed Aredah"/><br /><sub><b>Ahmed Aredah</b></sub></a><br /><a href="https://github.com/VTTI-CSM/CargoNetSim/commits?author=ahmedaredah" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/heshamrakha"><img src="https://avatars.githubusercontent.com/u/11538915?v=4?s=100" width="100px;" alt="Hesham Rakha"/><br /><sub><b>Hesham Rakha</b></sub></a><br /><a href="#projectManagement-heshamrakha" title="Project Management">📆</a></td>
     </tr>
   </tbody>
 </table>
