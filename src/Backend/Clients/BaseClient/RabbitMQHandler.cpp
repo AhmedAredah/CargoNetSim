@@ -9,6 +9,11 @@
 #include <chrono>
 #include <rabbitmq-c/tcp_socket.h>
 #include <thread>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <sys/time.h>
+#endif
 
 namespace CargoNetSim
 {
