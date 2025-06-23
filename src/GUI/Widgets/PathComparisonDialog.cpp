@@ -13,6 +13,7 @@
 
 #include "PathComparisonDialog.h"
 #include "GUI/Utils/IconCreator.h" // For icon utilities
+#include "qcoreapplication.h"
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QMessageBox>
