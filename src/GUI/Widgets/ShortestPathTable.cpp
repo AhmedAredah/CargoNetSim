@@ -838,39 +838,56 @@ void ShortestPathsTable::refreshTable()
 
         // Connect checkbox state change to update
         // compare button state
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+        // Qt 6.7+ version with checkStateChanged signal
         connect(checkbox, &QCheckBox::checkStateChanged,
                 this, [this, pathId](Qt::CheckState state) {
-                    // Emit signal that checkbox state
-                    // changed
-                    emit checkboxChanged(
-                        pathId, state == Qt::Checked);
+                    // Emit signal that checkbox state changed
+                    emit checkboxChanged(pathId, state == Qt::Checked);
 
-                    // Get all checked paths
-                    QVector<int> checkedPaths =
-                        getCheckedPathIds();
-                    bool hasCheckedPaths =
-                        !checkedPaths.isEmpty();
+                           // Get all checked paths
+                    QVector<int> checkedPaths = getCheckedPathIds();
+                    bool hasCheckedPaths = !checkedPaths.isEmpty();
 
-                    // Enable compare button if at least 1
-                    // path is checked
-                    m_compareButton->setEnabled(
-                        hasCheckedPaths);
+                           // Enable compare button if at least 1 path is checked
+                    m_compareButton->setEnabled(hasCheckedPaths);
 
-                    // Enable export button if there are any
-                    // paths in the table (checked or not)
-                    m_exportButton->setEnabled(
-                        !m_pathData.isEmpty());
+                           // Enable export button if there are any paths in the table (checked or not)
+                    m_exportButton->setEnabled(!m_pathData.isEmpty());
 
-                    // Update select/unselect buttons state
-                    m_unselectAllButton->setEnabled(
-                        hasCheckedPaths);
+                           // Update select/unselect buttons state
+                    m_unselectAllButton->setEnabled(hasCheckedPaths);
 
-                    // Enable select all button only if not
-                    // all paths are already selected
-                    m_selectAllButton->setEnabled(
-                        m_pathData.size()
-                        > checkedPaths.size());
+                           // Enable select all button only if not all paths are already selected
+                    m_selectAllButton->setEnabled(m_pathData.size() > checkedPaths.size());
                 });
+#else
+      // Qt 6.4-6.6 version with stateChanged signal
+        connect(checkbox, &QCheckBox::stateChanged,
+                this, [this, pathId](int state) {
+                    // Convert int to Qt::CheckState for consistency
+                    Qt::CheckState checkState = static_cast<Qt::CheckState>(state);
+
+                           // Emit signal that checkbox state changed
+                    emit checkboxChanged(pathId, checkState == Qt::Checked);
+
+                           // Get all checked paths
+                    QVector<int> checkedPaths = getCheckedPathIds();
+                    bool hasCheckedPaths = !checkedPaths.isEmpty();
+
+                           // Enable compare button if at least 1 path is checked
+                    m_compareButton->setEnabled(hasCheckedPaths);
+
+                           // Enable export button if there are any paths in the table (checked or not)
+                    m_exportButton->setEnabled(!m_pathData.isEmpty());
+
+                           // Update select/unselect buttons state
+                    m_unselectAllButton->setEnabled(hasCheckedPaths);
+
+                           // Enable select all button only if not all paths are already selected
+                    m_selectAllButton->setEnabled(m_pathData.size() > checkedPaths.size());
+                });
+#endif
 
         // Add Path ID cell
         auto pathItem =
