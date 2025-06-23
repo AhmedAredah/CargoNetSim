@@ -42,16 +42,6 @@ TrainSimulationClient::TrainSimulationClient(
     //     ClientType::TrainClient, "Train Simulation",
     //     100);
 
-    // Log initialization using logger if available
-    if (m_logger)
-    {
-        m_logger->log("TrainSimulationClient initialized",
-                      static_cast<int>(m_clientType));
-    }
-    else
-    {
-        qDebug() << "TrainSimulationClient initialized";
-    }
 }
 
 TrainSimulationClient::~TrainSimulationClient()
