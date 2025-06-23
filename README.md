@@ -1,6 +1,6 @@
 <h1 align="center">
   <a href="https://github.com/VTTI-CSM/CargoNetSim">
-    <img src="https://github.com/user-attachments/assets/72c29fe8-cb40-4f61-bb4b-447cafff9c3a" alt="NeTrainSim"/>
+    <img src="https://github.com/user-attachments/assets/72c29fe8-cb40-4f61-bb4b-447cafff9c3a" alt="CargoNetSim"/>
 
   </a>
   <br/>
@@ -86,7 +86,7 @@ CargoNetSim is a multimodal freight operations optimization tool. This comprehen
 - **KDReports**: Reporting functionality
 - **TerminalSim**: [Available on GitHub](https://github.com/AhmedAredah/TerminalSim)
 - **ShipNetSim Server**: [Available on GitHub](https://github.com/VTTI-CSM/ShipNetSim)
-- **NeTrainSim Server**: [Available on GitHub](https://github.com/VTTI-CSM/NeTrainSim)
+- **CargoNetSim Server**: [Available on GitHub](https://github.com/VTTI-CSM/CargoNetSim)
 - **Integration Server**: [Available on GitHub](https://github.com/AhmedAredah/IntegrationTrucks)
 
 ### Build Instructions
