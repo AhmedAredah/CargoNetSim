@@ -9,6 +9,7 @@
 
 #include "Backend/Controllers/CargoNetSimController.h"
 #include "Backend/Models/SimulationTime.h"
+#include "QtWidgets/qmessagebox.h"
 
 namespace CargoNetSim
 {
@@ -162,6 +163,23 @@ bool SimulationClientBase::connectToServer()
                 getClientTypeString()
                     + " failed to connect to server",
                 static_cast<int>(m_clientType));
+
+            QMessageBox msgBox(nullptr);
+            msgBox.setIcon(QMessageBox::Critical);
+            msgBox.setWindowTitle("RabbitMQ Connection Failed");
+            msgBox.setText("Could not connect to RabbitMQ server");
+            msgBox.setInformativeText(
+                "The application failed to establish a connection to the RabbitMQ message broker. "
+                "This means that simulation features will not be available.\n\n"
+                "Please check:\n"
+                "• RabbitMQ server is running\n"
+                "• Network connectivity\n"
+                "• Firewall settings\n"
+                "• Server configuration\n\n"
+                "The application will terminate now."
+                );
+            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Retry);
+            msgBox.setDefaultButton(QMessageBox::Ok);
         }
     }
 

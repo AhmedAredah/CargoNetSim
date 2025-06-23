@@ -384,7 +384,7 @@ protected:
     QStringList m_receivingRoutingKeys;
 
     // Logging interface
-    LoggerInterface *m_logger;
+    LoggerInterface *m_logger = nullptr;
 
     // SimulationTime interface
     SimulationTime *m_simulationTime;
