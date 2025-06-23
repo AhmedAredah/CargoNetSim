@@ -1,4 +1,5 @@
 #include "Path.h"
+#include <stdexcept>
 
 namespace CargoNetSim
 {

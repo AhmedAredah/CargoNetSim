@@ -1,5 +1,6 @@
 #include "Terminal.h"
 #include <QJsonArray>
+#include <stdexcept>
 
 namespace CargoNetSim
 {
