@@ -10,9 +10,9 @@ endif()
 # Platform-specific paths
 if(WIN32)
     # Windows-specific paths
-    set(CONTAINER_SEARCH_PATHS "C:/Program Files/Container/cmake" CACHE PATH "Default path to container's library")
+    set(CONTAINER_SEARCH_PATHS "C:/Program Files/ContainerLib/lib/cmake" CACHE PATH "Default path to container's library")
     set(RABBITMQ_CMAKE_DIR "C:/Program Files/rabbitmq-c/lib/cmake/rabbitmq-c" CACHE PATH "Default path to RabbitMQ-C library on Windows")
-    set(KDREPORTS_DIR "C:/Program Files/KDAB/KDReports/cmake" CACHE PATH "Path to KDReports CMake directory")
+    set(KDREPORTS_DIR "C:/KDAB/KDReports-2.3.95/lib/cmake/KDReports-qt6" CACHE PATH "Path to KDReports CMake directory")
 elseif(APPLE)
     # macOS-specific paths
     set(CONTAINER_SEARCH_PATHS "/usr/local/lib/cmake/Container" CACHE PATH "Default path to container's library on macOS")
@@ -33,8 +33,8 @@ set(CONTAINER_CMAKE_DIR "${CONTAINER_SEARCH_PATHS}" CACHE PATH "Path to Containe
 find_package(Container REQUIRED PATHS ${CONTAINER_CMAKE_DIR} NO_DEFAULT_PATH)
 
 # Check if the directory exists
-if(NOT EXISTS "${CONTAINER_LIB_DIR}")
-    message(FATAL_ERROR "The specified CONTAINER_LIB_DIR does not exist: ${CONTAINER_LIB_DIR}")
+if(NOT TARGET Container::Container)
+    message(FATAL_ERROR "Container::Container target not available after find_package")
 endif()
 
 find_package(RabbitMQ-C REQUIRED CONFIG PATHS ${RABBITMQ_CMAKE_DIR})

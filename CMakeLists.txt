@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CargoNetSim VERSION 1.0.0 LANGUAGES CXX)
+project(CargoNetSim VERSION 0.0.1 LANGUAGES CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Option to enable or disable tests
 option(CARGONET_BUILD_TESTS "Build the CargoNetSim test suite" ON)
+option(CARGONET_BUILD_INSTALLER "Build the CargoNetSim installer package" ON)
 
 # Include our custom CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -34,9 +35,11 @@ if(CARGONET_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+# Conditionally add installer directory
+if(CARGONET_BUILD_INSTALLER)
+    add_subdirectory(src/installer)
+endif()
+
 # Install configuration
 install(DIRECTORY config/ DESTINATION etc/CargoNetSim)
-install(DIRECTORY media/ DESTINATION share/CargoNetSim/media)
-
-# Package configuration
-include(CPack)
+# install(DIRECTORY media/ DESTINATION share/CargoNetSim/media)
