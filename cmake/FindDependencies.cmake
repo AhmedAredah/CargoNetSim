@@ -24,13 +24,8 @@ setup_library_search_paths()
 message(STATUS "")
 message(STATUS "=== Finding Required Packages ===")
 
-if(CARGONET_BUILD_TESTS)
-    find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml Test REQUIRED)
-    message(STATUS "Qt6 found: ${Qt6_VERSION} (with Test component)")
-else()
-    find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml REQUIRED)
-    message(STATUS "Qt6 found: ${Qt6_VERSION}")
-endif()
+find_package(Qt6 COMPONENTS Core Gui Widgets Network Xml REQUIRED)
+message(STATUS "Qt6 found: ${Qt6_VERSION}")
 
 # =============================================================================
 # Container Library - Required

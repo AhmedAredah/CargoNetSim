@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Option to enable or disable tests
-option(CARGONET_BUILD_TESTS "Build the CargoNetSim test suite" ON)
 option(CARGONET_BUILD_INSTALLER "Build the CargoNetSim installer package" ON)
 option(CARGONET_BUILD_RABBITMQ_CONFIG "Build RabbitMQ config tool" ON)
 
@@ -30,11 +28,6 @@ configure_file(
 
 # Add subdirectories
 add_subdirectory(src)
-
-# Conditionally add tests directory
-if(CARGONET_BUILD_TESTS)
-    add_subdirectory(tests)
-endif()
 
 # Conditionally add installer directory
 if(CARGONET_BUILD_INSTALLER)
