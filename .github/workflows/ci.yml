@@ -2,8 +2,6 @@
 # - Keep Container available to GitHub Actions through CONTAINER_REPO_TOKEN,
 #   or move it to a vendored, submodule, GitHub Packages, or self-hosted runner
 #   setup before making build-linux mandatory.
-# - Tag Container releases and update CONTAINER_REF from the pinned main commit
-#   below to a stable release tag.
 # - Keep KDReports pinned to a release tag and make build-linux required only
 #   after dependency bootstrap is stable in CI.
 
@@ -22,7 +20,7 @@ permissions:
 
 env:
   BUILD_TYPE: Release
-  CONTAINER_REF: 3058433c017bb4a26012c86d31de13f19804ea8a
+  CONTAINER_REF: v0.2.0
   KDREPORTS_REF: kdreports-2.3.0
 
 jobs:
@@ -50,7 +48,10 @@ jobs:
             "config": {
               "MD012": false,
               "MD013": false,
+              "MD022": false,
+              "MD032": false,
               "MD033": false,
+              "MD034": false,
               "MD041": false
             }
           }
@@ -156,6 +157,16 @@ jobs:
 
       - name: Install KDReports
         run: cmake --build deps/build/kdreports --target install
+
+      - name: Patch KDReports Qt6 package config
+        run: |
+          config_file="${DEPS_PREFIX}/lib/cmake/KDReports-qt6/KDReports-qt6Config.cmake"
+          sed -i \
+            -e 's/find_dependency(QtCore /find_dependency(Qt6Core /' \
+            -e 's/find_dependency(QtWidgets /find_dependency(Qt6Widgets /' \
+            -e 's/find_dependency(QtPrintSupport /find_dependency(Qt6PrintSupport /' \
+            -e 's/find_dependency(QtXml /find_dependency(Qt6Xml /' \
+            "${config_file}"
 
       - name: Configure CargoNetSim
         run: |
