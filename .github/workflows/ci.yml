@@ -1,0 +1,175 @@
+# TODO:
+# - Keep Container available to GitHub Actions through CONTAINER_REPO_TOKEN,
+#   or move it to a vendored, submodule, GitHub Packages, or self-hosted runner
+#   setup before making build-linux mandatory.
+# - Tag Container releases and update CONTAINER_REF from the pinned main commit
+#   below to a stable release tag.
+# - Keep KDReports pinned to a release tag and make build-linux required only
+#   after dependency bootstrap is stable in CI.
+
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: Release
+  CONTAINER_REF: 3058433c017bb4a26012c86d31de13f19804ea8a
+  KDREPORTS_REF: kdreports-2.3.0
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out CargoNetSim
+        uses: actions/checkout@v4
+
+      - name: Install lint dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: cmake clang-format
+          version: 1.0
+
+      - name: Check root CMake file
+        run: cmake -E cat CMakeLists.txt > /dev/null
+
+      - name: Write markdownlint configuration
+        run: |
+          cat > .markdownlint-cli2.jsonc <<'JSON'
+          {
+            "config": {
+              "MD012": false,
+              "MD013": false,
+              "MD033": false,
+              "MD041": false
+            }
+          }
+          JSON
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v23.1.0
+        with:
+          config: .markdownlint-cli2.jsonc
+          globs: "*.md"
+
+      - name: Check clang-format
+        if: ${{ hashFiles('.clang-format') != '' }}
+        shell: bash
+        run: |
+          shopt -s globstar nullglob
+          files=(src/**/*.cpp src/**/*.h)
+          if (( ${#files[@]} == 0 )); then
+            echo "No C++ source files found."
+            exit 0
+          fi
+          clang-format --dry-run --Werror "${files[@]}"
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+
+    env:
+      DEPS_PREFIX: ${{ github.workspace }}/deps/install
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+
+    steps:
+      - name: Check out CargoNetSim
+        uses: actions/checkout@v4
+
+      - name: Check Container token
+        env:
+          CONTAINER_REPO_TOKEN: ${{ secrets.CONTAINER_REPO_TOKEN }}
+        run: |
+          if [ -z "${CONTAINER_REPO_TOKEN}" ]; then
+            echo "::error::CONTAINER_REPO_TOKEN is required to check out the private Container dependency."
+            exit 1
+          fi
+
+      - name: Check out Container
+        uses: actions/checkout@v4
+        with:
+          repository: AhmedAredah/container
+          token: ${{ secrets.CONTAINER_REPO_TOKEN }}
+          ref: ${{ env.CONTAINER_REF }}
+          path: deps/container
+
+      - name: Check out KDReports
+        uses: actions/checkout@v4
+        with:
+          repository: KDAB/KDReports
+          ref: ${{ env.KDREPORTS_REF }}
+          path: deps/kdreports
+
+      - name: Install build dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: cmake qt6-base-dev qt6-tools-dev libyaml-cpp-dev librabbitmq-dev build-essential ninja-build ccache
+          version: 1.0
+
+      - name: Cache CMake build and compiler output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            build
+          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', 'cmake/**') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
+
+      - name: Configure Container
+        run: |
+          cmake -S deps/container -B deps/build/container -G Ninja \
+            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+            -DCMAKE_INSTALL_PREFIX="${DEPS_PREFIX}" \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_PYTHON_BINDINGS=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_DOCS=OFF \
+            -DCMAKE_CXX_COMPILER_LAUNCHER="${CMAKE_CXX_COMPILER_LAUNCHER}"
+
+      - name: Install Container
+        run: cmake --build deps/build/container --target install
+
+      - name: Configure KDReports
+        run: |
+          cmake -S deps/kdreports -B deps/build/kdreports -G Ninja \
+            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+            -DCMAKE_INSTALL_PREFIX="${DEPS_PREFIX}" \
+            -DKDReports_QT6=ON \
+            -DKDReports_TESTS=OFF \
+            -DKDReports_EXAMPLES=OFF \
+            -DKDReports_DOCS=OFF \
+            -DKDReports_PYTHON_BINDINGS=OFF \
+            -DCMAKE_CXX_COMPILER_LAUNCHER="${CMAKE_CXX_COMPILER_LAUNCHER}"
+
+      - name: Install KDReports
+        run: cmake --build deps/build/kdreports --target install
+
+      - name: Configure CargoNetSim
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+            -DCMAKE_PREFIX_PATH="${DEPS_PREFIX};/usr" \
+            -DCONTAINER_CMAKE_DIR="${DEPS_PREFIX}/lib/cmake/Container" \
+            -DKDREPORTS_DIR="${DEPS_PREFIX}/lib/cmake/KDReports-qt6" \
+            -DRABBITMQ_CMAKE_DIR="/usr/lib/x86_64-linux-gnu/cmake/rabbitmq-c" \
+            -DYAMLCPP_CMAKE_DIR="/usr/lib/x86_64-linux-gnu/cmake/yaml-cpp" \
+            -DCARGONET_BUILD_TESTS=OFF \
+            -DCARGONET_BUILD_INSTALLER=OFF \
+            -DCARGONET_BUILD_RABBITMQ_CONFIG=OFF \
+            -DCMAKE_CXX_COMPILER_LAUNCHER="${CMAKE_CXX_COMPILER_LAUNCHER}"
+
+      - name: Build CargoNetSim
+        run: cmake --build build
